@@ -28,6 +28,7 @@ The game follows a **fetch-once, run-local** pattern: a single bootstrap pull fr
 ## Client (frontend dev + UI/UX designers + QA)
 
 ### PWA Shell
+
 **Service Worker** — intercepts network requests, serves the app from cache, and handles the offline-first guarantee. This is load-bearing; the game must work with zero connectivity after first install.
 
 **App Manifest** — defines install behavior, splash screen, icons, display mode (`standalone`), orientation lock if needed.
@@ -35,6 +36,7 @@ The game follows a **fetch-once, run-local** pattern: a single bootstrap pull fr
 **Install / Onboarding flow** — the first-launch experience: downloads the game bundle, shows progress, then gates entry to the main shell. This is the only moment real network traffic happens per session.
 
 ### Local Storage Layer
+
 **IndexedDB store** — the on-device database. Holds the full game content bundle (locations, items, quests), player state (inventory, progress flags, journal), and cached map tiles or assets. Structure this with named object stores so different subsystems access their own slice cleanly.
 
 **State manager** — a client-side singleton (Zustand, Redux, or a hand-rolled store) that holds the in-memory working copy of player state, syncs writes through to IndexedDB, and exposes reactive subscriptions to the UI.
@@ -42,6 +44,7 @@ The game follows a **fetch-once, run-local** pattern: a single bootstrap pull fr
 **Save / checkpoint system** — serializes player state snapshots into IndexedDB with timestamps. Lets you implement manual saves, autosaves, and rollback.
 
 ### Game Modules
+
 **Location engine** — resolves the player's current position (GPS, manual selection, or QR trigger depending on your mechanic) against the location dataset, fires arrival/departure events.
 
 **Quest / event system** — a lightweight finite-state machine that evaluates conditions (visited location X, has item Y, flag Z is set) and advances quest state. This is the core game logic; keep it pure and testable.
@@ -51,6 +54,7 @@ The game follows a **fetch-once, run-local** pattern: a single bootstrap pull fr
 **Travel / map module** — renders the world map, marks visited and discoverable locations, and feeds input into the location engine.
 
 ### UI Layer
+
 **Design system / component library** — shared tokens (color, type, spacing), base components, and interaction patterns. This is the primary deliverable for your UI/UX designers and the contract your frontend dev builds against.
 
 **Map view** — the main game screen. Likely the most complex UI component; needs to handle pan/zoom, location markers, and state-driven overlays.
@@ -74,7 +78,7 @@ The game follows a **fetch-once, run-local** pattern: a single bootstrap pull fr
 ## Team → Component Mapping (quick reference)
 
 | Role | Primary ownership |
-|---|---|
+| --- | --- |
 | PO (you) | Bootstrap API contract, feature flags, release gates |
 | Game designer | Quest/event system spec, content DB schema, location data |
 | Backend dev | Bootstrap API, auth/session, sync endpoint |
