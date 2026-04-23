@@ -33,7 +33,7 @@ The game follows a **fetch-once, run-local** pattern: a single bootstrap pull fr
 
 **App Manifest** — defines install behavior, splash screen, icons, display mode (`standalone`), orientation lock if needed.
 
-**Install / Onboarding flow** — the first-launch experience: downloads the game bundle, shows progress, then gates entry to the main shell. This is the only moment real network traffic happens per session.
+**Install / Onboarding flow** — the first-launch experience: downloads the game bundle, shows progress, then gates entry to the main shell. This is the primary required network phase happens per session.
 
 ### Local Storage Layer
 

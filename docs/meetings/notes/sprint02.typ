@@ -12,7 +12,7 @@ Ngày: 20/4/2026
 
 - Bảng theo dõi tiến độ nhiệm vụ
   - Vai trò chính phụ
-  - Mục tiên sprint
+  - Mục tiêu sprint
   - Thời hạn nhiệm vụ
 
 - Kết quả cuộc họp
@@ -65,7 +65,7 @@ Ngày: 20/4/2026
         - Meet nếu khẩn cấp/nghiêm trọng
   - Deadline nhiệm vụ cá nhân/nhóm:
     - Thống nhất trong họp/ngay sau họp
-    - Trễ dealine: trừ 0.2/0.5/1/2/4 điểm vào milestone
+    - Trễ deadline: trừ 0.2/0.5/1/2/4 điểm vào milestone
     - Trễ 3 lần trở lên: 1 lần vi phạm (không reset)
   - Mức độ vi phạm: 4 mức
     1. Nhắc nhở
