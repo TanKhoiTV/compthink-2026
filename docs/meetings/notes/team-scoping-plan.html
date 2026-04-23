@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Scoping Plan — Traveling Game PWA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a18;
+    --paper: #f5f2eb;
+    --paper-dark: #ede9df;
+    --accent: #c94a1e;
+    --accent-soft: #f0d9d0;
+    --muted: #7a7060;
+    --border: #d4cfc3;
+    --client: #1e5f8a;
+    --client-soft: #d4e8f5;
+    --backend: #2a7a4b;
+    --backend-soft: #d4f0e2;
+    --data: #7a4a1e;
+    --data-soft: #f5e6d4;
+    --cross: #5a3a7a;
+    --cross-soft: #e8d8f5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3rem 4rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    border: 2px solid rgba(245,242,235,0.08);
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    border: 2px solid rgba(245,242,235,0.05);
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    line-height: 1.15;
+    max-width: 640px;
+  }
+  header h1 em {
+    font-style: italic;
+    color: rgba(245,242,235,0.6);
+  }
+  .header-meta {
+    margin-top: 1.2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    font-size: 0.78rem;
+    color: rgba(245,242,235,0.5);
+    font-family: 'DM Mono', monospace;
+  }
+  .meta-item span {
+    color: rgba(245,242,235,0.85);
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.82rem;
+  }
+
+  /* ── LAYOUT ── */
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  section { margin-bottom: 3.5rem; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    margin-bottom: 1rem;
+  }
+
+  p { color: #3d3a30; font-size: 0.93rem; max-width: 680px; }
+
+  /* ── PRINCIPLE BOX ── */
+  .principle-box {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  .principle-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .principle-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    margin-bottom: 0.3rem;
+    color: var(--paper);
+  }
+  .principle-box p {
+    font-size: 0.84rem;
+    color: rgba(245,242,235,0.65);
+    max-width: none;
+  }
+
+  /* ── DOMAIN CARDS ── */
+  .domain-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 640px) { .domain-grid { grid-template-columns: 1fr; } }
+
+  .domain-card {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.4rem 1.6rem;
+    background: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .domain-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .domain-card.client::before  { background: var(--client); }
+  .domain-card.backend::before { background: var(--backend); }
+  .domain-card.data::before    { background: var(--data); }
+  .domain-card.cross::before   { background: var(--cross); }
+
+  .domain-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 2px;
+    display: inline-block;
+    margin-bottom: 0.6rem;
+  }
+  .client  .domain-tag { background: var(--client-soft);  color: var(--client); }
+  .backend .domain-tag { background: var(--backend-soft); color: var(--backend); }
+  .data    .domain-tag { background: var(--data-soft);    color: var(--data); }
+  .cross   .domain-tag { background: var(--cross-soft);   color: var(--cross); }
+
+  .domain-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    margin-bottom: 0.3rem;
+  }
+  .domain-card p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    max-width: none;
+  }
+  .domain-owner {
+    margin-top: 0.8rem;
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+  .domain-owner strong { color: var(--ink); }
+
+  /* ── DATA FLOW DIAGRAM ── */
+  .flow-diagram {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem;
+    margin-top: 1.5rem;
+    overflow-x: auto;
+  }
+  .flow-diagram svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  /* ── INTERFACE TABLE ── */
+  .interface-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.2rem;
+    font-size: 0.84rem;
+  }
+  .interface-table th {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  .interface-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .interface-table tr:last-child td { border-bottom: none; }
+  .interface-table tr:nth-child(even) td { background: var(--paper-dark); }
+  .flow-arrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+  .if-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    background: var(--paper-dark);
+    padding: 0.15rem 0.4rem;
+    border-radius: 2px;
+    color: var(--muted);
+  }
+
+  /* ── DELIVERABLE CARDS ── */
+  .deliverable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 1.2rem;
+  }
+  .deliverable-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+  }
+  .deliverable-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--border);
+    line-height: 1;
+    flex-shrink: 0;
+    width: 2rem;
+    text-align: center;
+    margin-top: 0.1rem;
+  }
+  .deliverable-item h4 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
+  .deliverable-item p {
+    font-size: 0.81rem;
+    color: var(--muted);
+    max-width: none;
+  }
+
+  /* ── ROLE TABLE ── */
+  .role-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.2rem;
+    font-size: 0.84rem;
+  }
+  .role-table th {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    background: var(--paper-dark);
+    border-bottom: 2px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .role-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .role-table tr:last-child td { border-bottom: none; }
+  .role-pill {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── RULES BOX ── */
+  .rules-box {
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 1.4rem 1.8rem;
+    background: var(--accent-soft);
+    margin-top: 1.5rem;
+  }
+  .rules-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    margin-bottom: 0.8rem;
+    color: var(--accent);
+  }
+  .rules-box ol {
+    padding-left: 1.2rem;
+  }
+  .rules-box li {
+    font-size: 0.85rem;
+    color: #4a2010;
+    margin-bottom: 0.4rem;
+  }
+
+  /* ── DIVIDER ── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Architecture Scoping Plan · v1.0</div>
+  <h1>Traveling Game PWA<br><em>Team Scope Definition Brief</em></h1>
+  <div class="header-meta">
+    <div class="meta-item">Issued by <span>Product Owner</span></div>
+    <div class="meta-item">Audience <span>All Disciplines</span></div>
+    <div class="meta-item">Purpose <span>Scope Research & Deliverable Definition</span></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- CONTEXT -->
+  <section>
+    <div class="section-label">§ 01 — Context</div>
+    <h2>What we are building</h2>
+    <p>A Progressive Web App travel game that pulls a full game content bundle from the server at first launch, then stores everything on the player's device and runs entirely offline. The server is only contacted at install time (and optionally when content updates). All game logic, state, and progress are processed locally.</p>
+
+    <div class="principle-box">
+      <div class="principle-icon">◎</div>
+      <div>
+        <h3>Core architecture principle: Fetch once, run local</h3>
+        <p>The client owns all runtime behavior after the initial bootstrap. The server's role is to deliver a well-structured content bundle and, optionally, receive analytics. No game action should require a live network connection.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOMAINS -->
+  <section>
+    <div class="section-label">§ 02 — Domains</div>
+    <h2>Four domains, eight contributors</h2>
+    <p>The system is divided into four domains. Each domain has a defined owner and a boundary: components within a domain are free to share internal state, but communication <em>across</em> domains happens only through defined interfaces (listed in §04).</p>
+
+    <div class="domain-grid">
+
+      <div class="domain-card client">
+        <div class="domain-tag">Client</div>
+        <h3>PWA Client</h3>
+        <p>Everything that runs on the player's device — the installable shell, offline cache, local database, game logic, and all user-facing UI.</p>
+        <div class="domain-owner">Owner: <strong>Frontend Dev</strong> · UI/UX Designers · QA · PO</div>
+      </div>
+
+      <div class="domain-card backend">
+        <div class="domain-tag">Backend</div>
+        <h3>Server API</h3>
+        <p>The bootstrap endpoint that serves the versioned content bundle, optional session/auth, and optional event ingestion from the client.</p>
+        <div class="domain-owner">Owner: <strong>Backend Dev</strong></div>
+      </div>
+
+      <div class="domain-card data">
+        <div class="domain-tag">Data</div>
+        <h3>Content & Data Platform</h3>
+        <p>The authoritative source of game content (locations, quests, items, events), the CMS used by the game designer, and the analytics pipeline.</p>
+        <div class="domain-owner">Owner: <strong>Data Dev</strong> · Analysts · Game Designer (content authoring)</div>
+      </div>
+
+      <div class="domain-card cross">
+        <div class="domain-tag">Cross-Cutting</div>
+        <h3>Shared Contracts</h3>
+        <p>The bundle schema, version protocol, and analytics event schema. Agreed upon collectively; changes require sign-off from all touching domains.</p>
+        <div class="domain-owner">Owner: <strong>PO</strong> (change control)</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- DATA FLOW -->
+  <section>
+    <div class="section-label">§ 03 — Data Flow</div>
+    <h2>How data moves through the system</h2>
+    <p>There are three distinct flows. Each team should understand which flows touch their domain.</p>
+
+    <div class="flow-diagram">
+      <svg viewBox="0 0 820 420" width="820" height="420" font-family="DM Sans, sans-serif" role="img" aria-labelledby="flowTitle flowDesc">
+        <title id="flowTitle">Traveling Game PWA data flow diagram</title>
+        <desc id="flowDesc">Three flows: bootstrap from content to client, local-only game loop on client, and optional analytics from client to data platform via backend.</desc>
+
+        <!-- Background lanes -->
+        <rect x="10" y="10" width="180" height="400" rx="4" fill="#f8f4ee" stroke="#d4cfc3" stroke-width="1"/>
+        <rect x="210" y="10" width="180" height="400" rx="4" fill="#f0f7ff" stroke="#d4cfc3" stroke-width="1"/>
+        <rect x="410" y="10" width="180" height="400" rx="4" fill="#f0fff6" stroke="#d4cfc3" stroke-width="1"/>
+        <rect x="610" y="10" width="180" height="400" rx="4" fill="#fdf5ee" stroke="#d4cfc3" stroke-width="1"/>
+
+        <!-- Lane labels -->
+        <text x="100" y="32" text-anchor="middle" font-size="9" fill="#7a7060" font-family="DM Mono, monospace" letter-spacing="1">CLIENT</text>
+        <text x="300" y="32" text-anchor="middle" font-size="9" fill="#1e5f8a" font-family="DM Mono, monospace" letter-spacing="1">BACKEND API</text>
+        <text x="500" y="32" text-anchor="middle" font-size="9" fill="#2a7a4b" font-family="DM Mono, monospace" letter-spacing="1">DATA PLATFORM</text>
+        <text x="700" y="32" text-anchor="middle" font-size="9" fill="#7a4a1e" font-family="DM Mono, monospace" letter-spacing="1">CONTENT DB / CMS</text>
+
+        <!-- ── FLOW A: BOOTSTRAP ── -->
+        <text x="30" y="66" font-size="9" fill="#c94a1e" font-family="DM Mono, monospace" letter-spacing="1">FLOW A · BOOTSTRAP</text>
+
+        <!-- CMS → Data Platform (publish) -->
+        <rect x="630" y="80" width="130" height="36" rx="3" fill="#f5e6d4" stroke="#7a4a1e" stroke-width="1"/>
+        <text x="695" y="101" text-anchor="middle" font-size="10" fill="#7a4a1e">Game Content</text>
+        <line x1="620" y1="98" x2="590" y2="98" stroke="#7a4a1e" stroke-width="1.5" marker-end="url(#arrowData)"/>
+        <text x="604" y="92" font-size="8" fill="#7a7060" font-family="DM Mono, monospace">publish</text>
+
+        <!-- Data Platform → Backend (bundle) -->
+        <rect x="430" y="80" width="130" height="36" rx="3" fill="#d4f0e2" stroke="#2a7a4b" stroke-width="1"/>
+        <text x="495" y="101" text-anchor="middle" font-size="10" fill="#2a7a4b">Build Bundle</text>
+        <line x1="420" y1="98" x2="390" y2="98" stroke="#2a7a4b" stroke-width="1.5" marker-end="url(#arrowBackend)"/>
+        <text x="397" y="92" font-size="8" fill="#7a7060" font-family="DM Mono, monospace">serve</text>
+
+        <!-- Backend → Client (download) -->
+        <rect x="230" y="80" width="130" height="36" rx="3" fill="#d4e8f5" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="295" y="101" text-anchor="middle" font-size="10" fill="#1e5f8a">Bootstrap API</text>
+        <line x1="220" y1="98" x2="190" y2="98" stroke="#1e5f8a" stroke-width="1.5" marker-end="url(#arrowClient)"/>
+        <text x="198" y="92" font-size="8" fill="#7a7060" font-family="DM Mono, monospace">install</text>
+
+        <!-- Client nodes -->
+        <rect x="30" y="80" width="130" height="36" rx="3" fill="#e8e4d8" stroke="#7a7060" stroke-width="1"/>
+        <text x="95" y="95" text-anchor="middle" font-size="10" fill="#1a1a18">Service Worker</text>
+        <text x="95" y="108" text-anchor="middle" font-size="9" fill="#7a7060">+ IndexedDB</text>
+
+        <!-- ── FLOW B: GAME LOOP ── -->
+        <text x="30" y="170" font-size="9" fill="#c94a1e" font-family="DM Mono, monospace" letter-spacing="1">FLOW B · GAME LOOP (LOCAL ONLY)</text>
+
+        <rect x="30" y="182" width="130" height="36" rx="3" fill="#e8e4d8" stroke="#7a7060" stroke-width="1"/>
+        <text x="95" y="204" text-anchor="middle" font-size="10" fill="#1a1a18">Location Engine</text>
+
+        <line x1="95" y1="218" x2="95" y2="248" stroke="#7a7060" stroke-width="1.5" marker-end="url(#arrowClient)"/>
+        <text x="100" y="240" font-size="8" fill="#7a7060" font-family="DM Mono, monospace">triggers</text>
+
+        <rect x="30" y="250" width="130" height="36" rx="3" fill="#e8e4d8" stroke="#7a7060" stroke-width="1"/>
+        <text x="95" y="272" text-anchor="middle" font-size="10" fill="#1a1a18">Quest / Event FSM</text>
+
+        <line x1="95" y1="286" x2="95" y2="316" stroke="#7a7060" stroke-width="1.5" marker-end="url(#arrowClient)"/>
+        <text x="100" y="308" font-size="8" fill="#7a7060" font-family="DM Mono, monospace">writes</text>
+
+        <rect x="30" y="318" width="130" height="36" rx="3" fill="#e8e4d8" stroke="#7a7060" stroke-width="1"/>
+        <text x="95" y="340" text-anchor="middle" font-size="10" fill="#1a1a18">State Manager</text>
+
+        <!-- loop arrow -->
+        <path d="M 30 204 Q 15 272 30 340" fill="none" stroke="#d4cfc3" stroke-width="1" stroke-dasharray="4 3"/>
+
+        <!-- State → UI -->
+        <line x1="160" y1="336" x2="200" y2="336" stroke="#7a7060" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <rect x="200" y="318" width="170" height="36" rx="3" fill="none" stroke="#d4cfc3" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="285" y="340" text-anchor="middle" font-size="9" fill="#7a7060" font-style="italic">(out of scope: UI reacts)</text>
+
+        <!-- ── FLOW C: ANALYTICS ── -->
+        <text x="30" y="388" font-size="9" fill="#c94a1e" font-family="DM Mono, monospace" letter-spacing="1">FLOW C · ANALYTICS (OPTIONAL)</text>
+
+        <line x1="160" y1="366" x2="240" y2="394" stroke="#5a3a7a" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrowCross)"/>
+        <rect x="240" y="382" width="130" height="30" rx="3" fill="#e8d8f5" stroke="#5a3a7a" stroke-width="1"/>
+        <text x="305" y="400" text-anchor="middle" font-size="10" fill="#5a3a7a">Event Ingest API</text>
+        <line x1="370" y1="397" x2="430" y2="397" stroke="#5a3a7a" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrowCross)"/>
+        <rect x="430" y="382" width="130" height="30" rx="3" fill="#e8d8f5" stroke="#5a3a7a" stroke-width="1"/>
+        <text x="495" y="400" text-anchor="middle" font-size="10" fill="#5a3a7a">Analytics Pipeline</text>
+
+        <!-- Legend -->
+        <line x1="620" y1="200" x2="650" y2="200" stroke="#7a7060" stroke-width="1.5"/>
+        <text x="655" y="204" font-size="9" fill="#7a7060">Bootstrap / game data</text>
+        <line x1="620" y1="218" x2="650" y2="218" stroke="#5a3a7a" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <text x="655" y="222" font-size="9" fill="#7a7060">Analytics (optional)</text>
+        <line x1="620" y1="236" x2="650" y2="236" stroke="#d4cfc3" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="655" y="240" font-size="9" fill="#7a7060">UI reactive update</text>
+
+        <!-- Arrowhead defs -->
+        <defs>
+          <marker id="arrowClient" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#7a7060"/>
+          </marker>
+          <marker id="arrowBackend" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#1e5f8a"/>
+          </marker>
+          <marker id="arrowData" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#7a4a1e"/>
+          </marker>
+          <marker id="arrowCross" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#5a3a7a"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- INTERFACES -->
+  <section>
+    <div class="section-label">§ 04 — Cross-Domain Interfaces</div>
+    <h2>Where domains talk to each other</h2>
+    <p>These are the only four touch-points between domains. Everything else is internal to a domain. Teams must agree on these contracts before implementation begins — they are the shared seams.</p>
+
+    <table class="interface-table">
+      <thead>
+        <tr>
+          <th>Interface</th>
+          <th>From → To</th>
+          <th>What crosses the boundary</th>
+          <th>Owner</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="if-tag">IF-1</span><br>Bootstrap Endpoint</td>
+          <td class="flow-arrow">Data Platform → Backend API → Client</td>
+          <td>Versioned JSON bundle: world map, locations, quests, items, events. Includes a <code>bundle_version</code> hash the client uses to detect staleness.</td>
+          <td>Backend Dev defines schema; Data Dev populates; Frontend Dev consumes.</td>
+        </tr>
+        <tr>
+          <td><span class="if-tag">IF-2</span><br>Content Schema</td>
+          <td class="flow-arrow">Data Platform → Backend API</td>
+          <td>The internal DB-to-API transform. How raw CMS content maps to the bundle format. Invisible to the client.</td>
+          <td>Data Dev + Backend Dev jointly.</td>
+        </tr>
+        <tr>
+          <td><span class="if-tag">IF-3</span><br>Analytics Events</td>
+          <td class="flow-arrow">Client → Backend API → Data Platform</td>
+          <td>Structured event payloads (session start, location visited, quest completed, etc.) fired from the client on demand. Optional; does not affect gameplay.</td>
+          <td>Analysts define event schema; Backend Dev builds ingest; Frontend Dev instruments.</td>
+        </tr>
+        <tr>
+          <td><span class="if-tag">IF-4</span><br>Version Check</td>
+          <td class="flow-arrow">Client → Backend API</td>
+          <td>A lightweight ping on app launch: client sends current <code>bundle_version</code>, server responds with whether a re-pull is needed.</td>
+          <td>Backend Dev + Frontend Dev.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- DELIVERABLES -->
+  <section>
+    <div class="section-label">§ 05 — Your Deliverable</div>
+    <h2>What each team member submits</h2>
+    <p>This is your research assignment. You are not being asked to build yet — only to scope your corner of the system so we can align before implementation.</p>
+
+    <div class="deliverable-list">
+      <div class="deliverable-item">
+        <div class="deliverable-num">1</div>
+        <div>
+          <h4>Module / Service List</h4>
+          <p>Name every module or service you are responsible for (minimum 3). For each: a short name, a one-sentence purpose, its inputs (what it receives or reads), and its outputs (what it produces or writes). No implementation detail required — just the contract at its boundary.</p>
+        </div>
+      </div>
+      <div class="deliverable-item">
+        <div class="deliverable-num">2</div>
+        <div>
+          <h4>Relationship Diagram</h4>
+          <p>A diagram showing how your modules relate to each other and how data flows between them. Any tool is acceptable (Miro, draw.io, Figma, pen and paper photographed). It must show: modules as nodes, data flows as directed edges labeled with what moves, and which interfaces from §04 your domain touches.</p>
+        </div>
+      </div>
+      <div class="deliverable-item">
+        <div class="deliverable-num">3</div>
+        <div>
+          <h4>Open Questions & Assumptions</h4>
+          <p>List anything you assumed that needs confirmation, and any questions that would change your scope. This prevents misalignment from compounding silently.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="rules-box">
+      <h3>Scope rules — read before starting</h3>
+      <ol>
+        <li>You define <em>what</em> your modules do, not <em>how</em>. Tech choices are yours to research and propose.</li>
+        <li>You do not need to define the internals of another domain's modules. Reference them by the interface ID (e.g., "receives bundle via IF-1") and stop there.</li>
+        <li>If a component could belong to two domains, flag it — do not silently claim it. We resolve overlaps together.</li>
+        <li>The four interfaces in §04 are fixed constraints. Everything else is open.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ROLE MAP -->
+  <section>
+    <div class="section-label">§ 06 — Role Map</div>
+    <h2>Who owns what</h2>
+
+    <table class="role-table">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Domain</th>
+          <th>Primary scope</th>
+          <th>Interfaces touched</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="role-pill" style="background:#f5e6d4;color:#7a4a1e;">Game Designer</span></td>
+          <td>Data</td>
+          <td>Content schema (locations, quests, items, events), CMS tooling, content validation rules</td>
+          <td>IF-2</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill" style="background:#d4e8f5;color:#1e5f8a;">Backend Dev</span></td>
+          <td>Backend</td>
+          <td>Bootstrap API, version check endpoint, auth/session (if needed), analytics ingest</td>
+          <td>IF-1, IF-2, IF-3, IF-4</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill" style="background:#d4f0e2;color:#2a7a4b;">Data Dev</span></td>
+          <td>Data</td>
+          <td>Content database, bundle build pipeline, CMS integration, versioning strategy</td>
+          <td>IF-2, IF-3</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill" style="background:#d4f0e2;color:#2a7a4b;">Analysts</span></td>
+          <td>Data</td>
+          <td>Analytics event schema, downstream pipeline, dashboards</td>
+          <td>IF-3</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill" style="background:#e8e4d8;color:#1a1a18;">UI/UX Designers</span></td>
+          <td>Client</td>
+          <td>Design system, component library, map view, onboarding flow, install experience</td>
+          <td>None (internal UI)</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill" style="background:#e8e4d8;color:#1a1a18;">Frontend Dev</span></td>
+          <td>Client</td>
+          <td>PWA shell, service worker, IndexedDB layer, state manager, game logic modules, analytics instrumentation</td>
+          <td>IF-1, IF-3, IF-4</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill" style="background:#e8e4d8;color:#1a1a18;">QA</span></td>
+          <td>Client + Cross</td>
+          <td>Test plan, offline regression suite, install flow validation, cross-domain contract testing</td>
+          <td>All (test coverage)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  Traveling Game PWA · Architecture Scoping Plan v1.0 · Issued by Product Owner
+</footer>
+
+</body>
+</html>
