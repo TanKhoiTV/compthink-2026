@@ -454,7 +454,10 @@
     <p>There are three distinct flows. Each team should understand which flows touch their domain.</p>
 
     <div class="flow-diagram">
-      <svg viewBox="0 0 820 420" width="820" height="420" font-family="DM Sans, sans-serif">
+      <svg viewBox="0 0 820 420" width="820" height="420" font-family="DM Sans, sans-serif" role="img" aria-labelledby="flowTitle flowDesc">
+        <title id="flowTitle">Traveling Game PWA data flow diagram</title>
+        <desc id="flowDesc">Three flows: bootstrap from content to client, local-only game loop on client, and optional analytics from client to data platform via backend.</desc>
+
         <!-- Background lanes -->
         <rect x="10" y="10" width="180" height="400" rx="4" fill="#f8f4ee" stroke="#d4cfc3" stroke-width="1"/>
         <rect x="210" y="10" width="180" height="400" rx="4" fill="#f0f7ff" stroke="#d4cfc3" stroke-width="1"/>
