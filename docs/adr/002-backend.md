@@ -57,7 +57,7 @@ Given this narrow scope, the backend platform should be as simple to set up and 
 
 ## Interfaces the Backend is Responsible For
 
-The backend owns all four interfaces defined in the Architecture Scoping Plan. The frontend depends on three of them (IF-1, IF-3, IF-4) and the data platform owns the content that powers IF-2. The backend dev is responsible for implementing and maintaining all four endpoints.
+The backend “owns” the server-side endpoint implementation for all four interfaces (IF-1..IF-4). The frontend is directly responsible for the client-side behavior and failure handling for IF-1, IF-3, and IF-4 (downloading/storing, emitting events, and performing launch-time version checks). The data platform owns the content that powers IF-2.
 
 **IF-1 — Bootstrap Endpoint** *(Backend serves → Frontend consumes)*
 The primary data delivery interface. The backend exposes a URL that the frontend calls on first install to download the complete game content bundle. The bundle is a structured JSON file (or set of files) containing all locations, quests, items, and events. It must include a `bundle_version` field — a hash or identifier that uniquely identifies this version of the content. The backend dev and data dev must agree on the exact bundle structure (the schema) before either side begins implementation. Changes to this structure after implementation require coordinated updates on both sides.

@@ -25,9 +25,9 @@ PocketBase
 
 - DBMS (SQLite)
 
-- Auth
+- Session management
 - Security
-- File managements
+- File management
 - Admin UI
 
 Các vấn đề cần làm rõ:
