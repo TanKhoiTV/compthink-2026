@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture — Traveling Game PWA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a18;
+    --paper: #f5f2eb;
+    --paper-dark: #ede9df;
+    --accent: #c94a1e;
+    --accent-soft: #f0d9d0;
+    --muted: #7a7060;
+    --border: #d4cfc3;
+    --client: #1e5f8a;
+    --client-soft: #d4e8f5;
+    --client-mid: #b8d8ef;
+    --backend: #2a7a4b;
+    --backend-soft: #d4f0e2;
+    --data: #7a4a1e;
+    --data-soft: #f5e6d4;
+    --cross: #5a3a7a;
+    --cross-soft: #e8d8f5;
+    --if-color: #c94a1e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3rem 4rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    border: 2px solid rgba(245,242,235,0.08);
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    border: 2px solid rgba(245,242,235,0.05);
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    line-height: 1.15;
+    max-width: 640px;
+  }
+  header h1 em {
+    font-style: italic;
+    color: rgba(245,242,235,0.6);
+  }
+  .header-meta {
+    margin-top: 1.2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    font-size: 0.78rem;
+    color: rgba(245,242,235,0.5);
+    font-family: 'DM Mono', monospace;
+  }
+  .meta-item span {
+    color: rgba(245,242,235,0.85);
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.82rem;
+  }
+
+  /* ── LAYOUT ── */
+  main {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  section { margin-bottom: 3.5rem; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-intro {
+    color: #3d3a30;
+    font-size: 0.93rem;
+    max-width: 720px;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── PRINCIPLE BOX ── */
+  .principle-box {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  .principle-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+  .principle-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    margin-bottom: 0.3rem;
+    color: var(--paper);
+  }
+  .principle-box p {
+    font-size: 0.84rem;
+    color: rgba(245,242,235,0.65);
+    max-width: none;
+  }
+
+  /* ── DIAGRAM CONTAINER ── */
+  .diagram-wrap {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem;
+    overflow-x: auto;
+    margin-bottom: 2rem;
+  }
+  .diagram-wrap svg {
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* ── DOMAIN COLUMNS ── */
+  .domain-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 680px) { .domain-columns { grid-template-columns: 1fr; } }
+
+  .domain-panel {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .domain-panel-header {
+    padding: 0.9rem 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .domain-panel.client .domain-panel-header  { background: var(--client); }
+  .domain-panel.backend .domain-panel-header { background: var(--backend); }
+
+  .domain-panel-header h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    color: white;
+  }
+  .domain-panel-header .adr-ref {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.6);
+    margin-left: auto;
+  }
+
+  .module-list {
+    padding: 1rem 1.4rem;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .module-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .domain-panel.client  .module-item { background: #f5f9fd; }
+  .domain-panel.backend .module-item { background: #f3fbf6; }
+
+  .module-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+  }
+  .client  .module-dot { background: var(--client); }
+  .backend .module-dot { background: var(--backend); }
+
+  .module-item strong {
+    font-size: 0.83rem;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.1rem;
+  }
+  .module-item p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    max-width: none;
+  }
+
+  /* ── INTERFACE TABLE ── */
+  .interface-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.2rem;
+    font-size: 0.84rem;
+  }
+  .interface-table th {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  .interface-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .interface-table tr:last-child td { border-bottom: none; }
+  .interface-table tr:nth-child(even) td { background: var(--paper-dark); }
+  .flow-arrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+  .if-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 0.18rem 0.45rem;
+    border-radius: 2px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .owner-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    padding: 0.12rem 0.4rem;
+    border-radius: 2px;
+    display: inline-block;
+    margin-right: 0.25rem;
+  }
+  .owner-client  { background: var(--client-soft);  color: var(--client); }
+  .owner-backend { background: var(--backend-soft); color: var(--backend); }
+  .owner-both    { background: var(--cross-soft);   color: var(--cross); }
+
+  /* ── STACK SUMMARY ── */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 600px) { .stack-grid { grid-template-columns: 1fr; } }
+
+  .stack-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.2rem 1.4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .stack-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .stack-card.client::before  { background: var(--client); }
+  .stack-card.backend::before { background: var(--backend); }
+
+  .stack-card .tech-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 0.15rem;
+  }
+  .stack-card .tech-role {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .stack-divider {
+    border: none;
+    border-top: 1px dashed var(--border);
+    margin: 0.7rem 0;
+  }
+
+  /* ── DECISION STATUS BOX ── */
+  .decision-note {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    background: var(--accent-soft);
+    padding: 1rem 1.4rem;
+    margin-top: 1.5rem;
+    font-size: 0.84rem;
+    color: #4a2010;
+  }
+  .decision-note strong {
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--accent);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Architecture · ADR 001 + ADR 002 · Proposed</div>
+  <h1>Traveling Game PWA<br><em>System Architecture Overview</em></h1>
+  <div class="header-meta">
+    <div class="meta-item">Covers <span>ADR 001 — Frontend PWA</span></div>
+    <div class="meta-item">Covers <span>ADR 002 — PocketBase Backend</span></div>
+    <div class="meta-item">Status <span>Proposed — Not Yet Decided</span></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- § 01 PRINCIPLE -->
+  <section>
+    <div class="section-label">§ 01 — Core Principle</div>
+    <h2>Fetch once, run local</h2>
+    <p class="section-intro">The game downloads everything it needs on first install, then runs entirely from the player's device. The server is contacted only to deliver the initial content bundle and to check for updates. No gameplay action requires a live internet connection.</p>
+
+    <div class="principle-box">
+      <div class="principle-icon">◎</div>
+      <div>
+        <h3>The client owns all runtime behaviour after bootstrap</h3>
+        <p>Game logic, state, player progress, and all decisions happen on-device. The backend is a content delivery and data collection service — nothing more. This is the constraint that shapes every decision in ADR 001 and ADR 002.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- § 02 FULL SYSTEM DIAGRAM -->
+  <section>
+    <div class="section-label">§ 02 — Full System Diagram</div>
+    <h2>How the two domains fit together</h2>
+    <p class="section-intro">The diagram below shows all components across both the frontend (client) and backend domains, their internal structure, and the four interfaces (IF-1 through IF-4) that connect them. Everything inside a domain boundary is internal. Everything crossing a boundary must go through a defined interface.</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 980 620" width="980" height="620" font-family="DM Sans, sans-serif" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-client" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#1e5f8a"/>
+          </marker>
+          <marker id="arr-backend" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#2a7a4b"/>
+          </marker>
+          <marker id="arr-if" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#c94a1e"/>
+          </marker>
+          <marker id="arr-if-rev" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+            <path d="M8,0 L8,6 L0,3 z" fill="#c94a1e"/>
+          </marker>
+          <marker id="arr-muted" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#7a7060"/>
+          </marker>
+        </defs>
+
+        <!-- ══ DOMAIN BACKGROUND PANELS ══ -->
+        <!-- Client domain -->
+        <rect x="14" y="14" width="480" height="590" rx="6" fill="#f0f7ff" stroke="#1e5f8a" stroke-width="1.5"/>
+        <text x="32" y="36" font-size="9" fill="#1e5f8a" font-family="DM Mono, monospace" letter-spacing="1.5" font-weight="500">CLIENT DOMAIN — ADR 001</text>
+
+        <!-- Backend domain -->
+        <rect x="514" y="14" width="452" height="590" rx="6" fill="#f0fff6" stroke="#2a7a4b" stroke-width="1.5"/>
+        <text x="532" y="36" font-size="9" fill="#2a7a4b" font-family="DM Mono, monospace" letter-spacing="1.5" font-weight="500">BACKEND DOMAIN — ADR 002</text>
+
+        <!-- ══ CLIENT COMPONENTS ══ -->
+
+        <!-- PWA Shell -->
+        <rect x="30" y="50" width="200" height="44" rx="3" fill="#1e5f8a" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="130" y="68" text-anchor="middle" font-size="11" fill="white" font-weight="400">PWA Shell</text>
+        <text x="130" y="84" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.7)">SvelteKit · installable app</text>
+
+        <!-- Vite + vite-plugin-pwa (build) -->
+        <rect x="248" y="50" width="200" height="44" rx="3" fill="#e8e4d8" stroke="#7a7060" stroke-width="1"/>
+        <text x="348" y="68" text-anchor="middle" font-size="11" fill="#1a1a18">Build Toolchain</text>
+        <text x="348" y="84" text-anchor="middle" font-size="9" fill="#7a7060">Vite + vite-plugin-pwa</text>
+
+        <!-- Arrow: Build → Shell -->
+        <line x1="248" y1="72" x2="234" y2="72" stroke="#7a7060" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arr-muted)"/>
+        <text x="241" y="68" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace" text-anchor="middle">compiles</text>
+
+        <!-- Service Worker -->
+        <rect x="30" y="118" width="200" height="44" rx="3" fill="#d4e8f5" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="130" y="136" text-anchor="middle" font-size="11" fill="#1e5f8a">Service Worker</text>
+        <text x="130" y="152" text-anchor="middle" font-size="9" fill="#7a7060">asset caching · offline serve</text>
+
+        <!-- Arrow: Shell → SW -->
+        <line x1="130" y1="94" x2="130" y2="116" stroke="#1e5f8a" stroke-width="1.2" marker-end="url(#arr-client)"/>
+        <text x="150" y="110" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace">registers</text>
+
+        <!-- Manifest (generated) -->
+        <rect x="248" y="118" width="200" height="44" rx="3" fill="#e8e4d8" stroke="#7a7060" stroke-width="1"/>
+        <text x="348" y="136" text-anchor="middle" font-size="11" fill="#1a1a18">Web App Manifest</text>
+        <text x="348" y="152" text-anchor="middle" font-size="9" fill="#7a7060">install metadata · icons · theme</text>
+
+        <!-- Arrow: Toolchain → Manifest -->
+        <line x1="348" y1="94" x2="348" y2="116" stroke="#7a7060" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arr-muted)"/>
+        <text x="378" y="110" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace">generates</text>
+
+        <!-- IndexedDB via Dexie.js -->
+        <rect x="30" y="188" width="200" height="56" rx="3" fill="#d4e8f5" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="130" y="208" text-anchor="middle" font-size="11" fill="#1e5f8a">IndexedDB</text>
+        <text x="130" y="223" text-anchor="middle" font-size="9" fill="#7a7060">via Dexie.js · versioned schema</text>
+        <text x="130" y="237" text-anchor="middle" font-size="8.5" fill="#1e5f8a">game bundle · player progress</text>
+
+        <!-- Arrow: SW → IndexedDB -->
+        <line x1="130" y1="162" x2="130" y2="186" stroke="#1e5f8a" stroke-width="1.2" marker-end="url(#arr-client)"/>
+        <text x="150" y="180" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace">stores</text>
+
+        <!-- State Manager -->
+        <rect x="248" y="188" width="200" height="44" rx="3" fill="#d4e8f5" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="348" y="206" text-anchor="middle" font-size="11" fill="#1e5f8a">State Manager</text>
+        <text x="348" y="222" text-anchor="middle" font-size="9" fill="#7a7060">Svelte stores · reactive UI</text>
+
+        <!-- Arrow IndexedDB → State Manager -->
+        <line x1="232" y1="216" x2="246" y2="216" stroke="#1e5f8a" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arr-client)"/>
+        <text x="239" y="212" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace" text-anchor="middle">reads</text>
+
+        <!-- Game Logic layer label -->
+        <text x="32" y="276" font-size="8" fill="#c94a1e" font-family="DM Mono, monospace" letter-spacing="1">GAME LOGIC (LOCAL ONLY)</text>
+
+        <!-- Location Engine -->
+        <rect x="30" y="285" width="130" height="40" rx="3" fill="#e8f2fa" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="95" y="303" text-anchor="middle" font-size="10" fill="#1e5f8a">Location Engine</text>
+        <text x="95" y="318" text-anchor="middle" font-size="8.5" fill="#7a7060">GPS · geofence triggers</text>
+
+        <!-- Quest / Event FSM -->
+        <rect x="175" y="285" width="140" height="40" rx="3" fill="#e8f2fa" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="245" y="303" text-anchor="middle" font-size="10" fill="#1e5f8a">Quest / Event FSM</text>
+        <text x="245" y="318" text-anchor="middle" font-size="8.5" fill="#7a7060">finite state machine</text>
+
+        <!-- Scoring -->
+        <rect x="330" y="285" width="118" height="40" rx="3" fill="#e8f2fa" stroke="#1e5f8a" stroke-width="1"/>
+        <text x="389" y="303" text-anchor="middle" font-size="10" fill="#1e5f8a">Scoring Module</text>
+        <text x="389" y="318" text-anchor="middle" font-size="8.5" fill="#7a7060">end-of-game calc</text>
+
+        <!-- Arrows: State → game logic modules -->
+        <line x1="280" y1="232" x2="245" y2="283" stroke="#1e5f8a" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-client)"/>
+
+        <!-- Arrow Location → FSM -->
+        <line x1="162" y1="305" x2="173" y2="305" stroke="#1e5f8a" stroke-width="1" marker-end="url(#arr-client)"/>
+
+        <!-- Arrow FSM → Scoring -->
+        <line x1="317" y1="305" x2="328" y2="305" stroke="#1e5f8a" stroke-width="1" marker-end="url(#arr-client)"/>
+
+        <!-- FSM → State Manager (write back) -->
+        <path d="M 245 283 Q 245 265 320 220" fill="none" stroke="#1e5f8a" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-client)"/>
+        <text x="290" y="260" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace">writes state</text>
+
+        <!-- Analytics Queue -->
+        <rect x="30" y="355" width="200" height="40" rx="3" fill="#e8d8f5" stroke="#5a3a7a" stroke-width="1"/>
+        <text x="130" y="373" text-anchor="middle" font-size="10" fill="#5a3a7a">Analytics Queue</text>
+        <text x="130" y="388" text-anchor="middle" font-size="8.5" fill="#7a7060">fire-and-forget · IF-3</text>
+
+        <!-- Version Check Module -->
+        <rect x="248" y="355" width="200" height="40" rx="3" fill="#e8d8f5" stroke="#5a3a7a" stroke-width="1"/>
+        <text x="348" y="373" text-anchor="middle" font-size="10" fill="#5a3a7a">Version Check</text>
+        <text x="348" y="388" text-anchor="middle" font-size="8.5" fill="#7a7060">IF-4 · on every launch</text>
+
+        <!-- Arrow from FSM to Analytics -->
+        <line x1="130" y1="327" x2="130" y2="353" stroke="#5a3a7a" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-muted)"/>
+
+        <!-- Arrow from SW to Version Check -->
+        <line x1="348" y1="232" x2="348" y2="353" stroke="#5a3a7a" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-muted)"/>
+        <text x="368" y="310" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace">triggers</text>
+
+        <!-- ══ IF CONNECTORS ══ -->
+
+        <!-- IF-1: Bootstrap (Backend→Client) -->
+        <rect x="170" y="458" width="160" height="32" rx="3" fill="#c94a1e" stroke="#c94a1e" stroke-width="1"/>
+        <text x="250" y="472" text-anchor="middle" font-size="10" fill="white" font-weight="500">IF-1  Bootstrap</text>
+        <text x="250" y="484" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.8)">versioned bundle download</text>
+        <!-- Arrow from IF-1 into Client (SW/IndexedDB) -->
+        <line x1="200" y1="458" x2="140" y2="426" stroke="#c94a1e" stroke-width="1.5" marker-end="url(#arr-if)"/>
+        <!-- Line from Backend side to IF-1 -->
+        <line x1="514" y1="474" x2="332" y2="474" stroke="#c94a1e" stroke-width="1.5" marker-end="url(#arr-if)"/>
+        <text x="423" y="468" font-size="8" fill="#c94a1e" font-family="DM Mono, monospace" text-anchor="middle">JSON bundle</text>
+
+        <!-- IF-3: Analytics (Client→Backend) -->
+        <rect x="170" y="508" width="160" height="32" rx="3" fill="#5a3a7a" stroke="#5a3a7a" stroke-width="1"/>
+        <text x="250" y="522" text-anchor="middle" font-size="10" fill="white" font-weight="500">IF-3  Analytics</text>
+        <text x="250" y="534" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.8)">optional · fire-and-forget</text>
+        <!-- Arrow from Analytics Queue to IF-3 -->
+        <line x1="160" y1="395" x2="220" y2="506" stroke="#5a3a7a" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#arr-muted)"/>
+        <!-- Line from IF-3 to backend -->
+        <line x1="332" y1="524" x2="514" y2="524" stroke="#5a3a7a" stroke-width="1.5" marker-end="url(#arr-muted)"/>
+        <text x="423" y="518" font-size="8" fill="#5a3a7a" font-family="DM Mono, monospace" text-anchor="middle">event payload</text>
+
+        <!-- IF-4: Version Check (Client→Backend) -->
+        <rect x="170" y="558" width="160" height="32" rx="3" fill="#c94a1e" stroke="#c94a1e" stroke-width="1"/>
+        <text x="250" y="572" text-anchor="middle" font-size="10" fill="white" font-weight="500">IF-4  Version Check</text>
+        <text x="250" y="584" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.8)">bundle_version ping</text>
+        <!-- Arrow from Version Check module to IF-4 -->
+        <line x1="320" y1="395" x2="310" y2="556" stroke="#c94a1e" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#arr-if)"/>
+        <!-- Line IF-4 to backend -->
+        <line x1="332" y1="574" x2="514" y2="574" stroke="#c94a1e" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-if)"/>
+        <text x="423" y="568" font-size="8" fill="#c94a1e" font-family="DM Mono, monospace" text-anchor="middle">up-to-date / re-pull</text>
+
+        <!-- ══ BACKEND COMPONENTS ══ -->
+
+        <!-- Nginx reverse proxy -->
+        <rect x="530" y="50" width="180" height="44" rx="3" fill="#2a7a4b" stroke="#2a7a4b" stroke-width="1"/>
+        <text x="620" y="68" text-anchor="middle" font-size="11" fill="white">Nginx</text>
+        <text x="620" y="84" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.75)">reverse proxy · HTTPS / TLS</text>
+
+        <!-- VPS Label -->
+        <rect x="726" y="50" width="224" height="44" rx="3" fill="#e8e4d8" stroke="#7a7060" stroke-width="1"/>
+        <text x="838" y="68" text-anchor="middle" font-size="11" fill="#1a1a18">VPS Hosting</text>
+        <text x="838" y="84" text-anchor="middle" font-size="9" fill="#7a7060">Hetzner / DO · Certbot TLS</text>
+
+        <!-- Arrow: Internet → Nginx -->
+        <text x="620" y="112" text-anchor="middle" font-size="7.5" fill="#7a7060" font-family="DM Mono, monospace">HTTPS traffic</text>
+        <line x1="620" y1="94" x2="620" y2="118" stroke="#2a7a4b" stroke-width="1.2" marker-end="url(#arr-backend)"/>
+
+        <!-- PocketBase -->
+        <rect x="530" y="120" width="420" height="200" rx="4" fill="white" stroke="#2a7a4b" stroke-width="1.5"/>
+        <text x="546" y="140" font-size="8.5" fill="#2a7a4b" font-family="DM Mono, monospace" letter-spacing="1">POCKETBASE</text>
+
+        <!-- REST API -->
+        <rect x="548" y="150" width="180" height="42" rx="3" fill="#d4f0e2" stroke="#2a7a4b" stroke-width="1"/>
+        <text x="638" y="168" text-anchor="middle" font-size="10" fill="#2a7a4b">REST API Layer</text>
+        <text x="638" y="183" text-anchor="middle" font-size="8.5" fill="#7a7060">stateless · all IF endpoints</text>
+
+        <!-- Admin UI / CMS -->
+        <rect x="746" y="150" width="186" height="42" rx="3" fill="#d4f0e2" stroke="#2a7a4b" stroke-width="1"/>
+        <text x="839" y="168" text-anchor="middle" font-size="10" fill="#2a7a4b">Admin UI / CMS</text>
+        <text x="839" y="183" text-anchor="middle" font-size="8.5" fill="#7a7060">content authoring · IF-2</text>
+
+        <!-- Arrow Nginx → REST API -->
+        <line x1="620" y1="120" x2="620" y2="148" stroke="#2a7a4b" stroke-width="1.2" marker-end="url(#arr-backend)"/>
+
+        <!-- SQLite DB -->
+        <rect x="548" y="210" width="180" height="42" rx="3" fill="#d4f0e2" stroke="#2a7a4b" stroke-width="1"/>
+        <text x="638" y="228" text-anchor="middle" font-size="10" fill="#2a7a4b">SQLite Database</text>
+        <text x="638" y="243" text-anchor="middle" font-size="8.5" fill="#7a7060">game content · analytics events</text>
+
+        <!-- File Storage -->
+        <rect x="746" y="210" width="186" height="42" rx="3" fill="#d4f0e2" stroke="#2a7a4b" stroke-width="1"/>
+        <text x="839" y="228" text-anchor="middle" font-size="10" fill="#2a7a4b">File Storage</text>
+        <text x="839" y="243" text-anchor="middle" font-size="8.5" fill="#7a7060">static bundle assets</text>
+
+        <!-- Arrow REST → SQLite -->
+        <line x1="638" y1="192" x2="638" y2="208" stroke="#2a7a4b" stroke-width="1.2" marker-end="url(#arr-backend)"/>
+
+        <!-- Arrow Admin UI → SQLite -->
+        <path d="M 839 192 Q 839 200 760 210" fill="none" stroke="#2a7a4b" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-backend)"/>
+
+        <!-- Arrow REST → File Storage -->
+        <line x1="730" y1="171" x2="744" y2="171" stroke="#2a7a4b" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-backend)"/>
+
+        <!-- Auth / Security -->
+        <rect x="548" y="270" width="384" height="36" rx="3" fill="#f3fbf6" stroke="#2a7a4b" stroke-width="1" stroke-dasharray="4 2"/>
+        <text x="740" y="288" text-anchor="middle" font-size="10" fill="#2a7a4b">Auth · Security (PocketBase built-in)</text>
+        <text x="740" y="301" text-anchor="middle" font-size="8.5" fill="#7a7060">available if player sessions needed in future</text>
+
+        <!-- IF-2 label inside PocketBase -->
+        <rect x="548" y="332" width="384" height="32" rx="3" fill="#f5e6d4" stroke="#7a4a1e" stroke-width="1"/>
+        <text x="740" y="350" text-anchor="middle" font-size="10" fill="#7a4a1e">IF-2 · Content Schema (internal)</text>
+        <text x="740" y="361" text-anchor="middle" font-size="8" fill="#7a7060">Admin UI → Bundle format · owned by Backend Dev + Data Dev</text>
+
+        <!-- IF-1 bootstrap endpoint label inside backend -->
+        <rect x="530" y="380" width="190" height="30" rx="3" fill="#f0d9d0" stroke="#c94a1e" stroke-width="1"/>
+        <text x="625" y="394" text-anchor="middle" font-size="9" fill="#c94a1e" font-family="DM Mono, monospace">IF-1  Bootstrap Endpoint</text>
+        <text x="625" y="405" text-anchor="middle" font-size="8" fill="#7a7060">serves versioned JSON bundle</text>
+
+        <!-- IF-3 endpoint label inside backend -->
+        <rect x="530" y="418" width="190" height="30" rx="3" fill="#e8d8f5" stroke="#5a3a7a" stroke-width="1"/>
+        <text x="625" y="432" text-anchor="middle" font-size="9" fill="#5a3a7a" font-family="DM Mono, monospace">IF-3  Analytics Ingest</text>
+        <text x="625" y="443" text-anchor="middle" font-size="8" fill="#7a7060">receives event payloads</text>
+
+        <!-- IF-4 endpoint label inside backend -->
+        <rect x="530" y="456" width="190" height="30" rx="3" fill="#f0d9d0" stroke="#c94a1e" stroke-width="1"/>
+        <text x="625" y="470" text-anchor="middle" font-size="9" fill="#c94a1e" font-family="DM Mono, monospace">IF-4  Version Check</text>
+        <text x="625" y="481" text-anchor="middle" font-size="8" fill="#7a7060">compares bundle_version hash</text>
+
+        <!-- Connect backend IF blocks to their counterparts -->
+        <line x1="530" y1="474" x2="514" y2="474" stroke="#c94a1e" stroke-width="1.5"/>
+        <line x1="530" y1="524" x2="514" y2="524" stroke="#5a3a7a" stroke-width="1.5"/>
+        <line x1="530" y1="574" x2="514" y2="574" stroke="#c94a1e" stroke-width="1.5" stroke-dasharray="4 2"/>
+
+        <!-- Analytics Pipeline note -->
+        <rect x="736" y="418" width="210" height="68" rx="3" fill="#f5e6d4" stroke="#7a4a1e" stroke-width="1"/>
+        <text x="746" y="436" font-size="8.5" fill="#7a4a1e" font-family="DM Mono, monospace">DATA PLATFORM</text>
+        <text x="841" y="452" text-anchor="middle" font-size="9" fill="#7a4a1e">Analytics Pipeline</text>
+        <text x="841" y="466" text-anchor="middle" font-size="8" fill="#7a7060">dashboards · event storage</text>
+        <text x="841" y="480" text-anchor="middle" font-size="8" fill="#7a7060">ADR 003 (pending)</text>
+
+        <line x1="722" y1="433" x2="734" y2="433" stroke="#7a4a1e" stroke-width="1" marker-end="url(#arr-muted)"/>
+
+        <!-- ══ LEGEND ══ -->
+        <rect x="530" y="495" width="416" height="100" rx="3" fill="#f5f2eb" stroke="#d4cfc3" stroke-width="1"/>
+        <text x="544" y="512" font-size="8" fill="#7a7060" font-family="DM Mono, monospace" letter-spacing="0.8">LEGEND</text>
+
+        <rect x="544" y="520" width="10" height="10" rx="2" fill="#1e5f8a"/>
+        <text x="560" y="530" font-size="8.5" fill="#3d3a30">Client component (ADR 001)</text>
+
+        <rect x="544" y="538" width="10" height="10" rx="2" fill="#2a7a4b"/>
+        <text x="560" y="548" font-size="8.5" fill="#3d3a30">Backend component (ADR 002)</text>
+
+        <rect x="544" y="556" width="10" height="10" rx="2" fill="#c94a1e"/>
+        <text x="560" y="566" font-size="8.5" fill="#3d3a30">Interface boundary (IF-1, IF-4) — game data</text>
+
+        <rect x="544" y="574" width="10" height="10" rx="2" fill="#5a3a7a"/>
+        <text x="560" y="584" font-size="8.5" fill="#3d3a30">Interface boundary (IF-3) — analytics, optional</text>
+
+        <line x1="730" y1="525" x2="760" y2="525" stroke="#7a7060" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <text x="768" y="529" font-size="8.5" fill="#3d3a30">Internal data flow</text>
+
+        <line x1="730" y1="543" x2="760" y2="543" stroke="#7a7060" stroke-width="1.5"/>
+        <text x="768" y="547" font-size="8.5" fill="#3d3a30">Required connection</text>
+      </svg>
+    </div>
+
+    <div class="decision-note">
+      <strong>Status — Proposed</strong>
+      Both ADR 001 (Frontend PWA) and ADR 002 (PocketBase Backend) are proposed but not yet decided. This diagram reflects the proposed architecture for team review. ADR 003 (Data Platform), ADR 004 (Game Design), and ADR 005 (Testing Workflow) are pending.
+    </div>
+  </section>
+
+  <!-- § 03 FRONTEND DETAIL -->
+  <section>
+    <div class="section-label">§ 03 — Frontend Modules (ADR 001)</div>
+    <h2>What runs on the player's device</h2>
+    <p class="section-intro">Every component below runs entirely on the player's phone or tablet after the first install. Nothing here requires a live server connection during gameplay.</p>
+
+    <div class="domain-panel client">
+      <div class="domain-panel-header">
+        <h3>Client Domain — Frontend</h3>
+        <span class="adr-ref">ADR 001 · PROPOSED</span>
+      </div>
+      <div class="module-list">
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>PWA Shell (SvelteKit)</strong>
+            <p>The installable app container. SvelteKit provides the project structure, routing, and page rendering. Svelte compiles to plain JavaScript — no framework runtime is bundled into the final download, keeping the install size small.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Build Toolchain — Vite + vite-plugin-pwa</strong>
+            <p>The developer tool that compiles source code into the final app. vite-plugin-pwa automatically generates the Service Worker and Web App Manifest, removing the most complex parts of PWA setup from the developer's plate.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Service Worker</strong>
+            <p>A background script that intercepts network requests and serves cached content when the player is offline. After the first install, the app loads instantly from this cache — no internet needed. Also detects when a new content bundle is available via IF-4 and triggers a re-download.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Web App Manifest</strong>
+            <p>A configuration file (auto-generated by vite-plugin-pwa) that tells the browser how to display and install the app — its name, icon, theme colour, and launch behaviour. This is what enables "Add to Home Screen" without an app store.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>IndexedDB via Dexie.js</strong>
+            <p>The on-device database. Stores the complete game bundle received from IF-1 (all locations, quests, items, events) and all player progress generated during gameplay. Dexie.js provides a clean interface over raw IndexedDB and manages schema versioning — every future change to what is stored must be written as an explicit, numbered migration to avoid data loss.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>State Manager (Svelte stores)</strong>
+            <p>Holds the current runtime state of the game in memory — what the player can see and interact with right now. Reads from IndexedDB on launch, writes back on change. The UI reacts to state changes automatically through Svelte's reactivity system.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Location Engine</strong>
+            <p>Reads the device's GPS coordinates and checks them against the location data stored in IndexedDB. When the player enters a defined zone, the Location Engine fires a trigger into the Quest/Event FSM.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Quest / Event FSM (Finite State Machine)</strong>
+            <p>The core game logic module. Manages the lifecycle of every quest and event — which states are possible (available, active, complete, failed), and what transitions are allowed between them. All game decisions run through this module. Writes results back to the State Manager and IndexedDB.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Scoring Module</strong>
+            <p>Calculates end-of-game scores based on completed quests, visited locations, and other criteria defined in the game content bundle. Reads from the State Manager; output is displayed in the UI.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Analytics Queue</strong>
+            <p>Collects gameplay events (location visited, quest completed, session started) and sends them to the server via IF-3 when a network connection is available. Fires independently from gameplay — if the network is down, events are queued or dropped silently. The game never pauses waiting for this.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Version Check (IF-4 client side)</strong>
+            <p>Runs automatically on every app launch before the game loads. Sends the currently stored <code>bundle_version</code> to the server. If the server says a new version is available, the Service Worker triggers a fresh download via IF-1. If the server is unreachable, the game launches normally from the local bundle.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- § 04 BACKEND DETAIL -->
+  <section>
+    <div class="section-label">§ 04 — Backend Modules (ADR 002)</div>
+    <h2>What runs on the server</h2>
+    <p class="section-intro">The entire backend is a single PocketBase binary running on one VPS. It covers all four interfaces. It does not run game logic.</p>
+
+    <div class="domain-panel backend">
+      <div class="domain-panel-header">
+        <h3>Backend Domain — PocketBase on VPS</h3>
+        <span class="adr-ref">ADR 002 · PROPOSED</span>
+      </div>
+      <div class="module-list">
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Nginx — Reverse Proxy + HTTPS</strong>
+            <p>Sits in front of PocketBase and handles all incoming traffic. Terminates HTTPS connections (using a TLS certificate from Certbot/Let's Encrypt) and forwards requests to PocketBase. HTTPS is not optional — service workers will not function without it, which means this must be configured before any frontend live testing can begin.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>PocketBase — REST API Layer</strong>
+            <p>The public-facing API that the frontend calls. Handles all four interfaces: serving the bootstrap bundle (IF-1), receiving analytics events (IF-3), and responding to version checks (IF-4). Stateless — each request is self-contained with no session memory between calls.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>PocketBase — Admin UI / CMS (IF-2)</strong>
+            <p>A browser-based control panel built into PocketBase. The game designer and data dev use this to create and update game content — locations, quests, items, events — without writing code. This is the CMS for the project. The backend dev configures the data structure (collections); the content team fills it in.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>SQLite Database</strong>
+            <p>The database PocketBase uses to store everything — game content authored through the Admin UI, analytics events received from the client, and the current bundle version identifier. Stored as a single file on the VPS. Simple to back up; does not support multiple simultaneous writers or multiple machines.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>File Storage</strong>
+            <p>PocketBase's built-in file management, used to store static bundle assets (images, audio, or other media) that accompany the JSON game content. The frontend downloads these as part of or alongside the IF-1 bootstrap bundle.</p>
+          </div>
+        </div>
+        <div class="module-item">
+          <div class="module-dot"></div>
+          <div>
+            <strong>Auth &amp; Security (available, not yet scoped)</strong>
+            <p>PocketBase includes built-in authentication and access control. Not required for the demo (the game has no player login), but available if player accounts or protected content authoring become a requirement. No additional setup is needed to unlock this — it is part of PocketBase out of the box.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- § 05 INTERFACES -->
+  <section>
+    <div class="section-label">§ 05 — Interfaces (IF-1 through IF-4)</div>
+    <h2>The only permitted cross-domain connections</h2>
+    <p class="section-intro">These four interfaces are the only points where the frontend and backend are allowed to communicate. Everything else is internal to one domain. The contracts below must be agreed before implementation begins — changes after the fact require sign-off from all touching roles.</p>
+
+    <table class="interface-table">
+      <thead>
+        <tr>
+          <th>Interface</th>
+          <th>Direction</th>
+          <th>What crosses the boundary</th>
+          <th>Owner</th>
+          <th>Frontend responsibility</th>
+          <th>Backend responsibility</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="if-tag">IF-1</span><br>Bootstrap Endpoint</td>
+          <td class="flow-arrow">Backend → Client</td>
+          <td>Versioned JSON bundle: all locations, quests, items, events. Includes a <code>bundle_version</code> hash.</td>
+          <td>
+            <span class="owner-pill owner-both">Backend Dev</span>
+            <span class="owner-pill owner-backend">Data Dev</span>
+            <span class="owner-pill owner-client">Frontend Dev</span>
+          </td>
+          <td>Request bundle on first install. Store in IndexedDB via Dexie. Show install progress to player. Handle failed downloads gracefully.</td>
+          <td>Expose the endpoint. Serve the correctly formatted bundle. Ensure the <code>bundle_version</code> field is present and accurate.</td>
+        </tr>
+        <tr>
+          <td><span class="if-tag">IF-2</span><br>Content Schema</td>
+          <td class="flow-arrow">Data Platform → Backend (internal)</td>
+          <td>The structure of game content in PocketBase collections and how it maps to the IF-1 bundle format. Not a public API — invisible to the frontend.</td>
+          <td>
+            <span class="owner-pill owner-backend">Backend Dev</span>
+            <span class="owner-pill owner-backend">Data Dev</span>
+          </td>
+          <td>Does not implement this. Depends on its output: the IF-1 bundle shape must be stable before the frontend data layer is built.</td>
+          <td>Configure PocketBase collections to match the agreed schema. Build the transformation that produces the IF-1 bundle from raw CMS content.</td>
+        </tr>
+        <tr>
+          <td><span class="if-tag">IF-3</span><br>Analytics Events</td>
+          <td class="flow-arrow">Client → Backend</td>
+          <td>Structured event payloads (session start, location visited, quest completed, etc.). Optional — gameplay is never affected by whether this succeeds.</td>
+          <td>
+            <span class="owner-pill owner-client">Frontend Dev</span>
+            <span class="owner-pill owner-backend">Backend Dev</span>
+            <span class="owner-pill owner-backend">Analysts</span>
+          </td>
+          <td>Instrument the Analytics Queue to fire events at the correct moments. Ensure events are never blocking — fire-and-forget only. Queue unsent events if offline.</td>
+          <td>Expose the ingest endpoint. Accept payloads and store them in SQLite. Pass data to the analytics pipeline (ADR 003).</td>
+        </tr>
+        <tr>
+          <td><span class="if-tag">IF-4</span><br>Version Check</td>
+          <td class="flow-arrow">Client → Backend → Client</td>
+          <td>A lightweight ping: client sends its stored <code>bundle_version</code>; server replies "up to date" or "new version available."</td>
+          <td>
+            <span class="owner-pill owner-client">Frontend Dev</span>
+            <span class="owner-pill owner-backend">Backend Dev</span>
+          </td>
+          <td>Send the version check on every launch before loading the game. If the server is unreachable, launch anyway from the local bundle. If a new version is available, trigger an IF-1 re-download before play begins.</td>
+          <td>Expose a fast, lightweight endpoint. Compare the submitted <code>bundle_version</code> against the current value and return the correct response.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- § 06 STACK SUMMARY -->
+  <section>
+    <div class="section-label">§ 06 — Proposed Stack Summary</div>
+    <h2>Technology choices at a glance</h2>
+    <p class="section-intro">All choices below are proposed and subject to team review. Framework choice is open to revision based on the assigned frontend developer's existing experience.</p>
+
+    <div class="stack-grid">
+      <div class="stack-card client">
+        <div class="tech-name">SvelteKit</div>
+        <div class="tech-role">Frontend framework · PWA shell</div>
+        <hr class="stack-divider">
+        <div class="tech-name">Vite + vite-plugin-pwa</div>
+        <div class="tech-role">Build toolchain · service worker + manifest generation</div>
+        <hr class="stack-divider">
+        <div class="tech-name">Dexie.js (IndexedDB)</div>
+        <div class="tech-role">On-device database · game bundle + player progress storage</div>
+        <hr class="stack-divider">
+        <div class="tech-name">Svelte Stores</div>
+        <div class="tech-role">Reactive state management · in-memory game state</div>
+      </div>
+
+      <div class="stack-card backend">
+        <div class="tech-name">PocketBase</div>
+        <div class="tech-role">Single-binary backend · REST API + Admin UI + SQLite + File Storage</div>
+        <hr class="stack-divider">
+        <div class="tech-name">SQLite</div>
+        <div class="tech-role">Embedded database · no separate server required</div>
+        <hr class="stack-divider">
+        <div class="tech-name">Nginx</div>
+        <div class="tech-role">Reverse proxy · HTTPS termination</div>
+        <hr class="stack-divider">
+        <div class="tech-name">Certbot / Let's Encrypt</div>
+        <div class="tech-role">TLS certificate · free, auto-renewing · required for service workers</div>
+      </div>
+    </div>
+
+    <div class="decision-note">
+      <strong>Pending ADRs</strong>
+      ADR 003 (Data Platform &amp; Analytics Pipeline), ADR 004 (Game Design), and ADR 005 (Testing Workflow) are not yet written. The IF-3 analytics pipeline destination, content schema detail, and QA process are out of scope for this document.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Traveling Game PWA · Architecture Overview · ADR 001 + ADR 002 · Proposed
+</footer>
+
+</body>
+</html>
