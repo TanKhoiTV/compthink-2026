@@ -23,18 +23,6 @@ Who uses it. Identified use cases. Which subset is the MVP target.
 ### 5.1 Overview — system topology, frontend–backend boundary
 ### 5.2 Detailed Infrastructure — modules/services, their responsibilities, and interactions
 ### 5.3 User Experience & Data Flow — app logic from the user's perspective, what they input and what they get at each stage
-Chào Phú Đạt, tôi hiểu rồi. Vì bạn chịu trách nhiệm hoàn thiện **toàn bộ mục 5.3 (User Experience & Data Flow)** cho cả nhóm, chúng ta cần một cái nhìn tổng thể hơn.
-
-Phần này không chỉ dừng lại ở giao diện (UX), mà phải mô tả được sự phối hợp giữa các thành phần kỹ thuật (Frontend, Game Logic, Data) để biến các thao tác của người dùng thành luồng dữ liệu xử lý bên dưới.
-
-Dưới đây là nội dung chi tiết cho mục 5.3 để bạn đưa vào bản PoC của nhóm:
-
----
-
-### 5.3 User Experience & Data Flow (Toàn nhóm)
-
-Mục này mô tả logic vận hành của ứng dụng dưới góc nhìn của người dùng (trải nghiệm) và cách hệ thống xử lý dữ liệu tương ứng ở từng giai đoạn. Toàn bộ hệ thống vận hành theo nguyên lý **"Fetch once, run local"**, đảm bảo mọi tương tác diễn ra tức thời trên thiết bị.
-
 #### A. Giai đoạn Khởi tạo & Đồng bộ (Bootstrap Flow)
 * **Trải nghiệm người dùng (UX):** Người dùng mở ứng dụng lần đầu (PWA). Hệ thống hiển thị màn hình chờ (Splash Screen) kèm thanh tiến trình trong khi tải dữ liệu thế giới game.
 * 
