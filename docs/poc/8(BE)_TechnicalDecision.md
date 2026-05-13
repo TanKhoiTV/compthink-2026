@@ -23,7 +23,7 @@ Each file in the **Server (Deno)** and **Shared logic** panels owns a distinct b
 
 | File / Module | Backend Developer Responsibility                                                                                          | Key Functions / Methods | Interfaces With |
 |---|---------------------------------------------------------------------------------------------------------------------------|---|---|
-| `server.ts` | Bootstrap HTTP + WS server; route upgrade handshakes; health check endpoint                                               | `Deno.serve()`, `upgradeWebSocket()`, `onopen/onmessage/onclose` handlers | `game.ts` (creates room), `player.ts` (one per socket) |
+| `server.ts` | Bootstrap HTTP + WS server; route upgrade handshakes; health check endpoint                                               | `Deno.serve()`, `Deno.upgradeWebSocket(req)`, `onopen/onmessage/onclose` handlers | `game.ts` (creates room), `player.ts` (one per socket) |
 | `game.ts` | Own the room FSM: phase transitions, timer ticks, broadcast state snapshots to all players in room                        | `createRoom()`, `transition(event)`, `broadcastSnapshot()`, `resolveDay()` | `player.ts` (receives actions), `board.ts` (mutates grid), `score.ts` (final tally) |
 | `player.ts` | Per-socket JSON-RPC dispatcher; validate and forward player actions; manage per-player resource state (Xu, Stamina, Debt) | `dispatch(method, params)`, `validateResources()`, `applyDebt()`, `applyStaminaLock()` | `game.ts` (emits validated actions), `rules.ts` (constraint checks) |
 | `board.ts` | Authoritative 3×5 grid — place/remove tiles, enforce slot constraints, return grid snapshot                               | `placeTile(day, slot, tile)`, `removeTile()`, `getNeighbour()`, `exportGrid()` | `rules.ts` (time-slot tag checks), `score.ts` (reads placed tiles) |
@@ -50,7 +50,7 @@ The game server needs to run TypeScript natively, expose both HTTP and WebSocket
 | Option | Pros | Cons |
 |---|---|---|
 | Node.js + ts-node | Massive ecosystem, well-known; ts-node gives near-native TS | Extra dependency; ts-node has known perf edge cases; tsconfig divergence between client and server |
-| **Deno** ✓ | First-class TypeScript, built-in security sandbox, `std/http` includes WS upgrade, single binary | Smaller ecosystem; some npm packages need compat shim |
+| **Deno** ✓ | First-class TypeScript, built-in security sandbox, built-in `Deno.upgradeWebSocket(req)`, single binary | Smaller ecosystem; some npm packages need compat shim |
 | Bun | Fast startup, node-compatible | Less mature; WS API changes between releases; Docker image size larger |
 
 **Decision:** Use Deno as the primary server runtime.
