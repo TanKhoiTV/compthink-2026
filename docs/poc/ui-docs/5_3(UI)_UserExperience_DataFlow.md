@@ -11,6 +11,7 @@ Hệ thống sử dụng phong cách thiết kế hiện đại mang tone màu e
 - Soft White `#F4EFE6`
 
 ![theme](./images/color.png)
+
 Theme này được lựa chọn vì phù hợp với cơ chế gameplay của hệ thống. Trò chơi không mang phong cách hành động hoặc fantasy mà tập trung vào cảm giác lên kế hoạch du lịch thực tế, quản lý tài nguyên, xây dựng lịch trình, và tối ưu trải nghiệm khám phá.
 
 Tone màu nâu – beige giúp giao diện: tạo cảm giác giống bản đồ du lịch, nhật ký hành trình và vé du lịch, mang tính thư giãn và gần gũi, đồng thời vẫn giữ được vẻ hiện đại và cao cấp.
