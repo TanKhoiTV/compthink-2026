@@ -1,377 +1,75 @@
 
-## 1. Detailed Infrastructure
+## 1. Hạ Tầng Chi Tiết
 
-### 1.1 Module Map & Responsibilities
+### 1.1 Bản Đồ Module & Trách Nhiệm
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  BUILD PIPELINE  (Makefile orchestrates all steps)                      │
-│                                                                          │
-│  tsc ──► .build/      lessc ──► client.css      rollup ──► client.js   │
-│  (type-check + emit)  (Less → CSS)               (bundle .build/)       │
-│                                         sw.js ──► Service Worker / PWA  │
-└───────────────────────────────┬─────────────────────────────────────────┘
-                                │  compiled outputs
-              ┌─────────────────▼──────────────┐
-              │           CLIENT (Browser)      │
-              │                                 │
-              │  index.html  ──►  client.js     │
-              │  (shell/entry)    (app bundle)  │
-              │       │               │         │
-              │  app.ts         multi.ts        │
-              │  (Game UI       (WebSocket /    │
-              │   controller)    JSON-RPC hub)  │
-              │                      │  WS      │
-              │  client.css   img/   │          │
-              │  (compiled   (tiles, ▼          │
-              │   from Less)  icons) │          │
-              └──────────────────────┼──────────┘
-                                     │  WebSocket (JSON-RPC 2.0)
-              ┌──────────────────────▼──────────┐
-              │          SERVER (Deno)           │
-              │                                 │
-              │  server.ts                      │
-              │  HTTP listener + WS upgrade     │
-              │       │         │               │
-              │       │    player.ts            │
-              │       │    (1 per socket)       │
-              │       │    JSON-RPC dispatcher  │
-              │       │    resource manager     │
-              │       ▼         │               │
-              │  game.ts  ◄─────┘               │
-              │  Room FSM                       │
-              │  Phase sequencer                │
-              │  Broadcaster                   │
-              │       │                         │
-              │  Dockerfile                     │
-              │  (container image)              │
-              └──────────────────────┬──────────┘
-                                     │  imports (shared src/)
-              ┌──────────────────────▼──────────┐
-              │        SHARED LOGIC (src/)       │
-              │                                 │
-              │  board.ts       rules.ts        │
-              │  7×7 grid       tag compat      │
-              │  tile CRUD      dist penalty    │
-              │                 stamina logic   │
-              │  score.ts       dice.ts/tile.ts │
-              │  VP aggregator  Seeded PRNG     │
-              │  penalty apply  event resolver  │
-              └─────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph BuildPipeline
+        TSC["tsc"] --> BUILD[".build/"]
+        LESSC["lessc"] --> CSS["client.css"]
+        ROLLUP["rollup"] --> JS["client.js"]
+        SW["sw.js"] --> PWA["PWA"]
+    end
+
+    BUILD -->|Da bien dich| CLIENT_BROWSER
+
+    subgraph CLIENT_BROWSER
+        INDEX["index.html"] --> CLIENTJS["client.js"]
+        CLIENTJS --> APP["app.ts"]
+        CLIENTJS --> MULTI["multi.ts"]
+        CSS_CLIENT["client.css"]
+        IMG["img/"]
+    end
+
+    MULTI -->|WebSocket| SERVER_DENO
+    SERVER_DENO -->|WebSocket| MULTI
+
+    subgraph SERVER_DENO
+        SERVER["server.ts"] --> PLAYER["player.ts"]
+        SERVER --> GAME["game.ts"]
+        PLAYER --> GAME
+        DOCKER["Dockerfile"]
+    end
+
+    SERVER_DENO -->|Imports| LOGIC_CHUNG
+
+    subgraph LOGIC_CHUNG
+        BOARD["board.ts"]
+        RULES["rules.ts"]
+        SCORE["score.ts"]
+        DICE["dice.ts"]
+    end
 ```
 
-#### Module Responsibilities — Detailed
+#### Trách Nhiệm Module — Chi Tiết
 
-| Module | Type | Owns | Does NOT own |
+| Module | Loại | Sở hữu | KHÔNG sở hữu |
 |---|---|---|---|
-| `server.ts` | **Entry point** | HTTP listener, WS handshake, room registry `Map<roomId, Room>` | Business logic, player state, scoring |
-| `game.ts` | **Orchestrator** | Room FSM, phase timer, broadcast loop, day counter | Individual player resources, grid mutation, VP math |
-| `player.ts` | **Session handler** | Per-socket RPC dispatch, Xu/Stamina/Debt state, stamina-lock bitmask | Room-level events, grid state, scoring |
-| `board.ts` | **Data structure** | 3×5 grid (3 days × 5 time slots), tile placement/removal, locked-slot enforcement | Why a tile is invalid (delegates to `rules.ts`) |
-| `rules.ts` | **Pure validator** | Tag–slot compatibility table, distance penalty curve, debt/stamina constraint logic | State mutation of any kind |
-| `score.ts` | **Calculator** | Base VP read, combo multiplier application, penalty deduction, phase total, final sum | Reading player state directly (receives it as parameter) |
-| `dice.ts` | **Randomness** | Mulberry32 PRNG, per-phase seed lifecycle, tag→event probability table | Applying event effects (returns `EventEffect`, `game.ts` applies) |
-| `tile.ts` | **Enum / config** | `TileType`, `TagSet`, `GameType` enums, base VP values, tile metadata | Runtime state |
+| `server.ts` | **Điểm khởi đầu** | HTTP listener, WS handshake, room registry `Map<roomId, Room>` | Business logic, trạng thái người chơi, tính điểm |
+| `game.ts` | **Điều phối viên** | Room FSM, bộ đếm thời gian pha, vòng lặp broadcast, bộ đếm ngày | Tài nguyên người chơi riêng lẻ, thay đổi lưới, tính toán VP |
+| `player.ts` | **Trình xử lý phiên** | Gửi RPC theo socket, trạng thái Xu/Stamina/Debt, bitmask khóa stamina | Sự kiện cấp phòng, trạng thái lưới, tính điểm |
+| `board.ts` | **Cấu trúc dữ liệu** | Lưới 3×5 (3 ngày × 5 khung giờ), đặt/xóa ô, áp dụng ràng buộc slot bị khóa | Lý do ô không hợp lệ (uỷ quyền cho `rules.ts`) |
+| `rules.ts` | **Bộ kiểm tra thuần** | Bảng tương thích tag–slot, đường cong phạt khoảng cách, logic ràng buộc debt/stamina | Thay đổi trạng thái dưới mọi hình thức |
+| `score.ts` | **Máy tính** | Đọc VP cơ bản, áp dụng hệ số nhân combo, trừ điểm phạt, tổng điểm pha, tổng cuối | Đọc trạng thái người chơi trực tiếp (nhận qua tham số) |
+| `dice.ts` | **Ngẫu nhiên** | Mulberry32 PRNG, vòng đời seed theo pha, bảng xác suất sự kiện theo tag | Áp dụng hiệu ứng sự kiện (trả về `EventEffect`, `game.ts` áp dụng) |
+| `tile.ts` | **Enum / cấu hình** | Enum `TileType`, `TagSet`, `GameType`, giá trị VP cơ bản, metadata ô | Trạng thái runtime |
 
 ---
 
-### 1.2 Service Interaction Diagram
+## 2. Ràng Buộc Backend Chính
 
-```
-Client (multi.ts)                   Server
-        │                              │
-        │── WS connect ──────────────► server.ts
-        │                              │── createRoom() ──► game.ts
-        │                              │── new Player() ──► player.ts
-        │                              │
-        │── JSON-RPC: selectCard ───► player.ts
-        │                              │── validateResources()
-        │                              │── rules.canPlaceTile()  ──► rules.ts
-        │                              │── game.transition(CARD_SELECTED) ─► game.ts
-        │                              │
-        │◄── notification: draftState ─ game.broadcastSnapshot()
-        │                              │
-        │── JSON-RPC: placeTile ─────► player.ts
-        │                              │── board.placeTile() ──────────────► board.ts
-        │                              │        └── rules.isTagCompatible() ► rules.ts
-        │                              │
-        │◄── notification: gridUpdate ─ game.broadcastSnapshot()
-        │                              │
-        │── JSON-RPC: endDay ────────► player.ts
-        │                              │── game.transition(DAY_END) ──────► game.ts
-        │                              │── score.calcDayVP() ─────────────► score.ts
-        │                              │        └── board.exportGrid()  ──► board.ts
-        │                              │── dice.rollEvent() (per tile) ───► dice.ts
-        │                              │        └── rules.ts (tag lookup)
-        │                              │
-        │◄── notification: dayResult ── game.broadcastSnapshot()
-        │                              │
-        │── JSON-RPC: endPhase ──────► player.ts
-        │                              │── score.finalScore() ────────────► score.ts
-        │                              │── score.applyPenalties() ────────► score.ts
-        │                              │── game.transition(PHASE_END) ───► game.ts
-        │                              │
-        │◄── notification: phaseResult  game.broadcastSnapshot()
-```
+Các ràng buộc này xuất phát trực tiếp từ tài liệu logic trò chơi và phải được thực thi phía server mọi lúc.
 
----
-
-### 1.3 Data Flow per Game Phase
-
-#### Phase: Drafting
-
-```
-game.ts enters DRAFTING state
-    │
-    └─► server distributes 5 cards to each player.ts instance
-              │
-              └─► player.ts stores hand[], validates Xu cost on selection
-                        │
-                        └─► game.ts collects selections (simultaneous reveal)
-                                  │
-                                  └─► game.ts swaps remaining hands between players
-                                            │
-                                            └─► repeat until hand exhausted (5 rounds)
-                                                      │
-                                                      └─► game.transition(DRAFTING_DONE)
-```
-
-#### Phase: Grid Assembly
-
-```
-game.ts enters ASSEMBLY state
-    │
-    └─► player.ts receives placeTile(day, slot, tileId) RPC calls
-              │
-              ├─► rules.isTagCompatible(slot, tile.tags)     [pure check]
-              ├─► rules.canPlaceTile(playerState, tile)      [resource check]
-              ├─► board.placeTile(day, slot, tile)           [mutates grid]
-              └─► game.broadcastSnapshot()                   [push to all clients]
-```
-
-#### Phase: Simulation (Dice Rolls)
-
-```
-game.ts enters SIMULATION state
-    │
-    ├─► dice.ts seeds PRNG with phaseRng, broadcasts seed
-    │
-    └─► for each placed tile (left→right, top→bottom):
-              │
-              ├─► dice.rollEvent(tile, phaseRng)
-              │         └─► checks tile.tags against event probability table
-              │         └─► returns EventEffect | null
-              │
-              └─► game.ts applies EventEffect:
-                        ├─► RAIN      → tile VP ×0.5 (Outdoor tiles)
-                        ├─► TRAFFIC   → drain Stamina; if <0 cancel tile
-                        ├─► OVERCHARGE→ drain Xu; if empty -20 VP
-                        └─► FLASH_SALE→ tile VP ×1.5
-```
-
-#### Phase: Scoring
-
-```
-game.ts enters SCORING state
-    │
-    └─► score.calcDayVP(board.exportGrid(), day)
-              │
-              ├─► reads base VP per tile
-              ├─► applies combo multipliers
-              ├─► runs rules.calcDistancePenalty() between adjacent tiles
-              └─► returns DayScore
-                        │
-                        └─► score.applyPenalties(playerState)
-                                  ├─► -50 VP per unresolved Debt token
-                                  ├─► 0 VP for stamina-locked slots
-                                  └─► returns FinalScore
-                                            │
-                                            └─► game.broadcastSnapshot(PHASE_RESULT)
-```
-
----
-
-### 1.4 Inter-Module Contracts
-
-These are the TypeScript interface boundaries that each module must honour.
-
-#### `game.ts` ↔ `player.ts`
-
-```typescript
-// player.ts emits this after validating an action
-interface PlayerAction {
-  playerId: string;
-  type: 'SELECT_CARD' | 'PLACE_TILE' | 'END_DAY' | 'BORROW_XU' | 'BORROW_STAMINA';
-  payload: unknown;
-  timestamp: number;
-}
-
-// game.ts pushes this to all sockets via broadcastSnapshot()
-interface RoomSnapshot {
-  phase: GamePhase;
-  day: number;          // 1–3
-  players: PlayerSnapshot[];
-  grid: GridSnapshot;   // board.exportGrid() output
-  seed?: number;        // present during SIMULATION phase only
-}
-```
-
-#### `board.ts` ↔ `rules.ts`
-
-```typescript
-// rules.ts only reads; never mutates board state
-interface PlacementRequest {
-  day: number;          // 0–2
-  slot: TimeSlot;       // MORNING | NOON | AFTERNOON | EVENING | NIGHT
-  tile: Tile;
-  playerState: PlayerState;
-}
-
-// returned by rules.canPlaceTile()
-type ValidationResult =
-  | { ok: true }
-  | { ok: false; reason: 'WRONG_TAG' | 'INSUFFICIENT_XU' | 'INSUFFICIENT_STAMINA' | 'SLOT_LOCKED' | 'SLOT_OCCUPIED' };
-```
-
-#### `score.ts` ↔ `board.ts` / `player.ts`
-
-```typescript
-// score.ts receives these; never imports player.ts or board.ts directly
-interface ScoringInput {
-  grid: GridSnapshot;       // from board.exportGrid()
-  playerState: PlayerState; // from player.ts snapshot
-  day: number;
-}
-
-interface DayScore {
-  baseVP: number;
-  comboBonus: number;
-  distancePenalty: number;
-  eventAdjustments: number;
-  subtotal: number;
-}
-```
-
-#### `dice.ts` ↔ `game.ts`
-
-```typescript
-// game.ts calls this for each tile during SIMULATION
-function rollEvent(tile: Tile, rng: () => number): EventEffect | null;
-
-interface EventEffect {
-  eventType: 'RAIN' | 'TRAFFIC' | 'OVERCHARGE' | 'FLASH_SALE';
-  vpMultiplier?: number;     // RAIN: 0.5, FLASH_SALE: 1.5
-  staminaDrain?: number;     // TRAFFIC
-  xuDrain?: number;          // OVERCHARGE
-  cancelTile?: boolean;      // TRAFFIC when stamina < 0
-}
-```
-
----
-
-### 1.5 Runtime Dependency Graph
-
-```
-server.ts
-├── game.ts
-│   ├── board.ts
-│   │   └── rules.ts
-│   │       └── tile.ts  (enums only)
-│   ├── score.ts
-│   │   ├── board.ts  (via exportGrid snapshot)
-│   │   └── rules.ts  (calcDistancePenalty)
-│   └── dice.ts
-│       ├── tile.ts   (TagSet enum)
-│       └── rules.ts  (isTagCompatible)
-└── player.ts
-    ├── game.ts   (transition, broadcastSnapshot)
-    └── rules.ts  (canPlaceTile)
-
-─── Compiled into client bundle (Rollup) ───────────────
-app.ts / multi.ts
-├── board.ts    (preview grid state)
-├── rules.ts    (client-side validation preview)
-├── score.ts    (live VP estimate)
-└── dice.ts     (replay simulation animations)
-```
-
-**Dependency rules:**
-
-- `rules.ts`, `tile.ts`, `dice.ts` → **no imports** from other game modules (pure leaf nodes)
-- `board.ts` → may import `rules.ts` and `tile.ts` only
-- `score.ts` → may import `rules.ts` and `tile.ts` only; receives board data as plain objects
-- `game.ts` → may import everything except `server.ts`
-- `player.ts` → may import `game.ts` and `rules.ts` only
-- `server.ts` → may import `game.ts` and `player.ts` only
-
----
-
-### 1.6 Error & Penalty Propagation
-
-```
-Player action arrives at player.ts
-         │
-         ▼
-  ┌─────────────────────────────────────────────────────┐
-  │  Resource gate (player.ts)                          │
-  │                                                     │
-  │  Xu < cost?        ──► BORROW_XU path               │
-  │    └─► create DebtToken, add to playerState.debt[]  │
-  │    └─► continue with action                         │
-  │                                                     │
-  │  Stamina < cost?   ──► BORROW_STAMINA path          │
-  │    └─► set staminaLock on next day's first 1–2 slots │
-  │    └─► continue with action                         │
-  └─────────────────────────────────────────────────────┘
-         │
-         ▼
-  ┌─────────────────────────────────────────────────────┐
-  │  Validation gate (rules.ts)                         │
-  │                                                     │
-  │  isTagCompatible?  ──► false → RPC error response   │
-  │  isSlotLocked?     ──► true  → RPC error response   │
-  │  isSlotOccupied?   ──► true  → RPC error response   │
-  └─────────────────────────────────────────────────────┘
-         │ passes
-         ▼
-  board.ts mutates grid
-         │
-         ▼ (at SIMULATION phase)
-  dice.ts rolls event
-  ├── RAIN       → tile.vpMultiplier = 0.5   (applied in score.ts)
-  ├── TRAFFIC    → playerState.stamina -= N
-  │                if stamina < 0: tile.cancelled = true
-  ├── OVERCHARGE → playerState.xu -= N
-  │                if xu <= 0: vpPenalty += 20
-  └── FLASH_SALE → tile.vpMultiplier = 1.5
-         │
-         ▼ (at SCORING phase)
-  score.ts aggregates
-  ├── base VP × tile.vpMultiplier (event adjustments)
-  ├── − distance penalty (rules.calcDistancePenalty)
-  ├── − 50 VP × playerState.debt.length   (unresolved Debt tokens)
-  └── 0 VP for all stamina-locked slots (regardless of tile placed)
-         │
-         ▼
-  game.broadcastSnapshot(PHASE_RESULT)
-  └── final scores sent to both clients
-```
-
----
-
-## 2. Key Backend Constraints
-
-These constraints flow directly from the game logic document and must be enforced server-side at all times.
-
-| Constraint | Enforced In | Rule |
+| Ràng buộc | Thực thi tại | Quy tắc |
 |---|---|---|
-| **Resource caps** | `player.ts` | Xu ≤ 15 tokens; Stamina ≤ 20. Any action that would push beyond the cap must be blocked before `game.ts` processes it. |
-| **Debt penalty** | `score.ts` | Each unresolved Debt Token at end of Phase = −50 VP. Applied after `game.ts` transitions to `SCORING` state. |
-| **Stamina lock** | `board.ts` + `player.ts` | Borrowing stamina locks the first 1–2 slots of the next day. Stored as a locked-slot bitmask; `board.ts` rejects placements on locked slots. |
-| **Distance penalty — adjacent** | `rules.ts` | Tiles with gap = 0 (e.g., Morning → Noon): threshold 10 km. Escalating penalty above threshold. |
-| **Distance penalty — gap** | `rules.ts` | One empty slot between tiles (gap = 1, e.g., Morning → Afternoon): threshold relaxed to 30 km. |
-| **Tag-driven events** | `dice.ts` | Mưa Giông fires only on Outdoor-tagged tiles; Kẹt Xe on City-tagged; Chặt Chém on Food/Market; Flash Sale is universal. |
-| **Phase map branching** | `game.ts` | Phase 2A (Da Nang) costs Xu; Phase 2B (Da Lat) costs 5 Xu + 10 Stamina. `game.ts` gate-checks resources before committing the branch. |
-| **Grid dimensions** | `board.ts` | Board is exactly 3 days × 5 time slots. No tile may be placed outside this boundary. |
-| **PRNG authority** | `dice.ts` + `game.ts` | Server PRNG output is authoritative. Client-reported event outcomes are ignored. Seed is broadcast before simulation starts. |
-| **Phase sequencing** | `game.ts` FSM | Illegal transitions (e.g., placing a tile during SCORING) are rejected. `player.ts` and `score.ts` must check current phase before acting. |
+| **Giới hạn tài nguyên** | `player.ts` | Xu ≤ 15 token; Stamina ≤ 20. Bất kỳ hành động nào vượt quá giới hạn phải bị chặn trước khi `game.ts` xử lý. |
+| **Phạt Debt** | `score.ts` | Mỗi Debt Token chưa giải quyết khi kết thúc Pha = −50 VP. Áp dụng sau khi `game.ts` chuyển sang trạng thái `SCORING`. |
+| **Khóa Stamina** | `board.ts` + `player.ts` | Mượn stamina sẽ khóa 1–2 slot đầu tiên của ngày tiếp theo. Lưu dưới dạng bitmask slot bị khóa; `board.ts` từ chối đặt ô lên slot bị khóa. |
+| **Phạt khoảng cách — liền kề** | `rules.ts` | Ô có khoảng cách = 0 (ví dụ: Sáng → Trưa): ngưỡng 10 km. Phạt tăng dần trên ngưỡng. |
+| **Phạt khoảng cách — có khoảng trống** | `rules.ts` | Một slot trống giữa các ô (khoảng cách = 1, ví dụ: Sáng → Chiều): ngưỡng nới lỏng thành 30 km. |
+| **Sự kiện theo tag** | `dice.ts` | Mưa Giông chỉ kích hoạt trên ô có tag Ngoài Trời; Kẹt Xe trên tag Thành Phố; Chặt Chém trên Ẩm Thực/Chợ; Flash Sale là phổ quát. |
+| **Phân nhánh bản đồ pha** | `game.ts` | Pha 2A (Đà Nẵng) tốn Xu; Pha 2B (Đà Lạt) tốn 5 Xu + 10 Stamina. `game.ts` kiểm tra tài nguyên trước khi xác nhận nhánh. |
+| **Kích thước lưới** | `board.ts` | Bảng là chính xác 3 ngày × 5 khung giờ. Không ô nào được đặt ngoài ranh giới này. |
+| **Quyền hạn PRNG** | `dice.ts` + `game.ts` | Kết quả PRNG từ server là chuẩn quyền. Kết quả sự kiện do client báo cáo bị bỏ qua. Seed được phát sóng trước khi mô phỏng bắt đầu. |
+| **Trình tự pha** | FSM `game.ts` | Chuyển đổi trái phép (ví dụ: đặt ô trong SCORING) bị từ chối. `player.ts` và `score.ts` phải kiểm tra pha hiện tại trước khi thực thi bất kỳ logic nào. |

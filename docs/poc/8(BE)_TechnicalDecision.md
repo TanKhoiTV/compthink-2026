@@ -1,173 +1,173 @@
 
-## 1. Realized Tech Stack
+## 1. Tech Stack Thực Tế
 
-The architecture follows the diagram's three-panel separation: **Build pipeline (Makefile)**, **Client (Browser)**, and **Server (Deno)**, with **Shared logic (`src/`)** as the domain kernel.
+Kiến trúc tuân theo sơ đồ phân chia ba panel: **Build pipeline (Makefile)**, **Client (Trình duyệt)**, và **Server (Deno)**, với **Logic dùng chung (`src/`)** là nhân domain.
 
-| Layer | Technology | Role in Backend                                                                                                            | Why Chosen                                                                                                                     | Maps to Diagram |
-|---|---|----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|---|
-| **Runtime** | Deno | Hosts `server.ts` — HTTP + WebSocket listener entry point                                                                  | Native TypeScript, built-in security sandbox, no `node_modules` sprawl                                                         | Server (Deno) box |
-| **Language** | TypeScript | Shared type definitions across client + server; compile-time safety for game state                                         | Single language full-stack; shared logic in `src/` compiles to both targets                                                    | `tsc` build pipeline; `board.ts`, `rules.ts`, `score.ts`, `dice.ts` |
-| **Transport** | WebSocket (native Deno) | Bi-directional real-time channel from `multi.ts` (client) to `server.ts`                                                   | Drafting phase card passing, dice rolls, VP updates need sub-100ms push; HTTP polling is too slow                              | WS arrow between Client and Server |
-| **Messaging** | JSON-RPC 2.0 | Typed request/response protocol over WS — `player.ts` handles one RPC stream per socket                                    | Stateless, version-able, easy to mock in unit tests; avoids custom binary protocol overhead                                    | `multi.ts` WebSocket/JSON-RPC; `player.ts` JSON-RPC per socket |
-| **State Machine** | `game.ts` (custom FSM) | Room state machine — tracks phase (Drafting → Grid Assembly → Simulation → Scoring), day index, player resources           | Game loop has strict phase sequencing (3 days × 4 phases) that maps naturally to FSM transitions; prevents illegal state jumps | `game.ts` Room state machine |
-| **Domain Logic** | `board.ts` · `rules.ts` · `score.ts` · `dice.ts` | Pure TS modules: 3×5 grid state, tile/GameType enums, VP scoring (`sum()`), die face rotations and random event resolution | Shared `src/` means the same validation runs on client (preview) and server (authoritative) — no duplicated rule code          | Shared logic (`src/`) panel |
-| **Build Tool** | Rollup + lessc + tsc | Bundles `.build/` → `client.js`; compiles `css/*.less` → `client.css`; type-checks `src/**/*.ts`                           | Rollup produces a single optimised bundle (tree-shaking); lessc keeps CSS modular without runtime cost                         | Build pipeline (Makefile) top row |
-| **Offline / PWA** | `sw.js` (Service Worker) | Caches static assets for offline play; intercepts fetch for tile images in `img/`                                          | Tile images and game assets are large but rarely change — SW caching cuts re-load times significantly                          | `sw.js` Service Worker/PWA node |
-| **Deployment** | Docker (`Dockerfile`) | Packages Deno runtime + compiled assets into a single reproducible container image                                         | Eliminates environment drift; enables horizontal scaling for multi-room deployments                                            | `Dockerfile` node in Server panel |
-
----
-
-## 2. Backend Developer Roles by Module
-
-Each file in the **Server (Deno)** and **Shared logic** panels owns a distinct backend concern.
-
-| File / Module | Backend Developer Responsibility                                                                                          | Key Functions / Methods | Interfaces With |
-|---|---------------------------------------------------------------------------------------------------------------------------|---|---|
-| `server.ts` | Bootstrap HTTP + WS server; route upgrade handshakes; health check endpoint                                               | `Deno.serve()`, `Deno.upgradeWebSocket(req)`, `onopen/onmessage/onclose` handlers | `game.ts` (creates room), `player.ts` (one per socket) |
-| `game.ts` | Own the room FSM: phase transitions, timer ticks, broadcast state snapshots to all players in room                        | `createRoom()`, `transition(event)`, `broadcastSnapshot()`, `resolveDay()` | `player.ts` (receives actions), `board.ts` (mutates grid), `score.ts` (final tally) |
-| `player.ts` | Per-socket JSON-RPC dispatcher; validate and forward player actions; manage per-player resource state (Xu, Stamina, Debt) | `dispatch(method, params)`, `validateResources()`, `applyDebt()`, `applyStaminaLock()` | `game.ts` (emits validated actions), `rules.ts` (constraint checks) |
-| `board.ts` | Authoritative 3×5 grid — place/remove tiles, enforce slot constraints, return grid snapshot                               | `placeTile(day, slot, tile)`, `removeTile()`, `getNeighbour()`, `exportGrid()` | `rules.ts` (time-slot tag checks), `score.ts` (reads placed tiles) |
-| `rules.ts` | Pure validation layer: tile tag compatibility per time slot, distance penalty thresholds, stamina-lock eligibility        | `isTagCompatible(slot, tags)`, `calcDistancePenalty(coordA, coordB, gap)`, `canPlaceTile(state, tile)` | `board.ts`, `player.ts`, `score.ts` — called before any mutation |
-| `score.ts` | End-of-day and end-of-phase VP aggregation; apply combo multipliers, debt penalties, stamina-lock zeroing                 | `calcDayVP(grid, day)`, `applyPenalties(playerState)`, `finalScore(allDays)` | `board.ts` (grid snapshot), `player.ts` (debt / stamina state) |
-| `dice.ts` / `tile.ts` | Random event resolution: seed PRNG per phase for replay, check tile tags, return `Event` enum + effect payload            | `rollEvent(tile, phaseRng)`, `getTileRotation(face)`, `EventEffect` type | `game.ts` (triggers roll during simulation), `rules.ts` (tag lookup) |
+| Tầng | Công nghệ | Vai trò trong Backend | Lý do chọn | Ánh xạ trong sơ đồ |
+|---|---|---|---|---|
+| **Runtime** | Deno | Chạy `server.ts` — điểm vào HTTP + WebSocket listener | TypeScript gốc, sandbox bảo mật tích hợp, không có `node_modules` cồng kềnh | Ô Server (Deno) |
+| **Ngôn ngữ** | TypeScript | Định nghĩa kiểu dùng chung giữa client + server; an toàn tại compile-time cho trạng thái game | Một ngôn ngữ cho toàn stack; logic dùng chung trong `src/` biên dịch cho cả hai target | Pipeline build `tsc`; `board.ts`, `rules.ts`, `score.ts`, `dice.ts` |
+| **Transport** | WebSocket (Deno gốc) | Kênh real-time hai chiều từ `multi.ts` (client) đến `server.ts` | Giai đoạn Bốc Bài truyền bài, tung xúc xắc, cập nhật VP cần push dưới 100ms; HTTP polling quá chậm | Mũi tên WS giữa Client và Server |
+| **Messaging** | JSON-RPC 2.0 | Giao thức request/response có kiểu qua WS — `player.ts` xử lý một luồng RPC per socket | Stateless, có thể versioning, dễ mock trong unit test; tránh overhead giao thức binary tùy chỉnh | `multi.ts` WebSocket/JSON-RPC; `player.ts` JSON-RPC per socket |
+| **State Machine** | `game.ts` (FSM tùy chỉnh) | State machine phòng — theo dõi pha (Bốc Bài → Lắp Ráp Lưới → Mô Phỏng → Tính Điểm), chỉ số ngày, tài nguyên người chơi | Vòng lặp game có trình tự pha nghiêm ngặt (3 ngày × 4 pha) ánh xạ tự nhiên sang FSM transitions; ngăn nhảy trạng thái trái phép | State machine phòng `game.ts` |
+| **Domain Logic** | `board.ts` · `rules.ts` · `score.ts` · `dice.ts` | Các module TS thuần: trạng thái lưới 3×5, enum tile/GameType, tính VP (`sum()`), xoay mặt xúc xắc và phân giải sự kiện ngẫu nhiên | `src/` dùng chung nghĩa là cùng một logic kiểm tra chạy trên client (xem trước) và server (chuẩn quyền) — không cần nhân đôi code quy tắc | Panel Logic dùng chung (`src/`) |
+| **Build Tool** | Rollup + lessc + tsc | Bundle `.build/` → `client.js`; biên dịch `css/*.less` → `client.css`; kiểm tra kiểu `src/**/*.ts` | Rollup tạo ra một bundle tối ưu duy nhất (tree-shaking); lessc giữ CSS dạng module không tốn chi phí runtime | Build pipeline (Makefile) hàng trên |
+| **Offline / PWA** | `sw.js` (Service Worker) | Cache tài nguyên tĩnh để chơi offline; chặn fetch cho ảnh tile trong `img/` | Ảnh tile và tài nguyên game lớn nhưng ít thay đổi — caching SW giảm đáng kể thời gian tải lại | Node `sw.js` Service Worker/PWA |
+| **Triển khai** | Docker (`Dockerfile`) | Đóng gói Deno runtime + các tài nguyên đã biên dịch vào một container image có thể tái tạo | Loại bỏ drift môi trường; cho phép mở rộng ngang cho các triển khai multi-room | Node `Dockerfile` trong panel Server |
 
 ---
 
-## 3. Architecture Decision Records
+## 2. Vai Trò Của Developer Backend Theo Module
 
-Each ADR documents a significant backend decision: what problem prompted it, which options were on the table, what was chosen, and the trade-offs.
+Mỗi file trong panel **Server (Deno)** và **Logic dùng chung** sở hữu một mối quan tâm backend riêng biệt.
+
+| File / Module | Trách nhiệm Developer Backend | Hàm / Phương thức chính | Giao tiếp với |
+|---|---|---|---|
+| `server.ts` | Khởi động HTTP + WS server; định tuyến WS upgrade handshake; endpoint health check | `Deno.serve()`, `Deno.upgradeWebSocket(req)`, các handler `onopen/onmessage/onclose` | `game.ts` (tạo phòng), `player.ts` (một per socket) |
+| `game.ts` | Sở hữu FSM phòng: chuyển đổi pha, tick timer, broadcast snapshot trạng thái đến tất cả người chơi trong phòng | `createRoom()`, `transition(event)`, `broadcastSnapshot()`, `resolveDay()` | `player.ts` (nhận hành động), `board.ts` (thay đổi lưới), `score.ts` (tổng kết cuối) |
+| `player.ts` | Dispatcher JSON-RPC per socket; xác thực và chuyển tiếp hành động người chơi; quản lý trạng thái tài nguyên per-player (Xu, Stamina, Debt) | `dispatch(method, params)`, `validateResources()`, `applyDebt()`, `applyStaminaLock()` | `game.ts` (phát hành động đã xác thực), `rules.ts` (kiểm tra ràng buộc) |
+| `board.ts` | Lưới 3×5 chuẩn quyền — đặt/xóa tile, thực thi ràng buộc slot, trả về snapshot lưới | `placeTile(day, slot, tile)`, `removeTile()`, `getNeighbour()`, `exportGrid()` | `rules.ts` (kiểm tra tag time-slot), `score.ts` (đọc tile đã đặt) |
+| `rules.ts` | Tầng kiểm tra thuần: tương thích tag tile theo time slot, ngưỡng phạt khoảng cách, điều kiện đủ tiêu chuẩn stamina-lock | `isTagCompatible(slot, tags)`, `calcDistancePenalty(coordA, coordB, gap)`, `canPlaceTile(state, tile)` | `board.ts`, `player.ts`, `score.ts` — được gọi trước mọi thay đổi |
+| `score.ts` | Tổng hợp VP cuối ngày và cuối pha; áp dụng hệ số nhân combo, phạt debt, zeroing stamina-lock | `calcDayVP(grid, day)`, `applyPenalties(playerState)`, `finalScore(allDays)` | `board.ts` (snapshot lưới), `player.ts` (trạng thái debt / stamina) |
+| `dice.ts` / `tile.ts` | Phân giải sự kiện ngẫu nhiên: seed PRNG per pha để replay, kiểm tra tag tile, trả về enum `Event` + payload hiệu ứng | `rollEvent(tile, phaseRng)`, `getTileRotation(face)`, kiểu `EventEffect` | `game.ts` (kích hoạt tung trong simulation), `rules.ts` (tra cứu tag) |
 
 ---
 
-### ADR-001 · Use Deno Instead of Node.js as the Server Runtime `[Accepted]`
+## 3. Bản Ghi Quyết Định Kiến Trúc (ADR)
 
-**Context**
+Mỗi ADR ghi lại một quyết định backend quan trọng: vấn đề gì đã thúc đẩy, các lựa chọn nào đã được xem xét, điều gì được chọn và những đánh đổi.
 
-The game server needs to run TypeScript natively, expose both HTTP and WebSocket endpoints, and be deployable in a Docker container. Node.js requires a build step (`tsc`) and separate type-stripping tooling. The team wants to keep the runtime stack minimal.
+---
 
-**Options Considered**
+### ADR-001 · Sử Dụng Deno Thay Vì Node.js Làm Server Runtime `[Đã Chấp Nhận]`
 
-| Option | Pros | Cons |
+**Bối cảnh**
+
+Game server cần chạy TypeScript gốc, expose cả endpoint HTTP và WebSocket, và có thể triển khai trong Docker container. Node.js yêu cầu bước build (`tsc`) và công cụ type-stripping riêng. Team muốn giữ runtime stack tối thiểu.
+
+**Các Lựa Chọn Đã Xem Xét**
+
+| Lựa chọn | Ưu điểm | Nhược điểm |
 |---|---|---|
-| Node.js + ts-node | Massive ecosystem, well-known; ts-node gives near-native TS | Extra dependency; ts-node has known perf edge cases; tsconfig divergence between client and server |
-| **Deno** ✓ | First-class TypeScript, built-in security sandbox, built-in `Deno.upgradeWebSocket(req)`, single binary | Smaller ecosystem; some npm packages need compat shim |
-| Bun | Fast startup, node-compatible | Less mature; WS API changes between releases; Docker image size larger |
+| Node.js + ts-node | Ecosystem lớn, được biết đến rộng rãi; ts-node cho TS gần native | Phụ thuộc thêm; ts-node có các edge case về hiệu suất đã biết; tsconfig phân kỳ giữa client và server |
+| **Deno** ✓ | TypeScript first-class, sandbox bảo mật tích hợp, `Deno.upgradeWebSocket(req)` tích hợp, binary đơn | Ecosystem nhỏ hơn; một số npm package cần compat shim |
+| Bun | Khởi động nhanh, tương thích node | Kém trưởng thành hơn; WS API thay đổi giữa các release; kích thước Docker image lớn hơn |
 
-**Decision:** Use Deno as the primary server runtime.
+**Quyết định:** Sử dụng Deno làm runtime server chính.
 
-**Rationale:** Deno's first-class TypeScript support eliminates the need for a separate `tsc` watch process on the server side. The built-in WebSocket upgrade in `Deno.serve()` maps directly to the `server.ts` design. Security sandbox prevents accidental file system leakage from game logic bugs.
+**Lý do:** Hỗ trợ TypeScript first-class của Deno loại bỏ nhu cầu về một tiến trình `tsc` watch riêng ở phía server. WS upgrade tích hợp trong `Deno.serve()` ánh xạ trực tiếp vào thiết kế `server.ts`. Sandbox bảo mật ngăn rò rỉ file system vô tình từ các lỗi logic game.
 
-**Consequences:** No tsconfig mismatch between client and server. Some npm packages (particularly ORMs) need explicit `npm:` specifiers. Team must be trained on Deno permission flags for the Dockerfile entrypoint.
-
----
-
-### ADR-002 · Use WebSocket + JSON-RPC 2.0 for Client–Server Messaging `[Accepted]`
-
-**Context**
-
-The Drafting Phase requires simultaneous card reveal and card passing between two players with latency under 200 ms. The Simulation phase needs the server to push dice-roll events to all clients without the client polling.
-
-**Options Considered**
-
-| Option | Pros | Cons |
-|---|---|---|
-| REST (HTTP polling) | Simple; no connection state | High latency for game events; cannot push from server; wastes bandwidth |
-| Server-Sent Events (SSE) | Server push; no special protocol | Unidirectional only; client actions still need REST; two connections per player |
-| WebSocket + raw JSON | Low latency, bidirectional | No standardised request/response; client must implement own correlation IDs |
-| **WebSocket + JSON-RPC 2.0** ✓ | Low latency + structured method calls with `id` correlation; easy to unit-test | Slightly more envelope bytes per message than binary protocols |
-
-**Decision:** WebSocket transport with JSON-RPC 2.0 message framing.
-
-**Rationale:** JSON-RPC 2.0 handles both request/response (method calls with `id`) and server-push (notifications with no `id`) patterns. The protocol is human-readable, trivially mockable in tests, and adds < 50 bytes of overhead per message — acceptable for this game's throughput.
-
-**Consequences:** Each `player.ts` instance maintains a JSON-RPC dispatcher. Developers must ensure that notification broadcasts (`game.broadcastSnapshot()`) never accidentally include a request `id`, or clients will treat them as RPC responses.
+**Hệ quả:** Không có sự không khớp tsconfig giữa client và server. Một số npm package (đặc biệt ORM) cần chỉ định `npm:` rõ ràng. Team phải được đào tạo về Deno permission flags cho entrypoint Dockerfile.
 
 ---
 
-### ADR-003 · Implement Game Loop as an Explicit Finite State Machine in `game.ts` `[Accepted]`
+### ADR-002 · Sử Dụng WebSocket + JSON-RPC 2.0 Cho Messaging Client–Server `[Đã Chấp Nhận]`
 
-**Context**
+**Bối cảnh**
 
-The game has a strict ordered loop: Drafting Phase → Grid Assembly → Simulation (dice rolls) → Scoring, repeated over 3 days, then a Phase transition (Saigon → Da Nang or Da Lat → final city). Handling this with ad-hoc boolean flags risks illegal state combinations.
+Pha Bốc Bài yêu cầu đồng thời lật bài và truyền bài giữa hai người chơi với độ trễ dưới 200 ms. Pha Mô Phỏng cần server push sự kiện tung xúc xắc đến tất cả clients mà không cần client polling.
 
-**Options Considered**
+**Các Lựa Chọn Đã Xem Xét**
 
-| Option | Pros | Cons |
+| Lựa chọn | Ưu điểm | Nhược điểm |
 |---|---|---|
-| Ad-hoc flag variables | Quick to prototype | Combinatorial explosion of invalid states; hard to audit |
-| XState (library) | Battle-tested, visualisable | Adds a dependency; overkill for a deterministic turn-based loop; Deno compat layer needed |
-| **Custom FSM in `game.ts`** ✓ | Zero deps; states are explicit enums; `transition()` is a pure function testable in isolation | Must maintain the transition table manually |
+| REST (HTTP polling) | Đơn giản; không có connection state | Độ trễ cao cho game event; không thể push từ server; lãng phí băng thông |
+| Server-Sent Events (SSE) | Server push; không cần giao thức đặc biệt | Chỉ một chiều; hành động client vẫn cần REST; hai kết nối per player |
+| WebSocket + raw JSON | Độ trễ thấp, hai chiều | Không có request/response chuẩn hóa; client phải tự implement correlation ID |
+| **WebSocket + JSON-RPC 2.0** ✓ | Độ trễ thấp + method call có cấu trúc với `id` correlation; dễ unit-test | Thêm một ít byte envelope per message so với giao thức binary |
 
-**Decision:** Implement a custom FSM inside `game.ts` with an explicit `GamePhase` enum and a `transition(event)` function.
+**Quyết định:** WebSocket transport với JSON-RPC 2.0 message framing.
 
-**Rationale:** The game loop has a small, bounded set of states (≈8) and a well-defined transition table. A custom FSM is < 150 lines and can be unit-tested by feeding events to `transition()`. It prevents tile placement during Simulation and enforces the 3-day limit before Phase transition.
+**Lý do:** JSON-RPC 2.0 xử lý cả pattern request/response (method call với `id`) lẫn server-push (notification không có `id`). Giao thức dễ đọc, dễ mock trong test, và chỉ thêm < 50 byte overhead per message — chấp nhận được với throughput của game này.
 
-**Consequences:** Every new game mechanic must update the FSM transition table — deliberate friction that prevents accidental state leakage. `player.ts` and `score.ts` must query `game.ts` for the current phase before executing any logic.
+**Hệ quả:** Mỗi instance `player.ts` duy trì một JSON-RPC dispatcher. Developers phải đảm bảo notification broadcasts (`game.broadcastSnapshot()`) không bao giờ vô tình có `id` request, vì clients sẽ xử lý chúng như RPC response.
 
 ---
 
-### ADR-004 · Keep Domain Logic in Shared `src/` Compiled to Both Client and Server `[Accepted]`
+### ADR-003 · Implement Game Loop Như Một Finite State Machine Tường Minh Trong `game.ts` `[Đã Chấp Nhận]`
 
-**Context**
+**Bối cảnh**
 
-Rules such as tag-slot compatibility, distance penalty calculation, and VP scoring are needed both on the client (real-time preview) and on the server (authoritative validation). Duplicating rule code creates drift risk.
+Game có vòng lặp có thứ tự nghiêm ngặt: Pha Bốc Bài → Lắp Ráp Lưới → Mô Phỏng (tung xúc xắc) → Tính Điểm, lặp lại qua 3 ngày, sau đó chuyển pha (Sài Gòn → Đà Nẵng hoặc Đà Lạt → thành phố cuối). Xử lý điều này với các biến boolean ad-hoc có nguy cơ tạo ra các tổ hợp trạng thái không hợp lệ.
 
-**Options Considered**
+**Các Lựa Chọn Đã Xem Xét**
 
-| Option | Pros | Cons |
+| Lựa chọn | Ưu điểm | Nhược điểm |
 |---|---|---|
-| Server-only rules; client calls server to preview | Single source of truth | Round-trip latency on every tile hover; poor UX; server load increases |
-| Client-only rules; server trusts client | Zero latency preview | Trivially exploitable; client bugs silently pass invalid states to server |
-| **Shared `src/` compiled by tsc to both targets** ✓ | One source of truth; zero extra RPC calls for preview; server re-validates authoritatively | Shared code must be pure (no DOM, no Deno APIs); increases bundle size slightly |
+| Biến flag ad-hoc | Nhanh để prototype | Bùng nổ tổ hợp trạng thái không hợp lệ; khó kiểm tra |
+| XState (thư viện) | Đã được kiểm chứng, có thể trực quan hóa | Thêm dependency; quá mức cần thiết cho vòng lặp theo lượt xác định; cần compat layer cho Deno |
+| **FSM tùy chỉnh trong `game.ts`** ✓ | Không phụ thuộc; state là enum tường minh; `transition()` là hàm thuần có thể test độc lập | Phải duy trì bảng transition thủ công |
 
-**Decision:** Place all rule logic (`board.ts`, `rules.ts`, `score.ts`, `dice.ts`) in `src/` and compile it into both the client bundle (via Rollup) and the Deno server import graph.
+**Quyết định:** Implement một FSM tùy chỉnh bên trong `game.ts` với enum `GamePhase` tường minh và hàm `transition(event)`.
 
-**Rationale:** Optimistic UI with server authority — fast UX + cheat prevention. Pure TypeScript modules with no side effects can be imported by both targets.
+**Lý do:** Vòng lặp game có một tập hợp trạng thái nhỏ, hữu hạn (≈8) và một bảng transition được định nghĩa rõ ràng. FSM tùy chỉnh là < 150 dòng và có thể unit-test bằng cách đưa các event vào `transition()`. Nó ngăn đặt tile trong Simulation và thực thi giới hạn 3 ngày trước khi chuyển pha.
 
-**Consequences:** All shared modules must remain free of platform-specific APIs. Any module that needs Deno (file I/O, crypto) or DOM (`window`, `document`) must be split into a platform adapter.
+**Hệ quả:** Mỗi cơ chế game mới phải cập nhật bảng transition FSM — ma sát có chủ đích ngăn rò rỉ trạng thái vô tình. `player.ts` và `score.ts` phải query `game.ts` về pha hiện tại trước khi thực thi bất kỳ logic nào.
 
 ---
 
-### ADR-005 · Use Seeded PRNG in `dice.ts` for Deterministic Replay `[Accepted]`
+### ADR-004 · Giữ Domain Logic Trong `src/` Dùng Chung Biên Dịch Cho Cả Client Và Server `[Đã Chấp Nhận]`
 
-**Context**
+**Bối cảnh**
 
-The Simulation phase rolls random events per tile per player. If the server uses `Math.random()` (unseeded), it is impossible to replay a game session for debugging. Two clients in the same room would also produce different event sequences if they ever ran the simulation locally.
+Các quy tắc như tương thích tag-slot, tính phạt khoảng cách, và tính điểm VP cần thiết cả trên client (xem trước real-time) lẫn server (kiểm tra chuẩn quyền). Nhân đôi code quy tắc tạo ra nguy cơ drift.
 
-**Options Considered**
+**Các Lựa Chọn Đã Xem Xét**
 
-| Option | Pros | Cons |
+| Lựa chọn | Ưu điểm | Nhược điểm |
 |---|---|---|
-| `Math.random()` (unseeded) | Zero effort | Non-reproducible; cannot replay; client and server diverge |
-| **Seeded PRNG (Mulberry32)** ✓ | Reproducible with seed; pure JS; tiny implementation | Seed must be agreed before Simulation phase begins |
-| Server-only RNG, push results to client | No divergence risk | Requires RPC round-trip per tile event; adds latency |
+| Rules chỉ trên server; client gọi server để xem trước | Nguồn sự thật duy nhất | Độ trễ round-trip mỗi khi hover tile; UX kém; tăng tải server |
+| Rules chỉ trên client; server tin client | Xem trước không độ trễ | Dễ bị khai thác; bug phía client silently truyền trạng thái không hợp lệ lên server |
+| **`src/` dùng chung biên dịch bởi tsc cho cả hai target** ✓ | Một nguồn sự thật; không cần thêm RPC call cho preview; server tái kiểm tra chuẩn quyền | Code dùng chung phải thuần (không DOM, không Deno API); tăng nhẹ kích thước bundle |
 
-**Decision:** Use a seeded Mulberry32 PRNG in `dice.ts`. The server generates a random seed at the start of each Simulation phase and broadcasts it to all clients before simulation begins.
+**Quyết định:** Đặt tất cả rule logic (`board.ts`, `rules.ts`, `score.ts`, `dice.ts`) trong `src/` và biên dịch vào cả client bundle (qua Rollup) và import graph của Deno server.
 
-**Rationale:** A seeded PRNG makes the simulation deterministic given the seed. Both the server (authoritative) and the client (preview animations) can run the same event sequence without additional RPC calls. The seed is stored in the game state snapshot, enabling full session replay.
+**Lý do:** Optimistic UI với server authority — UX nhanh + ngăn gian lận. Các module TypeScript thuần không có side effects có thể được import bởi cả hai target.
 
-**Consequences:** The seed must be broadcast before any tile is processed in Simulation — if a client starts simulation before receiving the seed, it will diverge. The server must treat its own PRNG output as authoritative and ignore any client-reported event outcomes.
+**Hệ quả:** Tất cả module dùng chung phải không chứa platform-specific API. Bất kỳ module nào cần Deno (file I/O, crypto) hoặc DOM (`window`, `document`) phải được tách thành platform adapter.
 
 ---
 
-### ADR-006 · Use Docker for Server Packaging Instead of Bare VM `[Accepted]`
+### ADR-005 · Sử Dụng Seeded PRNG Trong `dice.ts` Để Replay Xác Định `[Đã Chấp Nhận]`
 
-**Context**
+**Bối cảnh**
 
-The Deno server must be deployable to cloud infrastructure. The team considered three deployment models for initial launch.
+Pha Mô Phỏng tung sự kiện ngẫu nhiên per tile per player. Nếu server dùng `Math.random()` (không seeded), không thể replay phiên game để debug. Hai clients trong cùng phòng cũng sẽ tạo ra chuỗi sự kiện khác nhau nếu họ chạy mô phỏng cục bộ.
 
-**Options Considered**
+**Các Lựa Chọn Đã Xem Xét**
 
-| Option | Pros | Cons |
+| Lựa chọn | Ưu điểm | Nhược điểm |
 |---|---|---|
-| Bare metal / VM with Deno installed | Simple, no container overhead | Environment drift between dev and prod; hard to scale horizontally |
-| **Docker container (`Dockerfile` in repo)** ✓ | Reproducible; portable; easy horizontal scaling | Docker daemon required on host; image build step in CI |
-| Serverless (e.g., Deno Deploy) | Zero ops; automatic scaling | WebSocket persistence model differs; room state cannot be held in memory across invocations without external store |
+| `Math.random()` (không seeded) | Không tốn công | Không thể tái tạo; không thể replay; client và server phân kỳ |
+| **Seeded PRNG (Mulberry32)** ✓ | Có thể tái tạo với seed; pure JS; implementation nhỏ gọn | Seed phải được thống nhất trước khi pha Simulation bắt đầu |
+| RNG chỉ trên server, push kết quả xuống client | Không có nguy cơ phân kỳ | Yêu cầu RPC round-trip per tile event; thêm độ trễ |
 
-**Decision:** Package the server as a Docker image using the `Dockerfile` in the Server panel.
+**Quyết định:** Sử dụng seeded Mulberry32 PRNG trong `dice.ts`. Server tạo một seed ngẫu nhiên ở đầu mỗi pha Simulation và broadcast nó đến tất cả clients trước khi simulation bắt đầu.
 
-**Rationale:** WebSocket sessions are stateful — a room's `game.ts` FSM lives in server memory for the duration of the session. Serverless functions cannot hold in-memory state across invocations without an external store (Redis, etc.), which adds latency and cost at the MVP stage.
+**Lý do:** Seeded PRNG làm cho simulation xác định khi biết seed. Cả server (chuẩn quyền) lẫn client (animation xem trước) đều có thể chạy cùng một chuỗi sự kiện mà không cần thêm RPC call. Seed được lưu trong snapshot trạng thái game, cho phép replay phiên đầy đủ.
 
-**Consequences:** Horizontal scaling requires sticky sessions (route each WebSocket by room ID to the same container) or migrating room state to an external store. This is the primary scaling bottleneck to revisit if concurrent room count exceeds a single container's capacity.
+**Hệ quả:** Seed phải được broadcast trước khi bất kỳ tile nào được xử lý trong Simulation — nếu client bắt đầu simulation trước khi nhận seed, nó sẽ phân kỳ. Server phải coi output PRNG của chính mình là chuẩn quyền và bỏ qua mọi kết quả sự kiện do client báo cáo.
+
+---
+
+### ADR-006 · Sử Dụng Docker Để Đóng Gói Server Thay Vì VM Trần `[Đã Chấp Nhận]`
+
+**Bối cảnh**
+
+Deno server phải có thể triển khai lên hạ tầng cloud. Team đã xem xét ba mô hình triển khai cho lần ra mắt đầu tiên.
+
+**Các Lựa Chọn Đã Xem Xét**
+
+| Lựa chọn | Ưu điểm | Nhược điểm |
+|---|---|---|
+| Bare metal / VM có cài Deno | Đơn giản, không overhead container | Environment drift giữa dev và prod; khó mở rộng ngang |
+| **Docker container (`Dockerfile` trong repo)** ✓ | Có thể tái tạo; portable; dễ mở rộng ngang | Yêu cầu Docker daemon trên host; bước build image trong CI |
+| Serverless (ví dụ Deno Deploy) | Không cần ops; tự động mở rộng | Model persistence WebSocket khác; room state không thể giữ trong bộ nhớ qua các lần gọi mà không cần external store |
+
+**Quyết định:** Đóng gói server dưới dạng Docker image sử dụng `Dockerfile` trong panel Server.
+
+**Lý do:** WebSocket session là stateful — FSM `game.ts` của phòng sống trong bộ nhớ server suốt phiên. Serverless functions không thể giữ in-memory state qua các lần gọi mà không có external store (Redis, v.v.), điều này thêm độ trễ và chi phí ở giai đoạn MVP.
+
+**Hệ quả:** Mở rộng ngang yêu cầu sticky sessions (định tuyến mỗi WebSocket theo room ID đến cùng container) hoặc migrate room state sang external store. Đây là nút thắt cổ chai mở rộng chính cần xem xét lại nếu số lượng phòng đồng thời vượt quá khả năng của một container.
 
 ---
