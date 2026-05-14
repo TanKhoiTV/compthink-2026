@@ -3,14 +3,14 @@
 
 Kiến trúc tuân theo sơ đồ phân chia ba panel: **Build pipeline (Makefile)**, **Client (Trình duyệt)**, và **Server (Deno)**, với **Logic dùng chung (`src/`)** là nhân domain.
 
-| Tầng | Công nghệ | Vai trò trong Backend | Lý do chọn | Ánh xạ trong sơ đồ |
-|---|---|---|---|---|
+| Tầng | Công nghệ | Vai trò trong Backend | Lý do chọn |
+|---|---|---|---|
 | **Runtime** | Deno | Chạy `server.ts` — điểm vào HTTP + WebSocket listener | TypeScript gốc, sandbox bảo mật tích hợp, không có `node_modules` cồng kềnh | Ô Server (Deno) |
-| **Ngôn ngữ** | TypeScript | Định nghĩa kiểu dùng chung giữa client + server; an toàn tại compile-time cho trạng thái game | Một ngôn ngữ cho toàn stack; logic dùng chung trong `src/` biên dịch cho cả hai target | Pipeline build `tsc`; `board.ts`, `rules.ts`, `score.ts`, `dice.ts` |
-| **Transport** | WebSocket (Deno gốc) | Kênh real-time hai chiều từ `multi.ts` (client) đến `server.ts` | Giai đoạn Bốc Bài truyền bài, tung xúc xắc, cập nhật VP cần push dưới 100ms; HTTP polling quá chậm | Mũi tên WS giữa Client và Server |
-| **Messaging** | JSON-RPC 2.0 | Giao thức request/response có kiểu qua WS — `player.ts` xử lý một luồng RPC per socket | Stateless, có thể versioning, dễ mock trong unit test; tránh overhead giao thức binary tùy chỉnh | `multi.ts` WebSocket/JSON-RPC; `player.ts` JSON-RPC per socket |
-| **State Machine** | `game.ts` (FSM tùy chỉnh) | State machine phòng — theo dõi pha (Bốc Bài → Lắp Ráp Lưới → Mô Phỏng → Tính Điểm), chỉ số ngày, tài nguyên người chơi | Vòng lặp game có trình tự pha nghiêm ngặt (3 ngày × 4 pha) ánh xạ tự nhiên sang FSM transitions; ngăn nhảy trạng thái trái phép | State machine phòng `game.ts` |
-| **Triển khai** | Docker (`Dockerfile`) | Đóng gói Deno runtime + các tài nguyên đã biên dịch vào một container image có thể tái tạo | Loại bỏ drift môi trường; cho phép mở rộng ngang cho các triển khai multi-room | Node `Dockerfile` trong panel Server |
+| **Ngôn ngữ** | TypeScript | Định nghĩa kiểu dùng chung giữa client + server; an toàn tại compile-time cho trạng thái game | Một ngôn ngữ cho toàn stack; logic dùng chung trong `src/` biên dịch cho cả hai target | 
+| **Transport** | WebSocket (Deno gốc) | Kênh real-time hai chiều từ `multi.ts` (client) đến `server.ts` | Giai đoạn Bốc Bài truyền bài, tung xúc xắc, cập nhật VP cần push dưới 100ms; HTTP polling quá chậm |
+| **Messaging** | JSON-RPC 2.0 | Giao thức request/response có kiểu qua WS — `player.ts` xử lý một luồng RPC per socket | Stateless, có thể versioning, dễ mock trong unit test; tránh overhead giao thức binary tùy chỉnh | 
+| **State Machine** | `game.ts` (FSM tùy chỉnh) | State machine phòng — theo dõi pha (Bốc Bài → Lắp Ráp Lưới → Mô Phỏng → Tính Điểm), chỉ số ngày, tài nguyên người chơi | Vòng lặp game có trình tự pha nghiêm ngặt (3 ngày × 4 pha) ánh xạ tự nhiên sang FSM transitions; ngăn nhảy trạng thái trái phép | 
+| **Triển khai** | Docker (`Dockerfile`) | Đóng gói Deno runtime + các tài nguyên đã biên dịch vào một container image có thể tái tạo | Loại bỏ drift môi trường; cho phép mở rộng ngang cho các triển khai multi-room | 
 
 ---
 
