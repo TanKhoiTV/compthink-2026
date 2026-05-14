@@ -1,30 +1,30 @@
-### 5.3 User Experience (UX Flow) — App logic from the user's perspective
+### 5.3 User Experience (UX Flow) — Quy trình vận hành hệ thống
 
-#### A. Giai đoạn Chờ & Nhập cuộc (Lobby & Matchmaking)
-* **Trải nghiệm người dùng (UX):** * Người chơi tham gia vào phòng chờ (Room). Giao diện hiển thị trạng thái "Đang chờ đối thủ...". 
-  * Khi tất cả người chơi đã sẵn sàng, màn hình chuyển cảnh mượt mà vào Phase 1 (Bản đồ Sài Gòn).
-  * Thanh HUD tài nguyên xuất hiện rõ ràng ở góc trên với: **15 Xu Vàng** và **20 Thể lực**.
+#### A. Giai đoạn Drafting (Daily Drafting Phase)
+* **Mô tả:**
+  * **Cơ chế phát thẻ:** Mỗi ngày, hệ thống cấp 5 thẻ cho người chơi. Thực hiện 3 lượt chọn: giữ 1 thẻ và chuyển các thẻ còn lại cho đối thủ. Các thẻ dư sau lượt 3 sẽ bị xóa khỏi bộ nhớ đệm.
+  * **Cơ chế Vay nợ (Debt Mechanism):** Khi thiếu Xu, người chơi vẫn có thể lấy thẻ nhưng hệ thống sẽ gán "Token Nợ". Token này dùng để khấu trừ điểm (Penalty) ở bước tính toán cuối cùng.
+  * **Cơ chế Kiệt sức (Exhaustion):** Nếu sử dụng thẻ khi cạn Thể lực, hệ thống tự động khóa (Lock) một ô thời gian ngẫu nhiên của ngày kế tiếp, vô hiệu hóa thao tác tại ô đó.
+  * **Quy đổi tài nguyên (Discard):** Người chơi có quyền hủy thẻ để lấy lại một lượng Xu/Thể lực nhất định. Ô trống sau khi hủy thẻ được tính là "Thời gian nghỉ", giúp ngắt các ràng buộc về phạt khoảng cách.
 
-#### B. Giai đoạn Chọn bài xoay vòng (Drafting Phase)
-* **Trải nghiệm người dùng (UX):** * **Xem bài:** Hệ thống phát 5 thẻ bài lật ngửa. Người chơi chạm/di chuột vào từng thẻ để soi các chỉ số: Tag, Điểm Hạnh phúc (VP), và Chi phí (Xu/Stamina).
-  * **Chọn & Chuyền:** Người chơi kéo 1 thẻ xuống khu vực lưu trữ cá nhân (thẻ sẽ tự động úp xuống để giữ bí mật). 
-  * **Hiệu ứng chuyển cảnh:** Ngay sau khi chốt, 4 thẻ còn lại sẽ có hoạt ảnh bay vụt ra khỏi màn hình để chuyển sang cho đối thủ. Quá trình lặp lại cho đến khi mỗi người cầm đủ 5 thẻ trên tay.
+#### B. Giai đoạn Lên lịch trình (Planning Phase)
+* **Mô tả:**
+  * **Phân bổ Grid:** Người dùng thực hiện Drag & Drop thẻ bài vào các slot Sáng - Chiều - Tối trên Grid 3x5. 
+  * **Chốt ngày (End of Day):** Sau khi xác nhận lịch trình trong ngày, các thẻ chưa sử dụng trong kho sẽ bị hủy để giải phóng bộ nhớ cho ngày làm việc tiếp theo.
 
-#### C. Giai đoạn Lắp ghép Sa bàn (Grid Placement Phase)
-* **Trải nghiệm người dùng (UX):** Người chơi kéo thả 5 thẻ vào lưới sa bàn 3x5 (3 Ngày x 5 Mốc thời gian). Các phản hồi trực quan bao gồm:
-  * **Cập nhật HUD:** Khi đặt thẻ, số Xu/Thể lực trên thanh tài nguyên lập tức tụt xuống tương ứng với giá trị thẻ.
-  * **Dây nối khoảng cách (Báo động đỏ):** Khi rê thẻ lơ lửng trên một ô, nếu cách địa điểm trước đó >10km, một sợi dây nối màu đỏ rực kèm dấu chấm than sẽ hiện ra để cảnh báo người chơi sẽ bị trừ điểm VP.
-  * **Trạng thái Nợ/Khóa ô:** * Nếu thiếu tiền, màn hình chớp đỏ và hiện icon **"Giấy nợ (-50 VP)"**. 
-    * Nếu thiếu thể lực, một **Ổ khóa sắt (Freeze)** sẽ rơi xuống khóa các ô thời gian của ngày tiếp theo.
-  * **Tương tác Giải vây:** Người chơi có thể kéo một thẻ "Tiện ích" thả đè lên icon Giấy nợ để kích hoạt hiệu ứng "xé giấy", xóa bỏ hình phạt VP.
+#### C. Giai đoạn Simulation & Scoring
+* **Mô tả:** Sau khi kết thúc Ngày 3, hệ thống sẽ khóa toàn bộ Grid và thực hiện chuỗi thuật toán tính điểm tự động gồm 5 bước:
+  * **Bước 1 (Check Nợ):** Kiểm tra số lượng Token Nợ và thực hiện trừ điểm tương ứng.
+  * **Bước 2 (Random Events):** Chạy xác suất 15% kích hoạt sự kiện ngẫu nhiên dựa trên Tag của thẻ (thời tiết, giao diện, sức khỏe). Các sự kiện này áp dụng trực tiếp hệ số nhân/chia (Modifiers) vào điểm của ô đó.
+  * **Bước 3 (Check Combo):** Duyệt Grid theo trục ngang/dọc để tìm các Tag khớp với bộ quy tắc Combo và cộng điểm thưởng.
+  * **Bước 4 (Check Distance):** Tính toán khoảng cách (Lat/Lng) giữa các thẻ liền kề. Nếu vượt quá 20km/di chuyển, hệ thống áp dụng điểm phạt. Nếu có ô trống ở giữa, thuật toán sẽ bỏ qua bước kiểm tra này.
+  * **Bước 5 (Final VP):** Tổng hợp Điểm gốc, Bonus Combo và các khoản Penalty để xuất kết quả cuối cùng.
 
-#### D. Giai đoạn Mô phỏng & Sự kiện (Simulation & Event Flow)
-* **Trải nghiệm người dùng (UX):** Sau khi bấm "Chạy Lịch Trình", thanh quét (Scanner) ánh sáng sẽ rà qua từng ô thẻ:
-  * **Hiệu ứng Mưa Giông:** Màn hình tối sầm, sấm sét nổ. Điểm VP trên thẻ dính Tag "Outdoor" bị giảm 50% ngay lập tức.
-  * **Hiệu ứng Kẹt Xe:** Nếu người chơi đang cạn kiệt sức lực, thẻ bài tại trung tâm sẽ bị rung lắc mạnh và **vỡ nát (Shattered)**, bốc hơi khỏi bàn cờ (0 VP).
-  * **Hiệu ứng Flash Sale:** Tiền vàng rơi lấp lánh, thẻ được nhân 1.5 lần điểm kèm hiệu ứng rực rỡ.
+#### D. Chuyển đổi Phase (Campaign Progression)
+* **Mô tả:** Hệ thống hỗ trợ mở rộng bản đồ sau khi hoàn thành Phase 1 (Sài Gòn):
+  * **Nhánh Đà Lạt:** Yêu cầu trả phí bằng Thể lực, tập trung vào các thẻ Outdoor.
+  * **Nhánh Đà Nẵng:** Yêu cầu trả phí bằng Xu (vé máy bay), tập trung vào các thẻ Culture.
 
-#### E. Tổng kết & So sánh (End-round & Side-by-side Rendering)
-* **Trải nghiệm người dùng (UX):** * **Bảng điểm cá nhân:** Hiển thị chi tiết tổng điểm gốc, các điểm phạt nợ và điểm chung cuộc.
-  * **So sánh Multiplayer (Side-by-side):** Sau khi tất cả đã xong, giao diện mở rộng để hiển thị sa bàn của đối thủ ngay cạnh grid của người chơi. 
-  * Người chơi có thể quan sát lộ trình và "nhân phẩm" của đối thủ trước khi quyết định chi tài nguyên để di chuyển sang bản đồ tiếp theo (Đà Lạt hoặc Đà Nẵng).
+#### E. Xuất dữ liệu (Real-world Export)
+* **Mô tả logic:** Hệ thống chuyển đổi toàn bộ Grid thành định dạng Timeline báo cáo.
+  * **Nội dung Export:** Danh sách địa điểm cụ thể, tổng quãng đường di chuyển và dự toán chi phí. File này giúp người dùng có thể sử dụng như một lịch trình du lịch thực tế.
