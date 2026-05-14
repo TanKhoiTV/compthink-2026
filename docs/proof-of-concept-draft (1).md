@@ -26,5 +26,5 @@
 
 #### E. Tổng kết & So sánh (End-round & Side-by-side Rendering)
 * **Trải nghiệm người dùng (UX):** * **Bảng điểm cá nhân:** Hiển thị chi tiết tổng điểm gốc, các điểm phạt nợ và điểm chung cuộc.
-  * **So sánh Multiplayer (Side-by-side):** Sau khi tất cả đã xong, giao diện mở rộng để hiển thị sa bàn của đối thủ ngay cạnh sa bàn của người chơi. 
+  * **So sánh Multiplayer (Side-by-side):** Sau khi tất cả đã xong, giao diện mở rộng để hiển thị sa bàn của đối thủ ngay cạnh grid của người chơi. 
   * Người chơi có thể quan sát lộ trình và "nhân phẩm" của đối thủ trước khi quyết định chi tài nguyên để di chuyển sang bản đồ tiếp theo (Đà Lạt hoặc Đà Nẵng).
