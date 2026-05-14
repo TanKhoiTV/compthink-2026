@@ -28,7 +28,7 @@
   * **Tiến trình Phase 3:** Dựa trên lựa chọn định tuyến ở Phase 2, hệ thống tiếp tục mở khóa khu vực tiếp nối:
     * **Nhánh Nha Trang:** Được kích hoạt mặc định nếu người chơi đã chọn tuyến Đà Lạt ở Phase 2.
     * **Nhánh Huế:** Được kích hoạt mặc định nếu người chơi đã chọn tuyến Đà Nẵng ở Phase 2.
-
+(Cả 2 nhánh trên đều yêu cầu trả phí / thể lực)
 #### E. Xuất dữ liệu
 * **Mô tả logic:** Hệ thống chuyển đổi toàn bộ Grid thành định dạng Timeline báo cáo.
   * **Nội dung Export:** Danh sách địa điểm cụ thể, tổng quãng đường di chuyển và dự toán chi phí. File này giúp người dùng có thể sử dụng như một lịch trình du lịch thực tế.
