@@ -30,7 +30,7 @@
 
 ### 4.1.4. Kiểm duyệt viên (Examiner)
 
-- **Đánh giá tuân thủ quyền riêng tư và thu thập dữ liệu:** Ứng dụng cần giải thích rõ lý do xin quyền vị trí, camera hoặc dữ liệu liên quan đến hoạt động người dùng. Việc xin quyền phải minh bạch, đúng ngữ cảnh và không gây cảm giác bị ép buộc. Nếu luồng xin quyền không rõ ràng, người dùng có thể từ chối cấp quyền, làm gián đoạn các tính năng cốt lõi như check-in hoặc xác thực nhiệm vụ.
+- **Đánh giá tuân thủ quyền riêng tư và thu thập dữ liệu:** Ứng dụng cần giải thích rõ lý do xin quyền vị trí hoặc dữ liệu liên quan đến hoạt động người dùng. Việc xin quyền phải minh bạch, đúng ngữ cảnh và không gây cảm giác bị ép buộc.
 
 - **Kiểm định phân loại độ tuổi và an toàn cho trẻ em:** Do ứng dụng có yếu tố game, huy hiệu và phần thưởng, sản phẩm có thể thu hút người dùng nhỏ tuổi. Vì vậy, hệ thống cần tránh đề xuất địa điểm không phù hợp, hạn chế chia sẻ dữ liệu nhạy cảm và có cơ chế bảo vệ nhóm người dùng dễ bị tổn thương.
 
