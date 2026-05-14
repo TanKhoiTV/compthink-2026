@@ -10,9 +10,6 @@ Kiến trúc tuân theo sơ đồ phân chia ba panel: **Build pipeline (Makefil
 | **Transport** | WebSocket (Deno gốc) | Kênh real-time hai chiều từ `multi.ts` (client) đến `server.ts` | Giai đoạn Bốc Bài truyền bài, tung xúc xắc, cập nhật VP cần push dưới 100ms; HTTP polling quá chậm | Mũi tên WS giữa Client và Server |
 | **Messaging** | JSON-RPC 2.0 | Giao thức request/response có kiểu qua WS — `player.ts` xử lý một luồng RPC per socket | Stateless, có thể versioning, dễ mock trong unit test; tránh overhead giao thức binary tùy chỉnh | `multi.ts` WebSocket/JSON-RPC; `player.ts` JSON-RPC per socket |
 | **State Machine** | `game.ts` (FSM tùy chỉnh) | State machine phòng — theo dõi pha (Bốc Bài → Lắp Ráp Lưới → Mô Phỏng → Tính Điểm), chỉ số ngày, tài nguyên người chơi | Vòng lặp game có trình tự pha nghiêm ngặt (3 ngày × 4 pha) ánh xạ tự nhiên sang FSM transitions; ngăn nhảy trạng thái trái phép | State machine phòng `game.ts` |
-| **Domain Logic** | `board.ts` · `rules.ts` · `score.ts` · `dice.ts` | Các module TS thuần: trạng thái lưới 3×5, enum tile/GameType, tính VP (`sum()`), xoay mặt xúc xắc và phân giải sự kiện ngẫu nhiên | `src/` dùng chung nghĩa là cùng một logic kiểm tra chạy trên client (xem trước) và server (chuẩn quyền) — không cần nhân đôi code quy tắc | Panel Logic dùng chung (`src/`) |
-| **Build Tool** | Rollup + lessc + tsc | Bundle `.build/` → `client.js`; biên dịch `css/*.less` → `client.css`; kiểm tra kiểu `src/**/*.ts` | Rollup tạo ra một bundle tối ưu duy nhất (tree-shaking); lessc giữ CSS dạng module không tốn chi phí runtime | Build pipeline (Makefile) hàng trên |
-| **Offline / PWA** | `sw.js` (Service Worker) | Cache tài nguyên tĩnh để chơi offline; chặn fetch cho ảnh tile trong `img/` | Ảnh tile và tài nguyên game lớn nhưng ít thay đổi — caching SW giảm đáng kể thời gian tải lại | Node `sw.js` Service Worker/PWA |
 | **Triển khai** | Docker (`Dockerfile`) | Đóng gói Deno runtime + các tài nguyên đã biên dịch vào một container image có thể tái tạo | Loại bỏ drift môi trường; cho phép mở rộng ngang cho các triển khai multi-room | Node `Dockerfile` trong panel Server |
 
 ---
@@ -102,30 +99,7 @@ Game có vòng lặp có thứ tự nghiêm ngặt: Pha Bốc Bài → Lắp Rá
 
 ---
 
-### ADR-004 · Giữ Domain Logic Trong `src/` Dùng Chung Biên Dịch Cho Cả Client Và Server 
-
-**Bối cảnh**
-
-Các quy tắc như tương thích tag-slot, tính phạt khoảng cách, và tính điểm VP cần thiết cả trên client (xem trước real-time) lẫn server (kiểm tra chuẩn quyền). Nhân đôi code quy tắc tạo ra nguy cơ drift.
-
-**Các Lựa Chọn Đã Xem Xét**
-
-| Lựa chọn | Ưu điểm | Nhược điểm |
-|---|---|---|
-| Rules chỉ trên server; client gọi server để xem trước | Nguồn sự thật duy nhất | Độ trễ round-trip mỗi khi hover tile; UX kém; tăng tải server |
-| Rules chỉ trên client; server tin client | Xem trước không độ trễ | Dễ bị khai thác; bug phía client silently truyền trạng thái không hợp lệ lên server |
-| **`src/` dùng chung biên dịch bởi tsc cho cả hai target** ✓ | Một nguồn sự thật; không cần thêm RPC call cho preview; server tái kiểm tra chuẩn quyền | Code dùng chung phải thuần (không DOM, không Deno API); tăng nhẹ kích thước bundle |
-
-**Quyết định:** Đặt tất cả rule logic (`board.ts`, `rules.ts`, `score.ts`, `dice.ts`) trong `src/` và biên dịch vào cả client bundle (qua Rollup) và import graph của Deno server.
-
-**Lý do:** Optimistic UI với server authority — UX nhanh + ngăn gian lận. Các module TypeScript thuần không có side effects có thể được import bởi cả hai target.
-
-**Hệ quả:** Tất cả module dùng chung phải không chứa platform-specific API. Bất kỳ module nào cần Deno (file I/O, crypto) hoặc DOM (`window`, `document`) phải được tách thành platform adapter.
-
----
-
-
-### ADR-005 · Sử Dụng Docker Để Đóng Gói Server Thay Vì VM Trần 
+### ADR-004 · Sử Dụng Docker Để Đóng Gói Server Thay Vì VM Trần 
 
 **Bối cảnh**
 
