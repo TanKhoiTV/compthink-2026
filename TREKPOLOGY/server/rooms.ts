@@ -326,8 +326,8 @@ export function startGame(
     state.players[playerId].isReady = false;
   }
 
-  startDraftForCurrentDay(state);
-
+  state.phase = "cinematic";
+  state.timer = 7; // Wait 7 seconds for cinematic transition before starting draft
   return null;
 }
 

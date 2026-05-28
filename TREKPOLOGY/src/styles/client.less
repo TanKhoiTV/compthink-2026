@@ -5836,8 +5836,8 @@ body {
 .player-hand--draft.player-hand--dealing .daily-draft-card,
 .player-hand--draft.is-dealing .daily-draft-card {
   pointer-events: none;
-  animation-duration: 1.08s;
-  animation-timing-function: cubic-bezier(0.16, 0.9, 0.24, 1);
+  animation-duration: 0.75s;
+  animation-timing-function: cubic-bezier(0.34, 1.45, 0.64, 1); /* Bounce/overshoot */
   animation-fill-mode: both;
   will-change: transform, opacity;
 }
@@ -6103,23 +6103,27 @@ body {
   display: grid;
   place-items: center;
   padding: 28px;
-  background:
-    radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.88), transparent 42%),
-    linear-gradient(180deg, #f5efe6, #e8dccb);
+  background-image: 
+    radial-gradient(circle at center, transparent 20%, rgba(30, 20, 10, 0.65) 120%),
+    url('../assets/backgrounds/lobby background.jpg');
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
 }
 
 .online-entry-card,
 .online-lobby-card {
   width: min(920px, 94vw);
-  border: 1px solid rgba(198, 173, 143, 0.7);
-  border-radius: 30px;
-  padding: 28px;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.94), transparent 46%),
-    linear-gradient(180deg, rgba(255, 250, 238, 0.96), rgba(244, 233, 216, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 32px;
+  padding: 36px 40px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   box-shadow:
-    0 28px 80px rgba(70, 45, 20, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    0 40px 100px rgba(0, 0, 0, 0.25),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  margin-top: -6vh;
 }
 
 .online-entry-card__brand {
@@ -6129,36 +6133,41 @@ body {
 
 .online-entry-card__brand span,
 .online-lobby-card__header span {
-  color: #8b5cf6;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.18em;
+  color: #1e40af; /* Royal Blue */
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
 }
 
 .online-entry-card__brand h1,
 .online-lobby-card__header h1 {
-  margin-top: 4px;
-  color: #4e3a2b;
-  font-size: 38px;
+  margin-top: 6px;
+  color: #0f172a; /* Deep Slate Blue */
+  font-size: 42px;
+  font-weight: 900;
   line-height: 1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 1), 0 4px 20px rgba(255, 255, 255, 0.8);
 }
 
 .online-entry-card__brand p,
 .online-lobby-card__header p,
 .online-lobby-card__hint {
   margin-top: 8px;
-  color: rgba(78, 58, 43, 0.68);
+  color: rgba(15, 23, 42, 0.75);
   font-size: 14px;
 }
 
 .online-entry-card__welcome {
   margin-top: 12px;
   font-size: 13px;
-  color: rgba(78, 58, 43, 0.78);
+  color: rgba(15, 23, 42, 0.75);
 }
 
 .online-entry-card__welcome strong {
-  color: #4e3a2b;
+  color: #0f172a;
 }
 
 .online-entry-card__back {
@@ -6179,37 +6188,51 @@ body {
 }
 
 .online-entry-form {
-  border: 1px solid rgba(198, 173, 143, 0.58);
-  border-radius: 22px;
-  padding: 18px;
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-bottom-color: rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .online-entry-form h2 {
-  margin-bottom: 14px;
-  font-size: 22px;
+  margin-bottom: 18px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .online-entry-form label {
   display: grid;
-  gap: 6px;
-  margin-bottom: 12px;
-  color: rgba(78, 58, 43, 0.74);
+  gap: 8px;
+  margin-bottom: 16px;
+  color: rgba(15, 23, 42, 0.85);
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
 .online-entry-form input {
-  border: 1px solid rgba(198, 173, 143, 0.76);
-  border-radius: 14px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #4e3a2b;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
   font-size: 16px;
   font-weight: 800;
   outline: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.online-entry-form input:focus {
+  background: #fff;
+  border-color: #2563eb;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .online-entry-form button,
@@ -6217,14 +6240,27 @@ body {
 .online-lobby-card__copy,
 .online-entry-card__resume button {
   cursor: pointer;
-  border: 0;
+  border: 1px solid #1e40af;
+  border-top-color: #60a5fa;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 14px 24px;
   color: #fff;
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  background: linear-gradient(180deg, #3b82f6, #1d4ed8);
   font-weight: 1000;
-  letter-spacing: 0.04em;
-  box-shadow: 0 12px 24px rgba(109, 40, 217, 0.22);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 14px;
+  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.online-lobby-card__actions button:hover,
+.online-lobby-card__copy:hover,
+.online-entry-card__resume button:hover,
+.online-entry-form button:hover {
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .online-entry-form button {
@@ -6237,18 +6273,19 @@ body {
   gap: 10px;
   justify-content: space-between;
   margin-top: 18px;
-  border: 1px dashed rgba(198, 173, 143, 0.8);
+  border: 1px dashed rgba(140, 110, 90, 0.4);
   border-radius: 18px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .online-entry-card__resume strong {
   display: block;
+  color: #3e2723;
 }
 
 .online-entry-card__resume span {
-  color: rgba(78, 58, 43, 0.66);
+  color: rgba(62, 39, 35, 0.66);
   font-size: 13px;
 }
 
@@ -6274,34 +6311,43 @@ body {
   grid-template-columns: 62px 1fr 82px;
   align-items: center;
   gap: 12px;
-  border: 1px solid rgba(198, 173, 143, 0.56);
+  border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 18px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.58);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .online-lobby-player.is-self {
-  border-color: rgba(34, 197, 94, 0.55);
-  box-shadow: inset 4px 0 0 rgba(34, 197, 94, 0.9);
+  border-color: #2563eb;
+  box-shadow: inset 4px 0 0 rgba(37, 99, 235, 0.8), 0 0 16px rgba(37, 99, 235, 0.15);
 }
 
 .online-lobby-player.is-empty {
-  opacity: 0.55;
+  opacity: 0.7;
+  border: 1px dashed rgba(15, 23, 42, 0.25);
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
 }
 
 .online-lobby-player__slot {
-  color: #f59e0b;
+  color: #1e40af;
   font-size: 20px;
   font-weight: 1000;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .online-lobby-player__info strong {
   display: block;
   font-size: 18px;
+  color: #0f172a;
 }
 
 .online-lobby-player__info span {
-  color: rgba(78, 58, 43, 0.62);
+  color: rgba(15, 23, 42, 0.75);
   font-size: 12px;
 }
 
@@ -6309,15 +6355,18 @@ body {
   text-align: center;
   border-radius: 999px;
   padding: 7px 10px;
-  background: rgba(154, 124, 87, 0.14);
-  color: #9a7c57;
+  background: rgba(15, 23, 42, 0.08);
+  color: rgba(15, 23, 42, 0.85);
   font-size: 11px;
   font-weight: 1000;
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .online-lobby-player.is-connected .online-lobby-player__status {
-  background: rgba(245, 158, 11, 0.18);
+  background: rgba(245, 158, 11, 0.15);
   color: #d97706;
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
 }
 
 .online-lobby-card__actions {
@@ -6328,11 +6377,15 @@ body {
 }
 
 .online-lobby-card__ready.is-ready {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  border-color: rgba(16, 185, 129, 0.6);
 }
 
 .online-lobby-card__start {
-  background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+  background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+  border-color: rgba(239, 68, 68, 0.6);
 }
 
 .online-lobby-card__start:disabled {
@@ -6363,20 +6416,22 @@ body {
 
 .online-lobby-card__leave {
   cursor: pointer;
-  border: 0;
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 999px;
   padding: 11px 16px;
   color: #fff;
-  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
   font-size: 12px;
   font-weight: 1000;
   letter-spacing: 0.04em;
-  box-shadow: 0 12px 24px rgba(185, 28, 28, 0.2);
+  transition: all 0.2s ease;
 }
 
-.online-lobby-card__leave:hover:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.04);
+.online-lobby-card__leave:hover {
+  background: rgba(220, 38, 38, 0.85);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  border-color: rgba(255,255,255,0.4);
 }
 
 .score-breakdown__leave {
@@ -6945,7 +7000,7 @@ body {
 }
 
 .resource-orb__frame::after {
-  content: "◆";
+  content: "\25C6";
   position: absolute;
   top: -15px;
   color: #8b5cf6;
@@ -9430,8 +9485,8 @@ body,
 .player-hand--draft.player-hand--dealing .daily-draft-card,
 .player-hand--draft.is-dealing .daily-draft-card {
   pointer-events: none;
-  animation-duration: 1.08s;
-  animation-timing-function: cubic-bezier(0.16, 0.9, 0.24, 1);
+  animation-duration: 0.75s;
+  animation-timing-function: cubic-bezier(0.34, 1.45, 0.64, 1);
   animation-fill-mode: both;
   will-change: transform, opacity;
 }
@@ -13161,3 +13216,52 @@ body,
   transition: clip-path 120ms ease !important;
 }
 
+
+/* =========================================
+   CINEMATIC TRANSITION (LOBBY -> GAME)
+   ========================================= */
+
+.online-lobby-card.is-exiting {
+  transform: translateX(-150vw) rotate(-10deg) !important;
+  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+#cinematic-transition-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 9999999;
+  background: #000;
+}
+
+#white-flash-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #fff;
+  z-index: 9999998;
+  opacity: 1;
+  transition: opacity 1.5s ease-out;
+}
+
+.game-shell.is-zooming-in {
+  animation: zoomInBoard 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes zoomInBoard {
+  0% {
+    transform: scale(3) translateY(-15%);
+    opacity: 0;
+    filter: blur(20px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}

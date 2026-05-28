@@ -453,7 +453,7 @@ function renderAuthScreen() {
     <main class="auth-screen">
       <section class="auth-card">
         <div class="auth-card__brand">
-          <span>LỮ KHÁCH BẠN CỜ</span>
+          <span>TREKPOLOGY</span>
           <h1>Đăng nhập</h1>
           <p>Đăng nhập tài khoản để tạo phòng, join room và reconnect theo người chơi thật.</p>
         </div>
@@ -508,7 +508,7 @@ function renderOnlineEntryScreen() {
     <main class="online-entry-screen">
       <section class="online-entry-card">
         <div class="online-entry-card__brand">
-          <span>LỮ KHÁCH BẠN CỜ</span>
+          <span>TREKPOLOGY</span>
           <h1>Online Room</h1>
           <p>Tạo phòng, mời bạn bè bằng mã phòng, rồi bắt đầu khi mọi người sẵn sàng.</p>
           <p class="online-entry-card__welcome">
@@ -3345,7 +3345,7 @@ function resetTurnForPrototype() {
 
 function renderScoreBreakdownPanel() {
   const breakdown = getCurrentScoreBreakdown();
-  const isOnlineLobby = onlineClientState.roomState?.phase === "lobby";
+  const isOnlineLobby = onlineClientState.roomState?.phase === "lobby" || onlineClientState.roomState?.phase === "cinematic";
   const onlineSelfScore = getOnlineSelfScore();
   const totalScoreToDisplay =
     onlineSelfScore ?? (simulationResult ? getStablePhaseScoreDisplay() : accumulatedVP);
@@ -5408,7 +5408,8 @@ function transitionToScreen(newScreen: AppScreen) {
   document.body.appendChild(vid);
 
   // Fade in the video overlay
-  void vid.play().catch(() => { vid.muted = true; void vid.play(); });
+  vid.playbackRate = 1.75;
+  void vid.play().catch(() => { vid.muted = true; vid.playbackRate = 1.75; void vid.play(); });
   requestAnimationFrame(() => { requestAnimationFrame(() => { vid.style.opacity = "1"; }); });
 
   let transitioned = false;
@@ -5587,6 +5588,86 @@ function getSaigonBackgroundCoordinate(shell: HTMLElement, event: MouseEvent) {
   };
 }
 
+let lastOnlinePhase: string | null = null;
+let isCinematicTransitioning = false;
+
+function triggerCinematicLobbyToGameTransition() {
+  console.log("TRIGGERING CINEMATIC TRANSITION!");
+  isCinematicTransitioning = true;
+  
+  const lobbyCard = document.querySelector(".online-lobby-card");
+  if (lobbyCard) lobbyCard.classList.add("is-exiting");
+
+  const video = document.getElementById("cinematic-transition-video") as HTMLVideoElement | null;
+  const overlay = document.getElementById("white-flash-overlay") as HTMLElement | null;
+  
+  if (!video || !overlay) {
+    console.warn("Missing video or overlay for cinematic transition.");
+    isCinematicTransitioning = false;
+    rerenderGameShell();
+    return;
+  }
+
+  setTimeout(() => {
+    video.style.display = "block";
+    video.currentTime = 0;
+    
+    // Play with sound, fallback to muted if autoplay blocked
+    video.play().catch((e) => {
+        console.warn("Video play failed with sound, attempting muted.", e);
+        video.muted = true;
+        video.play().catch(err => {
+            console.error("Video play failed completely.", err);
+        });
+    });
+
+    const finishTransition = () => {
+      if (!isCinematicTransitioning) return;
+      isCinematicTransitioning = false;
+
+      overlay.style.display = "block";
+      overlay.style.opacity = "1";
+      video.style.display = "none";
+      video.ontimeupdate = null; // cleanup
+      
+      rerenderGameShell();
+      
+      const gameShell = document.querySelector(".game-shell");
+      if (gameShell) {
+        gameShell.classList.add("is-zooming-in");
+      }
+
+      setTimeout(() => {
+         overlay.style.opacity = "0";
+         setTimeout(() => {
+            overlay.style.display = "none";
+            
+            if (gameShell) {
+                gameShell.classList.remove("is-zooming-in");
+            }
+         }, 1500); 
+      }, 50); 
+    };
+
+    video.onended = finishTransition;
+    
+    // Add timeupdate as a reliable way to detect video end for corrupted AI videos
+    video.ontimeupdate = () => {
+      if (video.duration && video.currentTime >= video.duration - 0.2) {
+        finishTransition();
+      }
+    };
+
+    // Fallback if video fails to play or gets stuck completely
+    setTimeout(() => {
+      if (isCinematicTransitioning) {
+        console.warn("Cinematic transition video timeout fallback.");
+        finishTransition();
+      }
+    }, 20000); // Increased to 20s to allow longer videos
+  }, 400); 
+}
+
 function isInsideOpaqueSaigonPixel(hotspot: SaigonAlphaHotspot, bgX: number, bgY: number) {
   if (
     bgX < hotspot.x
@@ -5669,9 +5750,7 @@ function renderGameShell() {
 
 (window as any).rerenderGameShell = rerenderGameShell;
 function rerenderGameShell() {
-  if (currentAppScreen !== "dashboard" || isOnlineRoomActive()) {
-    stopOutsideBackgroundMedia();
-  }
+  stopOutsideBackgroundMedia();
 
   app.innerHTML = renderGameShell();
   setupSaigonCollageHover();
@@ -5783,10 +5862,23 @@ function updateOnlineTimerOnly() {
 
 function renderAfterOnlineStateChange() {
   const nextSignature = getOnlineRenderSignature();
+  const currentPhase = onlineClientState.roomState?.phase ?? null;
 
   if (nextSignature !== lastOnlineRenderSignature) {
+    console.log("Signature changed:", lastOnlineRenderSignature, "=>", nextSignature); 
     lastOnlineRenderSignature = nextSignature;
-    rerenderGameShell();
+
+    if (lastOnlinePhase === "lobby" && currentPhase === "cinematic") {
+      lastOnlinePhase = currentPhase;
+      triggerCinematicLobbyToGameTransition();
+      return;
+    }
+    
+    lastOnlinePhase = currentPhase;
+    
+    if (!isCinematicTransitioning) {
+        rerenderGameShell();
+    }
 
     if (shouldActivateOnlineDealAnimation) {
       shouldActivateOnlineDealAnimation = false;
@@ -5810,6 +5902,7 @@ function renderAfterOnlineStateChange() {
 
 rerenderGameShell();
 lastOnlineRenderSignature = getOnlineRenderSignature();
+lastOnlinePhase = onlineClientState.roomState?.phase ?? null;
 
 function setupCardClickDelegation() {
   let holdStartX = 0;
