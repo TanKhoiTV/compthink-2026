@@ -237,7 +237,8 @@ export function tickRoom(state: RoomState) {
     state.phase !== "planning" &&
     state.phase !== "simulation" &&
     state.phase !== "result" &&
-    state.phase !== "gameover"
+    state.phase !== "gameover" &&
+    state.phase !== "cinematic"
   ) {
     return;
   }
@@ -247,6 +248,11 @@ export function tickRoom(state: RoomState) {
   }
 
   if (state.timer > 0) {
+    return;
+  }
+
+  if (state.phase === "cinematic") {
+    startDraftForCurrentDay(state);
     return;
   }
 

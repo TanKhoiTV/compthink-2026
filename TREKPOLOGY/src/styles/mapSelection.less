@@ -83,10 +83,10 @@
   position: relative;
   /* Initial state: further right and slightly smaller for stronger effect */
   opacity: 0;
-  transform: translateX(150px) scale(0.92);
+  transform: translateX(250px) scale(0.85);
   transition:
-    opacity 0.7s ease,
-    transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); /* bouncy spring easing */
+    opacity 0.5s ease,
+    transform 0.65s cubic-bezier(0.34, 1.85, 0.64, 1); /* Stronger bouncy spring easing */
 
   /* The frosted glass pillar behind each card */
   &::before {
@@ -119,15 +119,14 @@
 
 .map-card {
   position: relative;
+  width: 100%;
   aspect-ratio: 10 / 14;
   height: auto;
-  min-height: 380px;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   border: 2px solid transparent;
   background: #111;
-  position: relative;
   z-index: 1; /* sits above the ::before pillar */
   transition:
     box-shadow 0.3s ease,

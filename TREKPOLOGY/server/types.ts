@@ -1,6 +1,6 @@
 export type PlayerId = "p1" | "p2" | "p3" | "p4";
 
-export type GamePhase = "lobby" | "draft" | "planning" | "simulation" | "result" | "gameover";
+export type GamePhase = "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover";
 
 export type PublicBoardCell = {
   cardId: string;

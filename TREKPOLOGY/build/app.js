@@ -7,6 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var _a, _b;
 import { renderMapSelectionScreen } from "./ui/mapSelection.js";
 import { initDashboardHub, renderDashboard } from "./ui/dashboard.js";
 import { authClientState, createOnlineRoom, initOnlineClient, clearSavedOnlineSession, getSavedOnlineSession, joinOnlineRoom, leaveOnlineRoom, loginAccount, logoutAccount, onlineClientState, reconnectOnlineRoom, registerAccount, selectOnlineDraftCard, sendDiscardCard, sendPayDebt, sendPlaceCard, sendReturnBoardCard, setOnlineReady, startOnlineGame, } from "./online/socketClient.js";
@@ -329,7 +330,7 @@ function renderAuthScreen() {
     <main class="auth-screen">
       <section class="auth-card">
         <div class="auth-card__brand">
-          <span>LỮ KHÁCH BẠN CỜ</span>
+          <span>TREKPOLOGY</span>
           <h1>Đăng nhập</h1>
           <p>Đăng nhập tài khoản để tạo phòng, join room và reconnect theo người chơi thật.</p>
         </div>
@@ -383,7 +384,7 @@ function renderOnlineEntryScreen() {
     <main class="online-entry-screen">
       <section class="online-entry-card">
         <div class="online-entry-card__brand">
-          <span>LỮ KHÁCH BẠN CỜ</span>
+          <span>TREKPOLOGY</span>
           <h1>Online Room</h1>
           <p>Tạo phòng, mời bạn bè bằng mã phòng, rồi bắt đầu khi mọi người sẵn sàng.</p>
           <p class="online-entry-card__welcome">
@@ -2723,9 +2724,9 @@ function resetTurnForPrototype() {
     startTurnTimer();
 }
 function renderScoreBreakdownPanel() {
-    var _a;
+    var _a, _b;
     const breakdown = getCurrentScoreBreakdown();
-    const isOnlineLobby = ((_a = onlineClientState.roomState) === null || _a === void 0 ? void 0 : _a.phase) === "lobby";
+    const isOnlineLobby = ((_a = onlineClientState.roomState) === null || _a === void 0 ? void 0 : _a.phase) === "lobby" || ((_b = onlineClientState.roomState) === null || _b === void 0 ? void 0 : _b.phase) === "cinematic";
     const onlineSelfScore = getOnlineSelfScore();
     const totalScoreToDisplay = onlineSelfScore !== null && onlineSelfScore !== void 0 ? onlineSelfScore : (simulationResult ? getStablePhaseScoreDisplay() : accumulatedVP);
     const compactPhaseDayLabel = getCompactPhaseDayLabel();
@@ -4489,7 +4490,8 @@ window.gotoMapSelection = () => {
     ].join(";");
     document.body.appendChild(vid);
     // Fade in the video overlay
-    void vid.play().catch(() => { vid.muted = true; void vid.play(); });
+    vid.playbackRate = 1.75;
+    void vid.play().catch(() => { vid.muted = true; vid.playbackRate = 1.75; void vid.play(); });
     requestAnimationFrame(() => { requestAnimationFrame(() => { vid.style.opacity = "1"; }); });
     let transitioned = false;
     vid.addEventListener("timeupdate", () => {
@@ -4614,6 +4616,72 @@ function getSaigonBackgroundCoordinate(shell, event) {
         y: (event.clientY - rect.top - offsetY) / scale,
     };
 }
+let lastOnlinePhase = null;
+let isCinematicTransitioning = false;
+function triggerCinematicLobbyToGameTransition() {
+    console.log("TRIGGERING CINEMATIC TRANSITION!");
+    isCinematicTransitioning = true;
+    const lobbyCard = document.querySelector(".online-lobby-card");
+    if (lobbyCard)
+        lobbyCard.classList.add("is-exiting");
+    const video = document.getElementById("cinematic-transition-video");
+    const overlay = document.getElementById("white-flash-overlay");
+    if (!video || !overlay) {
+        console.warn("Missing video or overlay for cinematic transition.");
+        isCinematicTransitioning = false;
+        rerenderGameShell();
+        return;
+    }
+    setTimeout(() => {
+        video.style.display = "block";
+        video.currentTime = 0;
+        // Play with sound, fallback to muted if autoplay blocked
+        video.play().catch((e) => {
+            console.warn("Video play failed with sound, attempting muted.", e);
+            video.muted = true;
+            video.play().catch(err => {
+                console.error("Video play failed completely.", err);
+            });
+        });
+        const finishTransition = () => {
+            if (!isCinematicTransitioning)
+                return;
+            isCinematicTransitioning = false;
+            overlay.style.display = "block";
+            overlay.style.opacity = "1";
+            video.style.display = "none";
+            video.ontimeupdate = null; // cleanup
+            rerenderGameShell();
+            const gameShell = document.querySelector(".game-shell");
+            if (gameShell) {
+                gameShell.classList.add("is-zooming-in");
+            }
+            setTimeout(() => {
+                overlay.style.opacity = "0";
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                    if (gameShell) {
+                        gameShell.classList.remove("is-zooming-in");
+                    }
+                }, 1500);
+            }, 50);
+        };
+        video.onended = finishTransition;
+        // Add timeupdate as a reliable way to detect video end for corrupted AI videos
+        video.ontimeupdate = () => {
+            if (video.duration && video.currentTime >= video.duration - 0.2) {
+                finishTransition();
+            }
+        };
+        // Fallback if video fails to play or gets stuck completely
+        setTimeout(() => {
+            if (isCinematicTransitioning) {
+                console.warn("Cinematic transition video timeout fallback.");
+                finishTransition();
+            }
+        }, 20000); // Increased to 20s to allow longer videos
+    }, 400);
+}
 function isInsideOpaqueSaigonPixel(hotspot, bgX, bgY) {
     if (bgX < hotspot.x
         || bgX > hotspot.x + hotspot.width
@@ -4683,9 +4751,7 @@ function renderGameShell() {
 }
 window.rerenderGameShell = rerenderGameShell;
 function rerenderGameShell() {
-    if (currentAppScreen !== "dashboard" || isOnlineRoomActive()) {
-        stopOutsideBackgroundMedia();
-    }
+    stopOutsideBackgroundMedia();
     app.innerHTML = renderGameShell();
     setupSaigonCollageHover();
     syncInGameBackgroundMusic();
@@ -4783,10 +4849,21 @@ function updateOnlineTimerOnly() {
     }
 }
 function renderAfterOnlineStateChange() {
+    var _a, _b;
     const nextSignature = getOnlineRenderSignature();
+    const currentPhase = (_b = (_a = onlineClientState.roomState) === null || _a === void 0 ? void 0 : _a.phase) !== null && _b !== void 0 ? _b : null;
     if (nextSignature !== lastOnlineRenderSignature) {
+        console.log("Signature changed:", lastOnlineRenderSignature, "=>", nextSignature);
         lastOnlineRenderSignature = nextSignature;
-        rerenderGameShell();
+        if (lastOnlinePhase === "lobby" && currentPhase === "cinematic") {
+            lastOnlinePhase = currentPhase;
+            triggerCinematicLobbyToGameTransition();
+            return;
+        }
+        lastOnlinePhase = currentPhase;
+        if (!isCinematicTransitioning) {
+            rerenderGameShell();
+        }
         if (shouldActivateOnlineDealAnimation) {
             shouldActivateOnlineDealAnimation = false;
             activateDraftDealAnimation();
@@ -4804,6 +4881,7 @@ function renderAfterOnlineStateChange() {
 }
 rerenderGameShell();
 lastOnlineRenderSignature = getOnlineRenderSignature();
+lastOnlinePhase = (_b = (_a = onlineClientState.roomState) === null || _a === void 0 ? void 0 : _a.phase) !== null && _b !== void 0 ? _b : null;
 function setupCardClickDelegation() {
     let holdStartX = 0;
     let holdStartY = 0;

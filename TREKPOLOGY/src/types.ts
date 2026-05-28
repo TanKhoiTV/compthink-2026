@@ -43,6 +43,8 @@ export type GameCardLocation = {
   label: string;
 };
 
+export type GamePhase = "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover";
+
 export type PhasePool = "SAIGON" | "HANOI" | "DANANG" | "DALAT" | string;
 
 export type GameCardData = {

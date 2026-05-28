@@ -53,7 +53,7 @@ export type PlayerPublicState = {
 
 export type OnlineRoomState = {
   roomId: string;
-  phase: "lobby" | "draft" | "planning" | "simulation" | "result" | "gameover";
+  phase: "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover";
   phaseNumber: number;
   dayIndex: number;
   draftRound: number;
