@@ -1,0 +1,716 @@
+/* ==============================================
+   TREKPOLOGY — Dashboard Hub
+   --map-accent: màu nhấn theo từng map (override khi vào game)
+   --hero-bg:    CSS background cho hero khi dùng ảnh tĩnh
+   ============================================== */
+
+:root {
+  --map-accent:   #9a7c57;
+  --map-accent-h: #b89167;
+}
+
+/* ── Wrapper ─────────────────────────────────── */
+
+.dashboard-hub {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #4e3a2b;
+  background: #1a1410;   /* nền tối để video/ảnh hiện ra đẹp */
+}
+
+/* ── Topbar ──────────────────────────────────── */
+
+.hub-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px;
+  z-index: 20;
+  /* trong suốt, nổi lên trên video */
+  background: linear-gradient(to bottom, rgba(20,14,10,0.72) 0%, transparent 100%);
+}
+
+.hub-topbar__logo {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+
+.hub-topbar__nav {
+  display: flex;
+  gap: 4px;
+}
+
+.hub-topbar__nav button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 7px 16px;
+  border-radius: 20px;
+  transition: all 0.18s;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+
+.hub-topbar__nav button:hover {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.hub-topbar__account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hub-topbar__user {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  padding: 5px 14px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+}
+
+.hub-topbar__guest,
+.hub-topbar__logout {
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 7px 16px;
+  border-radius: 20px;
+  transition: all 0.18s;
+  backdrop-filter: blur(6px);
+}
+
+.hub-topbar__guest {
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(154,124,87,0.32);
+  color: #fff;
+}
+
+.hub-topbar__guest:hover {
+  background: rgba(154,124,87,0.52);
+}
+
+.hub-topbar__logout {
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.82);
+}
+
+.hub-topbar__logout:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+/* ── Body: 2 cột ─────────────────────────────── */
+
+.hub-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  overflow: hidden;
+}
+
+/* ── Hero (cột trái) ─────────────────────────── */
+
+.hub-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- Media: video hoặc ảnh --- */
+.hub-hero__media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #1a1410;
+}
+
+.hub-hero__media--paused .hub-hero__video {
+  animation-play-state: paused;
+  filter: saturate(0.92) contrast(1.02) brightness(0.88);
+}
+
+.hub-hero__video-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(135deg, #2c1f14 0%, #4a3423 40%, #2c1f14 100%);
+}
+
+.hub-hero__video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  transform: scale(1.04);
+  animation: hub-hero-video-drift 72s ease-in-out infinite alternate;
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.hub-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 90% 70% at 18% 78%, rgba(15,10,6,0.18) 0%, transparent 58%),
+    radial-gradient(ellipse 55% 45% at 88% 18%, rgba(154,124,87,0.12) 0%, transparent 62%),
+    linear-gradient(to right, rgba(12,8,5,0.72) 0%, rgba(12,8,5,0.28) 42%, rgba(12,8,5,0.08) 100%),
+    linear-gradient(to top, rgba(10,7,4,0.88) 0%, rgba(10,7,4,0.34) 38%, transparent 72%);
+}
+
+.hub-hero__hitarea {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.hub-hero__video-mute {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 6;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: rgba(255,255,255,0.92);
+  background: rgba(12,8,5,0.58);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.hub-hero__video-mute:hover {
+  background: rgba(12,8,5,0.74);
+  border-color: rgba(255,255,255,0.24);
+  transform: translateY(-1px);
+}
+
+.hub-hero__video-mute-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.hub-hero__video-mute-icon--on {
+  display: none;
+}
+
+.hub-hero__video-mute--unmuted .hub-hero__video-mute-icon--off {
+  display: none;
+}
+
+.hub-hero__video-mute--unmuted .hub-hero__video-mute-icon--on {
+  display: block;
+}
+
+@keyframes hub-hero-video-drift {
+  from {
+    transform: scale(1.04) translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: scale(1.1) translate3d(-1.2%, -0.8%, 0);
+  }
+}
+
+/* Placeholder khi chưa có ảnh/video thật */
+.hub-hero__media--placeholder {
+  background: linear-gradient(135deg, #2c1f14 0%, #4a3423 40%, #2c1f14 100%);
+}
+
+.hero-placeholder-pattern {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(154,124,87,0.18) 0%, transparent 45%),
+    radial-gradient(circle at 80% 20%, rgba(198,173,143,0.12) 0%, transparent 40%),
+    radial-gradient(circle at 60% 80%, rgba(154,124,87,0.10) 0%, transparent 35%);
+  /* gợi cảm giác bản đồ hoặc địa hình */
+  mask-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.015) 2px,
+    rgba(255,255,255,0.015) 4px
+  );
+}
+
+/* --- Overlay gradient chữ --- */
+.hub-hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.hub-hero__content {
+  padding: 52px 56px;
+  max-width: 560px;
+  pointer-events: auto;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--map-accent);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.hero-title {
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.hero-sub {
+  font-size: 15px;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.65;
+  margin-bottom: 32px;
+  font-weight: 400;
+}
+
+.btn-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 36px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  background: var(--map-accent);
+  color: white;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.35),
+    inset 0 -3px 0 rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-play:hover {
+  background: var(--map-accent-h);
+  transform: translateY(-3px);
+  box-shadow:
+    0 14px 32px rgba(0,0,0,0.4),
+    inset 0 -3px 0 rgba(0,0,0,0.2);
+}
+
+.btn-play:active {
+  transform: translateY(-1px);
+}
+
+.hero-auth-hint {
+  margin-top: 14px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.58);
+  line-height: 1.5;
+}
+
+.dashboard-hub--loading .hub-side,
+.dashboard-hub--loading .hub-hero__content {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.dashboard-hub--loading .hub-hero__video {
+  animation: none;
+  filter: saturate(0.85) contrast(1.02);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub-hero__video {
+    animation: none;
+    transform: scale(1.04);
+  }
+}
+
+/* ── Auth panel (sidebar guest) ──────────────── */
+
+.hub-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hub-auth__header {
+  margin-bottom: 2px;
+}
+
+.hub-auth__eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--map-accent);
+}
+
+.hub-auth__title {
+  margin-top: 6px;
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: #3e2e22;
+}
+
+.hub-auth__lead {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #77604f;
+}
+
+.hub-auth__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid #e8dccb;
+}
+
+.hub-auth__tab {
+  border: none;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #8a7260;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.hub-auth__tab.is-active {
+  color: #fff;
+  background: var(--map-accent);
+  box-shadow: 0 6px 16px rgba(80, 55, 25, 0.16);
+}
+
+.hub-auth__panels {
+  position: relative;
+}
+
+.hub-auth__panel {
+  display: none;
+  flex-direction: column;
+  gap: 0;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e8dccb;
+  background: rgba(255,255,255,0.72);
+}
+
+.hub-auth__panel.is-active {
+  display: flex;
+}
+
+.hub-auth__panel label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a7260;
+}
+
+.hub-auth__panel input {
+  border: 1px solid #dcccb8;
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: rgba(255,255,255,0.92);
+  color: #3e2e22;
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hub-auth__panel input:focus {
+  border-color: var(--map-accent);
+  box-shadow: 0 0 0 3px rgba(154,124,87,0.18);
+}
+
+.hub-auth__panel button[type="submit"] {
+  margin-top: 4px;
+  width: 100%;
+  border: none;
+  border-radius: 11px;
+  padding: 13px 16px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--map-accent-h), var(--map-accent));
+  box-shadow:
+    0 10px 22px rgba(80, 55, 25, 0.18),
+    inset 0 -2px 0 rgba(0,0,0,0.14);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.hub-auth__panel button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 26px rgba(80, 55, 25, 0.22),
+    inset 0 -2px 0 rgba(0,0,0,0.14);
+}
+
+.hub-auth__status {
+  min-height: 18px;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 700;
+  color: #5a4430;
+}
+
+.hub-auth__status.hub-auth__status--error {
+  color: #b42318;
+}
+
+.hub-auth__status.hub-auth__status--success {
+  color: #15803d;
+}
+
+.hub-auth.hub-auth--pulse {
+  animation: hubAuthPulse 680ms ease;
+}
+
+@keyframes hubAuthPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(154,124,87,0.28);
+  }
+
+  100% {
+    box-shadow: 0 0 0 14px rgba(154,124,87,0);
+  }
+}
+
+.hub-explore {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Side Panel (cột phải) ───────────────────── */
+
+.hub-side {
+  background: rgba(243, 237, 227, 0.97);
+  border-left: 1px solid #d5c6ad;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.hub-side::-webkit-scrollbar { width: 4px; }
+.hub-side::-webkit-scrollbar-thumb {
+  background: #d5c6ad;
+  border-radius: 4px;
+}
+
+.hub-side__inner {
+  padding: 72px 24px 32px; /* top padding để tránh topbar */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.side-title {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--map-accent);
+  margin-bottom: 4px;
+}
+
+/* ── News Items ──────────────────────────────── */
+
+.news-item {
+  background: rgba(255,255,255,0.65);
+  border: 1px solid #e8dccb;
+  padding: 14px 16px;
+  border-radius: 10px;
+  transition: all 0.18s;
+}
+
+.news-item:hover {
+  border-color: #c6ad8f;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 2px 12px rgba(78, 58, 43, 0.07);
+  transform: translateX(-3px);
+}
+
+.news-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: white;
+  margin-bottom: 7px;
+}
+
+.news-badge--new      { background: #38d873; }
+.news-badge--culture  { background: #8b5cf6; }
+.news-badge--food     { background: #f97316; }
+.news-badge--nature   { background: #22c55e; }
+.news-badge--heritage { background: #0ea5e9; }
+
+.news-item h4 {
+  font-size: 14px;
+  font-weight: 800;
+  color: #3e2e22;
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+
+.news-item p {
+  font-size: 12px;
+  color: #77604f;
+  line-height: 1.55;
+}
+
+/* ── Modal ───────────────────────────────────── */
+
+.hub-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 10, 6, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.hub-modal.hub-modal--open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.hub-modal__box {
+  position: relative;
+  background: #faf6ef;
+  border: 1px solid #d5c6ad;
+  border-radius: 16px;
+  padding: 36px 40px;
+  max-width: 520px;
+  width: 90%;
+  max-height: 78vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+  transform: translateY(14px);
+  transition: transform 0.22s ease;
+}
+
+.hub-modal.hub-modal--open .hub-modal__box {
+  transform: translateY(0);
+}
+
+.hub-modal__box h2 {
+  font-size: 22px;
+  font-weight: 900;
+  color: #3e2e22;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #e8dccb;
+}
+
+.hub-modal__content h3 {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--map-accent);
+  margin: 20px 0 7px;
+}
+
+.hub-modal__content p,
+.hub-modal__content ol {
+  font-size: 14px;
+  color: #5a4430;
+  line-height: 1.75;
+}
+
+.hub-modal__content ol {
+  padding-left: 20px;
+}
+
+.hub-modal__content ol li {
+  margin-bottom: 8px;
+}
+
+.hub-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #ede5d8;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #4e3a2b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.hub-modal__close:hover {
+  background: #d5c6ad;
+}
