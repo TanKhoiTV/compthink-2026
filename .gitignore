@@ -1,24 +1,34 @@
-# Thư viện node
+# Dependencies
 node_modules/
 /dist
 /build
 /.next/
 /out/
 
-# File log hoặc file môi trường bảo mật
+# Environment & debug logs
 .env
 .env.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# File cấu hình của hệ điều hành
+# OS metadata
 .DS_Store
 Thumbs.db
-
-# Build artifacts
-build_pipeline.zip
 
 # Tool caches
 .pi-lens/
 context.md
+
+# Build artifacts
+build_pipeline.zip
+
+# TREKPOLOGY build output
+TREKPOLOGY/build/
+TREKPOLOGY/dist/
+TREKPOLOGY/server/server.log
+TREKPOLOGY/server/data/
+
+# Sub-package lockfiles (managed by root)
+TREKPOLOGY/package-lock.json
+TREKPOLOGY/server/package-lock.json

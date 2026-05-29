@@ -1,0 +1,313 @@
+import http from "node:http";
+import { Server } from "socket.io";
+import type {
+  ClientToServerEvents,
+  PlayerId,
+  RoomState,
+  ServerToClientEvents,
+} from "./types.js";
+import { finishDraftRound, selectDraftCard } from "./draftEngine.js";
+import { getPlayerViewState } from "./gameEngine.js";
+import {
+  createRoom,
+  discardCardFromPlayerHand,
+  joinRoom,
+  leaveRoom,
+  payDebtTokenOnBoard,
+  placeCardOnPlayerBoard,
+  returnBoardCardToPlayerHand,
+  reconnectRoom,
+  setPlayerReady,
+  startGame,
+} from "./rooms.js";
+import { tickRoom } from "./timerEngine.js";
+
+const httpServer = http.createServer();
+
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+  cors: {
+    origin: "*",
+  },
+});
+
+const rooms = new Map<string, RoomState>();
+const socketPlayerIds = new Map<string, PlayerId>();
+const socketRoomIds = new Map<string, string>();
+
+function emitRoomState(roomId: string) {
+  const state = rooms.get(roomId);
+
+  if (!state) return;
+
+  const sockets = io.sockets.adapter.rooms.get(roomId);
+
+  if (!sockets) return;
+
+  for (const socketId of sockets) {
+    const socket = io.sockets.sockets.get(socketId);
+    const playerId = socketPlayerIds.get(socketId);
+
+    if (!socket || !playerId) continue;
+
+    socket.emit("room:state", getPlayerViewState(state, playerId));
+  }
+}
+
+setInterval(() => {
+  for (const [roomId, state] of rooms) {
+    tickRoom(state);
+    emitRoomState(roomId);
+  }
+}, 1000);
+
+io.on("connection", (socket) => {
+  socket.on("room:create", ({ playerName }) => {
+    const { roomId, playerId, state } = createRoom(playerName);
+
+    rooms.set(roomId, state);
+    socketPlayerIds.set(socket.id, playerId);
+    socketRoomIds.set(socket.id, roomId);
+    socket.join(roomId);
+
+    socket.emit("room:joined", {
+      roomId,
+      playerId,
+      state: getPlayerViewState(state, playerId),
+    });
+    emitRoomState(roomId);
+  });
+
+  socket.on("room:join", ({ roomId, playerName }) => {
+    const state = rooms.get(roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const playerId = joinRoom(state, playerName);
+
+    if (!playerId) {
+      socket.emit("game:error", { message: "Phòng đã đủ 4 người." });
+      return;
+    }
+
+    socketPlayerIds.set(socket.id, playerId);
+    socketRoomIds.set(socket.id, roomId);
+    socket.join(roomId);
+
+    socket.emit("room:joined", {
+      roomId,
+      playerId,
+      state: getPlayerViewState(state, playerId),
+    });
+    emitRoomState(roomId);
+  });
+
+  socket.on("room:reconnect", ({ roomId, playerId, playerName }) => {
+    const state = rooms.get(roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng để reconnect." });
+      return;
+    }
+
+    const reconnectedPlayerId = reconnectRoom(state, { playerId, playerName });
+
+    if (!reconnectedPlayerId) {
+      socket.emit("game:error", { message: "Không tìm thấy người chơi để reconnect." });
+      return;
+    }
+
+    socketPlayerIds.set(socket.id, reconnectedPlayerId);
+    socketRoomIds.set(socket.id, roomId);
+    socket.join(roomId);
+
+    socket.emit("room:joined", {
+      roomId,
+      playerId: reconnectedPlayerId,
+      state: getPlayerViewState(state, reconnectedPlayerId),
+    });
+    emitRoomState(roomId);
+  });
+
+  socket.on("room:leave", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("room:left");
+      socketPlayerIds.delete(socket.id);
+      socketRoomIds.delete(socket.id);
+      return;
+    }
+
+    const error = leaveRoom(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    socket.leave(payload.roomId);
+    socketPlayerIds.delete(socket.id);
+    socketRoomIds.delete(socket.id);
+    socket.emit("room:left");
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("room:setReady", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = setPlayerReady(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("game:start", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = startGame(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("draft:selectCard", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = selectDraftCard(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    const everyoneSelected = Object.values(state.players).every((player) => {
+      return player.draftPool.length === 0 || player.selectedDraftCardId !== null;
+    });
+
+    if (everyoneSelected) {
+      finishDraftRound(state);
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("planning:placeCard", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = placeCardOnPlayerBoard(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("planning:discardCard", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = discardCardFromPlayerHand(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("planning:payDebt", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = payDebtTokenOnBoard(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("planning:returnBoardCard", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = returnBoardCardToPlayerHand(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
+  socket.on("disconnect", () => {
+    const playerId = socketPlayerIds.get(socket.id);
+    const roomId = socketRoomIds.get(socket.id);
+    const state = roomId ? rooms.get(roomId) : null;
+
+    if (playerId && state) {
+      state.players[playerId].isConnected = false;
+      state.players[playerId].isReady = false;
+      emitRoomState(roomId!);
+    }
+
+    socketPlayerIds.delete(socket.id);
+    socketRoomIds.delete(socket.id);
+  });
+});
+
+const PORT = Number(process.env.PORT ?? 3001);
+
+httpServer.listen(PORT, () => {
+  console.log(`Socket server listening on http://localhost:${PORT}`);
+});
