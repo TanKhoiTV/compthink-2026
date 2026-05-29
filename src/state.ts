@@ -6,14 +6,17 @@
  */
 
 import { createEmptyBoardSlots } from "../scr/shared/board.ts";
-import { shuffleCards } from "../scr/shared/deck.ts";
 import type { TravelCard } from "../scr/shared/types.ts";
-import type { BoardSlots, BoardTotals } from "../scr/shared/board.ts";
-import type {
-	PlayerId,
-	TravelCardData,
-	UiGamePhase,
-} from "../scr/shared/client-types.ts";
+import type { BoardSlots } from "../scr/shared/board.ts";
+import type { PlayerId } from "../scr/shared/client-types.ts";
+
+// ── Game phase FSM ───────────────────────────────────────────────────────────
+//
+//   draft → placement → endDay → draft (next day) or finished
+//
+export type GamePhase = "draft" | "placement" | "endDay" | "finished";
+
+let gamePhase: GamePhase = "draft";
 
 // ── Deck state ──────────────────────────────────────────────────────────────
 
@@ -22,7 +25,7 @@ let playerHand: TravelCard[] = [];
 
 // ── Draft state ──────────────────────────────────────────────────────────────
 
-let isDraftPhase = true;
+let draftPool: TravelCard[] = [];       // 7 cards shown for current pick round
 let draftSelectedCardId: string | null = null;
 const draftPickSecondsLeft = 10;
 const draftTimerId: number | null = null;
@@ -126,12 +129,20 @@ export function setAccumulatedVP(vp: number) {
 	accumulatedVP = vp;
 }
 
-export function getIsDraftPhase(): boolean {
-	return isDraftPhase;
+export function getGamePhase(): GamePhase {
+	return gamePhase;
 }
 
-export function setIsDraftPhase(v: boolean) {
-	isDraftPhase = v;
+export function setGamePhase(p: GamePhase) {
+	gamePhase = p;
+}
+
+export function getDraftPool(): TravelCard[] {
+	return draftPool;
+}
+
+export function setDraftPool(pool: TravelCard[]) {
+	draftPool = pool;
 }
 
 export function getDraftSelectedCardId(): string | null {

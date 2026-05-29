@@ -34,19 +34,19 @@ let wsBaseUrl = isProduction
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export type AuthUser = {
-  id: string;
-  username: string;
-  displayName: string;
+	id: string;
+	username: string;
+	displayName: string;
 };
 
 export type AuthClientState = {
-  isReady: boolean;
-  user: AuthUser | null;
+	isReady: boolean;
+	user: AuthUser | null;
 };
 
 export const authClientState: AuthClientState = {
-  isReady: false,
-  user: null,
+	isReady: false,
+	user: null,
 };
 
 export function configureServerUrls(httpUrl: string, wsUrl: string) {
