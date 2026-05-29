@@ -1,5 +1,9 @@
-const gameName: string = "Trekkopoly";
+import { setupGameAudioDelegation } from './audio/gameAudio.js';
+
+const gameName: string = 'Trekkopoly';
 console.log(`${gameName} đã sẵn sàng hoạt động!`);
+
+setupGameAudioDelegation();
 
 const board = document.getElementById('board') as HTMLElement;
 
