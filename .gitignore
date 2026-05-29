@@ -15,3 +15,5 @@ yarn-error.log*
 # File cấu hình của hệ điều hành
 .DS_Store
 Thumbs.db
+# Build artifacts
+build_pipeline.zip
