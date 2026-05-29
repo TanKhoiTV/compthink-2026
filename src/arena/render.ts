@@ -5,40 +5,41 @@
  */
 
 import {
-  getBoardSlots,
-  getCurrentDayIndex,
-  getIsDraftPhase,
-  getPlayerHand,
-  getSelectedHandCardId,
-  getFocusedHandCardId,
-  getFocusedBoardCard,
-  getIsSimulationMode,
-  getPhaseNumber,
-  getAccumulatedVP,
-  getRemainingTurnSeconds,
-  getPlayerBoards,
-  currentPlayerId,
-  playerIds,
-} from '../state.ts';
-import type { TravelCard } from '../../scr/shared/types.ts';
-import type { BoardSlots, BoardPosition } from '../../scr/shared/board.ts';
+	getBoardSlots,
+	getCurrentDayIndex,
+	getIsDraftPhase,
+	getPlayerHand,
+	getSelectedHandCardId,
+	getFocusedHandCardId,
+	getFocusedBoardCard,
+	getIsSimulationMode,
+	getPhaseNumber,
+	getAccumulatedVP,
+	getRemainingTurnSeconds,
+	getPlayerBoards,
+	currentPlayerId,
+	playerIds,
+} from "../state.ts";
+import type { TravelCard } from "../../scr/shared/types.ts";
+import type { BoardSlots, BoardPosition } from "../../scr/shared/board.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const DAYS = [1, 2, 3, 4, 5];
-const ROWS = ['Sáng', 'Trưa', 'Chiều', 'Tối', 'Khuya'];
+const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
 // ── Main arena ──────────────────────────────────────────────────────────────
 
 export function renderMainArena(): string {
-  const boardSlots = getBoardSlots();
-  const currentDayIndex = getCurrentDayIndex();
-  const isDraft = getIsDraftPhase();
-  const isSimulation = getIsSimulationMode();
-  const focusedCard = getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard();
+	const boardSlots = getBoardSlots();
+	const currentDayIndex = getCurrentDayIndex();
+	const isDraft = getIsDraftPhase();
+	const isSimulation = getIsSimulationMode();
+	const focusedCard =
+		getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard();
 
-  return `
-    <main class="arena ${isSimulation ? 'arena--scanning' : ''}">
+	return `
+    <main class="arena ${isSimulation ? "arena--scanning" : ""}">
       <div class="arena__top arena__top--with-score">
         <div class="arena__title-block">
           <div class="blue-line"></div>
@@ -54,24 +55,27 @@ export function renderMainArena(): string {
       <div class="arena__main">
         <div class="board-block">
           <div class="days-header">
-            ${DAYS.map((day, index) =>
-              `<div class="day-pill ${index === currentDayIndex ? 'day-pill--current' : ''} ${index < currentDayIndex ? 'day-pill--done' : ''}">NGÀY ${day}</div>`
-            ).join('')}
+            ${DAYS.map(
+							(day, index) =>
+								`<div class="day-pill ${index === currentDayIndex ? "day-pill--current" : ""} ${index < currentDayIndex ? "day-pill--done" : ""}">NGÀY ${day}</div>`,
+						).join("")}
           </div>
 
           <section class="board-grid">
-            ${ROWS.map((row, rowIndex) => `
+            ${ROWS.map(
+							(row, rowIndex) => `
               <div class="time-label">${row}</div>
-              ${DAYS.map((_, colIndex) => renderBoardCell(boardSlots, rowIndex, colIndex, currentDayIndex, isDraft, isSimulation)).join('')}
-            `).join('')}
+              ${DAYS.map((_, colIndex) => renderBoardCell(boardSlots, rowIndex, colIndex, currentDayIndex, isDraft, isSimulation)).join("")}
+            `,
+						).join("")}
           </section>
         </div>
 
-        ${isDraft ? renderDraftPanel() : ''}
+        ${isDraft ? renderDraftPanel() : ""}
       </div>
 
       ${renderHandStrip()}
-      ${focusedCard ? renderFocusedCard(focusedCard) : ''}
+      ${focusedCard ? renderFocusedCard(focusedCard) : ""}
       ${renderTurnTimer()}
     </main>
   `;
@@ -80,32 +84,37 @@ export function renderMainArena(): string {
 // ── Board cell ──────────────────────────────────────────────────────────────
 
 function renderBoardCell(
-  boardSlots: BoardSlots,
-  rowIndex: number,
-  colIndex: number,
-  currentDayIndex: number,
-  isDraft: boolean,
-  isSimulation: boolean,
+	boardSlots: BoardSlots,
+	rowIndex: number,
+	colIndex: number,
+	currentDayIndex: number,
+	isDraft: boolean,
+	isSimulation: boolean,
 ): string {
-  const card = boardSlots[rowIndex]?.[colIndex] ?? null;
-  const isCurrentDayColumn = colIndex === currentDayIndex;
-  const isPlaceable = !isDraft && !isSimulation && isCurrentDayColumn && getSelectedHandCardId() !== null && card === null;
+	const card = boardSlots[rowIndex]?.[colIndex] ?? null;
+	const isCurrentDayColumn = colIndex === currentDayIndex;
+	const isPlaceable =
+		!isDraft &&
+		!isSimulation &&
+		isCurrentDayColumn &&
+		getSelectedHandCardId() !== null &&
+		card === null;
 
-  if (!card) {
-    return `
+	if (!card) {
+		return `
       <div
-        class="board-cell board-cell--empty ${isSimulation ? 'board-cell--locked-mode' : ''} ${!isCurrentDayColumn && !isSimulation ? 'board-cell--not-current-day' : ''} ${isPlaceable ? 'board-cell--placeable' : ''}"
+        class="board-cell board-cell--empty ${isSimulation ? "board-cell--locked-mode" : ""} ${!isCurrentDayColumn && !isSimulation ? "board-cell--not-current-day" : ""} ${isPlaceable ? "board-cell--placeable" : ""}"
         data-board-cell="true"
         data-row-index="${rowIndex}"
         data-col-index="${colIndex}"
-        title="${isCurrentDayColumn ? (isPlaceable ? 'Thả thẻ vào ô ngày hiện tại' : 'Chỉ xếp thẻ cho ngày hiện tại') : 'Không phải ngày hiện tại'}"
+        title="${isCurrentDayColumn ? (isPlaceable ? "Thả thẻ vào ô ngày hiện tại" : "Chỉ xếp thẻ cho ngày hiện tại") : "Không phải ngày hiện tại"}"
       >
         <span class="empty-plus">+</span>
       </div>
     `;
-  }
+	}
 
-  return `
+	return `
     <div
       class="board-cell board-cell--occupied board-cell--clickable"
       data-board-cell="true"
@@ -121,13 +130,13 @@ function renderBoardCell(
 // ── Mini card (on board) ────────────────────────────────────────────────────
 
 export function renderBoardMiniCard(card: TravelCard): string {
-  const rarityClass = card.rarity ? `card--rarity-${card.rarity}` : '';
-  return `
+	const rarityClass = card.rarity ? `card--rarity-${card.rarity}` : "";
+	return `
     <div class="board-mini-card ${rarityClass}">
       <img src="${card.image}" alt="${card.name}" loading="lazy" />
       <div class="board-mini-card__info">
         <span class="board-mini-card__name">${card.name}</span>
-        <span class="board-mini-card__tags">${card.tag ? tagLabel(card.tag) : ''}</span>
+        <span class="board-mini-card__tags">${card.tag ? tagLabel(card.tag) : ""}</span>
       </div>
       <div class="board-mini-card__stats">
         <span class="stat stat--vp">${card.vp}</span>
@@ -141,25 +150,25 @@ export function renderBoardMiniCard(card: TravelCard): string {
 // ── Hand strip ──────────────────────────────────────────────────────────────
 
 export function renderHandCards(): string {
-  const hand = getPlayerHand();
-  const selectedId = getSelectedHandCardId();
+	const hand = getPlayerHand();
+	const selectedId = getSelectedHandCardId();
 
-  if (hand.length === 0) {
-    return '<div class="hand-strip hand-strip--empty"><p>Không có thẻ nào</p></div>';
-  }
+	if (hand.length === 0) {
+		return '<div class="hand-strip hand-strip--empty"><p>Không có thẻ nào</p></div>';
+	}
 
-  return `
+	return `
     <section class="hand-strip">
-      ${hand.map((card) => renderHandCard(card, card.id === selectedId)).join('')}
+      ${hand.map((card) => renderHandCard(card, card.id === selectedId)).join("")}
     </section>
   `;
 }
 
 export function renderHandCard(card: TravelCard, isSelected: boolean): string {
-  const rarityClass = card.rarity ? `card--rarity-${card.rarity}` : '';
-  return `
+	const rarityClass = card.rarity ? `card--rarity-${card.rarity}` : "";
+	return `
     <div
-      class="hand-card ${rarityClass} ${isSelected ? 'hand-card--selected' : ''}"
+      class="hand-card ${rarityClass} ${isSelected ? "hand-card--selected" : ""}"
       data-hand-card-id="${card.id}"
       title="${card.name}"
     >
@@ -175,7 +184,7 @@ export function renderHandCard(card: TravelCard, isSelected: boolean): string {
 // ── Hand strip (full section) ──────────────────────────────────────────────
 
 function renderHandStrip(): string {
-  return `
+	return `
     <div class="hand-strip-container">
       ${renderHandCards()}
     </div>
@@ -185,7 +194,7 @@ function renderHandStrip(): string {
 // ── Draft panel ─────────────────────────────────────────────────────────────
 
 function renderDraftPanel(): string {
-  return `
+	return `
     <div class="draft-panel">
       <h2>Chọn thẻ (Vòng ${getDraftRound()})</h2>
       <div class="draft-cards">
@@ -198,36 +207,36 @@ function renderDraftPanel(): string {
 // ── Draft hand cards ───────────────────────────────────────────────────────
 
 export function renderDraftHandCards(cards: TravelCard[]): string {
-  return cards
-    .map(
-      (card) => `
+	return cards
+		.map(
+			(card) => `
     <div class="draft-card" data-draft-card-id="${card.id}">
       ${renderBoardMiniCard(card)}
       <button class="draft-card__select">Chọn</button>
     </div>
   `,
-    )
-    .join('');
+		)
+		.join("");
 }
 
 // ── Focused card popup ──────────────────────────────────────────────────────
 
 export function renderFocusedCard(card: TravelCard): string {
-  const rarityClass = card.rarity ? `card--rarity-${card.rarity}` : '';
-  return `
+	const rarityClass = card.rarity ? `card--rarity-${card.rarity}` : "";
+	return `
     <div class="focused-card-overlay">
       <div class="focused-card ${rarityClass}">
         <button id="focused-card-close" class="focused-card__close">&times;</button>
         <img src="${card.image}" alt="${card.name}" class="focused-card__image" />
         <div class="focused-card__details">
           <h2>${card.name}</h2>
-          <p>${card.description ?? ''}</p>
+          <p>${card.description ?? ""}</p>
           <div class="focused-card__stats">
             <span>VP: ${card.vp}</span>
             <span>Xu: ${card.coin}</span>
             <span>Stamina: ${card.stamina}</span>
           </div>
-          ${card.tags ? `<div class="focused-card__tags">${card.tags.map((t) => `<span class="tag">${t}</span>`).join('')}</div>` : ''}
+          ${card.tags ? `<div class="focused-card__tags">${card.tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>` : ""}
         </div>
       </div>
     </div>
@@ -237,7 +246,7 @@ export function renderFocusedCard(card: TravelCard): string {
 // ── Score panel ─────────────────────────────────────────────────────────────
 
 function renderScorePanel(): string {
-  return `
+	return `
     <div class="score-panel">
       <div class="score-panel__item">
         <span class="score-panel__label">VP</span>
@@ -254,7 +263,7 @@ function renderScorePanel(): string {
 // ── Resource orbs ───────────────────────────────────────────────────────────
 
 function renderResourceOrbs(): string {
-  return `
+	return `
     <div class="resource-orbs">
       <div class="orb orb--coin">
         <span class="orb__icon">C</span>
@@ -275,7 +284,7 @@ function renderResourceOrbs(): string {
 // ── Turn timer ──────────────────────────────────────────────────────────────
 
 function renderTurnTimer(): string {
-  return `
+	return `
     <div class="turn-timer">
       <span>${getRemainingTurnSeconds()}s</span>
     </div>
@@ -284,28 +293,26 @@ function renderTurnTimer(): string {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function getHandCardById(
-  cardId: string | null,
-): TravelCard | null {
-  if (!cardId) return null;
-  const hand = getPlayerHand();
-  return hand.find((c) => c.id === cardId) ?? null;
+function getHandCardById(cardId: string | null): TravelCard | null {
+	if (!cardId) return null;
+	const hand = getPlayerHand();
+	return hand.find((c) => c.id === cardId) ?? null;
 }
 
 function getDraftRound(): number {
-  return 1;
+	return 1;
 }
 
 function tagLabel(tag: string): string {
-  const labels: Record<string, string> = {
-    FOOD: 'Ẩm thực',
-    CULTURE: 'Văn hóa',
-    ACTION: 'Hành động',
-    UTILITY: 'Tiện ích',
-    TRANSIT: 'Di chuyển',
-    REST: 'Nghỉ ngơi',
-    OUTDOOR: 'Ngoài trời',
-    INDOOR: 'Trong nhà',
-  };
-  return labels[tag] ?? tag;
+	const labels: Record<string, string> = {
+		FOOD: "Ẩm thực",
+		CULTURE: "Văn hóa",
+		ACTION: "Hành động",
+		UTILITY: "Tiện ích",
+		TRANSIT: "Di chuyển",
+		REST: "Nghỉ ngơi",
+		OUTDOOR: "Ngoài trời",
+		INDOOR: "Trong nhà",
+	};
+	return labels[tag] ?? tag;
 }

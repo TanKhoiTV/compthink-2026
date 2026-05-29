@@ -7,7 +7,7 @@
  * This replaces TREKPOLOGY's Socket.IO client (src/online/socketClient.ts).
  */
 
-import type { RoomSnapshot } from '../scr/shared/types.ts';
+import type { RoomSnapshot } from "../scr/shared/types.ts";
 
 // ── Connection state ────────────────────────────────────────────────────────
 
@@ -17,30 +17,30 @@ let pendingResolve: ((value: unknown) => void) | null = null;
 let pendingReject: ((reason: Error) => void) | null = null;
 let onRoomSnapshotCallback: ((snapshot: RoomSnapshot) => void) | null = null;
 let onDisconnectCallback: (() => void) | null = null;
-let serverBaseUrl = 'http://localhost:8080';
-let wsBaseUrl = 'ws://localhost:8080';
+let serverBaseUrl = "http://localhost:8080";
+let wsBaseUrl = "ws://localhost:8080";
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function configureServerUrls(httpUrl: string, wsUrl: string) {
-  serverBaseUrl = httpUrl;
-  wsBaseUrl = wsUrl;
+	serverBaseUrl = httpUrl;
+	wsBaseUrl = wsUrl;
 }
 
 export function setOnRoomSnapshot(callback: (snapshot: RoomSnapshot) => void) {
-  onRoomSnapshotCallback = callback;
+	onRoomSnapshotCallback = callback;
 }
 
 export function setOnDisconnect(callback: () => void) {
-  onDisconnectCallback = callback;
+	onDisconnectCallback = callback;
 }
 
 export function getSocket(): WebSocket | null {
-  return socket;
+	return socket;
 }
 
 export function isConnected(): boolean {
-  return socket !== null && socket.readyState === WebSocket.OPEN;
+	return socket !== null && socket.readyState === WebSocket.OPEN;
 }
 
 /**
@@ -48,51 +48,51 @@ export function isConnected(): boolean {
  * Automatically sends joinRoom after the connection opens.
  */
 export function connectToRoom(
-  roomId: string,
-  playerId: string,
-  name: string,
+	roomId: string,
+	playerId: string,
+	name: string,
 ): Promise<{ ok: boolean; playerId: string }> {
-  return new Promise((resolve, reject) => {
-    if (socket) {
-      socket.close();
-      socket = null;
-    }
+	return new Promise((resolve, reject) => {
+		if (socket) {
+			socket.close();
+			socket = null;
+		}
 
-    const url = `${wsBaseUrl}/ws?roomId=${encodeURIComponent(roomId)}&playerId=${encodeURIComponent(playerId)}&name=${encodeURIComponent(name)}`;
-    socket = new WebSocket(url);
+		const url = `${wsBaseUrl}/ws?roomId=${encodeURIComponent(roomId)}&playerId=${encodeURIComponent(playerId)}&name=${encodeURIComponent(name)}`;
+		socket = new WebSocket(url);
 
-    socket.onopen = () => {
-      // Send joinRoom immediately after connection
-      rpcCall('joinRoom', { roomId, name })
-        .then((result) => resolve(result as { ok: boolean; playerId: string }))
-        .catch(reject);
-    };
+		socket.onopen = () => {
+			// Send joinRoom immediately after connection
+			rpcCall("joinRoom", { roomId, name })
+				.then((result) => resolve(result as { ok: boolean; playerId: string }))
+				.catch(reject);
+		};
 
-    socket.onmessage = (event: MessageEvent) => {
-      try {
-        const msg = JSON.parse(event.data as string);
+		socket.onmessage = (event: MessageEvent) => {
+			try {
+				const msg = JSON.parse(event.data as string);
 
-        if (msg.method) {
-          // Server notification (no id)
-          handleNotification(msg);
-        } else if (msg.id !== undefined) {
-          // Response to our request
-          handleResponse(msg);
-        }
-      } catch {
-        console.warn('[socketClient] Failed to parse message:', event.data);
-      }
-    };
+				if (msg.method) {
+					// Server notification (no id)
+					handleNotification(msg);
+				} else if (msg.id !== undefined) {
+					// Response to our request
+					handleResponse(msg);
+				}
+			} catch {
+				console.warn("[socketClient] Failed to parse message:", event.data);
+			}
+		};
 
-    socket.onclose = () => {
-      socket = null;
-      if (onDisconnectCallback) onDisconnectCallback();
-    };
+		socket.onclose = () => {
+			socket = null;
+			if (onDisconnectCallback) onDisconnectCallback();
+		};
 
-    socket.onerror = () => {
-      reject(new Error('WebSocket connection failed'));
-    };
-  });
+		socket.onerror = () => {
+			reject(new Error("WebSocket connection failed"));
+		};
+	});
 }
 
 /**
@@ -100,48 +100,48 @@ export function connectToRoom(
  * or rejects on error / timeout.
  */
 export function rpcCall(
-  method: string,
-  params: Record<string, unknown> = {},
+	method: string,
+	params: Record<string, unknown> = {},
 ): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      reject(new Error('WebSocket not connected'));
-      return;
-    }
+	return new Promise((resolve, reject) => {
+		if (!socket || socket.readyState !== WebSocket.OPEN) {
+			reject(new Error("WebSocket not connected"));
+			return;
+		}
 
-    requestId += 1;
-    const id = requestId;
-    pendingResolve = resolve;
-    pendingReject = reject;
+		requestId += 1;
+		const id = requestId;
+		pendingResolve = resolve;
+		pendingReject = reject;
 
-    socket.send(
-      JSON.stringify({
-        jsonrpc: '2.0',
-        id,
-        method,
-        params,
-      }),
-    );
+		socket.send(
+			JSON.stringify({
+				jsonrpc: "2.0",
+				id,
+				method,
+				params,
+			}),
+		);
 
-    // Timeout after 10 seconds
-    setTimeout(() => {
-      if (pendingResolve === resolve) {
-        pendingResolve = null;
-        pendingReject = null;
-        reject(new Error(`RPC call '${method}' timed out`));
-      }
-    }, 10000);
-  });
+		// Timeout after 10 seconds
+		setTimeout(() => {
+			if (pendingResolve === resolve) {
+				pendingResolve = null;
+				pendingReject = null;
+				reject(new Error(`RPC call '${method}' timed out`));
+			}
+		}, 10000);
+	});
 }
 
 /**
  * Disconnect from the current room.
  */
 export function disconnectFromRoom() {
-  if (socket) {
-    socket.close();
-    socket = null;
-  }
+	if (socket) {
+		socket.close();
+		socket = null;
+	}
 }
 
 /**
@@ -149,51 +149,55 @@ export function disconnectFromRoom() {
  * Convenience wrapper for the full join flow.
  */
 export async function createRoomAndJoin(
-  cards: unknown[],
-  playerId: string,
-  playerName: string,
-  maxPlayers = 2,
-  maxDays = 5,
+	cards: unknown[],
+	playerId: string,
+	playerName: string,
+	maxPlayers = 2,
+	maxDays = 5,
 ): Promise<{ ok: boolean; playerId: string; roomId: string }> {
-  const response = await fetch(`${serverBaseUrl}/rooms`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cards, maxPlayers, maxDays }),
-  });
+	const response = await fetch(`${serverBaseUrl}/rooms`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ cards, maxPlayers, maxDays }),
+	});
 
-  if (!response.ok) {
-    throw new Error(`Failed to create room: ${response.statusText}`);
-  }
+	if (!response.ok) {
+		throw new Error(`Failed to create room: ${response.statusText}`);
+	}
 
-  const { roomId } = (await response.json()) as { roomId: string };
-  const result = await connectToRoom(roomId, playerId, playerName);
-  return { ...result, roomId };
+	const { roomId } = (await response.json()) as { roomId: string };
+	const result = await connectToRoom(roomId, playerId, playerName);
+	return { ...result, roomId };
 }
 
 // ── Low-level helpers ───────────────────────────────────────────────────────
 
 function handleNotification(msg: { method: string; params: unknown }) {
-  switch (msg.method) {
-    case 'roomSnapshot':
-      if (onRoomSnapshotCallback) {
-        onRoomSnapshotCallback(msg.params as RoomSnapshot);
-      }
-      break;
-    default:
-      console.debug('[socketClient] Unhandled notification:', msg.method);
-  }
+	switch (msg.method) {
+		case "roomSnapshot":
+			if (onRoomSnapshotCallback) {
+				onRoomSnapshotCallback(msg.params as RoomSnapshot);
+			}
+			break;
+		default:
+			console.debug("[socketClient] Unhandled notification:", msg.method);
+	}
 }
 
-function handleResponse(msg: { id: number; result?: unknown; error?: { code: number; message: string } }) {
-  if (msg.error) {
-    if (pendingReject) {
-      pendingReject(new Error(msg.error.message));
-      pendingResolve = null;
-      pendingReject = null;
-    }
-  } else if (pendingResolve) {
-    pendingResolve(msg.result);
-    pendingResolve = null;
-    pendingReject = null;
-  }
+function handleResponse(msg: {
+	id: number;
+	result?: unknown;
+	error?: { code: number; message: string };
+}) {
+	if (msg.error) {
+		if (pendingReject) {
+			pendingReject(new Error(msg.error.message));
+			pendingResolve = null;
+			pendingReject = null;
+		}
+	} else if (pendingResolve) {
+		pendingResolve(msg.result);
+		pendingResolve = null;
+		pendingReject = null;
+	}
 }

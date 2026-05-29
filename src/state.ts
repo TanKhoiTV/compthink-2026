@@ -5,11 +5,15 @@
  * All state lives here as module-level `let` bindings with exported getters.
  */
 
-import { createEmptyBoardSlots } from '../scr/shared/board.ts';
-import { shuffleCards } from '../scr/shared/deck.ts';
-import type { TravelCard } from '../scr/shared/types.ts';
-import type { BoardSlots, BoardTotals } from '../scr/shared/board.ts';
-import type { PlayerId, TravelCardData, UiGamePhase } from '../scr/shared/client-types.ts';
+import { createEmptyBoardSlots } from "../scr/shared/board.ts";
+import { shuffleCards } from "../scr/shared/deck.ts";
+import type { TravelCard } from "../scr/shared/types.ts";
+import type { BoardSlots, BoardTotals } from "../scr/shared/board.ts";
+import type {
+	PlayerId,
+	TravelCardData,
+	UiGamePhase,
+} from "../scr/shared/client-types.ts";
 
 // ── Deck state ──────────────────────────────────────────────────────────────
 
@@ -27,33 +31,33 @@ let draftRound = 1;
 
 // ── Board state (offline mode) ───────────────────────────────────────────────
 
-const playerIds: PlayerId[] = ['p1', 'p2', 'p3', 'p4'];
-const currentPlayerId: PlayerId = 'p1';
+const playerIds: PlayerId[] = ["p1", "p2", "p3", "p4"];
+const currentPlayerId: PlayerId = "p1";
 let playerBoards: Record<PlayerId, BoardSlots> = createEmptyPlayerBoards();
 
 function createEmptyPlayerBoards(): Record<PlayerId, BoardSlots> {
-  return {
-    p1: createEmptyBoardSlots(),
-    p2: createEmptyBoardSlots(),
-    p3: createEmptyBoardSlots(),
-    p4: createEmptyBoardSlots(),
-  };
+	return {
+		p1: createEmptyBoardSlots(),
+		p2: createEmptyBoardSlots(),
+		p3: createEmptyBoardSlots(),
+		p4: createEmptyBoardSlots(),
+	};
 }
 
 function getCurrentPlayerBoard(): BoardSlots {
-  return playerBoards[currentPlayerId];
+	return playerBoards[currentPlayerId];
 }
 
 function setCurrentPlayerBoard(nextBoard: BoardSlots) {
-  playerBoards[currentPlayerId] = nextBoard;
+	playerBoards[currentPlayerId] = nextBoard;
 }
 
 export function getBoardSlots(): BoardSlots {
-  return getCurrentPlayerBoard();
+	return getCurrentPlayerBoard();
 }
 
 export function getOpponentPlayerIds(): PlayerId[] {
-  return playerIds.filter((id) => id !== currentPlayerId);
+	return playerIds.filter((id) => id !== currentPlayerId);
 }
 
 // ── Phase state ──────────────────────────────────────────────────────────────
@@ -82,123 +86,123 @@ const dayAdvanceTimerId: number | null = null;
 // ── Export getters / setters ─────────────────────────────────────────────────
 
 export function getDeck(): TravelCard[] {
-  return deck;
+	return deck;
 }
 
 export function setDeck(newDeck: TravelCard[]) {
-  deck = newDeck;
+	deck = newDeck;
 }
 
 export function getPlayerHand(): TravelCard[] {
-  return playerHand;
+	return playerHand;
 }
 
 export function setPlayerHand(hand: TravelCard[]) {
-  playerHand = hand;
+	playerHand = hand;
 }
 
 export function getCurrentDayIndex(): number {
-  return currentDayIndex;
+	return currentDayIndex;
 }
 
 export function setCurrentDayIndex(index: number) {
-  currentDayIndex = index;
+	currentDayIndex = index;
 }
 
 export function getPhaseNumber(): number {
-  return phaseNumber;
+	return phaseNumber;
 }
 
 export function setPhaseNumber(n: number) {
-  phaseNumber = n;
+	phaseNumber = n;
 }
 
 export function getAccumulatedVP(): number {
-  return accumulatedVP;
+	return accumulatedVP;
 }
 
 export function setAccumulatedVP(vp: number) {
-  accumulatedVP = vp;
+	accumulatedVP = vp;
 }
 
 export function getIsDraftPhase(): boolean {
-  return isDraftPhase;
+	return isDraftPhase;
 }
 
 export function setIsDraftPhase(v: boolean) {
-  isDraftPhase = v;
+	isDraftPhase = v;
 }
 
 export function getDraftSelectedCardId(): string | null {
-  return draftSelectedCardId;
+	return draftSelectedCardId;
 }
 
 export function setDraftSelectedCardId(id: string | null) {
-  draftSelectedCardId = id;
+	draftSelectedCardId = id;
 }
 
 export function getDraftRound(): number {
-  return draftRound;
+	return draftRound;
 }
 
 export function setDraftRound(r: number) {
-  draftRound = r;
+	draftRound = r;
 }
 
 export function getSelectedHandCardId(): string | null {
-  return selectedHandCardId;
+	return selectedHandCardId;
 }
 
 export function setSelectedHandCardId(id: string | null) {
-  selectedHandCardId = id;
+	selectedHandCardId = id;
 }
 
 export function getFocusedHandCardId(): string | null {
-  return focusedHandCardId;
+	return focusedHandCardId;
 }
 
 export function setFocusedHandCardId(id: string | null) {
-  focusedHandCardId = id;
+	focusedHandCardId = id;
 }
 
 export function getFocusedBoardCard(): TravelCard | null {
-  return focusedBoardCard;
+	return focusedBoardCard;
 }
 
 export function setFocusedBoardCard(card: TravelCard | null) {
-  focusedBoardCard = card;
+	focusedBoardCard = card;
 }
 
 export function getIsSimulationMode(): boolean {
-  return isSimulationMode;
+	return isSimulationMode;
 }
 
 export function setIsSimulationMode(v: boolean) {
-  isSimulationMode = v;
+	isSimulationMode = v;
 }
 
 export function getRemainingTurnSeconds(): number {
-  return remainingTurnSeconds;
+	return remainingTurnSeconds;
 }
 
 export function setRemainingTurnSeconds(s: number) {
-  remainingTurnSeconds = s;
+	remainingTurnSeconds = s;
 }
 
 export function getSuppressNextClick(): boolean {
-  return suppressNextClick;
+	return suppressNextClick;
 }
 
 export function setSuppressNextClick(v: boolean) {
-  suppressNextClick = v;
+	suppressNextClick = v;
 }
 
 export function getPlayerBoards(): Record<PlayerId, BoardSlots> {
-  return playerBoards;
+	return playerBoards;
 }
 
 export function setPlayerBoards(boards: Record<PlayerId, BoardSlots>) {
-  playerBoards = boards;
+	playerBoards = boards;
 }
 
 export { currentPlayerId, playerIds };
