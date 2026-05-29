@@ -36,11 +36,15 @@ A game proceeds through 5 days. Each day has 2 interactive phases followed by an
 
 ### Phase 1: Daily Drafting (5 rounds)
 
-Each player receives 5 cards. A clockwise passing draft runs for 3 picks:
+Each player receives **7 cards**. A clockwise passing draft runs for 5 rounds. In each round the player picks 1 card and passes the rest, until only 2 cards remain — those are discarded.
 
-1. **Pick 1:** Hold 5 cards. Choose 1 card, place it face-down. Pass remaining 4 cards to the neighbour.
-2. **Pick 2:** Receive 4 cards from the other neighbour. Choose 1. Pass remaining 3.
-3. **Pick 3:** Receive 3 cards. Choose 1. Pass remaining 2 (discarded).
+1. **Pick 1:** Hold 7 cards. Choose 1, place it face-down. Pass remaining 6.
+2. **Pick 2:** Receive 6 cards. Choose 1. Pass remaining 5.
+3. **Pick 3:** Receive 5 cards. Choose 1. Pass remaining 4.
+4. **Pick 4:** Receive 4 cards. Choose 1. Pass remaining 3.
+5. **Pick 5:** Receive 3 cards. Choose 1. Discard remaining 2.
+
+After 5 rounds each player has built a 5-card hand for the day. The last 2 cards are discarded as filler.
 
 Three options when picking a card:
 
