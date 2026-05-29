@@ -88,7 +88,7 @@ const DRAFT_PICK_TARGET = HAND_SIZE;
 
 
 import {
-  GameSoundName,
+  type GameSoundName,
   playGameSound,
   setupGameAudioDelegation,
   playCardThump,
@@ -1085,7 +1085,7 @@ let simulationReplayIndex = 0;
 let simulationReplayTimerId: number | null = null;
 let isReplayComplete = false;
 let isMidGameRankingOpen = false;
-let hasPlayedDealAnimation = true;
+const hasPlayedDealAnimation = true;
 let didMoveHandPointerDrag = false;
 let lastPointerDownCardId: string | null = null;
 
@@ -5117,7 +5117,7 @@ function renderMidGameRankingModal() {
    - Menu phòng có nút bật/tắt + thanh âm lượng.
    ========================================= */
 
-const IN_GAME_BACKGROUND_MUSIC_SRC = "assets/sounds/in-game-background.mp3";
+const IN_GAME_BACKGROUND_MUSIC_SRC = "/assets/audio/music/in-game-background.mp3";
 const IN_GAME_MUSIC_MUTED_KEY = "travelDeck.inGameMusicMuted";
 const IN_GAME_MUSIC_VOLUME_KEY = "travelDeck.inGameMusicVolume";
 const DEFAULT_IN_GAME_MUSIC_VOLUME = 0.5;
@@ -5397,7 +5397,7 @@ function transitionToScreen(newScreen: AppScreen) {
 
   // 1. Create overlay video — plays from beginning (smoke effect)
   const vid = document.createElement("video");
-  vid.src = "./assets/chuyencanh.mp4";
+  vid.src = "/assets/videos/chuyencanh.mp4";
   vid.muted = true;
   vid.playsInline = true;
   vid.style.cssText = [

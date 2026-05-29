@@ -28,7 +28,7 @@ export function renderMapSelectionScreen() {
 
           ${renderMapCardWrapper(`
             <div class="map-card map-card--active">
-              <div class="map-card__bg" style="background-image: url('./assets/saigon.jpg')"></div>
+              <div class="map-card__bg" style="background-image: url('/assets/images/cities/saigon.jpg')"></div>
               <div class="map-card__overlay"></div>
               <div class="map-card__content">
                 <span class="map-card__badge">Đã Mở Khoá</span>
@@ -46,7 +46,7 @@ export function renderMapSelectionScreen() {
 
           ${renderMapCardWrapper(`
             <div class="map-card map-card--locked">
-              <div class="map-card__bg" style="background-image: url('./assets/danang.jpg')"></div>
+              <div class="map-card__bg" style="background-image: url('/assets/images/cities/danang.jpg')"></div>
               <div class="map-card__overlay"></div>
               <div class="map-card__content">
                 <span class="map-card__badge map-card__badge--locked">Sắp ra mắt</span>
@@ -60,7 +60,7 @@ export function renderMapSelectionScreen() {
 
           ${renderMapCardWrapper(`
             <div class="map-card map-card--locked">
-              <div class="map-card__bg" style="background-image: url('./assets/hanoi.jpeg')"></div>
+              <div class="map-card__bg" style="background-image: url('/assets/images/cities/hanoi.jpeg')"></div>
               <div class="map-card__overlay"></div>
               <div class="map-card__content">
                 <span class="map-card__badge map-card__badge--locked">Sắp ra mắt</span>
