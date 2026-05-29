@@ -5,8 +5,7 @@
  * Does NOT own: per-player resources, grid mutations, VP calculations.
  *
  * Phase order per day:  DRAFTING → ASSEMBLY → SIMULATION → SCORING
- * After 3 days:         PHASE_TRANSITION (player chooses next region)
- * Full flow:            LOBBY → [day 1-3 loop] → PHASE_TRANSITION → FINISHED
+ * 5-day loop:           LOBBY → [day 1-5 loop] → FINISHED
  */
 
 import {
@@ -61,7 +60,7 @@ const TRANSITIONS: Record<GamePhase, GamePhase[]> = {
     lobby: ['draft'],
     draft: ['placement'],
     placement: ['scoring'],
-    scoring: ['draft', 'finished'],   // draft = next day, finished = after day 3
+    scoring: ['draft', 'finished'],   // draft = next day, finished = after maxDays
     finished: [],
 };
 
@@ -70,8 +69,8 @@ const TRANSITIONS: Record<GamePhase, GamePhase[]> = {
 export interface Room {
     roomId: string;
     phase: GamePhase;
-    day: number;            // 1–5 (board has 5 days, POC uses 3)
-    maxDays: number;        // 3 for MVP / phase 1
+    day: number;            // 1–5 (5 days per game design doc)
+    maxDays: number;        // 5 days per game-logic-design.md
     pickIndex: number;      // which pick round within drafting (0–2)
     maxPlayers: number;
     players: PlayerState[];
@@ -90,7 +89,7 @@ export function createRoom(
     cards: TravelCard[],
     broadcast: (room: Room) => void,
     maxPlayers = 2,
-    maxDays = 3,
+    maxDays = 5,
 ): Room {
     return {
         roomId,

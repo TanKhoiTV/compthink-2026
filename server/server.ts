@@ -101,7 +101,7 @@ async function handleCreateRoom(req: Request): Promise<Response> {
         body.cards,
         broadcaster,
         body.maxPlayers ?? 2,
-        body.maxDays ?? 3,
+        body.maxDays ?? 5,
     );
     rooms.set(roomId, room);
 
