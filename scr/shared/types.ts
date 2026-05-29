@@ -1,5 +1,5 @@
 export type Tag = 'FOOD' | 'CULTURE' | 'ACTION' | 'UTILITY' | 'TRANSIT' | 'REST' | 'OUTDOOR' | 'INDOOR';
-export type TimeSlot = 'morning' | 'afternoon' | 'evening';
+export type TimeSlot = 'early_morning' | 'morning' | 'afternoon' | 'evening' | 'night';
 export type GamePhase = 'lobby' | 'draft' | 'placement' | 'scoring' | 'finished';
 
 export type Coordinates = {
