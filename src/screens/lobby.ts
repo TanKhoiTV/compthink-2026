@@ -5,8 +5,11 @@
  * Interactive handlers use window.* globals bound in app.ts.
  */
 
-export function renderOnlineEntryScreen(savedSession: { roomId: string; playerId: string; playerName: string } | null, userDisplayName: string): string {
-  return `
+export function renderOnlineEntryScreen(
+	savedSession: { roomId: string; playerId: string; playerName: string } | null,
+	userDisplayName: string,
+): string {
+	return `
     <main class="online-entry-screen">
       <section class="online-entry-card">
         <div class="online-entry-card__brand">
@@ -61,8 +64,8 @@ export function renderOnlineEntryScreen(savedSession: { roomId: string; playerId
         </div>
 
         ${
-          savedSession
-            ? `
+					savedSession
+						? `
               <div class="online-entry-card__resume">
                 <div>
                   <strong>Phiên cũ</strong>
@@ -72,58 +75,64 @@ export function renderOnlineEntryScreen(savedSession: { roomId: string; playerId
                 <button class="online-entry-card__ghost" onclick="event.stopPropagation(); window.clearSavedRoomFromLobby()">Xóa lưu</button>
               </div>
             `
-            : ""
-        }
+						: ""
+				}
       </section>
     </main>
   `;
 }
 
 export function renderOnlineLobbyRoomScreen(
-  roomId: string,
-  playerId: string,
-  selfPlayerName: string,
-  phase: string,
-  players: Array<{ id: string; name: string; isConnected: boolean; hasJoined: boolean; isReady: boolean }>,
-  isHost: boolean,
-  canStart: boolean,
+	roomId: string,
+	playerId: string,
+	selfPlayerName: string,
+	phase: string,
+	players: Array<{
+		id: string;
+		name: string;
+		isConnected: boolean;
+		hasJoined: boolean;
+		isReady: boolean;
+	}>,
+	isHost: boolean,
+	canStart: boolean,
 ): string {
-  if (phase !== "lobby") return "";
+	if (phase !== "lobby") return "";
 
-  const playersHtml = players
-    .map((player) => {
-      const isSelf = player.id === playerId;
+	const playersHtml = players
+		.map((player) => {
+			const isSelf = player.id === playerId;
 
-      const slotClass = player.isConnected
-        ? "is-connected"
-        : player.hasJoined
-          ? "is-offline"
-          : "is-empty";
-      const statusText = player.isConnected
-        ? player.isReady
-          ? "READY"
-          : "WAIT"
-        : player.hasJoined
-          ? "OFFLINE"
-          : "-";
+			const slotClass = player.isConnected
+				? "is-connected"
+				: player.hasJoined
+					? "is-offline"
+					: "is-empty";
+			const statusText = player.isConnected
+				? player.isReady
+					? "READY"
+					: "WAIT"
+				: player.hasJoined
+					? "OFFLINE"
+					: "-";
 
-      const hasOccupiedSlot = player.isConnected || player.hasJoined;
-      const playerDisplayName = hasOccupiedSlot ? player.name : "Đang chờ...";
+			const hasOccupiedSlot = player.isConnected || player.hasJoined;
+			const playerDisplayName = hasOccupiedSlot ? player.name : "Đang chờ...";
 
-      return `
+			return `
         <div class="online-lobby-player ${slotClass} ${isSelf ? "is-self" : ""}">
           <div class="online-lobby-player__slot">${player.id.toUpperCase()}</div>
           <div class="online-lobby-player__info">
             <strong>${playerDisplayName}</strong>
-            <span>${player.isConnected ? (player.isReady ? "Sẵn sàng" : "Chưa sẵn sàng") : (player.hasJoined ? "Đã offline • giữ slot" : "Trống")}</span>
+            <span>${player.isConnected ? (player.isReady ? "Sẵn sàng" : "Chưa sẵn sàng") : player.hasJoined ? "Đã offline • giữ slot" : "Trống"}</span>
           </div>
           <div class="online-lobby-player__status ${player.isReady ? "is-ready" : ""} ${player.hasJoined && !player.isConnected ? "is-offline" : ""}">${statusText}</div>
         </div>
       `;
-    })
-    .join("");
+		})
+		.join("");
 
-  return `
+	return `
     <main class="online-lobby-screen">
       <section class="online-lobby-card">
         <div class="online-lobby-card__header">

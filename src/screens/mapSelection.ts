@@ -1,7 +1,7 @@
 import { authClientState } from "../online/socketClient.ts";
 
 export function renderMapSelectionScreen(): string {
-  return `
+	return `
     <div id="map-selection-screen" class="hub">
       <div id="hub-hero" class="hub__hero">
         <div class="hub-hero__media" id="hub-hero-media">

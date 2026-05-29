@@ -5,7 +5,7 @@
  */
 
 export function renderAuthScreen(): string {
-  return `
+	return `
     <main class="auth-screen">
       <section class="auth-card">
         <div class="auth-card__brand">
