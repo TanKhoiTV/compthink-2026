@@ -1,7 +1,7 @@
 import type { BoardCell, GridPosition, TravelCard, ValidationResult } from './types.ts';
 
 export const DAYS = [1, 2, 3, 4, 5] as const;
-export const TIME_SLOTS = ['morning', 'afternoon', 'evening'] as const;
+export const TIME_SLOTS = ['early_morning', 'morning', 'afternoon', 'evening', 'night'] as const;
 export const DISTANCE_LIMIT_KM = 20;
 
 export function createBoard(): BoardCell[] {
