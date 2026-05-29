@@ -10,12 +10,12 @@
  */
 
 import {
-    createBoard,
-    placeCardOnBoard,
-    skipBoardSlot,
-    lockBoardSlot,
-    validateDistance,
-} from './board.ts';
+    createBoardCells as createBoard,
+    placeCardOnBoardCells as placeCardOnBoard,
+    skipBoardSlotCells as skipBoardSlot,
+    lockBoardSlotCells as lockBoardSlot,
+    validateDistanceCells as validateDistance,
+} from '../scr/shared/board.ts';
 import {
     validateCardUsage,
     payDraftCost,
@@ -24,9 +24,9 @@ import {
     passHandsClockwise,
     STARTING_RESOURCES,
     MAX_STAMINA,
-} from './rules.ts';
-import { calculateScore, boardToTimeline } from './score.ts';
-import { drawDailyHand, simulateRandomEvent } from './dice.ts';
+} from '../scr/shared/rules.ts';
+import { calculateScore, boardToTimeline } from '../scr/shared/score.ts';
+import { drawDailyHand, simulateRandomEvent } from '../scr/shared/dice.ts';
 import type {
     BoardCell,
     GamePhase,
@@ -36,7 +36,7 @@ import type {
     PlayerState,
     RoomSnapshot,
     TravelCard,
-} from './types.ts';
+} from '../scr/shared/types.ts';
 
 // ─── FSM event types ──────────────────────────────────────────────────────────
 

@@ -30,6 +30,11 @@ export type TravelCard = {
   image: string;
   icon?: string;
   rarity?: Rarity;
+  // backward-compat alias fields (server code references old names)
+  card_id: string;    // same as id
+  cost: number;       // same as coin
+  on_play_effect: string;  // derived from onPlayEffect
+  victory_point: number; // same as vp
   city: string;
   onPlayEffect?: GameCardEffect;
   coordinates: Coordinates;

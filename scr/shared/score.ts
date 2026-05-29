@@ -1,4 +1,4 @@
-import { validateDistance } from './board.ts';
+import { validateDistanceCells as validateDistance } from './board.ts';
 import type { BoardCell, ItineraryEntry, PlayerResources, TravelCard } from './types.ts';
 
 export type ScoreBreakdown = {

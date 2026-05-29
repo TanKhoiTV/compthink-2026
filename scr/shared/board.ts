@@ -1,4 +1,4 @@
-import type { TravelCard } from "../types.ts";
+import type { BoardCell, TravelCard } from "../types.ts";
 import { days, rows } from "./constants.ts";
 
 export type BoardSlots = (TravelCard | null)[][];
@@ -207,4 +207,85 @@ function haversineKm(
 
 function toRad(value: number) {
   return (value * Math.PI) / 180;
+}
+
+// ─── BoardCell[] functions (server-side flat model, coexists with BoardSlots above) ───
+
+export function createBoardCells(): BoardCell[] {
+  return DAYS.flatMap((day) => TIME_SLOTS.map((slot) => ({ day, slot })));
+}
+
+export function placeCardOnBoardCells(
+  board: BoardCell[],
+  cardId: string,
+  position: GridPosition,
+): BoardCell[] {
+  return board.map((cell) =>
+    cell.day === position.day && cell.slot === position.slot
+      ? { ...cell, card_id: cardId }
+      : cell,
+  );
+}
+
+export function skipBoardSlotCells(
+  board: BoardCell[],
+  position: GridPosition,
+): BoardCell[] {
+  return board.map((cell) =>
+    cell.day === position.day && cell.slot === position.slot
+      ? { ...cell, skipped: true }
+      : cell,
+  );
+}
+
+export function lockBoardSlotCells(
+  board: BoardCell[],
+  position: GridPosition,
+): BoardCell[] {
+  return board.map((cell) =>
+    cell.day === position.day && cell.slot === position.slot
+      ? { ...cell, locked: true }
+      : cell,
+  );
+}
+
+export function validateDistanceCells(board: BoardCell[], cards: TravelCard[]) {
+  const byId = new Map(cards.map((card) => [card.card_id, card]));
+  let previous: TravelCard | undefined;
+  let previousDay: number | undefined;
+  let totalKm = 0;
+  let penalty = 0;
+  const warnings: string[] = [];
+
+  for (const cell of [...board].sort(
+    (a, b) => a.day - b.day || TIME_SLOTS.indexOf(a.slot as (typeof TIME_SLOTS)[number]) - TIME_SLOTS.indexOf(b.slot as (typeof TIME_SLOTS)[number]),
+  )) {
+    const current = cell.card_id ? byId.get(cell.card_id) : undefined;
+    if (!current || current.is_virtual) {
+      previous = undefined;
+      previousDay = undefined;
+      continue;
+    }
+
+    if (previous && previousDay === cell.day) {
+      const distance = haversineKm(
+        previous.coordinates.lat,
+        previous.coordinates.lng,
+        current.coordinates.lat,
+        current.coordinates.lng,
+      );
+      totalKm += distance;
+      if (distance > DISTANCE_LIMIT_KM) {
+        penalty += 2;
+        warnings.push(
+          `$previous.name-> $current.name: $distance.toFixed(1)km exceeds $DISTANCE_LIMIT_KMkm.`,
+        );
+      }
+    }
+
+    previous = current;
+    previousDay = cell.day;
+  }
+
+  return { totalKm: Number(totalKm.toFixed(1)), penalty, warnings };
 }
