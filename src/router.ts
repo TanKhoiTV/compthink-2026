@@ -72,8 +72,6 @@ function reattachCardClickDelegation() {
 		const cardId = el.getAttribute("data-hand-card-id");
 		if (!cardId) return;
 		el.addEventListener("click", () => handleHandCardClick(cardId));
-		el.addEventListener("pointerenter", () => handleHandCardEnter(cardId));
-		el.addEventListener("pointerleave", () => handleHandCardLeave());
 	});
 
 	// Draft card clicks
@@ -106,21 +104,22 @@ async function handleBoardCellClick(rowIndex: number, colIndex: number) {
 
 async function handleHandCardClick(cardId: string) {
 	const state = await import("./state.ts");
-	state.setSelectedHandCardId(
-		state.getSelectedHandCardId() === cardId ? null : cardId,
-	);
-	rerenderGameShell();
-}
+	const currentSelected = state.getSelectedHandCardId();
 
-async function handleHandCardEnter(cardId: string) {
-	const state = await import("./state.ts");
-	state.setFocusedHandCardId(cardId);
-	rerenderGameShell();
-}
+	if (currentSelected === cardId) {
+		// Card already selected — toggle focused detail popup
+		const currentlyFocused = state.getFocusedHandCardId();
+		if (currentlyFocused === cardId) {
+			state.setFocusedHandCardId(null);
+		} else {
+			state.setFocusedHandCardId(cardId);
+		}
+	} else {
+		// Select the card, clear any focused popup
+		state.setSelectedHandCardId(cardId);
+		state.setFocusedHandCardId(null);
+	}
 
-async function handleHandCardLeave() {
-	const state = await import("./state.ts");
-	state.setFocusedHandCardId(null);
 	rerenderGameShell();
 }
 
