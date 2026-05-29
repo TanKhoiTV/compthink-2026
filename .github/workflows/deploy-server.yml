@@ -31,10 +31,9 @@ jobs:
       - name: Deploy to Deno Deploy
         run: |
           deno deploy \
-            --project trekkopoly-server \
+            --org "${{ vars.DENO_DEPLOY_ORG }}" \
+            --app "${{ vars.DENO_DEPLOY_APP }}" \
             --prod \
-            --include='./server' \
-            --include='./scr' \
             server/server.ts
         env:
           DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
