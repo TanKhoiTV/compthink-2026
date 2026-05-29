@@ -1,0 +1,22 @@
+{
+  "name": "trekkopoly",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "lessc css/style.less build/client.css",
+    "build:js": "rollup -c",
+    "build": "npm run build:css && npm run build:js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.3.0",
+    "less": "^4.6.4",
+    "rollup": "^4.60.4",
+    "tslib": "^2.8.1",
+    "typescript": "^6.0.3"
+  }
+}

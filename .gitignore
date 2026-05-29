@@ -1,2 +1,24 @@
+# Thư viện node
+node_modules/
+/dist
+/build
+/.next/
+/out/
+
+# File log hoặc file môi trường bảo mật
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# File cấu hình của hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build_pipeline.zip
+
+# Tool caches
 .pi-lens/
 context.md
