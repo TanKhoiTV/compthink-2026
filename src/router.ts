@@ -97,5 +97,3 @@ function handleHandCardLeave() {
 		state.setFocusedHandCardId(null);
 	});
 }
-
-

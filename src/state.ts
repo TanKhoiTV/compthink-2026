@@ -25,7 +25,7 @@ let playerHand: TravelCard[] = [];
 
 // ── Draft state ──────────────────────────────────────────────────────────────
 
-let draftPool: TravelCard[] = [];       // 7 cards shown for current pick round
+let draftPool: TravelCard[] = []; // 7 cards shown for current pick round
 let draftSelectedCardId: string | null = null;
 const draftPickSecondsLeft = 10;
 const draftTimerId: number | null = null;
