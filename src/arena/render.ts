@@ -39,23 +39,35 @@ const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
 function getRarityLabel(rarity: string | undefined): string {
 	switch (rarity) {
-		case "common": return "★";
-		case "uncommon": return "★★";
-		case "epic": return "★★★★";
-		case "legendary": return "★★★★★";
-		default: return "★";
+		case "common":
+			return "★";
+		case "uncommon":
+			return "★★";
+		case "epic":
+			return "★★★★";
+		case "legendary":
+			return "★★★★★";
+		default:
+			return "★";
 	}
 }
 
 function getTagLabel(tag: string): string {
 	switch (tag) {
-		case "FOOD": return "Ẩm thực";
-		case "CULTURE": return "Văn hóa";
-		case "ACTION": return "Khám phá";
-		case "UTILITY": return "Tiện ích";
-		case "OUTDOOR": return "Ngoài trời";
-		case "INDOOR": return "Trong nhà";
-		default: return "Khác";
+		case "FOOD":
+			return "Ẩm thực";
+		case "CULTURE":
+			return "Văn hóa";
+		case "ACTION":
+			return "Khám phá";
+		case "UTILITY":
+			return "Tiện ích";
+		case "OUTDOOR":
+			return "Ngoài trời";
+		case "INDOOR":
+			return "Trong nhà";
+		default:
+			return "Khác";
 	}
 }
 
@@ -124,7 +136,12 @@ function getShortCity(city: string): string {
 	return trimmed.slice(0, 12).trim() + "…";
 }
 
-function getTextFitClass(text: string, base: string, medium: number, long: number): string {
+function getTextFitClass(
+	text: string,
+	base: string,
+	medium: number,
+	long: number,
+): string {
 	const len = text.trim().length;
 	if (len >= long) return `${base} ${base}--xs`;
 	if (len >= medium) return `${base} ${base}--sm`;
@@ -142,13 +159,13 @@ function getHandCityClass(city: string): string {
 // ── Main arena ──────────────────────────────────────────────────────────────
 
 export function renderMainArena(): string {
-const boardSlots = getBoardSlots();
-const currentDayIndex = getCurrentDayIndex();
-const isDraft = getIsDraftPhase();
-const isSimulation = getIsSimulationMode();
-const focusedCard = getShowFocusedPopup()
-? getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard()
-: null;
+	const boardSlots = getBoardSlots();
+	const currentDayIndex = getCurrentDayIndex();
+	const isDraft = getIsDraftPhase();
+	const isSimulation = getIsSimulationMode();
+	const focusedCard = getShowFocusedPopup()
+		? (getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard())
+		: null;
 
 	return `
     <main class="arena ${isSimulation ? "arena--scanning" : ""}">
@@ -300,9 +317,15 @@ function renderPlayerHandSection(): string {
 
 // ── Hand card (individually) ────────────────────────────────────────────────
 
-export function renderHandCard(card: TravelCard, index: number, selectedId: string | null): string {
+export function renderHandCard(
+	card: TravelCard,
+	index: number,
+	selectedId: string | null,
+): string {
 	const isSelected = card.id === selectedId;
-	const rarityClass = card.rarity ? `hand-card--${card.rarity}` : "hand-card--common";
+	const rarityClass = card.rarity
+		? `hand-card--${card.rarity}`
+		: "hand-card--common";
 	const fanClass = `hand-card--fan-${index + 1}`;
 	const shortName = (card as any).shortName || getShortName(card.name);
 	const shortCity = (card as any).shortCity || getShortCity(card.city || "");
@@ -315,9 +338,13 @@ export function renderHandCard(card: TravelCard, index: number, selectedId: stri
       data-hand-card-id="${card.id}"
       title="${card.name}"
     >
-      ${isSelected ? `
+      ${
+				isSelected
+					? `
         <button class="hand-card__close" onclick="event.stopPropagation(); clearSelectedHandCard()" title="Hủy chọn">×</button>
-      ` : ""}
+      `
+					: ""
+			}
 
       <div class="hand-card__header">
         <div class="hand-card__title-block">
@@ -477,7 +504,10 @@ function getHandCardById(cardId: string | null): TravelCard | null {
 }
 
 // Expose clearSelectedHandCard globally for inline onclick handlers
-if (typeof globalThis !== "undefined" && !(globalThis as any).clearSelectedHandCard) {
+if (
+	typeof globalThis !== "undefined" &&
+	!(globalThis as any).clearSelectedHandCard
+) {
 	(globalThis as any).clearSelectedHandCard = () => {
 		import("../state.ts").then((state) => {
 			state.setSelectedHandCardId(null);
