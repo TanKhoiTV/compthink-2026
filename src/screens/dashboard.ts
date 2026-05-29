@@ -1,6 +1,6 @@
 import { authClientState } from "../online/socketClient.ts";
 
-export const HERO_VIDEO_SRC = "/assets/videos/one-minute-in-vietnam.mp4";
+export const HERO_VIDEO_SRC = "assets/videos/one-minute-in-vietnam.mp4";
 
 export function initDashboardHub() {
 	const media = document.getElementById("hub-hero-media") as HTMLElement | null;

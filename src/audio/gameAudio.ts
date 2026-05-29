@@ -13,17 +13,17 @@ export type GameSoundName =
   | "reject";
 
 const GAME_SOUND_FILES = {
-  deal: "/assets/audio/sounds/card-deal.mp3",
-  returnDeck: "/assets/audio/sounds/card-return-deck.mp3",
-  cardSelect: "/assets/audio/sounds/card-select.mp3",
-  cardPlace: "/assets/audio/sounds/card-place.mp3",
-  button: "/assets/audio/sounds/ui-click.mp3",
-  scanCell: "/assets/audio/sounds/scan-cell.mp3",
-  scanBad: "/assets/audio/sounds/scan-bad.mp3",
-  eventTraffic: "/assets/audio/sounds/event-traffic.mp3",
-  eventDistance: "/assets/audio/sounds/event-distance.mp3",
-  eventStorm: "/assets/audio/sounds/event-storm.mp3",
-  eventPromo: "/assets/audio/sounds/event-promo.mp3",
+  deal: "assets/audio/sounds/card-deal.mp3",
+  returnDeck: "assets/audio/sounds/card-return-deck.mp3",
+  cardSelect: "assets/audio/sounds/card-select.mp3",
+  cardPlace: "assets/audio/sounds/card-place.mp3",
+  button: "assets/audio/sounds/ui-click.mp3",
+  scanCell: "assets/audio/sounds/scan-cell.mp3",
+  scanBad: "assets/audio/sounds/scan-bad.mp3",
+  eventTraffic: "assets/audio/sounds/event-traffic.mp3",
+  eventDistance: "assets/audio/sounds/event-distance.mp3",
+  eventStorm: "assets/audio/sounds/event-storm.mp3",
+  eventPromo: "assets/audio/sounds/event-promo.mp3",
 } as const;
 
 let gameAudioContext: AudioContext | null = null;
