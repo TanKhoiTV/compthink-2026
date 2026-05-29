@@ -1,4 +1,4 @@
-import type { TravelCard } from "../types.ts";
+import type { TravelCard } from "./types.ts"
 import type { BoardTotals } from "./board.ts";
 
 export type ResourceState = {

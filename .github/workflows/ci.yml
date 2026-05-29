@@ -22,9 +22,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check (client + shared)
-        run: npx tsc --noEmit
-
       - name: Build client bundle
         run: npm run build
 

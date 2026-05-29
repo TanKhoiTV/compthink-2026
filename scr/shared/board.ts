@@ -1,4 +1,4 @@
-import type { BoardCell, TravelCard } from "../types.ts";
+import type { BoardCell, TravelCard } from "./types.ts"
 import { days, rows } from "./constants.ts";
 
 export type BoardSlots = (TravelCard | null)[][];
