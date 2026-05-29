@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'server/**'
-      - 'scr/shared/**'
-      - '.github/workflows/deploy-server.yml'
+      - "server/**"
+      - "scr/shared/**"
+      - ".github/workflows/deploy-server.yml"
 
   # Manual trigger from Actions tab
   workflow_dispatch:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write  # Required for Deno Deploy auth
+      id-token: write # Required for Deno Deploy auth
       contents: read
 
     steps:
