@@ -18,6 +18,7 @@ import {
 	getSelectedHandCardId,
 	getFocusedHandCardId,
 	getFocusedBoardCard,
+	getShowFocusedPopup,
 	getIsSimulationMode,
 	getPhaseNumber,
 	getAccumulatedVP,
@@ -141,12 +142,13 @@ function getHandCityClass(city: string): string {
 // ── Main arena ──────────────────────────────────────────────────────────────
 
 export function renderMainArena(): string {
-	const boardSlots = getBoardSlots();
-	const currentDayIndex = getCurrentDayIndex();
-	const isDraft = getIsDraftPhase();
-	const isSimulation = getIsSimulationMode();
-	const focusedCard =
-		getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard();
+const boardSlots = getBoardSlots();
+const currentDayIndex = getCurrentDayIndex();
+const isDraft = getIsDraftPhase();
+const isSimulation = getIsSimulationMode();
+const focusedCard = getShowFocusedPopup()
+? getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard()
+: null;
 
 	return `
     <main class="arena ${isSimulation ? "arena--scanning" : ""}">

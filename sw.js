@@ -1,4 +1,4 @@
-const CACHE_NAME = "trekkopoly-v2";
+const CACHE_NAME = "trekkopoly-v3";
 
 // Danh sách các file cần lưu vào bộ nhớ đệm để chơi offline
 const ASSETS_TO_CACHE = [

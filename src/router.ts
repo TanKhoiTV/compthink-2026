@@ -72,6 +72,8 @@ function reattachCardClickDelegation() {
 		const cardId = el.getAttribute("data-hand-card-id");
 		if (!cardId) return;
 		el.addEventListener("click", () => handleHandCardClick(cardId));
+		el.addEventListener("pointerenter", () => handleHandCardEnter(cardId));
+		el.addEventListener("pointerleave", () => handleHandCardLeave());
 	});
 
 	// Draft card clicks
@@ -109,17 +111,36 @@ async function handleHandCardClick(cardId: string) {
 	if (currentSelected === cardId) {
 		// Card already selected — toggle focused detail popup
 		const currentlyFocused = state.getFocusedHandCardId();
-		if (currentlyFocused === cardId) {
+		if (currentlyFocused === cardId && state.getShowFocusedPopup()) {
+			// Already showing popup — dismiss
 			state.setFocusedHandCardId(null);
+			state.setShowFocusedPopup(false);
 		} else {
+			// Show popup
 			state.setFocusedHandCardId(cardId);
+			state.setShowFocusedPopup(true);
 		}
 	} else {
 		// Select the card, clear any focused popup
 		state.setSelectedHandCardId(cardId);
 		state.setFocusedHandCardId(null);
+		state.setShowFocusedPopup(false);
 	}
 
+	rerenderGameShell();
+}
+
+async function handleHandCardEnter(cardId: string) {
+	const state = await import("./state.ts");
+	state.setFocusedHandCardId(cardId);
+	state.setShowFocusedPopup(false);
+	rerenderGameShell();
+}
+
+async function handleHandCardLeave() {
+	const state = await import("./state.ts");
+	state.setFocusedHandCardId(null);
+	state.setShowFocusedPopup(false);
 	rerenderGameShell();
 }
 
