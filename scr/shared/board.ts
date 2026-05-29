@@ -102,7 +102,7 @@ export const TIME_SLOTS = ['early_morning', 'morning', 'afternoon', 'evening', '
 export const DISTANCE_LIMIT_KM = 20;
 
 export function cellId(position: GridPosition) {
-  return \`day-\${position.day}-\${position.slot}\`;
+  return `day-\${position.day}-\${position.slot}`;
 }
 
 export function validateGridPlacement(
@@ -117,7 +117,7 @@ export function validateGridPlacement(
     return { ok: false, reason: 'Invalid time slot.' };
   }
   if (position.day !== activeDay) {
-    return { ok: false, reason: \`Cards can only be placed on day \${activeDay}.\` };
+    return { ok: false, reason: `Cards can only be placed on day \${activeDay}.` };
   }
 
   const rowIndex = slotToRowIndex(position.slot);
@@ -179,7 +179,7 @@ export function validateDistance(
         if (distance > DISTANCE_LIMIT_KM) {
           penalty += 2;
           warnings.push(
-            \`\${previous.name} -> \${cell.name}: \${distance.toFixed(1)}km exceeds \${DISTANCE_LIMIT_KM}km.\`,
+            `\${previous.name} -> \${cell.name}: \${distance.toFixed(1)}km exceeds \${DISTANCE_LIMIT_KM}km.`,
           );
         }
       }
@@ -278,7 +278,7 @@ export function validateDistanceCells(board: BoardCell[], cards: TravelCard[]) {
       if (distance > DISTANCE_LIMIT_KM) {
         penalty += 2;
         warnings.push(
-          `$previous.name-> $current.name: $distance.toFixed(1)km exceeds $DISTANCE_LIMIT_KMkm.`,
+          `${previous.name} -> ${current.name}: ${distance.toFixed(1)}km exceeds ${DISTANCE_LIMIT_KM}km.`,
         );
       }
     }
