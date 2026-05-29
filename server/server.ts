@@ -22,7 +22,7 @@ import {
     sendError,
     type PlayerSession,
 } from './player.ts';
-import type { RoomSnapshot, TravelCard } from './types.ts';
+import type { TravelCard } from './types.ts';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -44,20 +44,17 @@ const sessions = new Map<string, PlayerSession>();
  * game.ts calls this whenever state changes.
  * We send a JSON-RPC notification (no `id`) to every connected player in the room.
  */
-function makeBroadcaster(roomId: string): (snapshot: RoomSnapshot) => void {
-    return (snapshot: RoomSnapshot) => {
-        const room = rooms.get(roomId);
-        if (!room) return;
-
-        const payload = JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'roomSnapshot',
-            params: snapshot,
-        });
-
+function makeBroadcaster(roomId: string): (room: Room) => void {
+    return (room: Room) => {
         for (const player of room.players) {
             const session = sessions.get(player.playerId);
             if (session?.socket.readyState === WebSocket.OPEN) {
+                const snapshot = exportSnapshot(room, player.playerId);
+                const payload = JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'roomSnapshot',
+                    params: snapshot,
+                });
                 session.socket.send(payload);
             }
         }
@@ -150,7 +147,7 @@ function handleWebSocket(req: Request): Response {
         }
 
         // Send initial snapshot immediately after join
-        sendNotification(session, 'roomSnapshot', exportSnapshot(room));
+        sendNotification(session, 'roomSnapshot', exportSnapshot(room, playerId));
     };
 
     socket.onmessage = (event: MessageEvent) => {
@@ -169,7 +166,7 @@ function handleWebSocket(req: Request): Response {
         if (room && room.phase !== 'finished') {
             removePlayer(room, playerId);
             // Notify remaining players
-            makeBroadcaster(roomId)(exportSnapshot(room));
+            makeBroadcaster(roomId)(room);
         }
 
         // Clean up empty lobby rooms

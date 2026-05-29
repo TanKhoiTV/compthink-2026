@@ -80,7 +80,7 @@ export interface Room {
     winnerId?: string;
     timeline?: ItineraryEntry[];
     /** broadcast callback — injected by server.ts so game.ts stays platform-free */
-    broadcast: (snapshot: RoomSnapshot) => void;
+    broadcast: (room: Room) => void;
 }
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ export interface Room {
 export function createRoom(
     roomId: string,
     cards: TravelCard[],
-    broadcast: (snapshot: RoomSnapshot) => void,
+    broadcast: (room: Room) => void,
     maxPlayers = 2,
     maxDays = 3,
 ): Room {
@@ -171,7 +171,7 @@ export function startGame(room: Room): void {
     }
     doTransition(room, 'draft', 'Game started.');
     beginDraftingPhase(room);
-    room.broadcast(exportSnapshot(room));
+    room.broadcast(room);
 }
 
 // ─── Phase: DRAFT ─────────────────────────────────────────────────────────────
@@ -182,13 +182,15 @@ function beginDraftingPhase(room: Room): void {
 
     room.players.forEach((player, index) => {
         // Deal 5 cards from the seeded hand generator
-        player.hand = drawDailyHand(room.cards, day, index, 5);
+        player.hand = drawDailyHand(room.cards, day, index, 7);
         player.chosen = [];
         player.ready = false;
         player.draftChoice = undefined;
     });
 
     room.log.push(`Day ${day}: Drafting phase started. Hands dealt.`);
+
+    room.broadcast(room);
 }
 
 /**
@@ -221,13 +223,15 @@ export function draftCard(
             );
         }
 
-        // If stamina was overspent, lock a slot on next day
+        // If stamina was overspent, lock a random slot on next day
         if (exhausted && room.day < room.maxDays) {
             const nextDay = room.day + 1;
-            const lockTarget: GridPosition = { day: nextDay, slot: 'morning' };
+            const slots = ['early_morning', 'morning', 'afternoon', 'evening', 'night'] as const;
+            const randomSlot = slots[Math.floor(Math.random() * slots.length)];
+            const lockTarget: GridPosition = { day: nextDay, slot: randomSlot };
             player.board = lockBoardSlot(player.board, lockTarget);
             room.log.push(
-                `${player.name} is exhausted — morning slot of day ${nextDay} locked.`,
+                `${player.name} is exhausted — ${randomSlot} slot of day ${nextDay} locked.`,
             );
         }
 
@@ -256,14 +260,14 @@ function advanceDraftRound(room: Room): void {
     room.pickIndex += 1;
     room.players.forEach((p) => (p.ready = false));
 
-    const DRAFT_ROUNDS = 3;
+    const DRAFT_ROUNDS = 5;
 
     if (room.pickIndex >= DRAFT_ROUNDS) {
         // Drafting complete — discard remaining hands, move to placement
         room.players.forEach((p) => (p.hand = []));
         room.log.push(`Day ${room.day}: All draft picks done. Moving to placement.`);
         doTransition(room, 'placement', 'Drafting complete');
-        room.broadcast(exportSnapshot(room));
+        room.broadcast(room);
         return;
     }
 
@@ -271,12 +275,12 @@ function advanceDraftRound(room: Room): void {
     const hands = room.players.map((p) => [...p.hand]);
     const n = room.players.length;
     room.players.forEach((p, i) => {
-        p.hand = hands[(i - 1 + n) % n];
+        p.hand = hands[(i + 1) % n];
         p.ready = false;
     });
 
     room.log.push(`Draft round ${room.pickIndex + 1} started (hands passed).`);
-    room.broadcast(exportSnapshot(room));
+    room.broadcast(room);
 }
 
 // ─── Phase: PLACEMENT ─────────────────────────────────────────────────────────
@@ -318,7 +322,7 @@ export function placeCard(
         `${player.name} placed "${card.name}" at day ${position.day} ${position.slot}.`,
     );
 
-    room.broadcast(exportSnapshot(room));
+    room.broadcast(room);
 }
 
 /**
@@ -340,7 +344,7 @@ export function skipSlot(
 
     player.board = skipBoardSlot(player.board, position);
     room.log.push(`${player.name} skipped ${position.slot} on day ${position.day}.`);
-    room.broadcast(exportSnapshot(room));
+    room.broadcast(room);
 }
 
 /**
@@ -419,7 +423,7 @@ function runSimulationAndScoring(room: Room): void {
         beginDraftingPhase(room);
     }
 
-    room.broadcast(exportSnapshot(room));
+    room.broadcast(room);
 }
 
 // ─── Finish ───────────────────────────────────────────────────────────────────
@@ -451,7 +455,7 @@ function finishGame(room: Room): void {
 
 // ─── Snapshot export (what clients receive) ───────────────────────────────────
 
-export function exportSnapshot(room: Room): RoomSnapshot {
+export function exportSnapshot(room: Room, viewerId?: string): RoomSnapshot {
     return {
         roomId: room.roomId,
         phase: room.phase,
@@ -459,8 +463,15 @@ export function exportSnapshot(room: Room): RoomSnapshot {
         pickIndex: room.pickIndex,
         maxPlayers: room.maxPlayers,
         players: room.players.map((p) => ({
-            ...p,
-            // Don't expose other players' full hand — only their chosen / board state
+            playerId: p.playerId,
+            name: p.name,
+            board: p.board,
+            chosen: p.chosen,
+            storage: p.storage,
+            resources: p.resources,
+            ready: p.ready,
+            draftChoice: p.draftChoice,
+            hand: viewerId && p.playerId === viewerId ? p.hand : [],
         })),
         winnerId: room.winnerId,
         log: [...room.log],

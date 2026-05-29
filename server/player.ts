@@ -100,7 +100,7 @@ export function sendError(
 }
 
 export function sendNotification(session: PlayerSession, method: string, params: unknown): void {
-    const msg: RpcNotification = { jsonrpc: '2.0', method, params: params as Record<string, unknown> };
+    const msg: RpcNotification = { jsonrpc: '2.0', method, params: params ?? {} };
     safeSend(session.socket, msg);
 }
 
@@ -173,7 +173,7 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
                     throw rpcError(RPC_ERRORS.INVALID_PARAMS.code, 'mode must be "store" or "rest"');
                 }
                 draftCard(session.room!, session.playerId, cardId, mode);
-                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!) });
+                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!, session.playerId) });
                 break;
             }
 
@@ -187,7 +187,7 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
                 }
                 const position: GridPosition = { day, slot: slot as GridPosition['slot'] };
                 placeCard(session.room!, session.playerId, cardId, position);
-                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!) });
+                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!, session.playerId) });
                 break;
             }
 
@@ -199,14 +199,14 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
                 }
                 const position: GridPosition = { day, slot: slot as GridPosition['slot'] };
                 skipSlot(session.room!, session.playerId, position);
-                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!) });
+                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!, session.playerId) });
                 break;
             }
 
             case 'confirmDay': {
                 requireRoom(session);
                 confirmDay(session.room!, session.playerId);
-                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!) });
+                sendResult(session, id, { ok: true, snapshot: exportSnapshot(session.room!, session.playerId) });
                 break;
             }
 
@@ -214,7 +214,7 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
 
             case 'getSnapshot': {
                 requireRoom(session);
-                sendResult(session, id, exportSnapshot(session.room!));
+                sendResult(session, id, exportSnapshot(session.room!, session.playerId));
                 break;
             }
 
