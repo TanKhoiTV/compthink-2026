@@ -57,29 +57,14 @@ export function rerenderGameShell() {
 // ── Card click delegation ───────────────────────────────────────────────────
 
 function reattachCardClickDelegation() {
-	// Board cell clicks
-	document.querySelectorAll("[data-board-cell]").forEach((el) => {
-		const rowIndex = Number(el.getAttribute("data-row-index"));
-		const colIndex = Number(el.getAttribute("data-col-index"));
-		el.addEventListener("click", (e) => {
-			e.stopPropagation();
-			handleBoardCellClick(rowIndex, colIndex);
-		});
-	});
+	// Board cell / hand card clicks: inline onclick → window['handleBoardCellClick'] / window['selectHandCard']
 
-	// Hand card hover (click is handled by inline onclick for synchronous selection)
+	// Hand card hover (visual feedback, no rerender)
 	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
 		const cardId = el.getAttribute("data-hand-card-id");
 		if (!cardId) return;
 		el.addEventListener("pointerenter", () => handleHandCardEnter(cardId));
 		el.addEventListener("pointerleave", () => handleHandCardLeave());
-	});
-
-	// Draft card clicks
-	document.querySelectorAll("[data-draft-card-id]").forEach((el) => {
-		const cardId = el.getAttribute("data-draft-card-id");
-		if (!cardId) return;
-		el.addEventListener("click", () => handleDraftCardClick(cardId));
 	});
 
 	// Focused card close
@@ -96,13 +81,7 @@ function reattachCardClickDelegation() {
 	}
 }
 
-// ── Click handlers (import state and rerender) ──────────────────────────────
-
-async function handleBoardCellClick(rowIndex: number, colIndex: number) {
-	const state = await import("./state.ts");
-	// Placeholder: will wire to server placement in full implementation
-	console.log(`Board cell click: row=${rowIndex}, col=${colIndex}`);
-}
+// ── Hover handlers (no rerender — CSS handles visual feedback) ──────────────
 
 function handleHandCardEnter(cardId: string) {
 	// CSS :hover effects handle visual feedback on the card itself.
@@ -119,8 +98,4 @@ function handleHandCardLeave() {
 	});
 }
 
-async function handleDraftCardClick(cardId: string) {
-	const state = await import("./state.ts");
-	state.setDraftSelectedCardId(cardId);
-	rerenderGameShell();
-}
+

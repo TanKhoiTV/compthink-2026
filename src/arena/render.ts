@@ -13,7 +13,7 @@
 import {
 	getBoardSlots,
 	getCurrentDayIndex,
-	getIsDraftPhase,
+	getGamePhase,
 	getPlayerHand,
 	getSelectedHandCardId,
 	getFocusedHandCardId,
@@ -24,6 +24,8 @@ import {
 	getAccumulatedVP,
 	getRemainingTurnSeconds,
 	getPlayerBoards,
+	getDraftPool,
+	getDraftRound,
 	currentPlayerId,
 	playerIds,
 } from "../state.ts";
@@ -161,7 +163,7 @@ function getHandCityClass(city: string): string {
 export function renderMainArena(): string {
 	const boardSlots = getBoardSlots();
 	const currentDayIndex = getCurrentDayIndex();
-	const isDraft = getIsDraftPhase();
+	const isDraft = getGamePhase() === "draft";
 	const isSimulation = getIsSimulationMode();
 	const focusedCard = getShowFocusedPopup()
 		? (getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard())
@@ -200,13 +202,13 @@ export function renderMainArena(): string {
           </section>
         </div>
 
-        ${isDraft ? renderDraftPanel() : ""}
+        ${isDraft ? renderDraftPanel() : getGamePhase() === "placement" ? renderEndDayButton() : ""}
       </div>
 
       ${renderPlayerHandSection()}
       ${focusedCard ? renderFocusedCard(focusedCard) : ""}
       ${renderTurnTimer()}
-    </main>
+    </main>\n    ${getGamePhase() === "finished" ? renderGameOverScreen() : ""}
   `;
 }
 
@@ -236,6 +238,7 @@ function renderBoardCell(
         data-board-cell="true"
         data-row-index="${rowIndex}"
         data-col-index="${colIndex}"
+        onclick="event.stopPropagation(); window['handleBoardCellClick'](${rowIndex}, ${colIndex})"
         title="${isCurrentDayColumn ? (isPlaceable ? "Thả thẻ vào ô ngày hiện tại" : "Chỉ xếp thẻ cho ngày hiện tại") : "Không phải ngày hiện tại"}"
       >
         <span class="empty-plus">+</span>
@@ -249,6 +252,7 @@ function renderBoardCell(
       data-board-cell="true"
       data-row-index="${rowIndex}"
       data-col-index="${colIndex}"
+      onclick="event.stopPropagation(); window['handleBoardCellClick'](${rowIndex}, ${colIndex})"
       title="${card.name}"
     >
       ${renderBoardMiniCard(card)}
@@ -280,7 +284,8 @@ export function renderBoardMiniCard(card: TravelCard): string {
 
 function renderPlayerHandSection(): string {
 	const hand = getPlayerHand();
-	const isDraft = getIsDraftPhase();
+	const gamePhase = getGamePhase();
+	const isDraft = gamePhase === "draft";
 	const currentDayIndex = getCurrentDayIndex();
 	const selectedId = getSelectedHandCardId();
 
@@ -399,12 +404,29 @@ export function renderHandCards(): string {
 // ── Draft panel ─────────────────────────────────────────────────────────────
 
 function renderDraftPanel(): string {
+	const pool = getDraftPool();
+	const round = getDraftRound();
+	const hand = getPlayerHand();
+	const alreadyPicked = hand.length; // cards picked in prior rounds
+
 	return `
     <div class="draft-panel">
-      <h2>Chọn thẻ (Vòng 1)</h2>
-      <div class="draft-cards">
-        <!-- Draft cards rendered by draft UI -->
+      <div class="draft-panel__header">
+        <h2>Chọn thẻ — Vòng ${round}/5</h2>
+        <span class="draft-panel__picked">Đã chọn: ${alreadyPicked}/5</span>
       </div>
+      <div class="draft-cards">
+        ${pool
+					.map(
+						(card, index) => `
+          <div class="daily-draft-card daily-draft-card--${index + 1}" data-draft-card-id="${card.id}">
+            ${renderHandCard(card, index, null)}
+          </div>
+        `,
+					)
+					.join("")}
+      </div>
+      <p class="draft-panel__hint">Nhấn vào một thẻ để chọn</p>
     </div>
   `;
 }
@@ -481,6 +503,32 @@ function renderResourceOrbs(): string {
       <div class="orb orb--debt">
         <span class="orb__icon">D</span>
         <span class="orb__value">--</span>
+      </div>
+    </div>
+  `;
+}
+
+// ── End Day button ──────────────────────────────────────────────────────────
+
+function renderEndDayButton(): string {
+	return `
+    <div class="end-day-bar">
+      <button class="end-day-btn" onclick="event.stopPropagation(); window['endCurrentDay']()">
+        Kết thúc ngày ${getCurrentDayIndex() + 1}
+      </button>
+    </div>
+  `;
+}
+
+// ── Game Over screen ─────────────────────────────────────────────────────────
+
+function renderGameOverScreen(): string {
+	return `
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <h1>Hoàn thành!</h1>
+        <p class="game-over__vp">Tổng VP: ${getAccumulatedVP()}</p>
+        <button onclick="location.reload()" class="game-over__replay">Chơi lại</button>
       </div>
     </div>
   `;
