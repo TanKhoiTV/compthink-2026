@@ -7,6 +7,8 @@ export type Coordinates = {
   lng: number;
 };
 
+export type Rarity = 'common' | 'uncommon' | 'epic' | 'legendary';
+
 export type TravelCard = {
   card_id: string;
   name: string;
@@ -16,6 +18,9 @@ export type TravelCard = {
   cost: number;
   stamina: number;
   victory_point: number;
+  image: string;
+  icon?: string;
+  rarity?: Rarity;
   on_play_effect: string;
   coordinates: Coordinates;
   is_virtual?: boolean;
