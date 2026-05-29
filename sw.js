@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trekkopoly-v1';
+const CACHE_NAME = 'trekkopoly-v2';
 
 // Danh sách các file cần lưu vào bộ nhớ đệm để chơi offline
 const ASSETS_TO_CACHE = [
@@ -42,15 +42,45 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// 3. Chiến lược Cache-First
-// Khi game yêu cầu file, SW sẽ lục trong bộ nhớ máy trước, nếu không có mới lên mạng tải
+// 3. Chiến lược lai (Hybrid):
+//    - Build assets (JS/CSS): Stale-While-Revalidate — phục vụ ngay từ cache,
+//      đồng thời tải bản mới ở nền và cập nhật cache cho lần sau.
+//      Giúp game luôn chạy code mới nhất sau mỗi lần deploy mà không cần
+//      người dùng xoá cache hay hard refresh.
+//    - Static assets (ảnh, nhạc, video): Cache-First — không đổi thường xuyên.
+//    - index.html: Network-First — luôn lấy bản mới từ server.
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse; // Trả về file trong máy ngay lập tức (< 1s)
-            }
-            return fetch(event.request); // Nếu máy chưa có thì mới lên mạng lấy
-        })
-    );
+    const url = new URL(event.request.url);
+    const isBuildAsset = url.pathname.endsWith('/build/client.js') ||
+                         url.pathname.endsWith('/build/client.css');
+    const isIndex = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
+
+    if (isBuildAsset) {
+        // Stale-While-Revalidate for JS/CSS
+        event.respondWith(
+            caches.open(CACHE_NAME).then((cache) => {
+                return cache.match(event.request).then((cached) => {
+                    const fetchPromise = fetch(event.request).then((network) => {
+                        cache.put(event.request, network.clone());
+                        return network;
+                    }).catch(() => cached); // fallback to cache if offline
+                    return cached || fetchPromise;
+                });
+            })
+        );
+    } else if (isIndex) {
+        // Network-First for index.html
+        event.respondWith(
+            fetch(event.request).catch(() =>
+                caches.match(event.request)
+            )
+        );
+    } else {
+        // Cache-First for everything else (images, audio, fonts, etc.)
+        event.respondWith(
+            caches.match(event.request).then((cached) =>
+                cached || fetch(event.request)
+            )
+        );
+    }
 });
