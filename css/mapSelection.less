@@ -1,0 +1,304 @@
+/* ==============================================
+   TREKPOLOGY — Map Selection Screen
+   ============================================== */
+
+.map-selection-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: transparent; /* Video shows through from behind */
+  color: #fff;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Dark overlay on top of video for readability and hiding video artifacts */
+.map-selection-screen::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 6, 3, 0.65) 0%,
+    rgba(10, 6, 3, 0.4) 40%,
+    rgba(10, 6, 3, 0.65) 100%
+  );
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Everything inside sits above the overlay */
+.hub-topbar,
+.map-selection__container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Tái sử dụng .hub-topbar từ dashboard.less */
+
+.map-selection__container {
+  flex: 1;
+  padding: 100px 40px 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.map-selection__header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.map-selection__header h2 {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+.map-selection__header p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Map Grid --- */
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+/* --- Column wrapper — holds the pillar backdrop + animates in --- */
+
+.map-card-col {
+  position: relative;
+  /* Initial state: further right and slightly smaller for stronger effect */
+  opacity: 0;
+  transform: translateX(250px) scale(0.85);
+  transition:
+    opacity 0.5s ease,
+    transform 0.65s cubic-bezier(0.34, 1.85, 0.64, 1); /* Stronger bouncy spring easing */
+
+  /* The frosted glass pillar behind each card */
+  &::before {
+    content: "";
+    position: absolute;
+    top: -24px;
+    bottom: -24px;
+    left: -12px;
+    right: -12px;
+    border-radius: 28px;
+    background: rgba(8, 5, 3, 0.45);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    z-index: 0;
+    pointer-events: none;
+  }
+}
+
+/* Triggered by JS — col slides in, card is always visible inside col */
+.map-card-col--slide-in {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/* --- Card base (inside col) --- */
+
+.map-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 10 / 14;
+  height: auto;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  border: 2px solid transparent;
+  background: #111;
+  z-index: 1; /* sits above the ::before pillar */
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s,
+    transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.map-card__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s ease;
+}
+
+.map-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(10, 6, 3, 0.95) 0%,
+    rgba(10, 6, 3, 0.4) 50%,
+    transparent 100%
+  );
+  transition: opacity 0.3s ease;
+}
+
+.map-card__content {
+  position: absolute;
+  inset: 0;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 2;
+}
+
+.map-card__badge {
+  align-self: flex-start;
+  background: var(--map-accent, #c6ad8f);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.map-card__badge--locked {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.map-card__title {
+  font-size: 26px;
+  font-weight: 900;
+  margin-bottom: 8px;
+  letter-spacing: 1.5px;
+  color: #fff;
+}
+
+.map-card__desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* Container for title + desc */
+.map-card__info {
+  transform: translateY(20px);
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Action buttons */
+.map-card__actions {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+  right: 28px;
+  display: flex;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.map-card__btn {
+  flex: 1;
+  text-align: center;
+  border: none;
+  padding: 12px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.map-card__btn--primary {
+  background: var(--map-accent, #c6ad8f);
+  color: #fff;
+}
+
+.map-card__btn--secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.map-card__btn--primary:hover {
+  background: #d8bda0;
+  transform: scale(1.04);
+}
+
+.map-card__btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.04);
+}
+
+/* --- Active Card (Sài Gòn) --- */
+.map-card--active {
+  cursor: pointer;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.map-card--active:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 28px 56px rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Don't override translateX during slide-in phase */
+.map-card--slide-in.map-card--active:hover {
+  transform: translateY(-8px) translateX(0);
+}
+
+.map-card--active:hover .map-card__bg {
+  transform: scale(1.06);
+}
+
+.map-card--active:hover .map-card__overlay {
+  background: linear-gradient(
+    to top,
+    rgba(10, 6, 3, 0.96) 0%,
+    rgba(10, 6, 3, 0.6) 60%,
+    rgba(10, 6, 3, 0.15) 100%
+  );
+}
+
+.map-card--active:hover .map-card__info {
+  transform: translateY(-48px);
+}
+
+.map-card--active:hover .map-card__actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Locked Cards --- */
+.map-card--locked {
+  cursor: not-allowed;
+  /* We removed grayscale and dimming, allowing the art to pop while the badge shows 'Sắp ra mắt' */
+}
+
+.map-card--locked .map-card__desc {
+  margin-bottom: 0;
+}
