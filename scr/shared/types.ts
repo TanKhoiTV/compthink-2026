@@ -9,19 +9,29 @@ export type Coordinates = {
 
 export type Rarity = 'common' | 'uncommon' | 'epic' | 'legendary';
 
+export type CardEffectType = 'NONE' | 'RECOVER_XU' | 'RECOVER_LA' | 'GAIN_VP' | 'DEDUCT_LA' | 'IGNORE_DISTANCE_NEXT' | 'DISCOUNT_XU_NEXT' | 'DOUBLE_VP_NEXT';
+
+export type GameCardEffect = {
+  has_effect: boolean;
+  effect_type: CardEffectType;
+  effect_value: number;
+};
+
 export type TravelCard = {
-  card_id: string;
+  id: string;
   name: string;
   description?: string;
   phase_pool?: string;
   tags: Tag[];
-  cost: number;
+  tag: Tag;
+  coin: number;
   stamina: number;
-  victory_point: number;
+  vp: number;
   image: string;
   icon?: string;
   rarity?: Rarity;
-  on_play_effect: string;
+  city: string;
+  onPlayEffect?: GameCardEffect;
   coordinates: Coordinates;
   is_virtual?: boolean;
 };

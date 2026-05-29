@@ -1,76 +1,201 @@
-import type { BoardCell, GridPosition, TravelCard, ValidationResult } from './types.ts';
+import type { TravelCard } from "../types.ts";
+import { days, rows } from "./constants.ts";
+
+export type BoardSlots = (TravelCard | null)[][];
+
+export type BoardPosition = {
+  rowIndex: number;
+  colIndex: number;
+};
+
+export type BoardTotals = {
+  vp: number;
+  coin: number;
+  stamina: number;
+  usedSlots: number;
+};
+
+export function createEmptyBoardSlots(): BoardSlots {
+  return rows.map(() => days.map(() => null));
+}
+
+export function getPlacedCards(boardSlots: BoardSlots): TravelCard[] {
+  const placedCards: TravelCard[] = [];
+
+  for (const row of boardSlots) {
+    for (const card of row) {
+      if (card !== null) {
+        placedCards.push(card);
+      }
+    }
+  }
+
+  return placedCards;
+}
+
+export function getCurrentDayPlacedCards(
+  boardSlots: BoardSlots,
+  dayIndex: number
+): TravelCard[] {
+  const cards: TravelCard[] = [];
+
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const card = boardSlots[rowIndex]?.[dayIndex] ?? null;
+
+    if (card) {
+      cards.push(card);
+    }
+  }
+
+  return cards;
+}
+
+export function getBoardCardByPosition(
+  boardSlots: BoardSlots,
+  rowIndex: number,
+  colIndex: number
+): TravelCard | null {
+  return boardSlots[rowIndex]?.[colIndex] ?? null;
+}
+
+export function getCardTagKeys(card: TravelCard): string[] {
+  if (card.tags && card.tags.length > 0) {
+    return card.tags.map((tag) => tag.toUpperCase());
+  }
+
+  return [card.tag.toUpperCase()];
+}
+
+export function countCardsWithTag(cards: TravelCard[], tag: string): number {
+  return cards.filter((card) => getCardTagKeys(card).includes(tag)).length;
+}
+
+// ─── Canonical validation (adapted from original scr/shared/board.ts) ─────────
+
+/** Map row index to legacy TimeSlot name. */
+function rowIndexToSlot(rowIndex: number): string {
+  const slots = ['early_morning', 'morning', 'afternoon', 'evening', 'night'];
+  return slots[rowIndex] ?? 'unknown';
+}
+
+/** Map legacy TimeSlot name to row index. */
+function slotToRowIndex(slot: string): number {
+  const slots: Record<string, number> = {
+    early_morning: 0, morning: 1, afternoon: 2, evening: 3, night: 4,
+  };
+  return slots[slot] ?? -1;
+}
+
+/** Legacy-style position type (compatibility). */
+export type GridPosition = {
+  day: number;
+  slot: string;
+};
+
+export type ValidationResult = {
+  ok: boolean;
+  reason?: string;
+};
 
 export const DAYS = [1, 2, 3, 4, 5] as const;
 export const TIME_SLOTS = ['early_morning', 'morning', 'afternoon', 'evening', 'night'] as const;
 export const DISTANCE_LIMIT_KM = 20;
 
-export function createBoard(): BoardCell[] {
-  return DAYS.flatMap((day) => TIME_SLOTS.map((slot) => ({ day, slot })));
-}
-
 export function cellId(position: GridPosition) {
-  return `day-${position.day}-${position.slot}`;
+  return \`day-\${position.day}-\${position.slot}\`;
 }
 
-export function validateGridPlacement(board: BoardCell[], position: GridPosition, activeDay: number): ValidationResult {
-  if (!DAYS.includes(position.day as (typeof DAYS)[number])) return { ok: false, reason: 'Invalid travel day.' };
-  if (!TIME_SLOTS.includes(position.slot as (typeof TIME_SLOTS)[number])) return { ok: false, reason: 'Invalid time slot.' };
-  if (position.day !== activeDay) return { ok: false, reason: `Cards can only be placed on day ${activeDay}.` };
+export function validateGridPlacement(
+  boardSlots: BoardSlots,
+  position: GridPosition,
+  activeDay: number,
+): ValidationResult {
+  if (!DAYS.includes(position.day as (typeof DAYS)[number])) {
+    return { ok: false, reason: 'Invalid travel day.' };
+  }
+  if (!TIME_SLOTS.includes(position.slot as (typeof TIME_SLOTS)[number])) {
+    return { ok: false, reason: 'Invalid time slot.' };
+  }
+  if (position.day !== activeDay) {
+    return { ok: false, reason: \`Cards can only be placed on day \${activeDay}.\` };
+  }
 
-  const target = board.find((cell) => cell.day === position.day && cell.slot === position.slot);
-  if (!target) return { ok: false, reason: 'Grid cell does not exist.' };
-  if (target.card_id) return { ok: false, reason: 'This time slot already has a destination card.' };
-  if (target.skipped) return { ok: false, reason: 'This time slot has been skipped as a rest buffer.' };
-  if (target.locked) return { ok: false, reason: 'This time slot is locked because of exhaustion.' };
+  const rowIndex = slotToRowIndex(position.slot);
+  const colIndex = days.indexOf(position.day);
+  if (rowIndex < 0 || colIndex < 0) {
+    return { ok: false, reason: 'Grid cell does not exist.' };
+  }
+
+  const cell = boardSlots[rowIndex]?.[colIndex];
+  if (cell === undefined) return { ok: false, reason: 'Grid cell does not exist.' };
+  if (cell !== null) return { ok: false, reason: 'This time slot already has a destination card.' };
 
   return { ok: true };
 }
 
-export function placeCardOnBoard(board: BoardCell[], cardId: string, position: GridPosition): BoardCell[] {
-  return board.map((cell) => (cell.day === position.day && cell.slot === position.slot ? { ...cell, card_id: cardId } : cell));
+export function placeCardOnBoard(
+  boardSlots: BoardSlots,
+  card: TravelCard,
+  position: GridPosition,
+): BoardSlots {
+  const rowIndex = slotToRowIndex(position.slot);
+  const colIndex = days.indexOf(position.day);
+  if (rowIndex < 0 || colIndex < 0) return boardSlots;
+
+  return boardSlots.map((row, ri) =>
+    row.map((existing, ci) => (ri === rowIndex && ci === colIndex ? card : existing)),
+  );
 }
 
-export function skipBoardSlot(board: BoardCell[], position: GridPosition): BoardCell[] {
-  return board.map((cell) => (cell.day === position.day && cell.slot === position.slot ? { ...cell, skipped: true } : cell));
-}
-
-export function lockBoardSlot(board: BoardCell[], position: GridPosition): BoardCell[] {
-  return board.map((cell) => (cell.day === position.day && cell.slot === position.slot ? { ...cell, locked: true } : cell));
-}
-
-export function validateDistance(board: BoardCell[], cards: TravelCard[]) {
-  const byId = new Map(cards.map((card) => [card.card_id, card]));
+export function validateDistance(
+  boardSlots: BoardSlots,
+  cards: TravelCard[],
+): { totalKm: number; penalty: number; warnings: string[] } {
+  const byId = new Map(cards.map((card) => [card.id, card]));
   let previous: TravelCard | undefined;
-  let previousDay: number | undefined;
+  let previousCol: number | undefined;
   let totalKm = 0;
   let penalty = 0;
   const warnings: string[] = [];
 
-  for (const cell of [...board].sort((a, b) => a.day - b.day || TIME_SLOTS.indexOf(a.slot) - TIME_SLOTS.indexOf(b.slot))) {
-    const current = cell.card_id ? byId.get(cell.card_id) : undefined;
-    if (!current || current.is_virtual) {
-      previous = undefined;
-      previousDay = undefined;
-      continue;
-    }
-
-    if (previous && previousDay === cell.day) {
-      const distance = haversineKm(previous.coordinates.lat, previous.coordinates.lng, current.coordinates.lat, current.coordinates.lng);
-      totalKm += distance;
-      if (distance > DISTANCE_LIMIT_KM) {
-        penalty += 2;
-        warnings.push(`${previous.name} -> ${current.name}: ${distance.toFixed(1)}km exceeds ${DISTANCE_LIMIT_KM}km.`);
+  // Flatten board in row-major order (all day-0 slots, then day-1, etc.)
+  for (let colIndex = 0; colIndex < days.length; colIndex += 1) {
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+      const cell = boardSlots[rowIndex]?.[colIndex];
+      if (!cell || cell.is_virtual) {
+        previous = undefined;
+        previousCol = undefined;
+        continue;
       }
-    }
 
-    previous = current;
-    previousDay = cell.day;
+      if (previous && previousCol === colIndex) {
+        const distance = haversineKm(
+          previous.coordinates.lat,
+          previous.coordinates.lng,
+          cell.coordinates.lat,
+          cell.coordinates.lng,
+        );
+        totalKm += distance;
+        if (distance > DISTANCE_LIMIT_KM) {
+          penalty += 2;
+          warnings.push(
+            \`\${previous.name} -> \${cell.name}: \${distance.toFixed(1)}km exceeds \${DISTANCE_LIMIT_KM}km.\`,
+          );
+        }
+      }
+
+      previous = cell;
+      previousCol = colIndex;
+    }
   }
 
   return { totalKm: Number(totalKm.toFixed(1)), penalty, warnings };
 }
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+function haversineKm(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
   const earthRadiusKm = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
