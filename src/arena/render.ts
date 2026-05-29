@@ -202,7 +202,7 @@ export function renderMainArena(): string {
           </section>
         </div>
 
-        ${isDraft ? renderDraftPanel() : getGamePhase() === "placement" ? renderEndDayButton() : ""}
+        ${!isDraft && getGamePhase() === "placement" ? renderEndDayButton() : ""}
       </div>
 
       ${renderPlayerHandSection()}
@@ -289,6 +289,36 @@ function renderPlayerHandSection(): string {
 	const currentDayIndex = getCurrentDayIndex();
 	const selectedId = getSelectedHandCardId();
 
+	if (isDraft) {
+		// ── Draft phase: render draft pool inside player-hand--draft ──
+		const pool = getDraftPool();
+		const round = getDraftRound();
+		const alreadyPicked = hand.length;
+
+		return `
+      <section class="player-hand player-hand--draft">
+        <div class="player-hand__top">
+          <div class="player-hand__title">
+            <span class="hand-badge">DRAFT</span>
+            <h2>Chọn thẻ ngày ${DAYS[currentDayIndex]}</h2>
+          </div>
+          <div class="player-hand__meta">Vòng ${round}/5 · Đã chọn: ${alreadyPicked}/5</div>
+        </div>
+        <div class="player-hand__cards">
+          ${pool
+						.map(
+							(card, index) => `
+            <div class="daily-draft-card daily-draft-card--${index + 1}" data-draft-card-id="${card.id}">
+              ${renderHandCard(card, index, null)}
+            </div>
+          `,
+						)
+						.join("")}
+        </div>
+      </section>
+    `;
+	}
+
 	if (hand.length === 0) {
 		return `
       <section class="player-hand">
@@ -308,8 +338,8 @@ function renderPlayerHandSection(): string {
     <section class="player-hand">
       <div class="player-hand__top">
         <div class="player-hand__title">
-          <span class="hand-badge">${isDraft ? "DRAFT" : "HAND"}</span>
-          <h2>${isDraft ? `Chọn bài ngày ${DAYS[currentDayIndex]}` : `Bài ngày ${DAYS[currentDayIndex]}`}</h2>
+          <span class="hand-badge">HAND</span>
+          <h2>Bài ngày ${DAYS[currentDayIndex]}</h2>
         </div>
         <div class="player-hand__meta">Giữ 0.5s để xem lớn</div>
       </div>
@@ -399,36 +429,6 @@ export function renderHandCards(): string {
 	return hand
 		.map((card, index) => renderHandCard(card, index, selectedId))
 		.join("");
-}
-
-// ── Draft panel ─────────────────────────────────────────────────────────────
-
-function renderDraftPanel(): string {
-	const pool = getDraftPool();
-	const round = getDraftRound();
-	const hand = getPlayerHand();
-	const alreadyPicked = hand.length; // cards picked in prior rounds
-
-	return `
-    <div class="draft-panel">
-      <div class="draft-panel__header">
-        <h2>Chọn thẻ — Vòng ${round}/5</h2>
-        <span class="draft-panel__picked">Đã chọn: ${alreadyPicked}/5</span>
-      </div>
-      <div class="draft-cards">
-        ${pool
-					.map(
-						(card, index) => `
-          <div class="daily-draft-card daily-draft-card--${index + 1}" data-draft-card-id="${card.id}">
-            ${renderHandCard(card, index, null)}
-          </div>
-        `,
-					)
-					.join("")}
-      </div>
-      <p class="draft-panel__hint">Nhấn vào một thẻ để chọn</p>
-    </div>
-  `;
 }
 
 // ── Draft hand cards ────────────────────────────────────────────────────────

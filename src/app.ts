@@ -35,10 +35,7 @@ import {
 	getShowFocusedPopup,
 	setShowFocusedPopup,
 } from "./state.ts";
-import {
-	createInitialDeck,
-	shuffleCards,
-} from "../scr/shared/deck.ts";
+import { createInitialDeck, shuffleCards } from "../scr/shared/deck.ts";
 import { saigonFoodCards } from "../scr/shared/data/index.ts";
 import { HAND_SIZE, PHASE_DAYS } from "../scr/shared/constants.ts";
 
@@ -115,7 +112,11 @@ function finishDailyDraft() {
  * Place the selected hand card onto a board cell.
  * Removes the card from hand. Does NOT refill hand (keeps it simple for MVP).
  */
-function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number) {
+function placeHandCardOnBoard(
+	cardId: string,
+	rowIndex: number,
+	colIndex: number,
+) {
 	if (getGamePhase() !== "placement") return;
 	if (colIndex !== getCurrentDayIndex()) return;
 
@@ -241,7 +242,10 @@ function endCurrentDay() {
  * Board cell click — places the selected card if in placement phase
  * and the cell is in the current day column.
  */
-(globalThis as any).handleBoardCellClick = (rowIndex: number, colIndex: number) => {
+(globalThis as any).handleBoardCellClick = (
+	rowIndex: number,
+	colIndex: number,
+) => {
 	if (getGamePhase() === "placement") {
 		const selectedId = getSelectedHandCardId();
 		if (selectedId) {
