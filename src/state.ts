@@ -76,6 +76,7 @@ let suppressNextClick = false;
 let isSimulationMode = false;
 const simulationReplayIndex = 0;
 const isReplayComplete = false;
+let showFocusedPopup = false;
 
 // ── Timer state ──────────────────────────────────────────────────────────────
 
@@ -175,6 +176,14 @@ export function setFocusedBoardCard(card: TravelCard | null) {
 
 export function getIsSimulationMode(): boolean {
 	return isSimulationMode;
+}
+
+export function getShowFocusedPopup(): boolean {
+	return showFocusedPopup;
+}
+
+export function setShowFocusedPopup(v: boolean) {
+	showFocusedPopup = v;
 }
 
 export function setIsSimulationMode(v: boolean) {
