@@ -1,0 +1,6 @@
+# LFS tracking for game assets
+TREKPOLOGY/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+TREKPOLOGY/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
+TREKPOLOGY/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+TREKPOLOGY/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+TREKPOLOGY/**/*.png filter=lfs diff=lfs merge=lfs -text
