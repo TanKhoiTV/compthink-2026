@@ -22,6 +22,22 @@ let wsBaseUrl = "ws://localhost:8080";
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
+export type AuthUser = {
+  id: string;
+  username: string;
+  displayName: string;
+};
+
+export type AuthClientState = {
+  isReady: boolean;
+  user: AuthUser | null;
+};
+
+export const authClientState: AuthClientState = {
+  isReady: false,
+  user: null,
+};
+
 export function configureServerUrls(httpUrl: string, wsUrl: string) {
 	serverBaseUrl = httpUrl;
 	wsBaseUrl = wsUrl;
