@@ -87,7 +87,7 @@ function reattachCardClickDelegation() {
 	const closeBtn = document.getElementById("focused-card-close");
 	if (closeBtn) {
 		closeBtn.addEventListener("click", () => {
-			import("../state.ts").then((state) => {
+			import("./state.ts").then((state) => {
 				state.setFocusedHandCardId(null);
 				state.setFocusedBoardCard(null);
 				rerenderGameShell();
@@ -99,13 +99,13 @@ function reattachCardClickDelegation() {
 // ── Click handlers (import state and rerender) ──────────────────────────────
 
 async function handleBoardCellClick(rowIndex: number, colIndex: number) {
-	const state = await import("../state.ts");
+	const state = await import("./state.ts");
 	// Placeholder: will wire to server placement in full implementation
 	console.log(`Board cell click: row=${rowIndex}, col=${colIndex}`);
 }
 
 async function handleHandCardClick(cardId: string) {
-	const state = await import("../state.ts");
+	const state = await import("./state.ts");
 	state.setSelectedHandCardId(
 		state.getSelectedHandCardId() === cardId ? null : cardId,
 	);
@@ -113,19 +113,19 @@ async function handleHandCardClick(cardId: string) {
 }
 
 async function handleHandCardEnter(cardId: string) {
-	const state = await import("../state.ts");
+	const state = await import("./state.ts");
 	state.setFocusedHandCardId(cardId);
 	rerenderGameShell();
 }
 
 async function handleHandCardLeave() {
-	const state = await import("../state.ts");
+	const state = await import("./state.ts");
 	state.setFocusedHandCardId(null);
 	rerenderGameShell();
 }
 
 async function handleDraftCardClick(cardId: string) {
-	const state = await import("../state.ts");
+	const state = await import("./state.ts");
 	state.setDraftSelectedCardId(cardId);
 	rerenderGameShell();
 }
