@@ -7,7 +7,7 @@
  * This replaces TREKPOLOGY's Socket.IO client (src/online/socketClient.ts).
  */
 
-import type { RoomSnapshot } from "../scr/shared/types.ts";
+import type { RoomSnapshot } from "../../scr/shared/types.ts";
 
 // ── Connection state ────────────────────────────────────────────────────────
 
@@ -17,8 +17,19 @@ let pendingResolve: ((value: unknown) => void) | null = null;
 let pendingReject: ((reason: Error) => void) | null = null;
 let onRoomSnapshotCallback: ((snapshot: RoomSnapshot) => void) | null = null;
 let onDisconnectCallback: (() => void) | null = null;
-let serverBaseUrl = "http://localhost:8080";
-let wsBaseUrl = "ws://localhost:8080";
+// Auto-detect: use the deployed Deno server when on GitHub Pages,
+// localhost for development.
+const isProduction =
+	typeof window !== "undefined" &&
+	(window.location.hostname === "tankhoitv.github.io" ||
+		window.location.hostname.includes("github.io"));
+
+let serverBaseUrl = isProduction
+	? "https://trekkopoly-3ecx8dx2y5kj.compthink-2026.deno.net"
+	: "http://localhost:8080";
+let wsBaseUrl = isProduction
+	? "wss://trekkopoly-3ecx8dx2y5kj.compthink-2026.deno.net"
+	: "ws://localhost:8080";
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
