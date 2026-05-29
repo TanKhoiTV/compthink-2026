@@ -337,6 +337,7 @@ export function renderHandCard(
       class="hand-card ${rarityClass} ${fanClass} ${isSelected ? "hand-card--selected" : ""}"
       data-hand-card-id="${card.id}"
       title="${card.name}"
+      onclick="event.stopPropagation(); window['selectHandCard']('${card.id}')" data-select-card="true"
     >
       ${
 				isSelected
@@ -501,19 +502,4 @@ function getHandCardById(cardId: string | null): TravelCard | null {
 	if (!cardId) return null;
 	const hand = getPlayerHand();
 	return hand.find((c) => c.id === cardId) ?? null;
-}
-
-// Expose clearSelectedHandCard globally for inline onclick handlers
-if (
-	typeof globalThis !== "undefined" &&
-	!(globalThis as any).clearSelectedHandCard
-) {
-	(globalThis as any).clearSelectedHandCard = () => {
-		import("../state.ts").then((state) => {
-			state.setSelectedHandCardId(null);
-			import("../router.ts").then((router) => {
-				router.rerenderGameShell();
-			});
-		});
-	};
 }
