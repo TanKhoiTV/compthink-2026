@@ -130,18 +130,19 @@ async function handleHandCardClick(cardId: string) {
 	rerenderGameShell();
 }
 
-async function handleHandCardEnter(cardId: string) {
-	const state = await import("./state.ts");
-	state.setFocusedHandCardId(cardId);
-	state.setShowFocusedPopup(false);
-	rerenderGameShell();
+function handleHandCardEnter(cardId: string) {
+	// CSS :hover effects handle visual feedback on the card itself.
+	// No rerender needed — the card fan layout uses CSS transitions.
+	// Just stash the focused card id for potential future use.
+	import("./state.ts").then((state) => {
+		state.setFocusedHandCardId(cardId);
+	});
 }
 
-async function handleHandCardLeave() {
-	const state = await import("./state.ts");
-	state.setFocusedHandCardId(null);
-	state.setShowFocusedPopup(false);
-	rerenderGameShell();
+function handleHandCardLeave() {
+	import("./state.ts").then((state) => {
+		state.setFocusedHandCardId(null);
+	});
 }
 
 async function handleDraftCardClick(cardId: string) {
