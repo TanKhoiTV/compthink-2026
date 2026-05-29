@@ -1,24 +1,2 @@
-#game-container {
-    padding: 20px;
-    font-family: sans-serif;
-}
-
-#board {
-    display: grid;
-    // Tạo lưới 3 hàng, 5 cột
-    grid-template-columns: repeat(5, 1fr); 
-    grid-template-rows: repeat(3, 150px);
-    gap: 10px; // Khoảng cách giữa các ô
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.slot {
-    background-color: #e0e0e0;
-    border: 2px dashed #999;
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-}
+// Main stylesheet — imports all component styles
+@import "client.less";

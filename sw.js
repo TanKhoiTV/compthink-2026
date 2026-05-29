@@ -4,9 +4,16 @@ const CACHE_NAME = 'trekkopoly-v1';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
+    './manifest.json',
     './build/client.js',
-    './build/client.css'
-    // Sau này có thêm thư mục img/ chứa ảnh thẻ bài thì thêm đường dẫn
+    './build/client.css',
+    '/assets/videos/chuyencanh2.mp4',
+    '/assets/images/cities/danang.jpg',
+    '/assets/images/cities/hanoi.jpeg',
+    '/assets/images/cities/saigon.jpg',
+    '/assets/images/backgrounds/lobby-bg.jpg',
+    '/assets/images/backgrounds/saigon-collage-hover/saigon-collage-bg.png',
+    '/assets/audio/music/in-game-background.mp3',
 ];
 
 // 1. Sự kiện Cài đặt (Install) - Gom hàng vào kho Cache
