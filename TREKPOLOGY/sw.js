@@ -15,10 +15,13 @@ const urlsToCache = [
   'https://cdn.socket.io/4.8.1/socket.io.min.js',
 
 
-  './assets/chuyencanh2.mp4',
-  './assets/danang.jpg',
-  './assets/hanoi.jpeg',
-  './assets/saigon.jpg'
+  '/assets/videos/chuyencanh2.mp4',
+  '/assets/images/cities/danang.jpg',
+  '/assets/images/cities/hanoi.jpeg',
+  '/assets/images/cities/saigon.jpg',
+  '/assets/images/backgrounds/lobby-bg.jpg',
+  '/assets/images/backgrounds/saigon-collage-hover/saigon-collage-bg.png',
+  '/assets/audio/music/in-game-background.mp3'
 ];
 
 // 1. Quá trình Cài đặt (Install): Tải và cất vào cache

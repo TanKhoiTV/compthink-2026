@@ -13,17 +13,17 @@ export type GameSoundName =
   | "reject";
 
 const GAME_SOUND_FILES = {
-  deal: "assets/sounds/card-deal.mp3",
-  returnDeck: "assets/sounds/card-return-deck.mp3",
-  cardSelect: "assets/sounds/card-select.mp3",
-  cardPlace: "assets/sounds/card-place.mp3",
-  button: "assets/sounds/ui-click.mp3",
-  scanCell: "assets/sounds/scan-cell.mp3",
-  scanBad: "assets/sounds/scan-bad.mp3",
-  eventTraffic: "assets/sounds/event-traffic.mp3",
-  eventDistance: "assets/sounds/event-distance.mp3",
-  eventStorm: "assets/sounds/event-storm.mp3",
-  eventPromo: "assets/sounds/event-promo.mp3",
+  deal: "/assets/audio/sounds/card-deal.mp3",
+  returnDeck: "/assets/audio/sounds/card-return-deck.mp3",
+  cardSelect: "/assets/audio/sounds/card-select.mp3",
+  cardPlace: "/assets/audio/sounds/card-place.mp3",
+  button: "/assets/audio/sounds/ui-click.mp3",
+  scanCell: "/assets/audio/sounds/scan-cell.mp3",
+  scanBad: "/assets/audio/sounds/scan-bad.mp3",
+  eventTraffic: "/assets/audio/sounds/event-traffic.mp3",
+  eventDistance: "/assets/audio/sounds/event-distance.mp3",
+  eventStorm: "/assets/audio/sounds/event-storm.mp3",
+  eventPromo: "/assets/audio/sounds/event-promo.mp3",
 } as const;
 
 let gameAudioContext: AudioContext | null = null;
@@ -179,7 +179,7 @@ function createCardPaperBuffer(audioContext: AudioContext, duration: number, rou
   for (let index = 0; index < frameCount; index += 1) {
     const progress = index / frameCount;
     const attack = Math.min(1, progress / 0.045);
-    const release = Math.pow(1 - progress, 2.05);
+    const release = (1 - progress) ** 2.05;
     const white = Math.random() * 2 - 1;
 
     brown = (brown + 0.035 * white) / 1.035;

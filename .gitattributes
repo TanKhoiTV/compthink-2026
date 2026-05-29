@@ -4,3 +4,10 @@ TREKPOLOGY/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
 TREKPOLOGY/**/*.jpg filter=lfs diff=lfs merge=lfs -text
 TREKPOLOGY/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
 TREKPOLOGY/**/*.png filter=lfs diff=lfs merge=lfs -text
+
+# Canonical asset store (Phase 1+)
+public/assets/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+public/assets/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
+public/assets/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+public/assets/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+public/assets/**/*.png filter=lfs diff=lfs merge=lfs -text
