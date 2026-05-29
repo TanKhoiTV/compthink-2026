@@ -67,11 +67,10 @@ function reattachCardClickDelegation() {
 		});
 	});
 
-	// Hand card clicks
+	// Hand card hover (click is handled by inline onclick for synchronous selection)
 	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
 		const cardId = el.getAttribute("data-hand-card-id");
 		if (!cardId) return;
-		el.addEventListener("click", () => handleHandCardClick(cardId));
 		el.addEventListener("pointerenter", () => handleHandCardEnter(cardId));
 		el.addEventListener("pointerleave", () => handleHandCardLeave());
 	});
@@ -90,6 +89,7 @@ function reattachCardClickDelegation() {
 			import("./state.ts").then((state) => {
 				state.setFocusedHandCardId(null);
 				state.setFocusedBoardCard(null);
+				state.setShowFocusedPopup(false);
 				rerenderGameShell();
 			});
 		});
@@ -102,32 +102,6 @@ async function handleBoardCellClick(rowIndex: number, colIndex: number) {
 	const state = await import("./state.ts");
 	// Placeholder: will wire to server placement in full implementation
 	console.log(`Board cell click: row=${rowIndex}, col=${colIndex}`);
-}
-
-async function handleHandCardClick(cardId: string) {
-	const state = await import("./state.ts");
-	const currentSelected = state.getSelectedHandCardId();
-
-	if (currentSelected === cardId) {
-		// Card already selected — toggle focused detail popup
-		const currentlyFocused = state.getFocusedHandCardId();
-		if (currentlyFocused === cardId && state.getShowFocusedPopup()) {
-			// Already showing popup — dismiss
-			state.setFocusedHandCardId(null);
-			state.setShowFocusedPopup(false);
-		} else {
-			// Show popup
-			state.setFocusedHandCardId(cardId);
-			state.setShowFocusedPopup(true);
-		}
-	} else {
-		// Select the card, clear any focused popup
-		state.setSelectedHandCardId(cardId);
-		state.setFocusedHandCardId(null);
-		state.setShowFocusedPopup(false);
-	}
-
-	rerenderGameShell();
 }
 
 function handleHandCardEnter(cardId: string) {

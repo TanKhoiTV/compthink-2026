@@ -1,10 +1,15 @@
 import { setupGameAudioDelegation } from "./audio/gameAudio.ts";
-import { transitionToScreen } from "./router.ts";
+import { rerenderGameShell, transitionToScreen } from "./router.ts";
 import {
 	setDeck,
 	setPlayerHand,
 	setCurrentDayIndex,
 	setIsDraftPhase,
+	setSelectedHandCardId,
+	setFocusedHandCardId,
+	getSelectedHandCardId,
+	getShowFocusedPopup,
+	setShowFocusedPopup,
 } from "./state.ts";
 import {
 	createInitialDeck,
@@ -51,6 +56,34 @@ setDeck(remainingDeck);
 setPlayerHand(hand);
 setCurrentDayIndex(0);
 setIsDraftPhase(false); // Skip draft for demo — show the board immediately
+
+// ── Expose global card handlers (inline onclick calls these — same pattern as old TREKPOLOGY) ──
+
+(globalThis as any).selectHandCard = (cardId: string) => {
+	const currentSelected = getSelectedHandCardId();
+	if (currentSelected === cardId) {
+		// Toggle focused popup on re-click
+		if (getShowFocusedPopup()) {
+			setFocusedHandCardId(null);
+			setShowFocusedPopup(false);
+		} else {
+			setFocusedHandCardId(cardId);
+			setShowFocusedPopup(true);
+		}
+	} else {
+		setSelectedHandCardId(cardId);
+		setFocusedHandCardId(null);
+		setShowFocusedPopup(false);
+	}
+	rerenderGameShell();
+};
+
+(globalThis as any).clearSelectedHandCard = () => {
+	setSelectedHandCardId(null);
+	setFocusedHandCardId(null);
+	setShowFocusedPopup(false);
+	rerenderGameShell();
+};
 
 // Start the app — render the game screen
 transitionToScreen("game");
