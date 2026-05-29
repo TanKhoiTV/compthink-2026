@@ -6,8 +6,8 @@ export function renderMapSelectionScreen(): string {
       <div id="hub-hero" class="hub__hero">
         <div class="hub-hero__media" id="hub-hero-media">
           <video id="hub-hero-video" class="hub-hero__video" muted loop playsinline preload="auto"
-            poster="/assets/videos/one-minute-in-vietnam-poster.jpg">
-            <source src="/assets/videos/one-minute-in-vietnam.mp4" type="video/mp4" />
+            poster="assets/videos/one-minute-in-vietnam-poster.jpg">
+            <source src="assets/videos/one-minute-in-vietnam.mp4" type="video/mp4" />
             <p>Trình duyệt không hỗ trợ phát video.</p>
           </video>
           <div class="hub-hero__video-controls">

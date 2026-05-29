@@ -21,7 +21,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 5,
   victory_point: 5,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_001.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_001.jpg',
   icon: '☕',
   rarity: 'common',
   city: 'Saigon',
@@ -42,7 +42,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 5,
   victory_point: 5,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_002.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_002.jpg',
   icon: '🍽️',
   rarity: 'common',
   city: 'Saigon',
@@ -63,7 +63,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 8,
   victory_point: 8,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_003.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_003.jpg',
   icon: '☕',
   rarity: 'common',
   city: 'Saigon',
@@ -84,7 +84,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 5,
   victory_point: 5,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_004.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_004.jpg',
   icon: '🍽️',
   rarity: 'common',
   city: 'Saigon',
@@ -105,7 +105,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 5,
   victory_point: 5,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_005.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_005.jpg',
   icon: '🍽️',
   rarity: 'common',
   city: 'Saigon',
@@ -126,7 +126,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 10,
   victory_point: 10,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_006.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_006.jpg',
   icon: '🥖',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -147,7 +147,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 1,
   vp: 15,
   victory_point: 15,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_001.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_001.jpg',
   icon: '🍽️',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -168,7 +168,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 12,
   victory_point: 12,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_002.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_002.jpg',
   icon: '☕',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -189,7 +189,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 12,
   victory_point: 12,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_003.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_003.jpg',
   icon: '🍽️',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -210,7 +210,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 1,
   vp: 15,
   victory_point: 15,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_004.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_004.jpg',
   icon: '🍚',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -231,7 +231,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 12,
   victory_point: 12,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_005.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_005.jpg',
   icon: '🍽️',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -252,7 +252,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 10,
   victory_point: 10,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_006.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_006.jpg',
   icon: '🍽️',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -273,7 +273,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 10,
   victory_point: 10,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_001.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_001.jpg',
   icon: '🍽️',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -294,7 +294,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 15,
   victory_point: 15,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_002.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_002.jpg',
   icon: '🍜',
   rarity: 'epic',
   city: 'Saigon',
@@ -315,7 +315,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 18,
   victory_point: 18,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_003.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_003.jpg',
   icon: '🍲',
   rarity: 'epic',
   city: 'Saigon',
@@ -336,7 +336,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 18,
   victory_point: 18,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_004.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_004.jpg',
   icon: '🍽️',
   rarity: 'epic',
   city: 'Saigon',
@@ -357,7 +357,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 25,
   victory_point: 25,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_005.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_005.jpg',
   icon: '🍽️',
   rarity: 'epic',
   city: 'Saigon',
@@ -378,7 +378,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 15,
   victory_point: 15,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_006.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_006.jpg',
   icon: '🍽️',
   rarity: 'epic',
   city: 'Saigon',
@@ -399,7 +399,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 35,
   victory_point: 35,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_001.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_001.jpg',
   icon: '🍽️',
   rarity: 'legendary',
   city: 'Saigon',
@@ -420,7 +420,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 45,
   victory_point: 45,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_002.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_002.jpg',
   icon: '🍽️',
   rarity: 'legendary',
   city: 'Saigon',
@@ -441,7 +441,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 35,
   victory_point: 35,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_003.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_003.jpg',
   icon: '🍚',
   rarity: 'legendary',
   city: 'Saigon',
@@ -462,7 +462,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 5,
   victory_point: 5,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_004.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_004.jpg',
   icon: '☕',
   rarity: 'common',
   city: 'Saigon',
@@ -483,7 +483,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 8,
   victory_point: 8,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_005.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_005.jpg',
   icon: '🍽️',
   rarity: 'common',
   city: 'Saigon',
@@ -504,7 +504,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 5,
   victory_point: 5,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_006.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_006.jpg',
   icon: '🍽️',
   rarity: 'common',
   city: 'Saigon',
@@ -525,7 +525,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 12,
   victory_point: 12,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_001.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_001.jpg',
   icon: '🍲',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -546,7 +546,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 10,
   victory_point: 10,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_002.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_002.jpg',
   icon: '🍽️',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -567,7 +567,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 1,
   vp: 15,
   victory_point: 15,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_003.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_003.jpg',
   icon: '🍽️',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -588,7 +588,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 10,
   victory_point: 10,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_004.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_004.jpg',
   icon: '🛵',
   rarity: 'uncommon',
   city: 'Saigon',
@@ -609,7 +609,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 22,
   victory_point: 22,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_005.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_005.jpg',
   icon: '🍲',
   rarity: 'epic',
   city: 'Saigon',
@@ -630,7 +630,7 @@ export const saigonFoodCards: TravelCard[] = [{
   stamina: 0,
   vp: 35,
   victory_point: 35,  // backward compat — same as vp
-  image: '/assets/images/cards/saigon/food/sg_food_006.jpg',
+  image: 'assets/images/cards/saigon/food/sg_food_006.jpg',
   icon: '🍽️',
   rarity: 'legendary',
   city: 'Saigon',
