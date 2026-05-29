@@ -253,8 +253,11 @@ function errorResponse(status: number, message: string): Response {
 }
 
 function corsHeaders(): Record<string, string> {
+	// Production: set CORS_ORIGIN to your Pages URL (e.g. https://tankhoitv.github.io)
+	// Dev: leave unset for localhost (falls back to "*")
+	const origin = Deno.env.get("CORS_ORIGIN") ?? "*";
 	return {
-		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Origin": origin,
 		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 		"Access-Control-Allow-Headers": "Content-Type",
 	};

@@ -1,0 +1,41 @@
+name: Deploy Server (Deno Deploy)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'scr/shared/**'
+      - '.github/workflows/deploy-server.yml'
+
+  # Manual trigger from Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write  # Required for Deno Deploy auth
+      contents: read
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Deploy to Deno Deploy
+        run: |
+          deno deploy \
+            --project trekkopoly-server \
+            --prod \
+            --include='./server' \
+            --include='./scr' \
+            server/server.ts
+        env:
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+          CORS_ORIGIN: ${{ vars.CORS_ORIGIN || 'https://tankhoitv.github.io' }}
