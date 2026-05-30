@@ -70,6 +70,7 @@ let accumulatedVP = 0;
 
 // ── UI interaction state ─────────────────────────────────────────────────────
 
+let isInitialDealInProgress = false;
 let selectedHandCardId: string | null = null;
 let focusedHandCardId: string | null = null;
 let focusedBoardCard: TravelCard | null = null;
@@ -265,6 +266,14 @@ export function getSuppressNextClick(): boolean {
 
 export function setSuppressNextClick(v: boolean) {
 	suppressNextClick = v;
+}
+
+export function getIsInitialDealInProgress(): boolean {
+	return isInitialDealInProgress;
+}
+
+export function setIsInitialDealInProgress(v: boolean) {
+	isInitialDealInProgress = v;
 }
 
 export function getPlayerBoards(): Record<PlayerId, BoardSlots> {

@@ -47,11 +47,16 @@ import {
 	setIsReplayComplete,
 	getSimulationTimerId,
 	setSimulationTimerId,
+	setIsInitialDealInProgress,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
 import { saigonFoodCards } from "./shared/data/index.ts";
-import { HAND_SIZE, PHASE_DAYS, DRAFT_PICK_SECONDS } from "./shared/constants.ts";
+import {
+	HAND_SIZE,
+	PHASE_DAYS,
+	DRAFT_PICK_SECONDS,
+} from "./shared/constants.ts";
 import { calculateSimulationResult } from "./shared/scoring.ts";
 import type { GameSoundName } from "./audio/gameAudio.ts";
 import { ROWS } from "./arena/render.ts";
@@ -61,7 +66,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.5.0";
+const VERSION = "0.6.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -110,9 +115,28 @@ function startDailyDraft() {
 	setDraftSelectedCardId(null);
 	setPlayerHand([]);
 	setGamePhase("draft");
+	setIsInitialDealInProgress(true);
 	playGameSound("deal");
 	rerenderGameShell();
-	startDraftTimer();
+
+	// Deal animation: after render, add .deal-active to trigger CSS, then finish after 1320ms
+	window.requestAnimationFrame(() => {
+		window.requestAnimationFrame(() => {
+			const handElement = document.querySelector(".player-hand--draft");
+			handElement?.classList.add("deal-active");
+		});
+	});
+
+	window.setTimeout(() => {
+		setIsInitialDealInProgress(false);
+		const handElement = document.querySelector(".player-hand");
+		handElement?.classList.remove(
+			"player-hand--dealing",
+			"is-dealing",
+			"deal-active",
+		);
+		startDraftTimer();
+	}, 1320);
 }
 
 /**

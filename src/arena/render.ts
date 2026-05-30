@@ -27,6 +27,7 @@ import {
 	getSimulationResult,
 	getSimulationReplayIndex,
 	getIsReplayComplete,
+	getIsInitialDealInProgress,
 	currentPlayerId,
 } from "../state.ts";
 import type { TravelCard } from "../shared/types.ts";
@@ -315,9 +316,11 @@ function renderPlayerHandSection(): string {
 		const pool = getDraftPool();
 		const secondsLeft = getDraftPickSecondsLeft();
 		const dangerClass = secondsLeft <= 3 ? "player-hand__meta--danger" : "";
+		const isDealing = getIsInitialDealInProgress();
+		const dealingClass = isDealing ? "player-hand--dealing is-dealing" : "";
 
 		return `
-      <section class="player-hand player-hand--draft">
+      <section class="player-hand player-hand--draft ${dealingClass}">
         <div class="player-hand__top">
           <div class="player-hand__title">
             <span class="hand-badge">DRAFT</span>
