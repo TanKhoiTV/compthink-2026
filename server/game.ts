@@ -14,7 +14,7 @@ import {
 	skipBoardSlotCells as skipBoardSlot,
 	lockBoardSlotCells as lockBoardSlot,
 	validateDistanceCells as validateDistance,
-} from "../scr/shared/board.ts";
+} from "../src/shared/board.ts";
 import {
 	validateCardUsage,
 	payDraftCost,
@@ -23,9 +23,9 @@ import {
 	passHandsClockwise,
 	STARTING_RESOURCES,
 	MAX_STAMINA,
-} from "../scr/shared/rules.ts";
-import { calculateScore, boardToTimeline } from "../scr/shared/score.ts";
-import { drawDailyHand, simulateRandomEvent } from "../scr/shared/dice.ts";
+} from "../src/shared/rules.ts";
+import { calculateScore, boardToTimeline } from "../src/shared/score.ts";
+import { drawDailyHand, simulateRandomEvent } from "../src/shared/dice.ts";
 import type {
 	BoardCell,
 	GamePhase,
@@ -35,7 +35,7 @@ import type {
 	PlayerState,
 	RoomSnapshot,
 	TravelCard,
-} from "../scr/shared/types.ts";
+} from "../src/shared/types.ts";
 
 // ─── FSM event types ──────────────────────────────────────────────────────────
 

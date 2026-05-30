@@ -4,7 +4,7 @@
  * Extracted from TREKPOLOGY/src/app.ts (lines 5362–5703, 5911–6093).
  */
 
-import type { AppScreen } from "../scr/shared/client-types.ts";
+import type { AppScreen } from "./shared/client-types.ts";
 import { renderMainArena } from "./arena/render.ts";
 
 // ── Screen state ────────────────────────────────────────────────────────────

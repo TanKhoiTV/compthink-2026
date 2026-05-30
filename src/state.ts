@@ -5,10 +5,10 @@
  * All state lives here as module-level `let` bindings with exported getters.
  */
 
-import { createEmptyBoardSlots } from "../scr/shared/board.ts";
-import type { TravelCard } from "../scr/shared/types.ts";
-import type { BoardSlots } from "../scr/shared/board.ts";
-import type { PlayerId } from "../scr/shared/client-types.ts";
+import { createEmptyBoardSlots } from "./shared/board.ts";
+import type { TravelCard } from "./shared/types.ts";
+import type { BoardSlots } from "./shared/board.ts";
+import type { PlayerId } from "./shared/client-types.ts";
 
 // ── Game phase FSM ───────────────────────────────────────────────────────────
 //
@@ -79,7 +79,7 @@ let suppressNextClick = false;
 let isSimulationMode = false;
 // ── Simulation state ─────────────────────────────────────────────────────────
 
-import type { SimulationResult } from "../scr/shared/scoring.ts";
+import type { SimulationResult } from "./shared/scoring.ts";
 
 let simulationResult: SimulationResult | null = null;
 let simulationReplayIndex = 0;

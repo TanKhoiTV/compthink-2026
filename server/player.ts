@@ -22,7 +22,7 @@ import {
     exportSnapshot,
     type Room,
 } from './game.ts';
-import type { GridPosition } from '../scr/shared/types.ts';
+import type { GridPosition } from '../src/shared/types.ts';
 
 // ─── JSON-RPC types ───────────────────────────────────────────────────────────
 

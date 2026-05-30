@@ -5,8 +5,8 @@
  * Imports state from state.ts instead of app.ts.
  */
 import { onlineClientState } from "../online/socketClient.ts";
-import type { TravelCardData } from "../../scr/shared/client-types.ts";
-import { days, rows } from "../../scr/shared/constants.ts";
+import type { TravelCardData } from "../shared/client-types.ts";
+import { days, rows } from "../shared/constants.ts";
 import {
 	getBoardSlots,
 	getRemainingResources,

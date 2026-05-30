@@ -3,7 +3,7 @@
  *
  * Extracted from TREKPOLOGY/src/app.ts (lines 3346–4109).
  */
-import type { TravelCard } from "../../scr/shared/types.ts";
+import type { TravelCard } from "../shared/types.ts";
 
 /* ── Score Breakdown Panel ──────────────────────────────────────────────── */
 

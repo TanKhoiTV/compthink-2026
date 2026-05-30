@@ -28,7 +28,7 @@ import {
 	sendError,
 	type PlayerSession,
 } from "./player.ts";
-import type { TravelCard } from "../scr/shared/types.ts";
+import type { TravelCard } from "../src/shared/types.ts";
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 

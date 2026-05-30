@@ -29,8 +29,8 @@ import {
 	getIsReplayComplete,
 	currentPlayerId,
 } from "../state.ts";
-import type { TravelCard } from "../../scr/shared/types.ts";
-import type { BoardSlots } from "../../scr/shared/board.ts";
+import type { TravelCard } from "../shared/types.ts";
+import type { BoardSlots } from "../shared/board.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 

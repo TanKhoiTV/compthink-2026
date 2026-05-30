@@ -26,9 +26,9 @@ import {
 import { isConnected, rpcCall } from "../online/socketClient.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import { rerenderArena } from "../router.ts";
-import type { TravelCard } from "../../scr/shared/types.ts";
-import type { BoardSlots, BoardPosition } from "../../scr/shared/board.ts";
-import type { PlayerId } from "../../scr/shared/client-types.ts";
+import type { TravelCard } from "../shared/types.ts";
+import type { BoardSlots, BoardPosition } from "../shared/board.ts";
+import type { PlayerId } from "../shared/client-types.ts";
 
 /* ── Board placement helpers ──────────────────────────────────────────── */
 

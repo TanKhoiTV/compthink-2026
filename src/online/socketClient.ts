@@ -7,7 +7,7 @@
  * This replaces TREKPOLOGY's Socket.IO client (src/online/socketClient.ts).
  */
 
-import type { RoomSnapshot } from "../../scr/shared/types.ts";
+import type { RoomSnapshot } from "../shared/types.ts";
 
 // ── Connection state ────────────────────────────────────────────────────────
 

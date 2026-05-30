@@ -43,10 +43,10 @@ import {
 	getSimulationTimerId,
 	setSimulationTimerId,
 } from "./state.ts";
-import { createInitialDeck, shuffleCards } from "../scr/shared/deck.ts";
-import { saigonFoodCards } from "../scr/shared/data/index.ts";
-import { HAND_SIZE, PHASE_DAYS } from "../scr/shared/constants.ts";
-import { calculateSimulationResult } from "../scr/shared/scoring.ts";
+import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
+import { saigonFoodCards } from "./shared/data/index.ts";
+import { HAND_SIZE, PHASE_DAYS } from "./shared/constants.ts";
+import { calculateSimulationResult } from "./shared/scoring.ts";
 import { ROWS } from "./arena/render.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
