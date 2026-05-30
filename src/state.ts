@@ -269,6 +269,16 @@ export function setSuppressNextClick(v: boolean) {
 	suppressNextClick = v;
 }
 
+let holdTimerId: number | null = null;
+
+export function getHoldTimerId(): number | null {
+	return holdTimerId;
+}
+
+export function setHoldTimerId(id: number | null) {
+	holdTimerId = id;
+}
+
 export function getLocalCoinDebt(): number {
 	return localCoinDebt;
 }
