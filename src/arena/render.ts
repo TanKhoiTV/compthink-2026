@@ -225,17 +225,6 @@ function renderBoardCell(
 	const card = boardSlots[rowIndex]?.[colIndex] ?? null;
 	const isCurrentDayColumn = colIndex === currentDayIndex;
 	const selectedId = getSelectedHandCardId();
-	if (getGamePhase() === "placement" && selectedId) {
-		console.log("[render] isPlaceable check", {
-			phase: getGamePhase(),
-			selected: selectedId,
-			row: rowIndex,
-			col: colIndex,
-			dayIndex: currentDayIndex,
-			colMatchesDay: isCurrentDayColumn,
-			cellEmpty: !card,
-		});
-	}
 	const isPlaceable =
 		!isDraft &&
 		!isSimulation &&
@@ -273,20 +262,22 @@ function renderBoardCell(
 // ── Mini card (on board) ────────────────────────────────────────────────────
 
 export function renderBoardMiniCard(card: TravelCard): string {
-	const rarityClass = card.rarity ? `card--rarity-${card.rarity}` : "";
+	const tagClass = card.tag ? `board-mini__tag--${card.tag.toLowerCase()}` : "";
+	const rarityClass = card.rarity ? `board-mini--${card.rarity}` : "";
 	return `
-    <div class="board-mini-card ${rarityClass}">
-      <img src="${card.image}" alt="${card.name}" loading="lazy" />
-      <div class="board-mini-card__info">
-        <span class="board-mini-card__name">${card.name}</span>
-        <span class="board-mini-card__tags">${card.tag ? getTagLabel(card.tag) : ""}</span>
+    <article class="board-mini ${rarityClass}" title="${card.name}">
+      <div
+        class="board-mini__image"
+        style="background-image: url('${card.image}')"
+      ></div>
+      <div class="board-mini__tag ${tagClass}">
+        ${card.tag ? getTagLabel(card.tag) : ""}
       </div>
-      <div class="board-mini-card__stats">
-        <span class="stat stat--vp">${card.vp}</span>
-        <span class="stat stat--coin">${card.coin}</span>
-        <span class="stat stat--stamina">${card.stamina}</span>
+      <div class="board-mini__info">
+        <h3 class="board-mini__name">${card.name}</h3>
+        <div class="board-mini__vp">★ ${card.vp}</div>
       </div>
-    </div>
+    </article>
   `;
 }
 

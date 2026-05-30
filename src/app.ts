@@ -101,7 +101,6 @@ function startDailyDraft() {
  * into the placement hand. Return leftover pool cards to deck.
  */
 function finishDailyDraft() {
-	console.log("[app] finishDailyDraft → placement", { handSize: getPlayerHand().length });
 	// Snapshot the hand into a fresh array to break shared reference
 	setPlayerHand([...getPlayerHand()]);
 	setGamePhase("placement");
@@ -119,16 +118,6 @@ function placeHandCardOnBoard(
 	rowIndex: number,
 	colIndex: number,
 ) {
-	console.log("[app] placeHandCardOnBoard enter", {
-		cardId,
-		rowIndex,
-		colIndex,
-		phase: getGamePhase(),
-		dayIndex: getCurrentDayIndex(),
-		colMatchesDay: colIndex === getCurrentDayIndex(),
-		handSize: getPlayerHand().length,
-		cardInHand: getPlayerHand().some((c) => c.id === cardId),
-	});
 	if (getGamePhase() !== "placement") return;
 	if (colIndex !== getCurrentDayIndex()) return;
 
@@ -192,12 +181,6 @@ function endCurrentDay() {
  */
 (globalThis as any).selectHandCard = (cardId: string) => {
 	const phase = getGamePhase();
-	console.log("[app] selectHandCard", {
-		cardId,
-		phase,
-		callCount: ((window as any).__selectCount ?? 0) + 1,
-	});
-	(window as any).__selectCount = ((window as any).__selectCount ?? 0) + 1;
 
 	if (phase === "draft") {
 		// ── Draft phase: pick the card for this round ──
@@ -218,11 +201,13 @@ function endCurrentDay() {
 		if (round >= DRAFT_PICK_TARGET) {
 			finishDailyDraft();
 		} else {
-			// Deal a new pool of 6 for the next round
+			// Pool shrinks each round simulating a pack being passed around
+			// Round 1: 7 cards, Round 2: 6, ..., Round 5: 3
+			const nextPoolSize = DRAFT_POOL_SIZE - round;
 			const newDeck = getDeck();
 			const shuffled = shuffleCards(newDeck);
-			setDraftPool(shuffled.slice(0, DRAFT_POOL_SIZE - 1));
-			setDeck(shuffled.slice(DRAFT_POOL_SIZE - 1));
+			setDraftPool(shuffled.slice(0, nextPoolSize));
+			setDeck(shuffled.slice(nextPoolSize));
 			setDraftRound(round + 1);
 			rerenderGameShell();
 		}
@@ -230,10 +215,6 @@ function endCurrentDay() {
 	}
 
 	if (phase === "placement") {
-		console.log("[app] selectHandCard placement", {
-			cardId,
-			currentSelected: getSelectedHandCardId(),
-		});
 		// ── Placement phase: select/deselect card ──
 		const currentSelected = getSelectedHandCardId();
 		if (currentSelected === cardId) {
@@ -269,12 +250,6 @@ function endCurrentDay() {
 	rowIndex: number,
 	colIndex: number,
 ) => {
-	console.log("[app] handleBoardCellClick", {
-		rowIndex,
-		colIndex,
-		phase: getGamePhase(),
-		selectedId: getSelectedHandCardId(),
-	});
 	if (getGamePhase() === "placement") {
 		const selectedId = getSelectedHandCardId();
 		if (selectedId) {
