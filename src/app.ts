@@ -57,7 +57,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.3.0";
+const VERSION = "0.4.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -268,7 +268,9 @@ function isBadSimulationReplayStep(step: SimulationReplayStep): boolean {
 	);
 }
 
-function getSimulationEventSoundName(step: SimulationReplayStep): GameSoundName | null {
+function getSimulationEventSoundName(
+	step: SimulationReplayStep,
+): GameSoundName | null {
 	if (!step.eventType) return null;
 	if (step.eventType === "promo") return "eventPromo";
 	if (step.eventType === "traffic") return "eventTraffic";
