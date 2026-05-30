@@ -43,6 +43,7 @@ import {
 	getSimulationTimerId,
 	setSimulationTimerId,
 } from "./state.ts";
+import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
 import { saigonFoodCards } from "./shared/data/index.ts";
 import { HAND_SIZE, PHASE_DAYS } from "./shared/constants.ts";
@@ -54,7 +55,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.2.0-scoring-wired";
+const VERSION = "0.3.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -197,9 +198,9 @@ function runSystemSimulation() {
 			}).length,
 		getCurrentDayPlacedCards: () => {
 			const b = getBoardSlots();
-			return b
-				.map((row) => row[dayIndex])
-				.filter((c): c is NonNullable<typeof c> => c !== null);
+			return (b as (TravelCard | null)[][])
+				.map((row: (TravelCard | null)[]) => row[dayIndex])
+				.filter((c: TravelCard | null): c is NonNullable<typeof c> => c !== null);
 		},
 	});
 
