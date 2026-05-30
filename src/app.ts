@@ -89,6 +89,88 @@ const BUILD_TIME = "__BUILD_TIME_PLACEHOLDER__";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} (build ${BUILD_TIME}) running!`);
 
+// ── Exhaust lock token system ──────────────────────────────────────────────
+
+function createExhaustLockTokenCard(params: {
+	rowIndex: number;
+	colIndex: number;
+	sourceCardName: string;
+}): TravelCard {
+	return {
+		id: `exhaust_lock_${params.rowIndex}_${params.colIndex}_${Date.now()}`,
+		name: "Bị khóa",
+		shortName: "Bị khóa",
+		city: "Kiệt sức",
+		shortCity: "Kiệt sức",
+		image: "assets/images/card-food.png",
+		rarity: "common",
+		rarityLabel: "!",
+		vp: 0,
+		coin: 0,
+		stamina: 0,
+		tag: "UTILITY",
+		tagLabel: "Khóa",
+		tags: ["UTILITY"],
+		icon: "🔒",
+		description: `Ô này bị khóa vì đã vay thể lực ở ${params.sourceCardName}.`,
+		bonusText: "Không thể xếp bài vào ô này.",
+		boardTokenType: "lock",
+		lockedReason: "Kiệt sức",
+		sourceCardName: params.sourceCardName,
+		// Satisfy required TravelCard fields
+		card_id: `exhaust_lock_${params.rowIndex}_${params.colIndex}_${Date.now()}`,
+		cost: 0,
+		on_play_effect: "NONE",
+		victory_point: 0,
+		coordinates: { lat: 0, lng: 0 },
+	};
+}
+
+function getNextTimeSlotPosition(
+	rowIndex: number,
+	colIndex: number,
+): { rowIndex: number; colIndex: number } | null {
+	const board = getBoardSlots();
+	const numRows = board.length;
+	const numCols = board[0]?.length ?? 0;
+
+	if (rowIndex < numRows - 1) {
+		return { rowIndex: rowIndex + 1, colIndex };
+	}
+
+	if (colIndex < numCols - 1) {
+		return { rowIndex: 0, colIndex: colIndex + 1 };
+	}
+
+	return null;
+}
+
+function addStaminaDebtAndLockToken(params: {
+	rowIndex: number;
+	colIndex: number;
+	card: TravelCard;
+	staminaDebt: number;
+}) {
+	if (params.staminaDebt <= 0) return;
+
+	const nextPosition = getNextTimeSlotPosition(
+		params.rowIndex,
+		params.colIndex,
+	);
+
+	if (!nextPosition) return;
+	const board = getBoardSlots();
+	if (board[nextPosition.rowIndex]?.[nextPosition.colIndex] !== null) return;
+
+	board[nextPosition.rowIndex][nextPosition.colIndex] =
+		createExhaustLockTokenCard({
+			rowIndex: nextPosition.rowIndex,
+			colIndex: nextPosition.colIndex,
+			sourceCardName: params.card.name,
+		});
+	setCurrentPlayerBoard(board);
+}
+
 // Initialise audio
 setupGameAudioDelegation();
 
@@ -306,12 +388,22 @@ function placeHandCardOnBoard(
 		setLocalCoinDebt(getLocalCoinDebt() + coinDebt);
 	}
 
+	const staminaDebt = Math.max(0, card.stamina - remaining.stamina);
+
 	hand.splice(handIndex, 1);
 	setPlayerHand(hand);
 
 	const board = getBoardSlots();
 	board[rowIndex][colIndex] = card;
 	setCurrentPlayerBoard(board);
+
+	// Place exhaust lock token if stamina debt incurred
+	addStaminaDebtAndLockToken({
+		rowIndex,
+		colIndex,
+		card,
+		staminaDebt,
+	});
 
 	setSelectedHandCardId(null);
 	setFocusedHandCardId(null);

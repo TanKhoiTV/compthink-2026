@@ -39,6 +39,16 @@ export type TravelCard = {
   onPlayEffect?: GameCardEffect;
   coordinates: Coordinates;
   is_virtual?: boolean;
+  // Board token fields (lock/debt pseudo-cards placed on the board)
+  boardTokenType?: "debt" | "lock";
+  lockedReason?: string;
+  sourceCardName?: string;
+  debtAmount?: number;
+  bonusText?: string;
+  shortName?: string;
+  shortCity?: string;
+  tagLabel?: string;
+  rarityLabel?: string;
 };
 
 export type GridPosition = {

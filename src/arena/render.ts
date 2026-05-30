@@ -292,6 +292,29 @@ function renderBoardCell(
 // ── Mini card (on board) ────────────────────────────────────────────────────
 
 export function renderBoardMiniCard(card: TravelCard): string {
+	// Board token cards (lock/debt) get a special compact layout
+	const token = card as TravelCard & {
+		boardTokenType?: "debt" | "lock";
+	};
+
+	if (token.boardTokenType === "lock") {
+		return `
+      <article class="board-mini board-mini--token board-mini--lock" title="Ô bị khóa vì kiệt sức">
+        <div class="board-mini-token__icon">🔒</div>
+        <strong>Bị khóa kiệt sức</strong>
+      </article>
+    `;
+	}
+
+	if (token.boardTokenType === "debt") {
+		return `
+      <article class="board-mini board-mini--token board-mini--debt" title="Bấm để trả nợ">
+        <div class="board-mini-token__icon">💸</div>
+        <strong>Nợ tiền ${token.debtAmount ?? 0} xu</strong>
+      </article>
+    `;
+	}
+
 	const tagClass = card.tag ? `board-mini__tag--${card.tag.toLowerCase()}` : "";
 	const rarityClass = card.rarity ? `board-mini--${card.rarity}` : "";
 	return `
