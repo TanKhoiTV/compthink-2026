@@ -54,11 +54,9 @@ export function rerenderGameShell() {
 	reattachCardClickDelegation();
 }
 
-// ── Card click delegation ───────────────────────────────────────────────────
+// ── Card click delegation (backup for inline handlers, hover) ───────────────
 
 function reattachCardClickDelegation() {
-	// Board cell / hand card clicks: inline onclick → window['handleBoardCellClick'] / window['selectHandCard']
-
 	// Hand card hover (visual feedback, no rerender)
 	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
 		const cardId = el.getAttribute("data-hand-card-id");
@@ -80,6 +78,32 @@ function reattachCardClickDelegation() {
 		});
 	}
 }
+
+// ── Document-level event delegation for board cell & hand card clicks ──────
+// Replaces inline onclick — no event.stopPropagation conflict.
+
+document.addEventListener("click", (e) => {
+	const target = e.target as HTMLElement;
+
+	const boardCell = target.closest("[data-board-cell]");
+	if (boardCell) {
+		e.stopPropagation();
+		const row = Number(boardCell.getAttribute("data-row-index"));
+		const col = Number(boardCell.getAttribute("data-col-index"));
+		(typeof globalThis as any).handleBoardCellClick?.(row, col);
+		return;
+	}
+
+	const handCard = target.closest("[data-hand-card-id]");
+	if (handCard && !target.closest(".hand-card__close")) {
+		e.stopPropagation();
+		const cardId = handCard.getAttribute("data-hand-card-id");
+		if (cardId) {
+			(typeof globalThis as any).selectHandCard?.(cardId);
+		}
+		return;
+	}
+});
 
 // ── Hover handlers (no rerender — CSS handles visual feedback) ──────────────
 
