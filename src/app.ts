@@ -211,7 +211,10 @@ function endCurrentDay() {
 	}
 
 	if (phase === "placement") {
-		console.log("[app] placement select", { cardId, currentSelected: getSelectedHandCardId() });
+		console.log("[app] placement select", {
+			cardId,
+			currentSelected: getSelectedHandCardId(),
+		});
 		// ── Placement phase: select/deselect card ──
 		const currentSelected = getSelectedHandCardId();
 		if (currentSelected === cardId) {

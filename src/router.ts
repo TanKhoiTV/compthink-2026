@@ -106,12 +106,23 @@ document.addEventListener(
 	"click",
 	(e) => {
 		const target = e.target as HTMLElement;
+		const phase = (globalThis as any).getGamePhase?.() || "?";
 
-			// Draft card click (via [data-draft-card-id] wrapper)
+		console.log("[router] click in capture", {
+			tag: target.tagName,
+			cls: target.className?.slice(0, 60),
+			dd: !!target.closest("[data-draft-card-id]"),
+			hc: !!target.closest("[data-hand-card-id]"),
+			bc: !!target.closest("[data-board-cell]"),
+			phase,
+		});
+
+		// Draft card click (via [data-draft-card-id] wrapper)
 		const draftCard = target.closest("[data-draft-card-id]");
 		if (draftCard) {
 			const cardId = draftCard.getAttribute("data-draft-card-id");
 			if (cardId) {
+				console.log("[router] draft matched");
 				e.preventDefault();
 				e.stopPropagation();
 				(globalThis as any).selectHandCard?.(cardId);
@@ -119,11 +130,12 @@ document.addEventListener(
 			}
 		}
 
-		// Hand card / board cell click (via [data-hand-card-id] or [data-board-cell])
+		// Hand card click
 		const handCard = target.closest("[data-hand-card-id]");
 		if (handCard && !handCard.closest(".hand-card__close")) {
 			const cardId = handCard.getAttribute("data-hand-card-id");
 			if (cardId) {
+				console.log("[router] hand matched");
 				e.preventDefault();
 				e.stopPropagation();
 				(globalThis as any).selectHandCard?.(cardId);
@@ -131,10 +143,12 @@ document.addEventListener(
 			}
 		}
 
+		// Board cell click
 		const boardCell = target.closest("[data-board-cell]");
 		if (boardCell) {
 			const row = Number(boardCell.getAttribute("data-row-index"));
 			const col = Number(boardCell.getAttribute("data-col-index"));
+			console.log("[router] board matched");
 			e.preventDefault();
 			e.stopPropagation();
 			(globalThis as any).handleBoardCellClick?.(row, col);
