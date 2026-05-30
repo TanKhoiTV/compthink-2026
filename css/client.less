@@ -6,6 +6,11 @@
 @rarity-legendary: #f59e0b;
 
 @paper: #f3ede3;
+
+/* Hide the static placeholder h1 in index.html — our JS handles the title */
+#game-container > h1 {
+  display: none;
+}
 @paper-light: #fbf8f1;
 @ink: #4e3a2b;
 @dash: #c6ad8f;
@@ -198,6 +203,8 @@ body {
   flex-direction: column;
   gap: var(--main-gap);
   overflow: visible;
+  background: #e9dece;
+  flex: 1 0 auto;
 }
 
 .board-block {
