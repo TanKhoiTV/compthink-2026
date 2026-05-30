@@ -217,12 +217,12 @@ export function renderMainArena(): string {
         </div>
 
         ${!isDraft && phase === "placement" ? renderEndDayButton() : ""}
+
+        ${phase !== "simulation" ? renderPlayerHandSection() : ""}
+        ${phase === "simulation" ? renderSimulationResultPanel() : ""}
       </div>
 
       ${renderDeckCardStack()}
-
-      ${phase !== "simulation" ? renderPlayerHandSection() : ""}
-      ${phase === "simulation" ? renderSimulationResultPanel() : ""}
       ${focusedCard ? renderFocusedCard(focusedCard) : ""}
       ${renderTurnTimer()}
     </main>\n    ${phase === "finished" ? renderGameOverScreen() : ""}
