@@ -16,6 +16,7 @@ import {
 	transitionToScreen,
 	updateTimerDom,
 } from "./router.ts";
+import { renderFocusedCard } from "./arena/render.ts";
 import {
 	setDeck,
 	setPlayerHand,
@@ -31,6 +32,7 @@ import {
 	setSelectedHandCardId,
 	setFocusedHandCardId,
 	setFocusedBoardCard,
+	getFocusedBoardCard,
 	getDeck,
 	getPlayerHand,
 	getGamePhase,
@@ -84,7 +86,9 @@ const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 const VERSION = "0.13.0";
 const BUILD_TIME = Date.now();
 const gameName = "Trekkopoly";
-console.log(`${gameName} v${VERSION} (build ${new Date(BUILD_TIME).toISOString().slice(0, 19).replace("T", " ")}) running!`);
+console.log(
+	`${gameName} v${VERSION} (build ${new Date(BUILD_TIME).toISOString().slice(0, 19).replace("T", " ")}) running!`,
+);
 
 // Initialise audio
 setupGameAudioDelegation();
@@ -631,11 +635,7 @@ function startNextDayOrPhase() {
 				el.classList.remove("hand-card--selected");
 			});
 		// Remove any focused popup overlay
-		const popup = document.getElementById("focused-card-close");
-		if (popup) {
-			const overlay = popup.closest(".hand-card__overlay");
-			overlay?.remove();
-		}
+		hideFocusedCardOverlay();
 
 		if (currentSelected === cardId) {
 			// Toggle off: deselect
@@ -670,7 +670,9 @@ function startNextDayOrPhase() {
 		setSuppressNextClick(true);
 		setShowFocusedPopup(true);
 		setHoldTimerId(null);
-		rerenderGameShell();
+
+		// Direct DOM injection — avoids flicker from full rerender
+		showFocusedCardOverlay(cardId);
 	}, 500);
 
 	setHoldTimerId(id);
@@ -688,10 +690,64 @@ function clearHoldCardTimer() {
 	}
 }
 
+function showFocusedCardOverlay(cardId: string) {
+	// Remove any existing overlay first
+	hideFocusedCardOverlay();
+
+	// Find the card — check hand first, then draft pool
+	let card: TravelCard | null =
+		getPlayerHand().find((c) => c.id === cardId) ?? null;
+
+	if (!card) {
+		card = getDraftPool().find((c) => c.id === cardId) ?? null;
+	}
+
+	if (!card) {
+		card = getFocusedBoardCard();
+	}
+
+	if (!card) return;
+
+	const html = renderFocusedCard(card);
+
+	// Create wrapper and insert into DOM
+	const wrapper = document.createElement("div");
+	wrapper.id = "focused-card-wrapper";
+	wrapper.style.position = "relative";
+	wrapper.style.zIndex = "10000";
+	// biome-ignore lint/suspicious/noInnerHTML: template from own render code, not user input
+	wrapper.innerHTML = html;
+
+	const app = document.getElementById("app");
+	if (app) {
+		app.appendChild(wrapper);
+
+		// Attach close handler directly
+		const closeBtn = document.getElementById("focused-card-close");
+		if (closeBtn) {
+			closeBtn.addEventListener("click", () => {
+				// If there's a selected card, also close the focused card
+				setFocusedHandCardId(null);
+				setFocusedBoardCard(null);
+				setShowFocusedPopup(false);
+				hideFocusedCardOverlay();
+			});
+		}
+	}
+}
+
+function hideFocusedCardOverlay() {
+	const existing = document.getElementById("focused-card-wrapper");
+	if (existing) {
+		existing.remove();
+	}
+}
+
 (globalThis as any).clearSelectedHandCard = () => {
 	setSelectedHandCardId(null);
 	setFocusedHandCardId(null);
 	setShowFocusedPopup(false);
+	hideFocusedCardOverlay();
 	document
 		.querySelectorAll("[data-hand-card-id].hand-card--selected")
 		.forEach((el) => {
