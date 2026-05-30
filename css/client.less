@@ -862,6 +862,18 @@ body {
   position: relative;
   padding: 0;
   transform: translateY(-14px);
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.5),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.38),
+      rgba(245, 236, 222, 0.76)
+    );
 }
 
 .hand-card,
@@ -884,6 +896,7 @@ body {
   overflow: hidden;
   border-radius: 16px;
   background: #f9f1e2;
+  pointer-events: auto;
   border: 3px solid @rarity-common;
   box-shadow: 0 8px 18px rgba(70, 45, 20, 0.14);
   transform-origin: 50% 110%;
@@ -978,10 +991,38 @@ body {
     0 0 0 8px rgba(139, 92, 246, 0.18) !important;
 }
 
-/* Hand interaction: hover — only the hovered card changes, no sibling fan reshuffling
-   (sibling :has() transforms removed — they caused flicker on overlapping card edges) */
+/* Hand interaction: hover indicates and sibling fan effect */
 .player-hand__cards:hover .hand-card:not(:hover):not(.hand-card--selected) {
   filter: saturate(0.96) brightness(0.985);
+}
+
+.player-hand__cards:has(.hand-card--fan-1:hover) .hand-card--fan-2 {
+  transform: translate3d(18px, -14px, 0) rotate(-5deg);
+}
+
+.player-hand__cards:has(.hand-card--fan-2:hover) .hand-card--fan-1 {
+  transform: translate3d(-16px, -4px, 0) rotate(-17deg);
+}
+.player-hand__cards:has(.hand-card--fan-2:hover) .hand-card--fan-3 {
+  transform: translate3d(18px, -12px, 0) rotate(2deg);
+}
+
+.player-hand__cards:has(.hand-card--fan-3:hover) .hand-card--fan-2 {
+  transform: translate3d(-14px, -10px, 0) rotate(-8deg);
+}
+.player-hand__cards:has(.hand-card--fan-3:hover) .hand-card--fan-4 {
+  transform: translate3d(14px, -10px, 0) rotate(8deg);
+}
+
+.player-hand__cards:has(.hand-card--fan-4:hover) .hand-card--fan-3 {
+  transform: translate3d(-18px, -12px, 0) rotate(-2deg);
+}
+.player-hand__cards:has(.hand-card--fan-4:hover) .hand-card--fan-5 {
+  transform: translate3d(16px, -4px, 0) rotate(17deg);
+}
+
+.player-hand__cards:has(.hand-card--fan-5:hover) .hand-card--fan-4 {
+  transform: translate3d(-18px, -14px, 0) rotate(5deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-1.hand-card--selected)

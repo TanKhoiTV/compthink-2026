@@ -24,6 +24,8 @@ import {
 	getRemainingTurnSeconds,
 	getDraftPool,
 	getDraftPickSecondsLeft,
+	getDraftSelectedCardId,
+	getDraftRound,
 	getSimulationResult,
 	getSimulationReplayIndex,
 	getIsReplayComplete,
@@ -308,6 +310,35 @@ export function renderBoardMiniCard(card: TravelCard): string {
   `;
 }
 
+// ── Draft hand top meta ───────────────────────────────────────────────────
+
+function renderDraftHandTopMeta(): string {
+	const pool = getDraftPool();
+	const hand = getPlayerHand();
+	const selectedId = getDraftSelectedCardId();
+	const selectedCard = selectedId
+		? pool.find((c) => c.id === selectedId) ||
+			hand.find((c) => c.id === selectedId)
+		: null;
+	const draftRound = getDraftRound();
+	const isDealing = getIsInitialDealInProgress();
+	const statusText = isDealing
+		? "Đang phát bài vào tay..."
+		: selectedCard
+			? "Đã chọn. Hết giờ mới chuyền bài."
+			: "Bấm để chọn, giữ 0.5s để xem lớn.";
+
+	return `
+    <div class="draft-hand-meta">
+      <div class="draft-hand-meta__info">
+        <span>Vòng ${draftRound}/5</span>
+        <strong>${selectedCard ? selectedCard.name : "Bấm 1 lá để chọn"}</strong>
+        <em>${statusText}</em>
+      </div>
+    </div>
+  `;
+}
+
 // ── Player hand section ─────────────────────────────────────────────────────
 
 function renderPlayerHandSection(): string {
@@ -334,6 +365,7 @@ function renderPlayerHandSection(): string {
           </div>
           <div class="player-hand__meta ${dangerClass}">Còn ${secondsLeft}s • bấm 1 lá để chọn</div>
         </div>
+        ${renderDraftHandTopMeta()}
         <div class="player-hand__cards">
           ${pool
 						.map(
