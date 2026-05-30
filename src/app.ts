@@ -11,7 +11,7 @@
 
 import { setupGameAudioDelegation, playGameSound } from "./audio/gameAudio.ts";
 import type { SimulationReplayStep } from "./shared/scoring.ts";
-import { rerenderGameShell, transitionToScreen } from "./router.ts";
+import { rerenderGameShell, transitionToScreen, updateTimerDom } from "./router.ts";
 import {
 	setDeck,
 	setPlayerHand,
@@ -38,7 +38,6 @@ import {
 	getDraftPool,
 	getDraftRound,
 	getSelectedHandCardId,
-	getShowFocusedPopup,
 	setShowFocusedPopup,
 	getSimulationResult,
 	setSimulationResult,
@@ -69,7 +68,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.9.0";
+const VERSION = "0.9.1";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -419,7 +418,7 @@ function startDraftTimer() {
 			return;
 		}
 
-		rerenderGameShell();
+		updateTimerDom();
 	}, 1000);
 
 	setDraftTimerId(timerId);
@@ -473,7 +472,7 @@ function startTurnTimer() {
 			return;
 		}
 
-		rerenderGameShell();
+		updateTimerDom();
 	}, 1000);
 }
 
@@ -540,29 +539,44 @@ function startNextDayOrPhase() {
 			setDeck(shuffled.slice(nextPoolSize));
 			setDraftRound(round + 1);
 			rerenderGameShell();
-			startDraftTimer();
+			// Timer restart is done inside deal animation callback
+			window.setTimeout(() => {
+				startDraftTimer();
+			}, 1320);
 		}
 		return;
 	}
 
 	if (phase === "placement") {
-		// ── Placement phase: select/deselect card ──
+		// ── Placement phase: toggle selection via CSS class — no full rerender ──
 		playGameSound("cardSelect");
 		const currentSelected = getSelectedHandCardId();
+
+		// Remove selection from all hand cards
+		document.querySelectorAll("[data-hand-card-id].hand-card--selected").forEach((el) => {
+			el.classList.remove("hand-card--selected");
+		});
+		// Remove any focused popup overlay
+		const popup = document.getElementById("focused-card-close");
+		if (popup) {
+			const overlay = popup.closest(".hand-card__overlay");
+			overlay?.remove();
+		}
+
 		if (currentSelected === cardId) {
-			if (getShowFocusedPopup()) {
-				setFocusedHandCardId(null);
-				setShowFocusedPopup(false);
-			} else {
-				setFocusedHandCardId(cardId);
-				setShowFocusedPopup(true);
-			}
+			// Toggle off: deselect
+			setSelectedHandCardId(null);
+			setFocusedHandCardId(null);
+			setShowFocusedPopup(false);
 		} else {
+			// Select the clicked card
 			setSelectedHandCardId(cardId);
 			setFocusedHandCardId(null);
 			setShowFocusedPopup(false);
+			const el = document.querySelector(`[data-hand-card-id="${CSS.escape(cardId)}"]`);
+			el?.classList.add("hand-card--selected");
 		}
-		rerenderGameShell();
+
 		return;
 	}
 };
@@ -571,7 +585,14 @@ function startNextDayOrPhase() {
 	setSelectedHandCardId(null);
 	setFocusedHandCardId(null);
 	setShowFocusedPopup(false);
-	rerenderGameShell();
+	document.querySelectorAll("[data-hand-card-id].hand-card--selected").forEach((el) => {
+		el.classList.remove("hand-card--selected");
+	});
+	const popup = document.getElementById("focused-card-close");
+	if (popup) {
+		const overlay = popup.closest(".hand-card__overlay");
+		overlay?.remove();
+	}
 };
 
 /**

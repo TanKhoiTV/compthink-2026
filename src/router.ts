@@ -50,8 +50,41 @@ export function renderGameShell(): string {
 export function rerenderGameShell() {
 	const app = document.getElementById("app");
 	if (!app) return;
+	// biome-ignore lint/suspicious/noInnerHTML: game shell template from own code, not user input
 	app.innerHTML = renderGameShell();
 	reattachCardClickDelegation();
+}
+
+/**
+ * Lightweight timer DOM update — avoids full shell re-render on every tick.
+ * Finds .score-breakdown__timer and updates textContent + danger class in-place.
+ */
+export function updateTimerDom() {
+	const timerEl = document.querySelector(".score-breakdown__timer");
+	if (!timerEl) return;
+	const strongEl = timerEl.querySelector("strong");
+	if (!strongEl) return;
+
+	import("./state.ts").then((s) => {
+		const phase = s.getGamePhase();
+		if (phase === "draft") {
+			const secs = s.getDraftPickSecondsLeft();
+			strongEl.textContent = `${secs}s`;
+			timerEl.classList.toggle(
+				"score-breakdown__timer--danger",
+				secs <= 3,
+			);
+		} else if (phase === "placement") {
+			const secs = s.getRemainingTurnSeconds();
+			const m = Math.floor(Math.max(0, secs) / 60);
+			const safeSec = Math.max(0, secs) % 60;
+			strongEl.textContent = `${m}:${safeSec < 10 ? "0" : ""}${safeSec}`;
+			timerEl.classList.toggle(
+				"score-breakdown__timer--danger",
+				secs <= 10,
+			);
+		}
+	});
 }
 
 // ── Card click delegation (backup for inline handlers, hover) ───────────────
