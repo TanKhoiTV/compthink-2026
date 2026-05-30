@@ -24,7 +24,12 @@ body,
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   background: @paper;
   color: @ink;
   overflow: hidden;
@@ -71,7 +76,11 @@ body {
   grid-template-columns: var(--side-width) var(--center-width) var(--side-width);
   overflow: hidden;
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.65), transparent 55%),
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.65),
+      transparent 55%
+    ),
     linear-gradient(180deg, #f5efe6, #e8dccb);
 }
 
@@ -79,7 +88,11 @@ body {
   height: 100vh;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(245, 238, 228, 0.97)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.55),
+      rgba(245, 238, 228, 0.97)
+    ),
     @paper-light;
   border-color: #d5c6ad;
   border-style: solid;
@@ -101,8 +114,16 @@ body {
   overflow: hidden;
   padding: var(--arena-padding-y) var(--arena-padding-x);
   background:
-    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.92), transparent 34%),
-    radial-gradient(circle at 50% 52%, rgba(255, 246, 210, 0.35), transparent 50%),
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(255, 255, 255, 0.92),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 50% 52%,
+      rgba(255, 246, 210, 0.35),
+      transparent 50%
+    ),
     linear-gradient(180deg, #f5efe6, #e9dece);
   box-shadow:
     inset 0 0 100px rgba(70, 45, 20, 0.07),
@@ -193,14 +214,20 @@ body {
   height: 50vh;
   padding: 14px 14px 12px;
   border-bottom: 2px solid #d6c8b3;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.58), rgba(246, 240, 230, 0.8));
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.58),
+    rgba(246, 240, 230, 0.8)
+  );
   overflow: hidden;
 }
 
 .side-player--active {
-  background:
-    linear-gradient(90deg, rgba(245, 255, 238, 0.9), rgba(255, 255, 245, 0.98));
+  background: linear-gradient(
+    90deg,
+    rgba(245, 255, 238, 0.9),
+    rgba(255, 255, 245, 0.98)
+  );
   box-shadow:
     inset 5px 0 0 #22c55e,
     inset 0 0 44px rgba(34, 197, 94, 0.09);
@@ -310,8 +337,11 @@ body {
   justify-content: center;
   border: 2px solid #d4c4ad;
   border-radius: 13px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(239, 232, 220, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.52),
+    rgba(239, 232, 220, 0.92)
+  );
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.7px;
@@ -339,8 +369,11 @@ body {
   justify-content: center;
   border: 2px solid #d4c4ad;
   border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(244, 238, 229, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.48),
+    rgba(244, 238, 229, 0.92)
+  );
   font-size: 12px;
   font-weight: 900;
   box-shadow:
@@ -357,8 +390,11 @@ body {
   justify-content: center;
   border: 3px dashed @dash;
   border-radius: 16px;
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.1));
+  background: radial-gradient(
+    circle at top,
+    rgba(255, 255, 255, 0.48),
+    rgba(255, 255, 255, 0.1)
+  );
   box-shadow: inset 0 0 20px rgba(80, 55, 25, 0.02);
 }
 
@@ -417,7 +453,11 @@ body {
   border: 3px solid @rarity-common;
 
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.64), transparent 46%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.64),
+      transparent 46%
+    ),
     linear-gradient(180deg, #fff7e8 0%, #f2dfbf 100%);
 
   color: #35271d;
@@ -589,8 +629,7 @@ body {
   grid-template-columns: 1fr 1px 1fr;
   align-items: center;
 
-  background:
-    linear-gradient(180deg, #eddcc3, #dec49c);
+  background: linear-gradient(180deg, #eddcc3, #dec49c);
 
   border-top: 2px solid rgba(126, 92, 56, 0.36);
 }
@@ -721,14 +760,13 @@ body {
   align-items: center;
   justify-content: center;
   color: #6b7280;
-  background:
-    repeating-linear-gradient(
-      45deg,
-      #cfd3d6,
-      #cfd3d6 10px,
-      #e4e7e9 10px,
-      #e4e7e9 20px
-    );
+  background: repeating-linear-gradient(
+    45deg,
+    #cfd3d6,
+    #cfd3d6 10px,
+    #e4e7e9 10px,
+    #e4e7e9 20px
+  );
   border: 2px solid #b9c0c7;
   box-shadow:
     inset 0 0 22px rgba(255, 255, 255, 0.35),
@@ -763,8 +801,16 @@ body {
   border: 2px solid rgba(204, 180, 145, 0.6);
   border-radius: 18px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.5), transparent 55%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(245, 236, 222, 0.76));
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.5),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.38),
+      rgba(245, 236, 222, 0.76)
+    );
   box-shadow:
     inset 0 0 30px rgba(255, 255, 255, 0.22),
     0 8px 18px rgba(80, 55, 25, 0.04);
@@ -942,7 +988,6 @@ body {
     0 0 0 8px rgba(139, 92, 246, 0.18) !important;
 }
 
-
 /* Hand interaction: khi hover/chọn một lá, lá kế bên mở nhẹ ra để fan sinh động hơn */
 .player-hand__cards:hover .hand-card:not(:hover):not(.hand-card--selected) {
   filter: saturate(0.96) brightness(0.985);
@@ -977,12 +1022,18 @@ body {
   transform: translate3d(-18px, -14px, 0) rotate(5deg);
 }
 
-.player-hand__cards:has(.hand-card--fan-1.hand-card--selected) .hand-card--fan-2,
-.player-hand__cards:has(.hand-card--fan-2.hand-card--selected) .hand-card--fan-3,
-.player-hand__cards:has(.hand-card--fan-3.hand-card--selected) .hand-card--fan-2,
-.player-hand__cards:has(.hand-card--fan-3.hand-card--selected) .hand-card--fan-4,
-.player-hand__cards:has(.hand-card--fan-4.hand-card--selected) .hand-card--fan-3,
-.player-hand__cards:has(.hand-card--fan-5.hand-card--selected) .hand-card--fan-4 {
+.player-hand__cards:has(.hand-card--fan-1.hand-card--selected)
+  .hand-card--fan-2,
+.player-hand__cards:has(.hand-card--fan-2.hand-card--selected)
+  .hand-card--fan-3,
+.player-hand__cards:has(.hand-card--fan-3.hand-card--selected)
+  .hand-card--fan-2,
+.player-hand__cards:has(.hand-card--fan-3.hand-card--selected)
+  .hand-card--fan-4,
+.player-hand__cards:has(.hand-card--fan-4.hand-card--selected)
+  .hand-card--fan-3,
+.player-hand__cards:has(.hand-card--fan-5.hand-card--selected)
+  .hand-card--fan-4 {
   filter: saturate(0.95) brightness(0.98);
 }
 
@@ -1174,26 +1225,14 @@ body {
   font-weight: 1000;
   background:
     linear-gradient(#fffaf0, #fffaf0) padding-box,
-    repeating-linear-gradient(
-      90deg,
-      #8b6a4f 0 7px,
-      transparent 7px 12px
-    ) top left / 100% 2px no-repeat,
-    repeating-linear-gradient(
-      90deg,
-      #8b6a4f 0 7px,
-      transparent 7px 12px
-    ) bottom left / 100% 2px no-repeat,
-    repeating-linear-gradient(
-      0deg,
-      #8b6a4f 0 7px,
-      transparent 7px 12px
-    ) top left / 2px 100% no-repeat,
-    repeating-linear-gradient(
-      0deg,
-      #8b6a4f 0 7px,
-      transparent 7px 12px
-    ) top right / 2px 100% no-repeat;
+    repeating-linear-gradient(90deg, #8b6a4f 0 7px, transparent 7px 12px) top
+      left / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, #8b6a4f 0 7px, transparent 7px 12px) bottom
+      left / 100% 2px no-repeat,
+    repeating-linear-gradient(0deg, #8b6a4f 0 7px, transparent 7px 12px) top
+      left / 2px 100% no-repeat,
+    repeating-linear-gradient(0deg, #8b6a4f 0 7px, transparent 7px 12px) top
+      right / 2px 100% no-repeat;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -1666,9 +1705,7 @@ body {
   pointer-events: none !important;
   transform: none !important;
   transition: none !important;
-  filter:
-    drop-shadow(0 18px 24px rgba(40, 24, 10, 0.28))
-    saturate(1.04);
+  filter: drop-shadow(0 18px 24px rgba(40, 24, 10, 0.28)) saturate(1.04);
 }
 
 .board-cell--drag-hover {
@@ -1883,7 +1920,9 @@ body {
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   box-shadow: 0 4px 10px rgba(86, 61, 34, 0.06);
 }
 
@@ -1951,7 +1990,11 @@ body {
   border-radius: 16px;
   border: 2px solid rgba(161, 125, 83, 0.22);
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.9), transparent 42%),
+    radial-gradient(
+      circle at 18% 0%,
+      rgba(255, 255, 255, 0.9),
+      transparent 42%
+    ),
     rgba(255, 248, 235, 0.9);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
@@ -1976,7 +2019,11 @@ body {
   justify-content: space-between;
   gap: 6px;
   border: 1px solid rgba(245, 158, 11, 0.32);
-  background: linear-gradient(135deg, rgba(255, 246, 218, 0.96), rgba(255, 232, 174, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 246, 218, 0.96),
+    rgba(255, 232, 174, 0.9)
+  );
 }
 
 .score-breakdown__header span {
@@ -2165,7 +2212,11 @@ body {
   border-radius: 20px;
   border: 2px solid rgba(161, 125, 83, 0.22);
   background:
-    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.9), transparent 44%),
+    radial-gradient(
+      circle at 16% 0%,
+      rgba(255, 255, 255, 0.9),
+      transparent 44%
+    ),
     rgba(255, 248, 235, 0.88);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
@@ -2269,7 +2320,9 @@ body {
     --gap: 6px;
     --cell-w: clamp(
       130px,
-      calc((var(--center-width) - var(--time-col) - (var(--gap) * 5) - 32px) / 5),
+      calc(
+        (var(--center-width) - var(--time-col) - (var(--gap) * 5) - 32px) / 5
+      ),
       178px
     );
     --hand-card-w: 146px;
@@ -2328,7 +2381,9 @@ body {
     --gap: 6px;
     --cell-w: clamp(
       122px,
-      calc((var(--center-width) - var(--time-col) - (var(--gap) * 5) - 32px) / 5),
+      calc(
+        (var(--center-width) - var(--time-col) - (var(--gap) * 5) - 32px) / 5
+      ),
       164px
     );
     --hand-card-w: 134px;
@@ -2423,7 +2478,6 @@ body {
     display: none;
   }
 }
-
 
 /* =========================================
    HAND FAN SMOOTH INTERACTION FINAL
@@ -2547,7 +2601,6 @@ body {
   }
 }
 
-
 /* =========================================
    HAND FAN SPACING FIX
    Fix lá bài bị đè lên nhau quá nhiều sau khi làm mượt hover.
@@ -2582,27 +2635,27 @@ body {
 
 /* Fan mặc định bung nhẹ hơn, tránh che title/VP của nhau */
 .hand-card--fan-1 {
-  transform: translate3d(-8px, -2px, 0) rotate(-13deg) ;
+  transform: translate3d(-8px, -2px, 0) rotate(-13deg);
   z-index: 1;
 }
 
 .hand-card--fan-2 {
-  transform: translate3d(-4px, -7px, 0) rotate(-6deg) ;
+  transform: translate3d(-4px, -7px, 0) rotate(-6deg);
   z-index: 2;
 }
 
 .hand-card--fan-3 {
-  transform: translate3d(0, -10px, 0) rotate(0deg) ;
+  transform: translate3d(0, -10px, 0) rotate(0deg);
   z-index: 3;
 }
 
 .hand-card--fan-4 {
-  transform: translate3d(4px, -7px, 0) rotate(6deg) ;
+  transform: translate3d(4px, -7px, 0) rotate(6deg);
   z-index: 2;
 }
 
 .hand-card--fan-5 {
-  transform: translate3d(8px, -2px, 0) rotate(13deg) ;
+  transform: translate3d(8px, -2px, 0) rotate(13deg);
   z-index: 1;
 }
 
@@ -2644,35 +2697,35 @@ body {
 
 /* Trả lá kế bên về đúng vị trí fan mới */
 .player-hand__cards:has(.hand-card--fan-1:hover) .hand-card--fan-2 {
-  transform: translate3d(-4px, -7px, 0) rotate(-6deg) ;
+  transform: translate3d(-4px, -7px, 0) rotate(-6deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-2:hover) .hand-card--fan-1 {
-  transform: translate3d(-8px, -2px, 0) rotate(-13deg) ;
+  transform: translate3d(-8px, -2px, 0) rotate(-13deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-2:hover) .hand-card--fan-3 {
-  transform: translate3d(0, -10px, 0) rotate(0deg) ;
+  transform: translate3d(0, -10px, 0) rotate(0deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-3:hover) .hand-card--fan-2 {
-  transform: translate3d(-4px, -7px, 0) rotate(-6deg) ;
+  transform: translate3d(-4px, -7px, 0) rotate(-6deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-3:hover) .hand-card--fan-4 {
-  transform: translate3d(4px, -7px, 0) rotate(6deg) ;
+  transform: translate3d(4px, -7px, 0) rotate(6deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-4:hover) .hand-card--fan-3 {
-  transform: translate3d(0, -10px, 0) rotate(0deg) ;
+  transform: translate3d(0, -10px, 0) rotate(0deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-4:hover) .hand-card--fan-5 {
-  transform: translate3d(8px, -2px, 0) rotate(13deg) ;
+  transform: translate3d(8px, -2px, 0) rotate(13deg);
 }
 
 .player-hand__cards:has(.hand-card--fan-5:hover) .hand-card--fan-4 {
-  transform: translate3d(4px, -7px, 0) rotate(6deg) ;
+  transform: translate3d(4px, -7px, 0) rotate(6deg);
 }
 
 /* Màn nhỏ: vẫn cần overlap nhiều hơn một chút để đủ chỗ */
@@ -2686,7 +2739,6 @@ body {
     padding-right: 18px;
   }
 }
-
 
 /* =========================================
    HAND FRAME DOES NOT CUT CARD EDGES
@@ -2733,8 +2785,10 @@ body {
   height: 2px;
 
   background:
-    linear-gradient(90deg, rgba(204, 180, 145, 0.65), rgba(204, 180, 145, 0.65)) left top / 26% 2px no-repeat,
-    linear-gradient(90deg, rgba(204, 180, 145, 0.65), rgba(204, 180, 145, 0.65)) right top / 26% 2px no-repeat;
+    linear-gradient(90deg, rgba(204, 180, 145, 0.65), rgba(204, 180, 145, 0.65))
+      left top / 26% 2px no-repeat,
+    linear-gradient(90deg, rgba(204, 180, 145, 0.65), rgba(204, 180, 145, 0.65))
+      right top / 26% 2px no-repeat;
 }
 
 /* Nội dung của hand luôn nằm trên frame giả */
@@ -2759,11 +2813,20 @@ body {
 @media (max-width: 1360px) {
   .player-hand::after {
     background:
-      linear-gradient(90deg, rgba(204, 180, 145, 0.65), rgba(204, 180, 145, 0.65)) left top / 20% 2px no-repeat,
-      linear-gradient(90deg, rgba(204, 180, 145, 0.65), rgba(204, 180, 145, 0.65)) right top / 20% 2px no-repeat;
+      linear-gradient(
+          90deg,
+          rgba(204, 180, 145, 0.65),
+          rgba(204, 180, 145, 0.65)
+        )
+        left top / 20% 2px no-repeat,
+      linear-gradient(
+          90deg,
+          rgba(204, 180, 145, 0.65),
+          rgba(204, 180, 145, 0.65)
+        )
+        right top / 20% 2px no-repeat;
   }
 }
-
 
 /* =========================================
    HAND CARDS TOP LAYER FIX
@@ -2867,7 +2930,6 @@ body {
     0 8px 18px rgba(80, 55, 25, 0.04) !important;
 }
 
-
 /* =========================================
    DEFINITIVE HAND FRAME FIX
    Giải quyết triệt để đường khung hand cắt ngang lá bài.
@@ -2906,8 +2968,16 @@ body {
   border-radius: 18px !important;
 
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.5), transparent 55%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(245, 236, 222, 0.76)) !important;
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.5),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.38),
+      rgba(245, 236, 222, 0.76)
+    ) !important;
 
   box-shadow:
     inset 0 0 30px rgba(255, 255, 255, 0.22),
@@ -3003,7 +3073,6 @@ body {
   background: transparent !important;
 }
 
-
 /* =========================================
    HAND NO-FRAME DEFINITIVE FIX
    Nếu khung hand vẫn che mép lá bài, bỏ hẳn khung đó.
@@ -3084,8 +3153,12 @@ body {
   border-radius: 999px !important;
   pointer-events: none !important;
 
-  background:
-    radial-gradient(ellipse at center, rgba(255, 250, 238, 0.82), rgba(255, 250, 238, 0.28) 52%, transparent 76%) !important;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 250, 238, 0.82),
+    rgba(255, 250, 238, 0.28) 52%,
+    transparent 76%
+  ) !important;
 
   box-shadow: 0 18px 36px rgba(96, 68, 39, 0.05) !important;
 }
@@ -3100,7 +3173,6 @@ body {
 .game-shell {
   overflow: hidden !important;
 }
-
 
 /* =========================================
    STABLE HAND SELECTION FIX
@@ -3124,7 +3196,8 @@ body {
 }
 
 /* Các lá khác vẫn hover được nhưng không đẩy selected */
-.player-hand__cards:has(.hand-card--selected) .hand-card:not(.hand-card--selected) {
+.player-hand__cards:has(.hand-card--selected)
+  .hand-card:not(.hand-card--selected) {
   transition:
     transform 180ms cubic-bezier(0.22, 0.61, 0.36, 1),
     box-shadow 160ms ease,
@@ -3136,7 +3209,6 @@ body {
   backface-visibility: hidden;
   transform-style: preserve-3d;
 }
-
 
 /* =========================================
    SIMULATION REPLAY FLOW
@@ -3155,7 +3227,11 @@ body {
   border: 2px solid rgba(204, 180, 145, 0.52);
 
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.72), transparent 52%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.72),
+      transparent 52%
+    ),
     linear-gradient(180deg, rgba(255, 250, 239, 0.94), rgba(238, 224, 202, 0.9));
 
   box-shadow:
@@ -3217,7 +3293,10 @@ body {
 
 .simulation-replay__body {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(260px, 1.3fr) minmax(190px, 0.8fr);
+  grid-template-columns: minmax(240px, 1fr) minmax(260px, 1.3fr) minmax(
+      190px,
+      0.8fr
+    );
   gap: 10px;
   align-items: stretch;
 }
@@ -3493,7 +3572,10 @@ body {
   }
 
   .simulation-replay__body {
-    grid-template-columns: minmax(210px, 1fr) minmax(220px, 1.1fr) minmax(160px, 0.7fr);
+    grid-template-columns: minmax(210px, 1fr) minmax(220px, 1.1fr) minmax(
+        160px,
+        0.7fr
+      );
     gap: 8px;
   }
 
@@ -3520,7 +3602,6 @@ body {
   }
 }
 
-
 /* =========================================
    SIMULATION FLOWCHART VIEW
    Thay replay log bằng flow chart trực quan.
@@ -3539,7 +3620,11 @@ body {
   border: 2px solid rgba(204, 180, 145, 0.52);
 
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.72), transparent 52%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.72),
+      transparent 52%
+    ),
     linear-gradient(180deg, rgba(255, 250, 239, 0.94), rgba(238, 224, 202, 0.9));
 
   box-shadow:
@@ -3720,7 +3805,11 @@ body {
   border-radius: 15px;
   border: 2px solid rgba(161, 125, 83, 0.2);
   background:
-    radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.75), transparent 48%),
+    radial-gradient(
+      circle at 30% 0%,
+      rgba(255, 255, 255, 0.75),
+      transparent 48%
+    ),
     rgba(255, 248, 235, 0.92);
 
   box-shadow:
@@ -3740,7 +3829,11 @@ body {
 .flow-node.is-done .flow-node__card {
   border-color: rgba(34, 197, 94, 0.32);
   background:
-    radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.75), transparent 48%),
+    radial-gradient(
+      circle at 30% 0%,
+      rgba(255, 255, 255, 0.75),
+      transparent 48%
+    ),
     rgba(240, 253, 244, 0.72);
 }
 
@@ -3933,7 +4026,6 @@ body {
   }
 }
 
-
 /* =========================================
    FLOWCHART COMPACT / NO CUT FIX
    Fix flowchart bị tụt xuống và bị che/cắt phần dưới.
@@ -4095,7 +4187,6 @@ body {
     font-size: 12px !important;
   }
 }
-
 
 /* =========================================
    FLOWCHART V3: BIGGER NODES + COMBO FIX + DAY SLIDE OUT
@@ -4286,7 +4377,6 @@ body {
   }
 }
 
-
 /* =========================================
    FLOWCHART V4: FINAL PANEL + DAY LIST FIX
    - Kết quả cuối không bị che.
@@ -4402,7 +4492,6 @@ body {
   }
 }
 
-
 /* =========================================
    FLOWCHART V5: LEFT DAY RAIL WINDOW
    Ban đầu chỉ hiện tối đa 4 ngày.
@@ -4439,7 +4528,6 @@ body {
     min-height: 42px !important;
   }
 }
-
 
 /* =========================================
    FLOWCHART V6: ALL DAYS EXIT PROGRESSIVELY
@@ -4502,7 +4590,6 @@ body {
   opacity: 1 !important;
 }
 
-
 /* =========================================
    RIGHT SIDEBAR DECK PANEL + DEAL ANIMATION
    Thay người chơi cuối bên phải bằng sấp bài.
@@ -4521,8 +4608,16 @@ body {
   border-top: 1px solid rgba(204, 180, 145, 0.6);
 
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 242, 196, 0.38), transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(243, 237, 225, 0.92));
+    radial-gradient(
+      circle at 50% 18%,
+      rgba(255, 242, 196, 0.38),
+      transparent 44%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(243, 237, 225, 0.92)
+    );
 }
 
 .deck-pile-panel__top {
@@ -4564,8 +4659,6 @@ body {
   line-height: 1;
   font-weight: 1000;
 }
-
-
 
 .player-effect-tray {
   min-height: 58px;
@@ -4634,7 +4727,11 @@ body {
 .player-effect-token--debt {
   color: #5a3217;
   background:
-    radial-gradient(circle at 16% 20%, rgba(255, 255, 255, 0.8), transparent 34%),
+    radial-gradient(
+      circle at 16% 20%,
+      rgba(255, 255, 255, 0.8),
+      transparent 34%
+    ),
     linear-gradient(135deg, #ffe8a8, #f5b96a);
   border: 1px solid rgba(180, 83, 9, 0.24);
   box-shadow:
@@ -4745,7 +4842,11 @@ body {
 
   color: #4e3a2b;
   background:
-    radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.7), transparent 44%),
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(255, 255, 255, 0.7),
+      transparent 44%
+    ),
     linear-gradient(135deg, #fff5d8, #f4d38c);
 
   transform: rotate(-2deg);
@@ -4814,7 +4915,6 @@ body {
   font-weight: 760;
 }
 
-
 @media (max-width: 1460px) {
   .deck-card-stack {
     width: 104px;
@@ -4866,7 +4966,6 @@ body {
   }
 }
 
-
 /* =========================================
    REVERT STABLE SAFETY PATCH
    - Không chạy animation chia bài lỗi.
@@ -4886,7 +4985,8 @@ body {
   transform: translate3d(0, -58px, 0) rotate(0deg) scale(1.07) !important;
 }
 
-.player-hand__cards:has(.hand-card--selected) .hand-card:not(.hand-card--selected):hover {
+.player-hand__cards:has(.hand-card--selected)
+  .hand-card:not(.hand-card--selected):hover {
   filter: saturate(1.02);
 }
 
@@ -4894,7 +4994,11 @@ body {
 .deck-card-stack__card--front {
   color: #4e3a2b;
   background:
-    radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.7), transparent 44%),
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(255, 255, 255, 0.7),
+      transparent 44%
+    ),
     linear-gradient(135deg, #fff5d8, #f4d38c) !important;
 }
 
@@ -4903,7 +5007,6 @@ body {
 .deck-card-stack__card--front em {
   display: block;
 }
-
 
 /* ============================================================
    TRUE SINGLE HAND DEAL FINAL
@@ -4989,13 +5092,16 @@ body {
 
 @keyframes trueDealFan1 {
   0% {
-    transform: translate3d(610px, -118px, 120px) rotate(-25deg) rotateY(-14deg) scale(0.82);
+    transform: translate3d(610px, -118px, 120px) rotate(-25deg) rotateY(-14deg)
+      scale(0.82);
   }
   18% {
-    transform: translate3d(520px, -180px, 170px) rotate(-32deg) rotateY(-18deg) scale(0.9);
+    transform: translate3d(520px, -180px, 170px) rotate(-32deg) rotateY(-18deg)
+      scale(0.9);
   }
   58% {
-    transform: translate3d(185px, -84px, 110px) rotate(-22deg) rotateY(10deg) scale(0.98);
+    transform: translate3d(185px, -84px, 110px) rotate(-22deg) rotateY(10deg)
+      scale(0.98);
   }
   100% {
     transform: translate3d(-8px, -2px, 0) rotate(-13deg) rotateY(0deg) scale(1);
@@ -5004,13 +5110,16 @@ body {
 
 @keyframes trueDealFan2 {
   0% {
-    transform: translate3d(520px, -120px, 120px) rotate(-14deg) rotateY(-14deg) scale(0.82);
+    transform: translate3d(520px, -120px, 120px) rotate(-14deg) rotateY(-14deg)
+      scale(0.82);
   }
   18% {
-    transform: translate3d(445px, -184px, 170px) rotate(-22deg) rotateY(-18deg) scale(0.9);
+    transform: translate3d(445px, -184px, 170px) rotate(-22deg) rotateY(-18deg)
+      scale(0.9);
   }
   58% {
-    transform: translate3d(145px, -90px, 110px) rotate(-11deg) rotateY(10deg) scale(0.98);
+    transform: translate3d(145px, -90px, 110px) rotate(-11deg) rotateY(10deg)
+      scale(0.98);
   }
   100% {
     transform: translate3d(-4px, -7px, 0) rotate(-6deg) rotateY(0deg) scale(1);
@@ -5019,13 +5128,16 @@ body {
 
 @keyframes trueDealFan3 {
   0% {
-    transform: translate3d(430px, -122px, 120px) rotate(-2deg) rotateY(-14deg) scale(0.82);
+    transform: translate3d(430px, -122px, 120px) rotate(-2deg) rotateY(-14deg)
+      scale(0.82);
   }
   18% {
-    transform: translate3d(360px, -188px, 170px) rotate(-8deg) rotateY(-18deg) scale(0.9);
+    transform: translate3d(360px, -188px, 170px) rotate(-8deg) rotateY(-18deg)
+      scale(0.9);
   }
   58% {
-    transform: translate3d(105px, -96px, 110px) rotate(0deg) rotateY(10deg) scale(0.98);
+    transform: translate3d(105px, -96px, 110px) rotate(0deg) rotateY(10deg)
+      scale(0.98);
   }
   100% {
     transform: translate3d(0, -10px, 0) rotate(0deg) rotateY(0deg) scale(1);
@@ -5034,13 +5146,16 @@ body {
 
 @keyframes trueDealFan4 {
   0% {
-    transform: translate3d(340px, -120px, 120px) rotate(12deg) rotateY(-14deg) scale(0.82);
+    transform: translate3d(340px, -120px, 120px) rotate(12deg) rotateY(-14deg)
+      scale(0.82);
   }
   18% {
-    transform: translate3d(275px, -184px, 170px) rotate(18deg) rotateY(-18deg) scale(0.9);
+    transform: translate3d(275px, -184px, 170px) rotate(18deg) rotateY(-18deg)
+      scale(0.9);
   }
   58% {
-    transform: translate3d(65px, -90px, 110px) rotate(11deg) rotateY(10deg) scale(0.98);
+    transform: translate3d(65px, -90px, 110px) rotate(11deg) rotateY(10deg)
+      scale(0.98);
   }
   100% {
     transform: translate3d(4px, -7px, 0) rotate(6deg) rotateY(0deg) scale(1);
@@ -5049,13 +5164,16 @@ body {
 
 @keyframes trueDealFan5 {
   0% {
-    transform: translate3d(250px, -118px, 120px) rotate(24deg) rotateY(-14deg) scale(0.82);
+    transform: translate3d(250px, -118px, 120px) rotate(24deg) rotateY(-14deg)
+      scale(0.82);
   }
   18% {
-    transform: translate3d(190px, -180px, 170px) rotate(30deg) rotateY(-18deg) scale(0.9);
+    transform: translate3d(190px, -180px, 170px) rotate(30deg) rotateY(-18deg)
+      scale(0.9);
   }
   58% {
-    transform: translate3d(25px, -84px, 110px) rotate(22deg) rotateY(10deg) scale(0.98);
+    transform: translate3d(25px, -84px, 110px) rotate(22deg) rotateY(10deg)
+      scale(0.98);
   }
   100% {
     transform: translate3d(8px, -2px, 0) rotate(13deg) rotateY(0deg) scale(1);
@@ -5101,36 +5219,76 @@ body {
 
 @media (max-width: 1460px) {
   @keyframes trueDealFan1 {
-    0% { transform: translate3d(540px, -108px, 120px) rotate(-25deg) rotateY(-14deg) scale(0.82); }
-    58% { transform: translate3d(155px, -78px, 110px) rotate(-22deg) rotateY(10deg) scale(0.98); }
-    100% { transform: translate3d(-8px, -2px, 0) rotate(-13deg) rotateY(0deg) scale(1); }
+    0% {
+      transform: translate3d(540px, -108px, 120px) rotate(-25deg)
+        rotateY(-14deg) scale(0.82);
+    }
+    58% {
+      transform: translate3d(155px, -78px, 110px) rotate(-22deg) rotateY(10deg)
+        scale(0.98);
+    }
+    100% {
+      transform: translate3d(-8px, -2px, 0) rotate(-13deg) rotateY(0deg)
+        scale(1);
+    }
   }
 
   @keyframes trueDealFan2 {
-    0% { transform: translate3d(455px, -110px, 120px) rotate(-14deg) rotateY(-14deg) scale(0.82); }
-    58% { transform: translate3d(120px, -84px, 110px) rotate(-11deg) rotateY(10deg) scale(0.98); }
-    100% { transform: translate3d(-4px, -7px, 0) rotate(-6deg) rotateY(0deg) scale(1); }
+    0% {
+      transform: translate3d(455px, -110px, 120px) rotate(-14deg)
+        rotateY(-14deg) scale(0.82);
+    }
+    58% {
+      transform: translate3d(120px, -84px, 110px) rotate(-11deg) rotateY(10deg)
+        scale(0.98);
+    }
+    100% {
+      transform: translate3d(-4px, -7px, 0) rotate(-6deg) rotateY(0deg) scale(1);
+    }
   }
 
   @keyframes trueDealFan3 {
-    0% { transform: translate3d(370px, -112px, 120px) rotate(-2deg) rotateY(-14deg) scale(0.82); }
-    58% { transform: translate3d(85px, -90px, 110px) rotate(0deg) rotateY(10deg) scale(0.98); }
-    100% { transform: translate3d(0, -10px, 0) rotate(0deg) rotateY(0deg) scale(1); }
+    0% {
+      transform: translate3d(370px, -112px, 120px) rotate(-2deg) rotateY(-14deg)
+        scale(0.82);
+    }
+    58% {
+      transform: translate3d(85px, -90px, 110px) rotate(0deg) rotateY(10deg)
+        scale(0.98);
+    }
+    100% {
+      transform: translate3d(0, -10px, 0) rotate(0deg) rotateY(0deg) scale(1);
+    }
   }
 
   @keyframes trueDealFan4 {
-    0% { transform: translate3d(285px, -110px, 120px) rotate(12deg) rotateY(-14deg) scale(0.82); }
-    58% { transform: translate3d(50px, -84px, 110px) rotate(11deg) rotateY(10deg) scale(0.98); }
-    100% { transform: translate3d(4px, -7px, 0) rotate(6deg) rotateY(0deg) scale(1); }
+    0% {
+      transform: translate3d(285px, -110px, 120px) rotate(12deg) rotateY(-14deg)
+        scale(0.82);
+    }
+    58% {
+      transform: translate3d(50px, -84px, 110px) rotate(11deg) rotateY(10deg)
+        scale(0.98);
+    }
+    100% {
+      transform: translate3d(4px, -7px, 0) rotate(6deg) rotateY(0deg) scale(1);
+    }
   }
 
   @keyframes trueDealFan5 {
-    0% { transform: translate3d(200px, -108px, 120px) rotate(24deg) rotateY(-14deg) scale(0.82); }
-    58% { transform: translate3d(15px, -78px, 110px) rotate(22deg) rotateY(10deg) scale(0.98); }
-    100% { transform: translate3d(8px, -2px, 0) rotate(13deg) rotateY(0deg) scale(1); }
+    0% {
+      transform: translate3d(200px, -108px, 120px) rotate(24deg) rotateY(-14deg)
+        scale(0.82);
+    }
+    58% {
+      transform: translate3d(15px, -78px, 110px) rotate(22deg) rotateY(10deg)
+        scale(0.98);
+    }
+    100% {
+      transform: translate3d(8px, -2px, 0) rotate(13deg) rotateY(0deg) scale(1);
+    }
   }
 }
-
 
 /* ============================================================
    DECK BACK REDESIGN - LỮ KHÁCH BÀN CỜ
@@ -5150,8 +5308,16 @@ body {
   border-top: 1px solid rgba(204, 180, 145, 0.6);
 
   background:
-    radial-gradient(circle at 50% 15%, rgba(255, 244, 204, 0.36), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(243, 237, 225, 0.94));
+    radial-gradient(
+      circle at 50% 15%,
+      rgba(255, 244, 204, 0.36),
+      transparent 42%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.76),
+      rgba(243, 237, 225, 0.94)
+    );
 }
 
 .deck-pile-panel__top {
@@ -5252,8 +5418,16 @@ body {
   overflow: hidden;
 
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.24), transparent 30%),
-    radial-gradient(circle at 50% 82%, rgba(255, 210, 122, 0.18), transparent 32%),
+    radial-gradient(
+      circle at 50% 18%,
+      rgba(255, 255, 255, 0.24),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 50% 82%,
+      rgba(255, 210, 122, 0.18),
+      transparent 32%
+    ),
     linear-gradient(160deg, #513b93 0%, #364f86 52%, #27385f 100%);
 
   color: #fff7ea;
@@ -5508,7 +5682,6 @@ body {
   }
 }
 
-
 /* ============================================================
    DAILY PHASE LOOP / SINGLE-DAY FLOWCHART
    - Chỉ xếp bài vào ngày hiện tại.
@@ -5578,7 +5751,6 @@ body {
   }
 }
 
-
 /* ============================================================
    DAILY DEAL BUGFIX
    Khi sang ngày mới, chỉ khóa tương tác trong lúc animation phát bài.
@@ -5592,7 +5764,6 @@ body {
 .player-hand:not(.player-hand--dealing) .hand-card {
   pointer-events: auto;
 }
-
 
 /* =========================================
    DAILY DRAFT IN HAND AREA
@@ -5737,7 +5908,6 @@ body {
   filter: grayscale(0.35);
 }
 
-
 /* =========================================
    CLEAN DRAFT 7-CARD FAN
    Luật: phát 7 lá, chọn 5 lá, 2 lá dư trả deck.
@@ -5780,89 +5950,123 @@ body {
 }
 
 /* Vị trí ngang tuyệt đối của 7 lá */
-.player-hand--draft .daily-draft-card--1 { left: calc(50% - 180px); }
-.player-hand--draft .daily-draft-card--2 { left: calc(50% - 120px); }
-.player-hand--draft .daily-draft-card--3 { left: calc(50% - 60px); }
-.player-hand--draft .daily-draft-card--4 { left: 50%; }
-.player-hand--draft .daily-draft-card--5 { left: calc(50% + 60px); }
-.player-hand--draft .daily-draft-card--6 { left: calc(50% + 120px); }
-.player-hand--draft .daily-draft-card--7 { left: calc(50% + 180px); }
-.player-hand--draft .daily-draft-card--8 { display: none !important; }
+.player-hand--draft .daily-draft-card--1 {
+  left: calc(50% - 180px);
+}
+.player-hand--draft .daily-draft-card--2 {
+  left: calc(50% - 120px);
+}
+.player-hand--draft .daily-draft-card--3 {
+  left: calc(50% - 60px);
+}
+.player-hand--draft .daily-draft-card--4 {
+  left: 50%;
+}
+.player-hand--draft .daily-draft-card--5 {
+  left: calc(50% + 60px);
+}
+.player-hand--draft .daily-draft-card--6 {
+  left: calc(50% + 120px);
+}
+.player-hand--draft .daily-draft-card--7 {
+  left: calc(50% + 180px);
+}
+.player-hand--draft .daily-draft-card--8 {
+  display: none !important;
+}
 
 /* Fan sau khi chia xong */
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--1 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--1 {
   transform: translateX(-50%) translateY(-2px) rotate(-21deg);
   z-index: 11;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--2 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--2 {
   transform: translateX(-50%) translateY(-10px) rotate(-14deg);
   z-index: 12;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--3 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--3 {
   transform: translateX(-50%) translateY(-17px) rotate(-7deg);
   z-index: 13;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--4 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--4 {
   transform: translateX(-50%) translateY(-21px) rotate(0deg);
   z-index: 14;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--5 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--5 {
   transform: translateX(-50%) translateY(-17px) rotate(7deg);
   z-index: 13;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--6 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--6 {
   transform: translateX(-50%) translateY(-10px) rotate(14deg);
   z-index: 12;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--7 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--7 {
   transform: translateX(-50%) translateY(-2px) rotate(21deg);
   z-index: 11;
 }
 
 /* Hover rõ và click được cho cả 7 lá */
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card:hover {
   z-index: 9999;
-  filter: saturate(1.05) contrast(1.02) drop-shadow(0 14px 18px rgba(75, 47, 25, 0.18));
+  filter: saturate(1.05) contrast(1.02)
+    drop-shadow(0 14px 18px rgba(75, 47, 25, 0.18));
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--1:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--1:hover {
   transform: translateX(-50%) translateY(-36px) rotate(-13deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--2:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--2:hover {
   transform: translateX(-50%) translateY(-40px) rotate(-8deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--3:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--3:hover {
   transform: translateX(-50%) translateY(-44px) rotate(-4deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--4:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--4:hover {
   transform: translateX(-50%) translateY(-48px) rotate(0deg) scale(1.03);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--5:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--5:hover {
   transform: translateX(-50%) translateY(-44px) rotate(4deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--6:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--6:hover {
   transform: translateX(-50%) translateY(-40px) rotate(8deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--7:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--7:hover {
   transform: translateX(-50%) translateY(-36px) rotate(13deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--selected,
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--selected:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--selected,
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--selected:hover {
   z-index: 99999 !important;
-  filter: drop-shadow(0 18px 22px rgba(75,47,25,.28));
+  filter: drop-shadow(0 18px 22px rgba(75, 47, 25, 0.28));
   transform: translateX(-50%) translateY(-60px) rotate(0deg) scale(1.055) !important;
 }
 
@@ -5871,7 +6075,12 @@ body {
 .player-hand--draft.is-dealing .daily-draft-card {
   pointer-events: none;
   animation-duration: 0.75s;
-  animation-timing-function: cubic-bezier(0.34, 1.45, 0.64, 1); /* Bounce/overshoot */
+  animation-timing-function: cubic-bezier(
+    0.34,
+    1.45,
+    0.64,
+    1
+  ); /* Bounce/overshoot */
   animation-fill-mode: both;
   will-change: transform, opacity;
 }
@@ -5933,51 +6142,117 @@ body {
 }
 
 @keyframes draftDeal7Clean1 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(610px, -126px, 0) rotate(25deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-2px) rotate(-21deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(610px, -126px, 0) rotate(25deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px) rotate(-21deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean2 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(560px, -130px, 0) rotate(20deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-10px) rotate(-14deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(560px, -130px, 0) rotate(20deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) rotate(-14deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean3 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(510px, -134px, 0) rotate(15deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-17px) rotate(-7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(510px, -134px, 0) rotate(15deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-17px) rotate(-7deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean4 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(460px, -138px, 0) rotate(8deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-21px) rotate(0deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(460px, -138px, 0) rotate(8deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-21px) rotate(0deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean5 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(410px, -134px, 0) rotate(0deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-17px) rotate(7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(410px, -134px, 0) rotate(0deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-17px) rotate(7deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean6 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(360px, -130px, 0) rotate(-8deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-10px) rotate(14deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(360px, -130px, 0) rotate(-8deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) rotate(14deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean7 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(310px, -126px, 0) rotate(-15deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-2px) rotate(21deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(310px, -126px, 0) rotate(-15deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px) rotate(21deg) scale(1);
+  }
 }
 
 /* Passing card về deck: giữ hiệu ứng nhẹ, không làm mất click sau đó */
-.player-hand--draft .player-hand__cards.is-passing .daily-draft-card:not(.daily-draft-card--selected) {
+.player-hand--draft
+  .player-hand__cards.is-passing
+  .daily-draft-card:not(.daily-draft-card--selected) {
   pointer-events: none;
-  animation: draftPassToDeckClean 0.9s cubic-bezier(0.17, 0.82, 0.24, 1) forwards;
+  animation: draftPassToDeckClean 0.9s cubic-bezier(0.17, 0.82, 0.24, 1)
+    forwards;
 }
 
 .player-hand--draft .player-hand__cards.is-passing .daily-draft-card--selected {
@@ -5986,22 +6261,42 @@ body {
 }
 
 @keyframes draftPassToDeckClean {
-  0% { opacity: 1; }
-  25% { opacity: 1; transform: translateX(-50%) translateY(-18px) rotate(6deg) scale(0.96); }
-  70% { opacity: 0.8; transform: translateX(-50%) translate3d(460px, -82px, 0) rotate(18deg) scale(0.62); }
-  100% { opacity: 0; transform: translateX(-50%) translate3d(690px, -122px, 0) rotate(26deg) scale(0.38); }
+  0% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-18px) rotate(6deg) scale(0.96);
+  }
+  70% {
+    opacity: 0.8;
+    transform: translateX(-50%) translate3d(460px, -82px, 0) rotate(18deg)
+      scale(0.62);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(690px, -122px, 0) rotate(26deg)
+      scale(0.38);
+  }
 }
 
 @keyframes draftChosenKeepClean {
-  0% { opacity: 1; }
-  70% { opacity: 1; transform: translateX(-50%) translateY(-62px) rotate(0deg) scale(1.08); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-96px) rotate(-5deg) scale(0.78); }
+  0% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-62px) rotate(0deg) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-96px) rotate(-5deg) scale(0.78);
+  }
 }
 
 .player-hand--draft .player-hand__cards.is-passing {
   pointer-events: none;
 }
-
 
 /* =========================================
    ONLINE FINAL RANKING PANEL
@@ -6014,7 +6309,11 @@ body {
   border-radius: 24px;
   padding: 20px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.95), transparent 42%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.95),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(255, 250, 238, 0.96), rgba(244, 233, 216, 0.9));
   box-shadow:
     0 24px 70px rgba(70, 45, 20, 0.14),
@@ -6064,7 +6363,11 @@ body {
 
 .final-ranking-row--self {
   border-color: rgba(34, 197, 94, 0.58);
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.14), rgba(255, 255, 255, 0.74));
+  background: linear-gradient(
+    90deg,
+    rgba(34, 197, 94, 0.14),
+    rgba(255, 255, 255, 0.74)
+  );
   box-shadow: inset 4px 0 0 rgba(34, 197, 94, 0.92);
 }
 
@@ -6137,9 +6440,13 @@ body {
   display: grid;
   place-items: center;
   padding: 28px;
-  background-image: 
-    radial-gradient(circle at center, transparent 20%, rgba(30, 20, 10, 0.65) 120%),
-    url('/assets/images/backgrounds/lobby-bg.jpg');
+  background-image:
+    radial-gradient(
+      circle at center,
+      transparent 20%,
+      rgba(30, 20, 10, 0.65) 120%
+    ),
+    url("/assets/images/backgrounds/lobby-bg.jpg");
   background-size: cover;
   background-position: top center;
   background-repeat: no-repeat;
@@ -6183,7 +6490,9 @@ body {
   font-weight: 900;
   line-height: 1;
   letter-spacing: -0.02em;
-  text-shadow: 0 2px 10px rgba(255, 255, 255, 1), 0 4px 20px rgba(255, 255, 255, 0.8);
+  text-shadow:
+    0 2px 10px rgba(255, 255, 255, 1),
+    0 4px 20px rgba(255, 255, 255, 0.8);
 }
 
 .online-entry-card__brand p,
@@ -6226,7 +6535,11 @@ body {
   border-bottom-color: rgba(255, 255, 255, 0.4);
   border-radius: 24px;
   padding: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0.4)
+  );
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -6266,7 +6579,9 @@ body {
 .online-entry-form input:focus {
   background: #fff;
   border-color: #2563eb;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(37, 99, 235, 0.2);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.05),
+    0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .online-entry-form button,
@@ -6284,7 +6599,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 14px;
-  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 6px 16px rgba(29, 78, 216, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -6294,7 +6611,9 @@ body {
 .online-entry-form button:hover {
   background: linear-gradient(180deg, #60a5fa, #2563eb);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 8px 24px rgba(29, 78, 216, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .online-entry-form button {
@@ -6348,7 +6667,11 @@ body {
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 18px;
   padding: 12px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.7)
+  );
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -6357,7 +6680,9 @@ body {
 
 .online-lobby-player.is-self {
   border-color: #2563eb;
-  box-shadow: inset 4px 0 0 rgba(37, 99, 235, 0.8), 0 0 16px rgba(37, 99, 235, 0.15);
+  box-shadow:
+    inset 4px 0 0 rgba(37, 99, 235, 0.8),
+    0 0 16px rgba(37, 99, 235, 0.15);
 }
 
 .online-lobby-player.is-empty {
@@ -6432,7 +6757,6 @@ body {
   text-align: right;
 }
 
-
 .online-lobby-player__status.is-ready {
   background: rgba(34, 197, 94, 0.16);
   color: #16a34a;
@@ -6450,7 +6774,7 @@ body {
 
 .online-lobby-card__leave {
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   padding: 11px 16px;
   color: #fff;
@@ -6465,7 +6789,7 @@ body {
 .online-lobby-card__leave:hover {
   background: rgba(220, 38, 38, 0.85);
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-  border-color: rgba(255,255,255,0.4);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .score-breakdown__leave {
@@ -6529,8 +6853,16 @@ body {
   border-radius: 999px;
   padding: 0;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.88), transparent 42%),
-    linear-gradient(180deg, rgba(255, 250, 238, 0.96), rgba(244, 233, 216, 0.92));
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.88),
+      transparent 42%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 250, 238, 0.96),
+      rgba(244, 233, 216, 0.92)
+    );
   box-shadow:
     0 18px 38px rgba(70, 45, 20, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
@@ -6618,7 +6950,11 @@ body {
   place-items: center;
   padding: 28px;
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.9), transparent 42%),
+    radial-gradient(
+      circle at 50% 18%,
+      rgba(255, 255, 255, 0.9),
+      transparent 42%
+    ),
     linear-gradient(180deg, #f5efe6, #e8dccb);
 }
 
@@ -6628,8 +6964,16 @@ body {
   border-radius: 30px;
   padding: 28px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.94), transparent 46%),
-    linear-gradient(180deg, rgba(255, 250, 238, 0.96), rgba(244, 233, 216, 0.94));
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.94),
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 250, 238, 0.96),
+      rgba(244, 233, 216, 0.94)
+    );
   box-shadow:
     0 28px 80px rgba(70, 45, 20, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
@@ -6878,7 +7222,11 @@ body {
   border-radius: 19px !important;
   border: 2px solid rgba(189, 139, 70, 0.42) !important;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.94), transparent 42%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.94),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(255, 250, 239, 0.98), rgba(245, 229, 201, 0.9)) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
@@ -6976,7 +7324,9 @@ body {
 }
 
 .arena__main {
-  height: calc(100vh - (var(--arena-padding-y) * 2) - var(--top-height)) !important;
+  height: calc(
+    100vh - (var(--arena-padding-y) * 2) - var(--top-height)
+  ) !important;
 }
 
 /* Bottom Diablo-inspired resource medallions */
@@ -7009,7 +7359,11 @@ body {
   border-radius: 50%;
   border: 5px solid rgba(130, 88, 48, 0.78);
   background:
-    radial-gradient(circle at 44% 35%, rgba(255, 255, 255, 0.66), transparent 24%),
+    radial-gradient(
+      circle at 44% 35%,
+      rgba(255, 255, 255, 0.66),
+      transparent 24%
+    ),
     radial-gradient(circle at 50% 52%, rgba(82, 49, 28, 0.22), transparent 58%),
     linear-gradient(135deg, #f8e8ba, #9a6a34 42%, #5d3924 68%, #f0cc82);
   box-shadow:
@@ -7026,7 +7380,11 @@ body {
   border-radius: 50%;
   border: 2px solid rgba(255, 236, 177, 0.84);
   background:
-    radial-gradient(circle at 50% 34%, rgba(149, 93, 35, 0.16), transparent 34%),
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(149, 93, 35, 0.16),
+      transparent 34%
+    ),
     linear-gradient(180deg, rgba(76, 45, 74, 0.85), rgba(63, 43, 31, 0.88));
   box-shadow:
     inset 0 0 24px rgba(0, 0, 0, 0.22),
@@ -7071,8 +7429,11 @@ body {
   place-items: center;
   border-radius: 999px;
   border: 2px solid rgba(231, 191, 111, 0.86);
-  background:
-    linear-gradient(180deg, rgba(91, 57, 33, 0.98), rgba(52, 32, 22, 0.98));
+  background: linear-gradient(
+    180deg,
+    rgba(91, 57, 33, 0.98),
+    rgba(52, 32, 22, 0.98)
+  );
   color: #fff6d4;
   font-size: clamp(16px, 1.6vw, 24px);
   font-weight: 1000;
@@ -7087,8 +7448,7 @@ body {
   padding: 4px 14px 5px;
   border-radius: 999px;
   border: 2px solid rgba(151, 101, 47, 0.48);
-  background:
-    linear-gradient(180deg, #fff0c2, #d9a95e);
+  background: linear-gradient(180deg, #fff0c2, #d9a95e);
   color: #553822;
   font-size: 13px;
   font-weight: 1000;
@@ -7269,7 +7629,11 @@ body {
   border-radius: 18px;
   padding: 12px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.82), transparent 42%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.82),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(255, 248, 235, 0.96), rgba(244, 232, 214, 0.9));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
@@ -7443,7 +7807,11 @@ body {
   place-items: center;
   padding: 28px;
   background:
-    radial-gradient(circle at 50% 32%, rgba(255, 245, 220, 0.2), transparent 34%),
+    radial-gradient(
+      circle at 50% 32%,
+      rgba(255, 245, 220, 0.2),
+      transparent 34%
+    ),
     rgba(44, 29, 19, 0.38);
   backdrop-filter: blur(5px);
 }
@@ -7455,8 +7823,16 @@ body {
   border: 2px solid rgba(198, 173, 143, 0.78);
   border-radius: 30px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.94), transparent 45%),
-    linear-gradient(180deg, rgba(255, 249, 235, 0.98), rgba(240, 226, 204, 0.96));
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.94),
+      transparent 45%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 249, 235, 0.98),
+      rgba(240, 226, 204, 0.96)
+    );
   box-shadow:
     0 30px 90px rgba(34, 20, 9, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -7624,8 +8000,16 @@ body {
   transform: translateY(-4px) scale(1.015);
   border-color: rgba(34, 197, 94, 0.78) !important;
   background:
-    radial-gradient(circle at 50% 42%, rgba(34, 197, 94, 0.14), transparent 42%),
-    linear-gradient(180deg, rgba(255, 252, 242, 0.98), rgba(238, 248, 223, 0.95)) !important;
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(34, 197, 94, 0.14),
+      transparent 42%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 252, 242, 0.98),
+      rgba(238, 248, 223, 0.95)
+    ) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
     0 0 0 4px rgba(34, 197, 94, 0.18),
@@ -7633,13 +8017,13 @@ body {
 }
 
 .deck-pile-panel--discard-hover .deck-card-stack {
-  filter:
-    drop-shadow(0 0 18px rgba(34, 197, 94, 0.38))
+  filter: drop-shadow(0 0 18px rgba(34, 197, 94, 0.38))
     drop-shadow(0 12px 20px rgba(75, 47, 25, 0.18));
 }
 
 .deck-pile-panel--discard-hover::after {
-  content: "+ " attr(data-discard-coin) " 🪙   + " attr(data-discard-stamina) " ⚡";
+  content: "+ " attr(data-discard-coin) " 🪙   + " attr(data-discard-stamina)
+    " ⚡";
   position: absolute;
   left: 50%;
   bottom: 96px;
@@ -7736,7 +8120,11 @@ body {
 
 .board-mini--event-promo {
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 237, 145, 0.55), transparent 42%),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 237, 145, 0.55),
+      transparent 42%
+    ),
     var(--card-bg, #fff7df);
 }
 
@@ -7984,33 +8372,41 @@ body {
   border: 2px solid rgba(120, 84, 48, 0.36);
   color: #4e3a2b;
   text-align: center;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .board-mini--debt {
   background:
-    radial-gradient(circle at 50% 20%, rgba(251, 191, 36, .32), transparent 45%),
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(251, 191, 36, 0.32),
+      transparent 45%
+    ),
     linear-gradient(180deg, #fff7dd, #f7df9b);
-  border-color: rgba(245, 158, 11, .7);
+  border-color: rgba(245, 158, 11, 0.7);
 }
 
 .board-mini--lock {
   background:
-    repeating-linear-gradient(135deg, rgba(85, 107, 128, .16) 0 10px, rgba(255,255,255,.18) 10px 20px),
+    repeating-linear-gradient(
+      135deg,
+      rgba(85, 107, 128, 0.16) 0 10px,
+      rgba(255, 255, 255, 0.18) 10px 20px
+    ),
     linear-gradient(180deg, #dbe4ea, #c8d4dd);
-  border-color: rgba(90, 105, 122, .62);
+  border-color: rgba(90, 105, 122, 0.62);
 }
 
 .board-mini-token__icon {
   font-size: 24px;
   line-height: 1;
-  filter: drop-shadow(0 3px 5px rgba(70, 45, 20, .18));
+  filter: drop-shadow(0 3px 5px rgba(70, 45, 20, 0.18));
 }
 
 .board-mini--token strong {
   font-size: 13px;
   font-weight: 1000;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
 }
 
 .board-mini--token span {
@@ -8021,7 +8417,7 @@ body {
 .board-mini--token small {
   font-size: 9px;
   font-weight: 800;
-  opacity: .72;
+  opacity: 0.72;
 }
 
 /* =========================================
@@ -8276,7 +8672,11 @@ body,
   margin: 0;
   overflow: hidden !important;
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.4), transparent 58%),
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.4),
+      transparent 58%
+    ),
     linear-gradient(180deg, #f5efe6, #e8dccb) !important;
 }
 
@@ -8314,7 +8714,9 @@ body,
 }
 
 .arena__main {
-  height: calc(100vh - (var(--arena-padding-y) * 2) - var(--top-height)) !important;
+  height: calc(
+    100vh - (var(--arena-padding-y) * 2) - var(--top-height)
+  ) !important;
 }
 
 /*
@@ -8367,7 +8769,9 @@ body,
   --hand-overlap: 70px;
 
   --cell-h: 94px;
-  --cell-w: calc((var(--center-width) - var(--time-col) - (var(--gap) * 5) - 32px) / 5);
+  --cell-w: calc(
+    (var(--center-width) - var(--time-col) - (var(--gap) * 5) - 32px) / 5
+  );
 
   --card-w: calc(var(--cell-w) - 6px);
   --card-h: calc(var(--cell-h) - 6px);
@@ -8381,7 +8785,11 @@ body,
   margin: 0;
   overflow: hidden !important;
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.75), transparent 58%),
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.75),
+      transparent 58%
+    ),
     linear-gradient(180deg, #f5efe6, #e8dccb) !important;
 }
 
@@ -8435,7 +8843,9 @@ body,
 }
 
 .arena__main {
-  height: calc(900px - (var(--arena-padding-y) * 2) - var(--top-height)) !important;
+  height: calc(
+    900px - (var(--arena-padding-y) * 2) - var(--top-height)
+  ) !important;
 }
 
 .auth-screen,
@@ -8452,64 +8862,92 @@ body,
 
 /* Width scale */
 @media (max-width: 1599px) {
-  :root { --ui-scale: 0.98; }
+  :root {
+    --ui-scale: 0.98;
+  }
 }
 
 @media (max-width: 1560px) {
-  :root { --ui-scale: 0.94; }
+  :root {
+    --ui-scale: 0.94;
+  }
 }
 
 @media (max-width: 1460px) {
-  :root { --ui-scale: 0.88; }
+  :root {
+    --ui-scale: 0.88;
+  }
 }
 
 @media (max-width: 1366px) {
-  :root { --ui-scale: 0.84; }
+  :root {
+    --ui-scale: 0.84;
+  }
 }
 
 @media (max-width: 1280px) {
-  :root { --ui-scale: 0.78; }
+  :root {
+    --ui-scale: 0.78;
+  }
 }
 
 /* Height scale */
 @media (max-height: 899px) {
-  :root { --ui-scale: 0.98; }
+  :root {
+    --ui-scale: 0.98;
+  }
 }
 
 @media (max-height: 860px) {
-  :root { --ui-scale: 0.94; }
+  :root {
+    --ui-scale: 0.94;
+  }
 }
 
 @media (max-height: 800px) {
-  :root { --ui-scale: 0.88; }
+  :root {
+    --ui-scale: 0.88;
+  }
 }
 
 @media (max-height: 760px) {
-  :root { --ui-scale: 0.84; }
+  :root {
+    --ui-scale: 0.84;
+  }
 }
 
 @media (max-height: 700px) {
-  :root { --ui-scale: 0.76; }
+  :root {
+    --ui-scale: 0.76;
+  }
 }
 
 /* Large desktop / F11 */
 @media (min-width: 1700px) and (min-height: 960px) {
-  :root { --ui-scale: 1.08; }
+  :root {
+    --ui-scale: 1.08;
+  }
 }
 
 @media (min-width: 1850px) and (min-height: 1030px) {
-  :root { --ui-scale: 1.16; }
+  :root {
+    --ui-scale: 1.16;
+  }
 }
 
 @media (min-width: 1920px) and (min-height: 1080px) {
-  :root { --ui-scale: 1.2; }
+  :root {
+    --ui-scale: 1.2;
+  }
 }
 
 /*
   Nếu màn cực rộng nhưng thấp, không phóng quá mạnh theo width.
 */
 @media (min-width: 1700px) and (max-height: 940px) {
-  :root { --ui-scale: 1; }
+  :root {
+    --ui-scale: 1;
+  }
 }
 
 /*
@@ -8525,7 +8963,11 @@ body,
     place-items: center;
     padding: 28px;
     background:
-      radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 58%),
+      radial-gradient(
+        circle at center,
+        rgba(255, 255, 255, 0.08),
+        transparent 58%
+      ),
       #111;
     color: #fff7e8;
     font-size: 20px;
@@ -8995,7 +9437,11 @@ body,
   pointer-events: none !important;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 42%),
-    radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.18), transparent 38%) !important;
+    radial-gradient(
+      circle at 50% 8%,
+      rgba(255, 255, 255, 0.18),
+      transparent 38%
+    ) !important;
 }
 
 /* Ảnh chiếm 75% phía trên */
@@ -9043,8 +9489,11 @@ body,
 
   padding: 0 8px !important;
 
-  background:
-    linear-gradient(180deg, rgba(31, 24, 18, 0.96), rgba(12, 10, 8, 0.98)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(31, 24, 18, 0.96),
+    rgba(12, 10, 8, 0.98)
+  ) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
@@ -9237,7 +9686,11 @@ body,
   padding: 0 8px !important;
   box-sizing: border-box !important;
 
-  background: linear-gradient(180deg, rgba(24, 18, 13, 0.97), rgba(7, 6, 5, 0.98)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(24, 18, 13, 0.97),
+    rgba(7, 6, 5, 0.98)
+  ) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
 }
 
@@ -9386,7 +9839,6 @@ body,
   }
 }
 
-
 /* =========================================
    CLEAN DRAFT 7-CARD FAN
    Luật: phát 7 lá, chọn 5 lá, 2 lá dư trả deck.
@@ -9429,89 +9881,123 @@ body,
 }
 
 /* Vị trí ngang tuyệt đối của 7 lá */
-.player-hand--draft .daily-draft-card--1 { left: calc(50% - 180px); }
-.player-hand--draft .daily-draft-card--2 { left: calc(50% - 120px); }
-.player-hand--draft .daily-draft-card--3 { left: calc(50% - 60px); }
-.player-hand--draft .daily-draft-card--4 { left: 50%; }
-.player-hand--draft .daily-draft-card--5 { left: calc(50% + 60px); }
-.player-hand--draft .daily-draft-card--6 { left: calc(50% + 120px); }
-.player-hand--draft .daily-draft-card--7 { left: calc(50% + 180px); }
-.player-hand--draft .daily-draft-card--8 { display: none !important; }
+.player-hand--draft .daily-draft-card--1 {
+  left: calc(50% - 180px);
+}
+.player-hand--draft .daily-draft-card--2 {
+  left: calc(50% - 120px);
+}
+.player-hand--draft .daily-draft-card--3 {
+  left: calc(50% - 60px);
+}
+.player-hand--draft .daily-draft-card--4 {
+  left: 50%;
+}
+.player-hand--draft .daily-draft-card--5 {
+  left: calc(50% + 60px);
+}
+.player-hand--draft .daily-draft-card--6 {
+  left: calc(50% + 120px);
+}
+.player-hand--draft .daily-draft-card--7 {
+  left: calc(50% + 180px);
+}
+.player-hand--draft .daily-draft-card--8 {
+  display: none !important;
+}
 
 /* Fan sau khi chia xong */
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--1 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--1 {
   transform: translateX(-50%) translateY(-2px) rotate(-21deg);
   z-index: 11;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--2 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--2 {
   transform: translateX(-50%) translateY(-10px) rotate(-14deg);
   z-index: 12;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--3 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--3 {
   transform: translateX(-50%) translateY(-17px) rotate(-7deg);
   z-index: 13;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--4 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--4 {
   transform: translateX(-50%) translateY(-21px) rotate(0deg);
   z-index: 14;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--5 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--5 {
   transform: translateX(-50%) translateY(-17px) rotate(7deg);
   z-index: 13;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--6 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--6 {
   transform: translateX(-50%) translateY(-10px) rotate(14deg);
   z-index: 12;
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--7 {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--7 {
   transform: translateX(-50%) translateY(-2px) rotate(21deg);
   z-index: 11;
 }
 
 /* Hover rõ và click được cho cả 7 lá */
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card:hover {
   z-index: 9999;
-  filter: saturate(1.05) contrast(1.02) drop-shadow(0 14px 18px rgba(75, 47, 25, 0.18));
+  filter: saturate(1.05) contrast(1.02)
+    drop-shadow(0 14px 18px rgba(75, 47, 25, 0.18));
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--1:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--1:hover {
   transform: translateX(-50%) translateY(-36px) rotate(-13deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--2:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--2:hover {
   transform: translateX(-50%) translateY(-40px) rotate(-8deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--3:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--3:hover {
   transform: translateX(-50%) translateY(-44px) rotate(-4deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--4:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--4:hover {
   transform: translateX(-50%) translateY(-48px) rotate(0deg) scale(1.03);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--5:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--5:hover {
   transform: translateX(-50%) translateY(-44px) rotate(4deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--6:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--6:hover {
   transform: translateX(-50%) translateY(-40px) rotate(8deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--7:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--7:hover {
   transform: translateX(-50%) translateY(-36px) rotate(13deg) scale(1.025);
 }
 
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--selected,
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--selected:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--selected,
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--selected:hover {
   z-index: 99999 !important;
-  filter: drop-shadow(0 18px 22px rgba(75,47,25,.28));
+  filter: drop-shadow(0 18px 22px rgba(75, 47, 25, 0.28));
   transform: translateX(-50%) translateY(-60px) rotate(0deg) scale(1.055) !important;
 }
 
@@ -9582,51 +10068,117 @@ body,
 }
 
 @keyframes draftDeal7Clean1 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(610px, -126px, 0) rotate(25deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-2px) rotate(-21deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(610px, -126px, 0) rotate(25deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px) rotate(-21deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean2 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(560px, -130px, 0) rotate(20deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-10px) rotate(-14deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(560px, -130px, 0) rotate(20deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) rotate(-14deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean3 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(510px, -134px, 0) rotate(15deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-17px) rotate(-7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(510px, -134px, 0) rotate(15deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-17px) rotate(-7deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean4 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(460px, -138px, 0) rotate(8deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-21px) rotate(0deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(460px, -138px, 0) rotate(8deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-21px) rotate(0deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean5 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(410px, -134px, 0) rotate(0deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-17px) rotate(7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(410px, -134px, 0) rotate(0deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-17px) rotate(7deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean6 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(360px, -130px, 0) rotate(-8deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-10px) rotate(14deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(360px, -130px, 0) rotate(-8deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) rotate(14deg) scale(1);
+  }
 }
 
 @keyframes draftDeal7Clean7 {
-  0% { opacity: 0; transform: translateX(-50%) translate3d(310px, -126px, 0) rotate(-15deg) scale(0.58); }
-  18% { opacity: 1; }
-  100% { opacity: 1; transform: translateX(-50%) translateY(-2px) rotate(21deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(310px, -126px, 0) rotate(-15deg)
+      scale(0.58);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px) rotate(21deg) scale(1);
+  }
 }
 
 /* Passing card về deck: giữ hiệu ứng nhẹ, không làm mất click sau đó */
-.player-hand--draft .player-hand__cards.is-passing .daily-draft-card:not(.daily-draft-card--selected) {
+.player-hand--draft
+  .player-hand__cards.is-passing
+  .daily-draft-card:not(.daily-draft-card--selected) {
   pointer-events: none;
-  animation: draftPassToDeckClean 0.9s cubic-bezier(0.17, 0.82, 0.24, 1) forwards;
+  animation: draftPassToDeckClean 0.9s cubic-bezier(0.17, 0.82, 0.24, 1)
+    forwards;
 }
 
 .player-hand--draft .player-hand__cards.is-passing .daily-draft-card--selected {
@@ -9635,16 +10187,37 @@ body,
 }
 
 @keyframes draftPassToDeckClean {
-  0% { opacity: 1; }
-  25% { opacity: 1; transform: translateX(-50%) translateY(-18px) rotate(6deg) scale(0.96); }
-  70% { opacity: 0.8; transform: translateX(-50%) translate3d(460px, -82px, 0) rotate(18deg) scale(0.62); }
-  100% { opacity: 0; transform: translateX(-50%) translate3d(690px, -122px, 0) rotate(26deg) scale(0.38); }
+  0% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-18px) rotate(6deg) scale(0.96);
+  }
+  70% {
+    opacity: 0.8;
+    transform: translateX(-50%) translate3d(460px, -82px, 0) rotate(18deg)
+      scale(0.62);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translate3d(690px, -122px, 0) rotate(26deg)
+      scale(0.38);
+  }
 }
 
 @keyframes draftChosenKeepClean {
-  0% { opacity: 1; }
-  70% { opacity: 1; transform: translateX(-50%) translateY(-62px) rotate(0deg) scale(1.08); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-96px) rotate(-5deg) scale(0.78); }
+  0% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-62px) rotate(0deg) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-96px) rotate(-5deg) scale(0.78);
+  }
 }
 
 .player-hand--draft .player-hand__cards.is-passing {
@@ -9652,8 +10225,10 @@ body,
 }
 
 /* Draft 7 compact fan final touch */
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card,
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .draft-deal-slot {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card,
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .draft-deal-slot {
   pointer-events: auto !important;
   cursor: pointer !important;
 }
@@ -9674,13 +10249,27 @@ body,
   transform: translate(42px, -28px) !important;
 }
 
-.player-hand--draft .daily-draft-card--1 { left: calc(50% - 180px) !important; }
-.player-hand--draft .daily-draft-card--2 { left: calc(50% - 120px) !important; }
-.player-hand--draft .daily-draft-card--3 { left: calc(50% - 60px) !important; }
-.player-hand--draft .daily-draft-card--4 { left: 50% !important; }
-.player-hand--draft .daily-draft-card--5 { left: calc(50% + 60px) !important; }
-.player-hand--draft .daily-draft-card--6 { left: calc(50% + 120px) !important; }
-.player-hand--draft .daily-draft-card--7 { left: calc(50% + 180px) !important; }
+.player-hand--draft .daily-draft-card--1 {
+  left: calc(50% - 180px) !important;
+}
+.player-hand--draft .daily-draft-card--2 {
+  left: calc(50% - 120px) !important;
+}
+.player-hand--draft .daily-draft-card--3 {
+  left: calc(50% - 60px) !important;
+}
+.player-hand--draft .daily-draft-card--4 {
+  left: 50% !important;
+}
+.player-hand--draft .daily-draft-card--5 {
+  left: calc(50% + 60px) !important;
+}
+.player-hand--draft .daily-draft-card--6 {
+  left: calc(50% + 120px) !important;
+}
+.player-hand--draft .daily-draft-card--7 {
+  left: calc(50% + 180px) !important;
+}
 
 /* Inner card không tự xử lý click trong draft; wrapper article xử lý qua delegation */
 .player-hand--draft .daily-draft-card {
@@ -9694,7 +10283,8 @@ body,
 }
 
 /* Khi không còn dealing/pass thì đảm bảo card nhận click */
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card {
   pointer-events: auto !important;
 }
 
@@ -9706,54 +10296,167 @@ body,
 }
 
 /* 7 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--1 { left: calc(50% - 180px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--2 { left: calc(50% - 120px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--3 { left: calc(50% - 60px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--4 { left: 50% !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--5 { left: calc(50% + 60px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--6 { left: calc(50% + 120px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--7 { left: calc(50% + 180px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--1 {
+  left: calc(50% - 180px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--2 {
+  left: calc(50% - 120px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--3 {
+  left: calc(50% - 60px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--4 {
+  left: 50% !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--5 {
+  left: calc(50% + 60px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--6 {
+  left: calc(50% + 120px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--7 {
+  left: calc(50% + 180px) !important;
+}
 
 /* 6 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--1 { left: calc(50% - 150px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--2 { left: calc(50% - 90px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--3 { left: calc(50% - 30px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--4 { left: calc(50% + 30px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--5 { left: calc(50% + 90px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--6 { left: calc(50% + 150px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--1 {
+  left: calc(50% - 150px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--2 {
+  left: calc(50% - 90px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--3 {
+  left: calc(50% - 30px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--4 {
+  left: calc(50% + 30px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--5 {
+  left: calc(50% + 90px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--6 {
+  left: calc(50% + 150px) !important;
+}
 
 /* 5 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--1 { left: calc(50% - 120px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--2 { left: calc(50% - 60px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--3 { left: 50% !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--4 { left: calc(50% + 60px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--5 { left: calc(50% + 120px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--1 {
+  left: calc(50% - 120px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--2 {
+  left: calc(50% - 60px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--3 {
+  left: 50% !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--4 {
+  left: calc(50% + 60px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--5 {
+  left: calc(50% + 120px) !important;
+}
 
 /* 4 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--1 { left: calc(50% - 90px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--2 { left: calc(50% - 30px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--3 { left: calc(50% + 30px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--4 { left: calc(50% + 90px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--1 {
+  left: calc(50% - 90px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--2 {
+  left: calc(50% - 30px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--3 {
+  left: calc(50% + 30px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--4 {
+  left: calc(50% + 90px) !important;
+}
 
 /* 3 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4)) .daily-draft-card--1 { left: calc(50% - 60px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4)) .daily-draft-card--2 { left: 50% !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4)) .daily-draft-card--3 { left: calc(50% + 60px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4))
+  .daily-draft-card--1 {
+  left: calc(50% - 60px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4))
+  .daily-draft-card--2 {
+  left: 50% !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4))
+  .daily-draft-card--3 {
+  left: calc(50% + 60px) !important;
+}
 
 /* 2 cards at final return: center before flying to deck */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3)) .daily-draft-card--1 { left: calc(50% - 34px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3)) .daily-draft-card--2 { left: calc(50% + 34px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3))
+  .daily-draft-card--1 {
+  left: calc(50% - 34px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3))
+  .daily-draft-card--2 {
+  left: calc(50% + 34px) !important;
+}
 
 /* Keep selected lift centered with dynamic positions */
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--selected,
-.player-hand--draft:not(.player-hand--dealing):not(.is-dealing) .daily-draft-card--selected:hover {
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--selected,
+.player-hand--draft:not(.player-hand--dealing):not(.is-dealing)
+  .daily-draft-card--selected:hover {
   transform: translateX(-50%) translateY(-58px) rotate(0deg) scale(1.055) !important;
 }
 
 /* Stronger final pass: gather first, then fly to deck */
-.player-hand--draft .player-hand__cards.is-passing .daily-draft-card:not(.daily-draft-card--selected) {
+.player-hand--draft
+  .player-hand__cards.is-passing
+  .daily-draft-card:not(.daily-draft-card--selected) {
   pointer-events: none !important;
-  animation: draftFinalGatherThenDeck 0.98s cubic-bezier(0.17, 0.82, 0.24, 1) forwards !important;
+  animation: draftFinalGatherThenDeck 0.98s cubic-bezier(0.17, 0.82, 0.24, 1)
+    forwards !important;
 }
 
 @keyframes draftFinalGatherThenDeck {
@@ -9768,17 +10471,20 @@ body,
 
   52% {
     opacity: 1;
-    transform: translateX(-50%) translate3d(90px, -70px, 0) rotate(8deg) scale(0.78);
+    transform: translateX(-50%) translate3d(90px, -70px, 0) rotate(8deg)
+      scale(0.78);
   }
 
   82% {
     opacity: 0.72;
-    transform: translateX(-50%) translate3d(500px, -120px, 0) rotate(18deg) scale(0.48);
+    transform: translateX(-50%) translate3d(500px, -120px, 0) rotate(18deg)
+      scale(0.48);
   }
 
   100% {
     opacity: 0;
-    transform: translateX(-50%) translate3d(690px, -138px, 0) rotate(26deg) scale(0.34);
+    transform: translateX(-50%) translate3d(690px, -138px, 0) rotate(26deg)
+      scale(0.34);
   }
 }
 
@@ -9790,48 +10496,159 @@ body,
 }
 
 /* 7 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--1 { left: calc(50% - 150px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--2 { left: calc(50% - 100px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--3 { left: calc(50% - 50px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--4 { left: 50% !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--5 { left: calc(50% + 50px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--6 { left: calc(50% + 100px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--7) .daily-draft-card--7 { left: calc(50% + 150px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--1 {
+  left: calc(50% - 150px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--2 {
+  left: calc(50% - 100px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--3 {
+  left: calc(50% - 50px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--4 {
+  left: 50% !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--5 {
+  left: calc(50% + 50px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--6 {
+  left: calc(50% + 100px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--7)
+  .daily-draft-card--7 {
+  left: calc(50% + 150px) !important;
+}
 
 /* 6 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--1 { left: calc(50% - 125px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--2 { left: calc(50% - 75px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--3 { left: calc(50% - 25px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--4 { left: calc(50% + 25px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--5 { left: calc(50% + 75px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7)) .daily-draft-card--6 { left: calc(50% + 125px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--1 {
+  left: calc(50% - 125px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--2 {
+  left: calc(50% - 75px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--3 {
+  left: calc(50% - 25px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--4 {
+  left: calc(50% + 25px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--5 {
+  left: calc(50% + 75px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--6):not(:has(.daily-draft-card--7))
+  .daily-draft-card--6 {
+  left: calc(50% + 125px) !important;
+}
 
 /* 5 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--1 { left: calc(50% - 100px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--2 { left: calc(50% - 50px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--3 { left: 50% !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--4 { left: calc(50% + 50px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6)) .daily-draft-card--5 { left: calc(50% + 100px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--1 {
+  left: calc(50% - 100px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--2 {
+  left: calc(50% - 50px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--3 {
+  left: 50% !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--4 {
+  left: calc(50% + 50px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--5):not(:has(.daily-draft-card--6))
+  .daily-draft-card--5 {
+  left: calc(50% + 100px) !important;
+}
 
 /* 4 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--1 { left: calc(50% - 75px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--2 { left: calc(50% - 25px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--3 { left: calc(50% + 25px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5)) .daily-draft-card--4 { left: calc(50% + 75px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--1 {
+  left: calc(50% - 75px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--2 {
+  left: calc(50% - 25px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--3 {
+  left: calc(50% + 25px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--4):not(:has(.daily-draft-card--5))
+  .daily-draft-card--4 {
+  left: calc(50% + 75px) !important;
+}
 
 /* 3 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4)) .daily-draft-card--1 { left: calc(50% - 50px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4)) .daily-draft-card--2 { left: 50% !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4)) .daily-draft-card--3 { left: calc(50% + 50px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4))
+  .daily-draft-card--1 {
+  left: calc(50% - 50px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4))
+  .daily-draft-card--2 {
+  left: 50% !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--3):not(:has(.daily-draft-card--4))
+  .daily-draft-card--3 {
+  left: calc(50% + 50px) !important;
+}
 
 /* 2 cards */
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3)) .daily-draft-card--1 { left: calc(50% - 28px) !important; }
-.player-hand--draft .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3)) .daily-draft-card--2 { left: calc(50% + 28px) !important; }
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3))
+  .daily-draft-card--1 {
+  left: calc(50% - 28px) !important;
+}
+.player-hand--draft
+  .player-hand__cards:has(.daily-draft-card--2):not(:has(.daily-draft-card--3))
+  .daily-draft-card--2 {
+  left: calc(50% + 28px) !important;
+}
 
 /* Final return: 2 lá gom sát lại rồi mới bay về deck */
-.player-hand--draft .player-hand__cards.is-passing .daily-draft-card:not(.daily-draft-card--selected) {
+.player-hand--draft
+  .player-hand__cards.is-passing
+  .daily-draft-card:not(.daily-draft-card--selected) {
   pointer-events: none !important;
-  animation: draftGatherThenFlyDeckPolished 1.02s cubic-bezier(0.17, 0.82, 0.24, 1) forwards !important;
+  animation: draftGatherThenFlyDeckPolished 1.02s
+    cubic-bezier(0.17, 0.82, 0.24, 1) forwards !important;
 }
 
 @keyframes draftGatherThenFlyDeckPolished {
@@ -9846,17 +10663,20 @@ body,
 
   52% {
     opacity: 1;
-    transform: translateX(-50%) translate3d(86px, -74px, 0) rotate(8deg) scale(0.78);
+    transform: translateX(-50%) translate3d(86px, -74px, 0) rotate(8deg)
+      scale(0.78);
   }
 
   82% {
     opacity: 0.72;
-    transform: translateX(-50%) translate3d(470px, -122px, 0) rotate(18deg) scale(0.48);
+    transform: translateX(-50%) translate3d(470px, -122px, 0) rotate(18deg)
+      scale(0.48);
   }
 
   100% {
     opacity: 0;
-    transform: translateX(-50%) translate3d(650px, -140px, 0) rotate(26deg) scale(0.34);
+    transform: translateX(-50%) translate3d(650px, -140px, 0) rotate(26deg)
+      scale(0.34);
   }
 }
 
@@ -9902,38 +10722,88 @@ body,
 }
 
 @keyframes planningDealRestore1 {
-  0% { opacity: 0; transform: translate3d(610px, -118px, 0) rotate(24deg) scale(0.62); }
-  18% { opacity: 1; }
-  65% { transform: translate3d(155px, -72px, 0) rotate(-20deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -2px, 0) rotate(-15deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(610px, -118px, 0) rotate(24deg) scale(0.62);
+  }
+  18% {
+    opacity: 1;
+  }
+  65% {
+    transform: translate3d(155px, -72px, 0) rotate(-20deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) rotate(-15deg) scale(1);
+  }
 }
 
 @keyframes planningDealRestore2 {
-  0% { opacity: 0; transform: translate3d(520px, -120px, 0) rotate(18deg) scale(0.62); }
-  18% { opacity: 1; }
-  65% { transform: translate3d(118px, -78px, 0) rotate(-10deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -7px, 0) rotate(-7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(520px, -120px, 0) rotate(18deg) scale(0.62);
+  }
+  18% {
+    opacity: 1;
+  }
+  65% {
+    transform: translate3d(118px, -78px, 0) rotate(-10deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -7px, 0) rotate(-7deg) scale(1);
+  }
 }
 
 @keyframes planningDealRestore3 {
-  0% { opacity: 0; transform: translate3d(430px, -122px, 0) rotate(8deg) scale(0.62); }
-  18% { opacity: 1; }
-  65% { transform: translate3d(82px, -84px, 0) rotate(0deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -10px, 0) rotate(0deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(430px, -122px, 0) rotate(8deg) scale(0.62);
+  }
+  18% {
+    opacity: 1;
+  }
+  65% {
+    transform: translate3d(82px, -84px, 0) rotate(0deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -10px, 0) rotate(0deg) scale(1);
+  }
 }
 
 @keyframes planningDealRestore4 {
-  0% { opacity: 0; transform: translate3d(340px, -120px, 0) rotate(-6deg) scale(0.62); }
-  18% { opacity: 1; }
-  65% { transform: translate3d(46px, -78px, 0) rotate(10deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -7px, 0) rotate(7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(340px, -120px, 0) rotate(-6deg) scale(0.62);
+  }
+  18% {
+    opacity: 1;
+  }
+  65% {
+    transform: translate3d(46px, -78px, 0) rotate(10deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -7px, 0) rotate(7deg) scale(1);
+  }
 }
 
 @keyframes planningDealRestore5 {
-  0% { opacity: 0; transform: translate3d(250px, -118px, 0) rotate(-16deg) scale(0.62); }
-  18% { opacity: 1; }
-  65% { transform: translate3d(14px, -72px, 0) rotate(20deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -2px, 0) rotate(15deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(250px, -118px, 0) rotate(-16deg) scale(0.62);
+  }
+  18% {
+    opacity: 1;
+  }
+  65% {
+    transform: translate3d(14px, -72px, 0) rotate(20deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) rotate(15deg) scale(1);
+  }
 }
 
 /* =========================================
@@ -9947,15 +10817,20 @@ body,
   - Không fade giữa đường; chỉ biến mất khi đã chui vào deck.
   - Dùng tọa độ thật do activateDraftPassAnimation() set bằng CSS variables.
 */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected) {
   pointer-events: none !important;
   opacity: 1 !important;
-  animation: draftGatherStackThenDeck 1.08s cubic-bezier(0.17, 0.82, 0.24, 1) forwards !important;
+  animation: draftGatherStackThenDeck 1.08s cubic-bezier(0.17, 0.82, 0.24, 1)
+    forwards !important;
   will-change: transform, opacity !important;
 }
 
 /* Lá đã chọn không bay về deck, chỉ nhấc nhẹ lên rồi tắt */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card--selected {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card--selected {
   pointer-events: none !important;
   animation: draftChosenLiftOut 0.62s ease forwards !important;
 }
@@ -9967,47 +10842,37 @@ body,
 
   30% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(var(--gather-x, 0px), var(--gather-y, -28px), 0)
-      rotate(var(--gather-r, 0deg))
-      scale(0.94);
+      rotate(var(--gather-r, 0deg)) scale(0.94);
   }
 
   50% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(var(--gather-x, 0px), var(--gather-y, -28px), 0)
-      rotate(var(--gather-r, 0deg))
-      scale(0.90);
+      rotate(var(--gather-r, 0deg)) scale(0.9);
   }
 
   72% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(var(--arc1-x, 160px), var(--arc1-y, -150px), 0)
-      rotate(10deg)
+    transform: translateX(-50%)
+      translate3d(var(--arc1-x, 160px), var(--arc1-y, -150px), 0) rotate(10deg)
       scale(0.72);
   }
 
   92% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
-      rotate(var(--deck-r, 16deg))
-      scale(0.42);
+      rotate(var(--deck-r, 16deg)) scale(0.42);
   }
 
   100% {
     opacity: 0;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
-      rotate(var(--deck-r, 16deg))
-      scale(0.30);
+      rotate(var(--deck-r, 16deg)) scale(0.3);
   }
 }
 
@@ -10079,38 +10944,93 @@ body,
 }
 
 @keyframes planningDealStable1 {
-  0% { opacity: 0; transform: translate3d(600px, -112px, 0) rotate(24deg) scale(0.62); }
-  16% { opacity: 1; }
-  66% { opacity: 1; transform: translate3d(150px, -70px, 0) rotate(-18deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -2px, 0) rotate(-15deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(600px, -112px, 0) rotate(24deg) scale(0.62);
+  }
+  16% {
+    opacity: 1;
+  }
+  66% {
+    opacity: 1;
+    transform: translate3d(150px, -70px, 0) rotate(-18deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) rotate(-15deg) scale(1);
+  }
 }
 
 @keyframes planningDealStable2 {
-  0% { opacity: 0; transform: translate3d(510px, -116px, 0) rotate(18deg) scale(0.62); }
-  16% { opacity: 1; }
-  66% { opacity: 1; transform: translate3d(112px, -76px, 0) rotate(-9deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -7px, 0) rotate(-7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(510px, -116px, 0) rotate(18deg) scale(0.62);
+  }
+  16% {
+    opacity: 1;
+  }
+  66% {
+    opacity: 1;
+    transform: translate3d(112px, -76px, 0) rotate(-9deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -7px, 0) rotate(-7deg) scale(1);
+  }
 }
 
 @keyframes planningDealStable3 {
-  0% { opacity: 0; transform: translate3d(420px, -120px, 0) rotate(8deg) scale(0.62); }
-  16% { opacity: 1; }
-  66% { opacity: 1; transform: translate3d(78px, -82px, 0) rotate(0deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -10px, 0) rotate(0deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(420px, -120px, 0) rotate(8deg) scale(0.62);
+  }
+  16% {
+    opacity: 1;
+  }
+  66% {
+    opacity: 1;
+    transform: translate3d(78px, -82px, 0) rotate(0deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -10px, 0) rotate(0deg) scale(1);
+  }
 }
 
 @keyframes planningDealStable4 {
-  0% { opacity: 0; transform: translate3d(330px, -116px, 0) rotate(-6deg) scale(0.62); }
-  16% { opacity: 1; }
-  66% { opacity: 1; transform: translate3d(42px, -76px, 0) rotate(9deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -7px, 0) rotate(7deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(330px, -116px, 0) rotate(-6deg) scale(0.62);
+  }
+  16% {
+    opacity: 1;
+  }
+  66% {
+    opacity: 1;
+    transform: translate3d(42px, -76px, 0) rotate(9deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -7px, 0) rotate(7deg) scale(1);
+  }
 }
 
 @keyframes planningDealStable5 {
-  0% { opacity: 0; transform: translate3d(240px, -112px, 0) rotate(-16deg) scale(0.62); }
-  16% { opacity: 1; }
-  66% { opacity: 1; transform: translate3d(12px, -70px, 0) rotate(18deg) scale(0.94); }
-  100% { opacity: 1; transform: translate3d(0, -2px, 0) rotate(15deg) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate3d(240px, -112px, 0) rotate(-16deg) scale(0.62);
+  }
+  16% {
+    opacity: 1;
+  }
+  66% {
+    opacity: 1;
+    transform: translate3d(12px, -70px, 0) rotate(18deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) rotate(15deg) scale(1);
+  }
 }
 
 /* =========================================
@@ -10124,14 +11044,19 @@ body,
   - Bay vòng cung cao hơn.
   - Không biến mất giữa đường; chỉ fade khi đã gần/đã vào deck.
 */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected) {
   pointer-events: none !important;
   opacity: 1 !important;
-  animation: draftReturnCompactHighArc 1.12s cubic-bezier(0.17, 0.82, 0.24, 1) forwards !important;
+  animation: draftReturnCompactHighArc 1.12s cubic-bezier(0.17, 0.82, 0.24, 1)
+    forwards !important;
   will-change: transform, opacity !important;
 }
 
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card--selected {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card--selected {
   pointer-events: none !important;
   animation: draftChosenLiftOutCompact 0.58s ease forwards !important;
 }
@@ -10144,83 +11069,59 @@ body,
   /* Gom nhanh về cụm nhỏ, scale gần nhau hơn */
   24% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.82),
         calc(var(--gather-y, -28px) * 0.86),
         0
       )
-      rotate(calc(var(--gather-r, 0deg) * 0.35))
-      scale(0.90);
+      rotate(calc(var(--gather-r, 0deg) * 0.35)) scale(0.9);
   }
 
   /* Dừng rất ngắn ở cụm bài, tạo cảm giác gom lại trước khi bay */
   38% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.82),
         calc(var(--gather-y, -28px) * 0.86),
         0
       )
-      rotate(calc(var(--gather-r, 0deg) * 0.18))
-      scale(0.86);
+      rotate(calc(var(--gather-r, 0deg) * 0.18)) scale(0.86);
   }
 
   /* Vòng cung cao hơn kiểu Slay the Spire */
   64% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc1-x, 160px),
-        calc(var(--arc1-y, -150px) - 90px),
-        0
-      )
-      rotate(12deg)
-      scale(0.70);
+    transform: translateX(-50%)
+      translate3d(var(--arc1-x, 160px), calc(var(--arc1-y, -150px) - 90px), 0)
+      rotate(12deg) scale(0.7);
   }
 
   84% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc2-x, 420px),
-        calc(var(--arc2-y, -180px) - 70px),
-        0
-      )
-      rotate(20deg)
-      scale(0.54);
+    transform: translateX(-50%)
+      translate3d(var(--arc2-x, 420px), calc(var(--arc2-y, -180px) - 70px), 0)
+      rotate(20deg) scale(0.54);
   }
 
   /* Gần chui vào deck mới bắt đầu fade */
   96% {
     opacity: 0.88;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) - 8px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.38);
+      rotate(var(--deck-r, 16deg)) scale(0.38);
   }
 
   100% {
     opacity: 0;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--deck-in-x, 620px),
-        var(--deck-in-y, -120px),
-        0
-      )
-      rotate(var(--deck-r, 16deg))
-      scale(0.28);
+    transform: translateX(-50%)
+      translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
+      rotate(var(--deck-r, 16deg)) scale(0.28);
   }
 }
 
@@ -10250,8 +11151,11 @@ body,
   - Tới miệng deck là gần như biến mất.
   - Giảm lag bằng opacity/transform đơn giản hơn, bỏ bớt nhiều calc phức tạp ở đoạn cuối.
 */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) {
-  animation: draftReturnSmoothFadeArc 1.02s cubic-bezier(0.18, 0.82, 0.24, 1) forwards !important;
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected) {
+  animation: draftReturnSmoothFadeArc 1.02s cubic-bezier(0.18, 0.82, 0.24, 1)
+    forwards !important;
   will-change: transform, opacity !important;
   backface-visibility: hidden !important;
   transform-style: flat !important;
@@ -10260,94 +11164,66 @@ body,
 @keyframes draftReturnSmoothFadeArc {
   0% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(0, 0, 0)
-      rotate(0deg)
-      scale(1);
+    transform: translateX(-50%) translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
 
   /* Gom bài gọn lại */
   24% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(calc(var(--gather-r, 0deg) * 0.22))
-      scale(0.88);
+      rotate(calc(var(--gather-r, 0deg) * 0.22)) scale(0.88);
   }
 
   /* Chụm cụm rất ngắn */
   36% {
     opacity: 0.96;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(0deg)
-      scale(0.84);
+      rotate(0deg) scale(0.84);
   }
 
   /* Bắt đầu bay vòng cung và bắt đầu fade sớm */
   58% {
     opacity: 0.72;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc1-x, 160px),
-        calc(var(--arc1-y, -150px) - 86px),
-        0
-      )
-      rotate(10deg)
-      scale(0.66);
+    transform: translateX(-50%)
+      translate3d(var(--arc1-x, 160px), calc(var(--arc1-y, -150px) - 86px), 0)
+      rotate(10deg) scale(0.66);
   }
 
   /* Đang rơi về deck, đã mờ rõ */
   78% {
     opacity: 0.34;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc2-x, 420px),
-        calc(var(--arc2-y, -180px) - 48px),
-        0
-      )
-      rotate(18deg)
-      scale(0.50);
+    transform: translateX(-50%)
+      translate3d(var(--arc2-x, 420px), calc(var(--arc2-y, -180px) - 48px), 0)
+      rotate(18deg) scale(0.5);
   }
 
   /* Tới gần miệng deck là gần biến mất */
   92% {
     opacity: 0.08;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) - 10px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.36);
+      rotate(var(--deck-r, 16deg)) scale(0.36);
   }
 
   100% {
     opacity: 0;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--deck-in-x, 620px),
-        var(--deck-in-y, -120px),
-        0
-      )
-      rotate(var(--deck-r, 16deg))
-      scale(0.30);
+    transform: translateX(-50%)
+      translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
+      rotate(var(--deck-r, 16deg)) scale(0.3);
   }
 }
 
@@ -10365,8 +11241,11 @@ body,
   - Đến 82% đã gần biến mất.
   - JS đã được tăng timeout để không cắt mất đoạn fade.
 */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) {
-  animation: draftReturnClearlyFadeArc 1.38s cubic-bezier(0.18, 0.82, 0.24, 1) forwards !important;
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected) {
+  animation: draftReturnClearlyFadeArc 1.38s cubic-bezier(0.18, 0.82, 0.24, 1)
+    forwards !important;
   opacity: 1;
   will-change: transform, opacity !important;
   backface-visibility: hidden !important;
@@ -10374,102 +11253,77 @@ body,
 }
 
 /* Đảm bảo opacity của wrapper ảnh hưởng rõ lên toàn bộ card con */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) > .hand-card {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected)
+  > .hand-card {
   opacity: inherit !important;
 }
 
 @keyframes draftReturnClearlyFadeArc {
   0% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(0, 0, 0)
-      rotate(0deg)
-      scale(1);
+    transform: translateX(-50%) translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
 
   /* Gom bài gọn lại */
   22% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(calc(var(--gather-r, 0deg) * 0.18))
-      scale(0.88);
+      rotate(calc(var(--gather-r, 0deg) * 0.18)) scale(0.88);
   }
 
   /* Cụm bài chuẩn bị bay */
   34% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(0deg)
-      scale(0.84);
+      rotate(0deg) scale(0.84);
   }
 
   /* Bắt đầu fade rõ khi bay lên vòng cung */
   48% {
     opacity: 0.62;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc1-x, 160px),
-        calc(var(--arc1-y, -150px) - 90px),
-        0
-      )
-      rotate(10deg)
-      scale(0.66);
+    transform: translateX(-50%)
+      translate3d(var(--arc1-x, 160px), calc(var(--arc1-y, -150px) - 90px), 0)
+      rotate(10deg) scale(0.66);
   }
 
   /* Mờ mạnh hơn trên đường rơi về deck */
   66% {
     opacity: 0.28;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc2-x, 420px),
-        calc(var(--arc2-y, -180px) - 58px),
-        0
-      )
-      rotate(18deg)
-      scale(0.50);
+    transform: translateX(-50%)
+      translate3d(var(--arc2-x, 420px), calc(var(--arc2-y, -180px) - 58px), 0)
+      rotate(18deg) scale(0.5);
   }
 
   /* Gần deck: gần như mất */
   82% {
     opacity: 0.08;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) - 12px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.36);
+      rotate(var(--deck-r, 16deg)) scale(0.36);
   }
 
   /* Chạm deck: biến mất hẳn */
   100% {
     opacity: 0;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--deck-in-x, 620px),
-        var(--deck-in-y, -120px),
-        0
-      )
-      rotate(var(--deck-r, 16deg))
-      scale(0.28);
+    transform: translateX(-50%)
+      translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
+      rotate(var(--deck-r, 16deg)) scale(0.28);
   }
 }
 
@@ -10483,82 +11337,68 @@ body,
   - Bài bay thấp hơn, chui vào phần thân deck.
   - Giữ opacity rõ tới gần deck, rồi fade nhanh khi đã vào deck.
 */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) {
-  animation: draftReturnIntoDeckVisible 1.30s cubic-bezier(0.18, 0.82, 0.24, 1) forwards !important;
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected) {
+  animation: draftReturnIntoDeckVisible 1.3s cubic-bezier(0.18, 0.82, 0.24, 1)
+    forwards !important;
   opacity: 1 !important;
   will-change: transform, opacity !important;
   backface-visibility: hidden !important;
   transform-style: flat !important;
 }
 
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) > .hand-card {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected)
+  > .hand-card {
   opacity: inherit !important;
 }
 
 @keyframes draftReturnIntoDeckVisible {
   0% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(0, 0, 0)
-      rotate(0deg)
-      scale(1);
+    transform: translateX(-50%) translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
 
   /* Gom gọn về cụm */
   24% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(calc(var(--gather-r, 0deg) * 0.18))
-      scale(0.88);
+      rotate(calc(var(--gather-r, 0deg) * 0.18)) scale(0.88);
   }
 
   /* Cụm bài dừng nhẹ */
   36% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(0deg)
-      scale(0.84);
+      rotate(0deg) scale(0.84);
   }
 
   /* Bay vòng cung cao */
   58% {
     opacity: 0.96;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc1-x, 160px),
-        calc(var(--arc1-y, -150px) - 92px),
-        0
-      )
-      rotate(10deg)
-      scale(0.66);
+    transform: translateX(-50%)
+      translate3d(var(--arc1-x, 160px), calc(var(--arc1-y, -150px) - 92px), 0)
+      rotate(10deg) scale(0.66);
   }
 
   /* Rơi về deck, vẫn còn nhìn rõ */
   78% {
     opacity: 0.82;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc2-x, 420px),
-        calc(var(--arc2-y, -180px) - 46px),
-        0
-      )
-      rotate(18deg)
-      scale(0.50);
+    transform: translateX(-50%)
+      translate3d(var(--arc2-x, 420px), calc(var(--arc2-y, -180px) - 46px), 0)
+      rotate(18deg) scale(0.5);
   }
 
   /*
@@ -10567,41 +11407,35 @@ body,
   */
   92% {
     opacity: 0.42;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) + 18px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.36);
+      rotate(var(--deck-r, 16deg)) scale(0.36);
   }
 
   98% {
-    opacity: 0.10;
-    transform:
-      translateX(-50%)
+    opacity: 0.1;
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) + 30px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.30);
+      rotate(var(--deck-r, 16deg)) scale(0.3);
   }
 
   100% {
     opacity: 0;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) + 36px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.26);
+      rotate(var(--deck-r, 16deg)) scale(0.26);
   }
 }
 
@@ -10615,110 +11449,88 @@ body,
   - Không bay xuống dưới đường đó nữa.
   - Fade bắt đầu trước khi tới deck, tới line là opacity = 0.
 */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) {
-  animation: draftReturnFadeOutAtDeckLine 1.22s cubic-bezier(0.18, 0.82, 0.24, 1) forwards !important;
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected) {
+  animation: draftReturnFadeOutAtDeckLine 1.22s
+    cubic-bezier(0.18, 0.82, 0.24, 1) forwards !important;
   opacity: 1 !important;
   will-change: transform, opacity !important;
   backface-visibility: hidden !important;
   transform-style: flat !important;
 }
 
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) > .hand-card {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected)
+  > .hand-card {
   opacity: inherit !important;
 }
 
 @keyframes draftReturnFadeOutAtDeckLine {
   0% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(0, 0, 0)
-      rotate(0deg)
-      scale(1);
+    transform: translateX(-50%) translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
 
   /* Gom gọn */
   24% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(calc(var(--gather-r, 0deg) * 0.18))
-      scale(0.88);
+      rotate(calc(var(--gather-r, 0deg) * 0.18)) scale(0.88);
   }
 
   /* Cụm bài dừng nhẹ */
   36% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.78),
         calc(var(--gather-y, -28px) * 0.82),
         0
       )
-      rotate(0deg)
-      scale(0.84);
+      rotate(0deg) scale(0.84);
   }
 
   /* Bay vòng cung cao, bắt đầu fade */
   56% {
     opacity: 0.78;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc1-x, 160px),
-        calc(var(--arc1-y, -150px) - 88px),
-        0
-      )
-      rotate(10deg)
-      scale(0.66);
+    transform: translateX(-50%)
+      translate3d(var(--arc1-x, 160px), calc(var(--arc1-y, -150px) - 88px), 0)
+      rotate(10deg) scale(0.66);
   }
 
   /* Rơi về deck, mờ rõ */
   74% {
     opacity: 0.34;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc2-x, 420px),
-        calc(var(--arc2-y, -180px) - 52px),
-        0
-      )
-      rotate(18deg)
-      scale(0.50);
+    transform: translateX(-50%)
+      translate3d(var(--arc2-x, 420px), calc(var(--arc2-y, -180px) - 52px), 0)
+      rotate(18deg) scale(0.5);
   }
 
   /* Gần line giữa deck: gần mất */
   90% {
     opacity: 0.08;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) - 8px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.36);
+      rotate(var(--deck-r, 16deg)) scale(0.36);
   }
 
   /* Đúng line giữa deck: biến mất hoàn toàn */
   100% {
     opacity: 0;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--deck-in-x, 620px),
-        var(--deck-in-y, -120px),
-        0
-      )
-      rotate(var(--deck-r, 16deg))
-      scale(0.28);
+    transform: translateX(-50%)
+      translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
+      rotate(var(--deck-r, 16deg)) scale(0.28);
   }
 }
 
@@ -10732,8 +11544,12 @@ body,
   - browser đang cache CSS cũ.
   Block này đặt cuối file, tên keyframe mới hoàn toàn để kiểm tra dễ hơn.
 */
-.player-hand--draft .player-hand__cards.is-passing.pass-active .draft-deal-slot:not(.daily-draft-card--selected),
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .draft-deal-slot:not(.daily-draft-card--selected),
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected) {
   animation-name: draftReturnFadeAtDeckLineV2 !important;
   animation-duration: 1.35s !important;
   animation-timing-function: cubic-bezier(0.18, 0.82, 0.24, 1) !important;
@@ -10744,8 +11560,14 @@ body,
   transform-style: flat !important;
 }
 
-.player-hand--draft .player-hand__cards.is-passing.pass-active .draft-deal-slot:not(.daily-draft-card--selected) > .hand-card,
-.player-hand--draft .player-hand__cards.is-passing.pass-active .daily-draft-card:not(.daily-draft-card--selected) > .hand-card {
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .draft-deal-slot:not(.daily-draft-card--selected)
+  > .hand-card,
+.player-hand--draft
+  .player-hand__cards.is-passing.pass-active
+  .daily-draft-card:not(.daily-draft-card--selected)
+  > .hand-card {
   opacity: 1 !important;
 }
 
@@ -10757,104 +11579,70 @@ body,
 @keyframes draftReturnFadeAtDeckLineV2 {
   0% {
     opacity: 1;
-    transform:
-      translateX(-50%)
-      translate3d(0, 0, 0)
-      rotate(0deg)
-      scale(1);
+    transform: translateX(-50%) translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
 
   22% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.72),
         calc(var(--gather-y, -28px) * 0.78),
         0
       )
-      rotate(calc(var(--gather-r, 0deg) * 0.14))
-      scale(0.86);
+      rotate(calc(var(--gather-r, 0deg) * 0.14)) scale(0.86);
   }
 
   34% {
     opacity: 1;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         calc(var(--gather-x, 0px) * 0.72),
         calc(var(--gather-y, -28px) * 0.78),
         0
       )
-      rotate(0deg)
-      scale(0.82);
+      rotate(0deg) scale(0.82);
   }
 
   /* Fade bắt đầu rất rõ từ đây */
   52% {
     opacity: 0.55;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc1-x, 160px),
-        calc(var(--arc1-y, -150px) - 96px),
-        0
-      )
-      rotate(10deg)
-      scale(0.62);
+    transform: translateX(-50%)
+      translate3d(var(--arc1-x, 160px), calc(var(--arc1-y, -150px) - 96px), 0)
+      rotate(10deg) scale(0.62);
   }
 
   68% {
     opacity: 0.22;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--arc2-x, 420px),
-        calc(var(--arc2-y, -180px) - 58px),
-        0
-      )
-      rotate(18deg)
-      scale(0.46);
+    transform: translateX(-50%)
+      translate3d(var(--arc2-x, 420px), calc(var(--arc2-y, -180px) - 58px), 0)
+      rotate(18deg) scale(0.46);
   }
 
   82% {
     opacity: 0.06;
-    transform:
-      translateX(-50%)
+    transform: translateX(-50%)
       translate3d(
         var(--deck-in-x, 620px),
         calc(var(--deck-in-y, -120px) - 16px),
         0
       )
-      rotate(var(--deck-r, 16deg))
-      scale(0.34);
+      rotate(var(--deck-r, 16deg)) scale(0.34);
   }
 
   /* Tới đường giữa deck là mất hẳn */
   92% {
     opacity: 0;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--deck-in-x, 620px),
-        var(--deck-in-y, -120px),
-        0
-      )
-      rotate(var(--deck-r, 16deg))
-      scale(0.28);
+    transform: translateX(-50%)
+      translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
+      rotate(var(--deck-r, 16deg)) scale(0.28);
   }
 
   100% {
     opacity: 0;
-    transform:
-      translateX(-50%)
-      translate3d(
-        var(--deck-in-x, 620px),
-        var(--deck-in-y, -120px),
-        0
-      )
-      rotate(var(--deck-r, 16deg))
-      scale(0.28);
+    transform: translateX(-50%)
+      translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0)
+      rotate(var(--deck-r, 16deg)) scale(0.28);
   }
 }
 
@@ -11023,7 +11811,8 @@ body,
 }
 
 /* Có cả event + combo: chia đôi chỗ dưới card */
-.flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge) .flow-node__event-badge {
+.flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge)
+  .flow-node__event-badge {
   left: 27% !important;
   transform: translateX(-50%) !important;
   max-width: 86px !important;
@@ -11031,7 +11820,8 @@ body,
   font-size: 7.2px !important;
 }
 
-.flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge) .flow-node__badge {
+.flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge)
+  .flow-node__badge {
   left: 73% !important;
   transform: translateX(-50%) !important;
   max-width: 72px !important;
@@ -11039,7 +11829,8 @@ body,
 }
 
 /* Chỉ có event, không có combo: event nằm giữa như combo */
-.flow-node__card:has(.flow-node__event-badge):not(:has(.flow-node__badge)) .flow-node__event-badge {
+.flow-node__card:has(.flow-node__event-badge):not(:has(.flow-node__badge))
+  .flow-node__event-badge {
   left: 50% !important;
   transform: translateX(-50%) !important;
   max-width: 112px !important;
@@ -11065,21 +11856,20 @@ body,
     font-size: 6.8px !important;
   }
 
-  .flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge) .flow-node__event-badge {
+  .flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge)
+    .flow-node__event-badge {
     left: 26% !important;
     max-width: 78px !important;
     font-size: 6.4px !important;
   }
 
-  .flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge) .flow-node__badge {
+  .flow-node__card:has(.flow-node__event-badge):has(.flow-node__badge)
+    .flow-node__badge {
     left: 74% !important;
     max-width: 66px !important;
     font-size: 6.4px !important;
   }
 }
-
-
-
 
 /* =========================================
    SAIGON COLLAGE BACKGROUND + EXACT ALPHA GLOW v4
@@ -11094,7 +11884,11 @@ body,
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.16), transparent 58%),
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.16),
+      transparent 58%
+    ),
     url(@saigon-collage-bg) center / cover no-repeat,
     linear-gradient(180deg, #f5efe6, #e8dccb);
 }
@@ -11108,29 +11902,56 @@ body,
 /* Cho background đi xuyên qua cả hai thanh bên, nhưng UI vẫn dễ đọc */
 .players-column {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(245, 238, 228, 0.70)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.46),
+      rgba(245, 238, 228, 0.7)
+    ),
     rgba(251, 248, 241, 0.28);
   backdrop-filter: blur(0.55px);
 }
 
 .side-player {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.34), rgba(246, 240, 230, 0.54));
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.34),
+    rgba(246, 240, 230, 0.54)
+  );
   backdrop-filter: blur(0.55px);
 }
 
 .players-column--right .deck-pile-panel {
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 242, 196, 0.16), transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(243, 237, 225, 0.56));
+    radial-gradient(
+      circle at 50% 18%,
+      rgba(255, 242, 196, 0.16),
+      transparent 44%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.32),
+      rgba(243, 237, 225, 0.56)
+    );
   backdrop-filter: blur(0.55px);
 }
 
 .arena {
   background:
-    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.62), transparent 34%),
-    radial-gradient(circle at 50% 52%, rgba(255, 246, 210, 0.12), transparent 50%),
-    linear-gradient(180deg, rgba(245, 239, 230, 0.36), rgba(233, 222, 206, 0.46));
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(255, 255, 255, 0.62),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 50% 52%,
+      rgba(255, 246, 210, 0.12),
+      transparent 50%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(245, 239, 230, 0.36),
+      rgba(233, 222, 206, 0.46)
+    );
 }
 
 .saigon-collage-bg {
@@ -11147,7 +11968,11 @@ body,
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(circle at center, rgba(255, 244, 198, 0.04), transparent 45%),
+    radial-gradient(
+      circle at center,
+      rgba(255, 244, 198, 0.04),
+      transparent 45%
+    ),
     rgba(12, 8, 5, 0.46);
   opacity: 0;
   transition: opacity 150ms ease;
@@ -11170,13 +11995,12 @@ body,
   opacity: 0;
   pointer-events: none;
   user-select: none;
-  transition: opacity 120ms ease, filter 120ms ease;
+  transition:
+    opacity 120ms ease,
+    filter 120ms ease;
   will-change: opacity, filter;
   object-fit: fill;
-  filter:
-    brightness(1.30)
-    contrast(1.08)
-    saturate(1.16)
+  filter: brightness(1.3) contrast(1.08) saturate(1.16)
     drop-shadow(0 0 7px rgba(255, 250, 210, 1))
     drop-shadow(0 0 18px rgba(255, 220, 95, 0.86))
     drop-shadow(0 0 34px rgba(255, 150, 45, 0.52));
@@ -11184,22 +12008,22 @@ body,
 
 /* Tọa độ đã tính theo ảnh nền gốc 1308x801 sau khi trim PNG sát alpha */
 .saigon-collage-bg__glow--vendor {
-  left: 0.0000%;
-  top: 0.0000%;
+  left: 0%;
+  top: 0%;
   width: 32.8746%;
   height: 41.1985%;
 }
 
 .saigon-collage-bg__glow--vehicle {
-  left: 45.1070%;
+  left: 45.107%;
   top: 8.9888%;
   width: 27.5229%;
   height: 23.7203%;
 }
 
 .saigon-collage-bg__glow--foodcart {
-  left: 0.0000%;
-  top: 56.8040%;
+  left: 0%;
+  top: 56.804%;
   width: 30.9633%;
   height: 38.0774%;
 }
@@ -11208,13 +12032,12 @@ body,
   left: 68.8073%;
   top: 60.5493%;
   width: 29.8165%;
-  height: 36.8290%;
+  height: 36.829%;
 }
 
 .game-shell[data-saigon-hover] .saigon-collage-bg__shade {
   opacity: 1;
 }
-
 
 .game-shell[data-saigon-hover] .arena,
 .game-shell[data-saigon-hover] .players-column {
@@ -11230,7 +12053,6 @@ body,
 .game-shell[data-saigon-hover="women"] .saigon-collage-bg__glow--women {
   opacity: 1;
 }
-
 
 /* =========================================
    IN-GAME MUSIC CONTROL IN ROOM MENU
@@ -11251,8 +12073,16 @@ body,
   border-radius: 999px;
   border: 1px solid rgba(20, 184, 166, 0.24);
   background:
-    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.74), transparent 45%),
-    linear-gradient(180deg, rgba(240, 253, 250, 0.94), rgba(204, 251, 241, 0.68));
+    radial-gradient(
+      circle at 20% 0%,
+      rgba(255, 255, 255, 0.74),
+      transparent 45%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(240, 253, 250, 0.94),
+      rgba(204, 251, 241, 0.68)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 8px 16px rgba(15, 118, 110, 0.08);
@@ -11353,8 +12183,16 @@ body,
   border-top: 1px solid rgba(204, 180, 145, 0.6) !important;
 
   background:
-    radial-gradient(circle at 50% 20%, rgba(255, 242, 196, 0.18), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(243, 237, 225, 0.92)) !important;
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(255, 242, 196, 0.18),
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(243, 237, 225, 0.92)
+    ) !important;
 }
 
 .deck-pile-panel__top,
@@ -11413,7 +12251,9 @@ body,
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: transform 180ms ease, filter 180ms ease;
+  transition:
+    transform 180ms ease,
+    filter 180ms ease;
 }
 
 .player-effect-seal:hover {
@@ -11454,7 +12294,11 @@ body,
 
 .player-effect-seal--debt .player-effect-seal__surface {
   background:
-    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.42), transparent 24%),
+    radial-gradient(
+      circle at 28% 22%,
+      rgba(255, 255, 255, 0.42),
+      transparent 24%
+    ),
     radial-gradient(circle at 68% 70%, rgba(82, 7, 7, 0.18), transparent 46%),
     linear-gradient(145deg, #8f1c1d 0%, #bb3133 42%, #7b1617 100%);
   box-shadow:
@@ -11465,17 +12309,45 @@ body,
 
 .player-effect-seal--debt .player-effect-seal__surface::before {
   background:
-    radial-gradient(circle at 12% 50%, rgba(132, 20, 20, 0.95) 0 11%, transparent 12%),
-    radial-gradient(circle at 86% 46%, rgba(132, 20, 20, 0.95) 0 11%, transparent 12%),
-    radial-gradient(circle at 48% 8%, rgba(132, 20, 20, 0.95) 0 10%, transparent 11%),
-    radial-gradient(circle at 52% 92%, rgba(132, 20, 20, 0.95) 0 10%, transparent 11%),
-    radial-gradient(circle at 24% 84%, rgba(132, 20, 20, 0.95) 0 10%, transparent 11%),
-    radial-gradient(circle at 77% 16%, rgba(132, 20, 20, 0.95) 0 10%, transparent 11%);
+    radial-gradient(
+      circle at 12% 50%,
+      rgba(132, 20, 20, 0.95) 0 11%,
+      transparent 12%
+    ),
+    radial-gradient(
+      circle at 86% 46%,
+      rgba(132, 20, 20, 0.95) 0 11%,
+      transparent 12%
+    ),
+    radial-gradient(
+      circle at 48% 8%,
+      rgba(132, 20, 20, 0.95) 0 10%,
+      transparent 11%
+    ),
+    radial-gradient(
+      circle at 52% 92%,
+      rgba(132, 20, 20, 0.95) 0 10%,
+      transparent 11%
+    ),
+    radial-gradient(
+      circle at 24% 84%,
+      rgba(132, 20, 20, 0.95) 0 10%,
+      transparent 11%
+    ),
+    radial-gradient(
+      circle at 77% 16%,
+      rgba(132, 20, 20, 0.95) 0 10%,
+      transparent 11%
+    );
 }
 
 .player-effect-seal--debt .player-effect-seal__surface::after {
   background:
-    radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.15), transparent 24%),
+    radial-gradient(
+      circle at 35% 26%,
+      rgba(255, 255, 255, 0.15),
+      transparent 24%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.08));
   box-shadow:
     inset 0 2px 3px rgba(255, 255, 255, 0.18),
@@ -11492,7 +12364,11 @@ body,
     inset 0 2px 4px rgba(255, 255, 255, 0.18),
     inset 0 -3px 6px rgba(83, 8, 8, 0.22);
   background:
-    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.14), transparent 22%),
+    radial-gradient(
+      circle at 34% 26%,
+      rgba(255, 255, 255, 0.14),
+      transparent 22%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.06));
 }
 
@@ -11581,7 +12457,9 @@ body,
   text-transform: uppercase;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
   box-shadow: 0 8px 16px rgba(35, 18, 12, 0.22);
 }
 
@@ -11632,7 +12510,11 @@ body,
   border-radius: 24px;
   border: 1px solid rgba(190, 166, 130, 0.35);
   background:
-    radial-gradient(circle at top right, rgba(255, 236, 200, 0.55), transparent 36%),
+    radial-gradient(
+      circle at top right,
+      rgba(255, 236, 200, 0.55),
+      transparent 36%
+    ),
     linear-gradient(180deg, #fffdf8, #f6efe3);
   box-shadow:
     0 20px 40px rgba(62, 40, 22, 0.24),
@@ -11766,7 +12648,10 @@ body,
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
-  transition: transform 150ms ease, filter 150ms ease, background 150ms ease;
+  transition:
+    transform 150ms ease,
+    filter 150ms ease,
+    background 150ms ease;
 }
 
 .effect-token-modal__ghost {
@@ -11915,7 +12800,6 @@ body,
   }
 }
 
-
 /* =========================================================
    V3: fullscreen dock fix + exact debt icon style
    ========================================================= */
@@ -11968,7 +12852,11 @@ body,
 
 .player-effect-seal--debt .player-effect-seal__surface {
   background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.45), transparent 22%),
+    radial-gradient(
+      circle at 30% 20%,
+      rgba(255, 255, 255, 0.45),
+      transparent 22%
+    ),
     radial-gradient(circle at 62% 75%, rgba(112, 6, 8, 0.24), transparent 38%),
     linear-gradient(145deg, #9c191b 0%, #c93335 44%, #7a1315 100%);
   box-shadow:
@@ -11979,12 +12867,36 @@ body,
 
 .player-effect-seal--debt .player-effect-seal__surface::before {
   background:
-    radial-gradient(circle at 12% 48%, rgba(137, 22, 23, 0.98) 0 10%, transparent 10.5%),
-    radial-gradient(circle at 85% 48%, rgba(137, 22, 23, 0.98) 0 10%, transparent 10.5%),
-    radial-gradient(circle at 50% 8%, rgba(137, 22, 23, 0.98) 0 9.5%, transparent 10%),
-    radial-gradient(circle at 50% 92%, rgba(137, 22, 23, 0.98) 0 9.5%, transparent 10%),
-    radial-gradient(circle at 24% 84%, rgba(137, 22, 23, 0.98) 0 9.5%, transparent 10%),
-    radial-gradient(circle at 76% 16%, rgba(137, 22, 23, 0.98) 0 9.5%, transparent 10%);
+    radial-gradient(
+      circle at 12% 48%,
+      rgba(137, 22, 23, 0.98) 0 10%,
+      transparent 10.5%
+    ),
+    radial-gradient(
+      circle at 85% 48%,
+      rgba(137, 22, 23, 0.98) 0 10%,
+      transparent 10.5%
+    ),
+    radial-gradient(
+      circle at 50% 8%,
+      rgba(137, 22, 23, 0.98) 0 9.5%,
+      transparent 10%
+    ),
+    radial-gradient(
+      circle at 50% 92%,
+      rgba(137, 22, 23, 0.98) 0 9.5%,
+      transparent 10%
+    ),
+    radial-gradient(
+      circle at 24% 84%,
+      rgba(137, 22, 23, 0.98) 0 9.5%,
+      transparent 10%
+    ),
+    radial-gradient(
+      circle at 76% 16%,
+      rgba(137, 22, 23, 0.98) 0 9.5%,
+      transparent 10%
+    );
   transform: rotate(8deg) scale(0.985);
   opacity: 0.72;
 }
@@ -12058,7 +12970,6 @@ body,
   }
 }
 
-
 /* v4 adjustments: torn money bag icon + remove remaining-deck row */
 .deck-pile-panel__footer,
 .deck-pile-panel__count {
@@ -12091,7 +13002,6 @@ body,
   height: 52px;
 }
 
-
 /* v5: clearer torn money bag debt icon */
 .player-effect-seal__icon-svg {
   overflow: visible;
@@ -12116,15 +13026,19 @@ body,
   dominant-baseline: middle;
 }
 
-
 /* =========================================================
    STATIC BACKGROUND ONLY - REMOVE HOVER/GLOW BACKGROUND
    ========================================================= */
 
 .game-shell {
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.16), transparent 58%),
-    url("/assets/images/backgrounds/saigon-collage-hover/saigon-collage-bg.png") center / cover no-repeat,
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.16),
+      transparent 58%
+    ),
+    url("/assets/images/backgrounds/saigon-collage-hover/saigon-collage-bg.png")
+      center / cover no-repeat,
     linear-gradient(180deg, #f5efe6, #e8dccb) !important;
 }
 
@@ -12170,7 +13084,9 @@ body,
 .arena--scanning .player-hand {
   filter: blur(3px) saturate(0.75);
   opacity: 0.38;
-  transition: filter 180ms ease, opacity 180ms ease;
+  transition:
+    filter 180ms ease,
+    opacity 180ms ease;
 }
 
 .arena--scanning .board-cell--replay-current,
@@ -12201,7 +13117,11 @@ body,
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at center, rgba(255, 246, 214, 0.12), transparent 44%),
+    radial-gradient(
+      circle at center,
+      rgba(255, 246, 214, 0.12),
+      transparent 44%
+    ),
     rgba(246, 240, 230, 0.48);
   backdrop-filter: blur(1.5px);
 }
@@ -12217,8 +13137,16 @@ body,
   border-radius: 999px;
   border: 1px solid rgba(167, 132, 82, 0.28);
   background:
-    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.86), transparent 38%),
-    linear-gradient(180deg, rgba(255, 252, 244, 0.88), rgba(232, 216, 190, 0.84));
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.86),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 252, 244, 0.88),
+      rgba(232, 216, 190, 0.84)
+    );
   box-shadow:
     0 12px 24px rgba(82, 56, 30, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
@@ -12267,8 +13195,19 @@ body,
   position: absolute;
   inset: 42px 0;
   background:
-    linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.94) 10%, rgba(255,255,255,0.96) 90%, rgba(255,255,255,0)),
-    repeating-linear-gradient(115deg, transparent 0 62px, rgba(0,0,0,0.075) 64px 68px, transparent 70px 124px);
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0.94) 10%,
+      rgba(255, 255, 255, 0.96) 90%,
+      rgba(255, 255, 255, 0)
+    ),
+    repeating-linear-gradient(
+      115deg,
+      transparent 0 62px,
+      rgba(0, 0, 0, 0.075) 64px 68px,
+      transparent 70px 124px
+    );
   box-shadow:
     0 18px 30px rgba(53, 38, 24, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
@@ -12299,11 +13238,15 @@ body,
   border: 1px solid rgba(168, 137, 94, 0.42);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 26% 10%, rgba(255, 255, 255, 0.92), transparent 34%),
+    radial-gradient(
+      circle at 26% 10%,
+      rgba(255, 255, 255, 0.92),
+      transparent 34%
+    ),
     linear-gradient(180deg, #fffdf8, #f4ead7);
   box-shadow:
     0 12px 24px rgba(66, 43, 22, 0.18),
-    inset 0 0 0 1px rgba(255,255,255,0.64);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.64);
   transform: rotate(-1deg) translateY(0);
   transform-origin: center;
   transition:
@@ -12313,8 +13256,12 @@ body,
     box-shadow 260ms ease;
 }
 
-.score-ticket:nth-child(4n + 1) { transform: rotate(-1.5deg); }
-.score-ticket:nth-child(4n + 3) { transform: rotate(1.2deg); }
+.score-ticket:nth-child(4n + 1) {
+  transform: rotate(-1.5deg);
+}
+.score-ticket:nth-child(4n + 3) {
+  transform: rotate(1.2deg);
+}
 
 .score-ticket.is-active {
   transform: rotate(0deg) scale(1.12) translateY(-8px);
@@ -12347,9 +13294,31 @@ body,
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(128deg, transparent 0 47%, rgba(96, 62, 36, 0.18) 48%, rgba(255,255,255,0.5) 49%, transparent 51%),
-    linear-gradient(132deg, transparent 0 54%, rgba(96, 62, 36, 0.13) 55%, transparent 57%);
-  clip-path: polygon(0 0, 100% 0, 96% 46%, 100% 51%, 95% 57%, 100% 100%, 0 100%, 4% 58%, 0 53%, 5% 47%);
+    linear-gradient(
+      128deg,
+      transparent 0 47%,
+      rgba(96, 62, 36, 0.18) 48%,
+      rgba(255, 255, 255, 0.5) 49%,
+      transparent 51%
+    ),
+    linear-gradient(
+      132deg,
+      transparent 0 54%,
+      rgba(96, 62, 36, 0.13) 55%,
+      transparent 57%
+    );
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    96% 46%,
+    100% 51%,
+    95% 57%,
+    100% 100%,
+    0 100%,
+    4% 58%,
+    0 53%,
+    5% 47%
+  );
 }
 
 .score-ticket__perforation {
@@ -12357,13 +13326,21 @@ body,
   top: 13px;
   bottom: 13px;
   width: 12px;
-  background:
-    radial-gradient(circle, rgba(214, 199, 173, 0.95) 0 4px, transparent 4.5px) center / 12px 18px repeat-y;
+  background: radial-gradient(
+      circle,
+      rgba(214, 199, 173, 0.95) 0 4px,
+      transparent 4.5px
+    )
+    center / 12px 18px repeat-y;
   opacity: 0.78;
 }
 
-.score-ticket__perforation--left { left: -6px; }
-.score-ticket__perforation--right { right: -6px; }
+.score-ticket__perforation--left {
+  left: -6px;
+}
+.score-ticket__perforation--right {
+  right: -6px;
+}
 
 .score-ticket__head {
   display: flex;
@@ -12503,8 +13480,12 @@ body,
   top: -8px;
   bottom: -8px;
   width: 2px;
-  background:
-    radial-gradient(circle, rgba(109, 83, 51, 0.38) 0 3px, transparent 3.5px) center / 2px 15px repeat-y;
+  background: radial-gradient(
+      circle,
+      rgba(109, 83, 51, 0.38) 0 3px,
+      transparent 3.5px
+    )
+    center / 2px 15px repeat-y;
   opacity: 0.42;
 }
 
@@ -12513,7 +13494,11 @@ body,
   flex: 0 0 34px;
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(137, 101, 58, 0.24), rgba(137, 101, 58, 0.56));
+  background: linear-gradient(
+    90deg,
+    rgba(137, 101, 58, 0.24),
+    rgba(137, 101, 58, 0.56)
+  );
 }
 
 .score-ticket-connector::after {
@@ -12553,7 +13538,7 @@ body,
   background: rgba(255, 252, 244, 0.86);
   box-shadow:
     0 10px 20px rgba(82, 56, 30, 0.09),
-    inset 0 1px 0 rgba(255,255,255,0.72);
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .ticket-scan-overlay__footer span {
@@ -12577,8 +13562,16 @@ body,
 
 .ticket-scan-overlay__complete {
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.85), transparent 36%),
-    linear-gradient(180deg, rgba(220, 252, 231, 0.94), rgba(187, 247, 208, 0.74)) !important;
+    radial-gradient(
+      circle at 18% 0%,
+      rgba(255, 255, 255, 0.85),
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(220, 252, 231, 0.94),
+      rgba(187, 247, 208, 0.74)
+    ) !important;
   border-color: rgba(34, 197, 94, 0.24) !important;
 }
 
@@ -12621,7 +13614,11 @@ body,
 
 .ticket-scan-overlay__scrim {
   background:
-    radial-gradient(circle at center, rgba(255, 238, 196, 0.10), transparent 45%),
+    radial-gradient(
+      circle at center,
+      rgba(255, 238, 196, 0.1),
+      transparent 45%
+    ),
     linear-gradient(180deg, rgba(64, 42, 24, 0.18), rgba(64, 42, 24, 0.26)) !important;
   backdrop-filter: blur(2.4px) saturate(0.84) brightness(0.9) !important;
 }
@@ -12644,15 +13641,23 @@ body,
       transparent 72px 128px
     ) !important;
   box-shadow:
-    0 18px 30px rgba(53, 38, 24, 0.20),
+    0 18px 30px rgba(53, 38, 24, 0.2),
     inset 0 1px 0 rgba(255, 248, 229, 0.38),
-    inset 0 -1px 0 rgba(112, 80, 46, 0.20) !important;
+    inset 0 -1px 0 rgba(112, 80, 46, 0.2) !important;
 }
 
 .ticket-scan-overlay__header {
   background:
-    radial-gradient(circle at 14% 0%, rgba(255, 249, 232, 0.82), transparent 38%),
-    linear-gradient(180deg, rgba(239, 224, 198, 0.96), rgba(211, 190, 158, 0.94)) !important;
+    radial-gradient(
+      circle at 14% 0%,
+      rgba(255, 249, 232, 0.82),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(239, 224, 198, 0.96),
+      rgba(211, 190, 158, 0.94)
+    ) !important;
   border-color: rgba(128, 92, 50, 0.28) !important;
   box-shadow:
     0 12px 24px rgba(52, 34, 19, 0.18),
@@ -12661,7 +13666,11 @@ body,
 
 .score-ticket {
   background:
-    radial-gradient(circle at 24% 10%, rgba(255, 252, 242, 0.78), transparent 32%),
+    radial-gradient(
+      circle at 24% 10%,
+      rgba(255, 252, 242, 0.78),
+      transparent 32%
+    ),
     linear-gradient(180deg, #f4ead7, #e7d4b4) !important;
   border-color: rgba(139, 101, 58, 0.5) !important;
   box-shadow:
@@ -12705,12 +13714,16 @@ body,
 
 .score-ticket__stats span {
   background: rgba(246, 235, 214, 0.92) !important;
-  border-color: rgba(135, 98, 57, 0.30) !important;
+  border-color: rgba(135, 98, 57, 0.3) !important;
   color: #5b3d27 !important;
 }
 
 .score-ticket-connector {
-  background: linear-gradient(90deg, rgba(111, 75, 38, 0.36), rgba(143, 93, 42, 0.78)) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(111, 75, 38, 0.36),
+    rgba(143, 93, 42, 0.78)
+  ) !important;
 }
 
 .score-ticket-connector::after {
@@ -12719,12 +13732,15 @@ body,
 }
 
 .ticket-scan-overlay__footer > div {
-  background:
-    linear-gradient(180deg, rgba(239, 226, 204, 0.94), rgba(218, 197, 164, 0.92)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(239, 226, 204, 0.94),
+    rgba(218, 197, 164, 0.92)
+  ) !important;
   border-color: rgba(128, 92, 50, 0.24) !important;
   box-shadow:
     0 10px 20px rgba(52, 34, 19, 0.13),
-    inset 0 1px 0 rgba(255,255,255,0.45) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
 }
 
 .ticket-scan-overlay__footer span {
@@ -12737,8 +13753,16 @@ body,
 
 .ticket-scan-overlay__complete {
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.55), transparent 36%),
-    linear-gradient(180deg, rgba(187, 227, 198, 0.95), rgba(142, 205, 163, 0.88)) !important;
+    radial-gradient(
+      circle at 18% 0%,
+      rgba(255, 255, 255, 0.55),
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(187, 227, 198, 0.95),
+      rgba(142, 205, 163, 0.88)
+    ) !important;
 }
 
 .arena--scanning .arena__top,
@@ -12759,7 +13783,11 @@ body,
 
 .ticket-scan-overlay__scrim {
   background:
-    radial-gradient(circle at 50% 48%, rgba(245, 225, 178, 0.08), transparent 48%),
+    radial-gradient(
+      circle at 50% 48%,
+      rgba(245, 225, 178, 0.08),
+      transparent 48%
+    ),
     linear-gradient(180deg, rgba(35, 27, 21, 0.24), rgba(35, 27, 21, 0.34)) !important;
   backdrop-filter: blur(2.6px) saturate(0.78) brightness(0.82) !important;
 }
@@ -12767,12 +13795,20 @@ body,
 .ticket-scan-overlay__header,
 .ticket-scan-overlay__footer > div {
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.52), transparent 38%),
-    linear-gradient(180deg, rgba(235, 216, 184, 0.96), rgba(205, 181, 145, 0.94)) !important;
+    radial-gradient(
+      circle at 18% 0%,
+      rgba(255, 255, 255, 0.52),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(235, 216, 184, 0.96),
+      rgba(205, 181, 145, 0.94)
+    ) !important;
   border-color: rgba(127, 91, 50, 0.24) !important;
   box-shadow:
     0 12px 24px rgba(44, 30, 18, 0.18),
-    inset 0 1px 0 rgba(255,255,255,0.48) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.48) !important;
 }
 
 .ticket-scan-overlay__header span,
@@ -12792,20 +13828,19 @@ body,
 
 .ticket-scan-strip__backdrop {
   inset: 48px 0 !important;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(78, 64, 50, 0),
-      rgba(218, 210, 195, 0.84) 7%,
-      rgba(236, 229, 216, 0.94) 50%,
-      rgba(218, 210, 195, 0.84) 93%,
-      rgba(78, 64, 50, 0)
-    ) !important;
-  border-top: 1px solid rgba(255,255,255,0.32);
+  background: linear-gradient(
+    90deg,
+    rgba(78, 64, 50, 0),
+    rgba(218, 210, 195, 0.84) 7%,
+    rgba(236, 229, 216, 0.94) 50%,
+    rgba(218, 210, 195, 0.84) 93%,
+    rgba(78, 64, 50, 0)
+  ) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.32);
   border-bottom: 1px solid rgba(85, 64, 43, 0.12);
   box-shadow:
     0 18px 34px rgba(36, 27, 19, 0.24),
-    inset 0 1px 0 rgba(255,255,255,0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
     inset 0 -1px 0 rgba(89, 68, 47, 0.16) !important;
 }
 
@@ -12813,7 +13848,7 @@ body,
   height: 252px !important;
   gap: 22px !important;
   padding: 0 80px !important;
-  transition: transform 820ms cubic-bezier(0.20, 0.84, 0.22, 1) !important;
+  transition: transform 820ms cubic-bezier(0.2, 0.84, 0.22, 1) !important;
 }
 
 /* Ticket shell */
@@ -12845,15 +13880,19 @@ body,
   top: 0;
   bottom: 0;
   width: 226px;
-  border: 1px solid rgba(131, 98, 63, 0.30);
+  border: 1px solid rgba(131, 98, 63, 0.3);
   border-right: 0;
   border-radius: 12px 0 0 12px;
   background:
-    radial-gradient(circle at 23% 12%, rgba(255,255,255,0.82), transparent 34%),
+    radial-gradient(
+      circle at 23% 12%,
+      rgba(255, 255, 255, 0.82),
+      transparent 34%
+    ),
     linear-gradient(180deg, #fffaf0 0%, #eadbc4 100%);
   box-shadow:
     0 14px 24px rgba(42, 29, 18, 0.18),
-    inset 0 1px 0 rgba(255,255,255,0.72);
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
   clip-path: polygon(
     0 0,
     calc(100% - 8px) 0,
@@ -12884,15 +13923,19 @@ body,
   top: 0;
   bottom: 0;
   width: 60px;
-  border: 1px solid rgba(131, 98, 63, 0.30);
+  border: 1px solid rgba(131, 98, 63, 0.3);
   border-left: 0;
   border-radius: 0 12px 12px 0;
   background:
-    radial-gradient(circle at 36% 14%, rgba(255,255,255,0.76), transparent 34%),
+    radial-gradient(
+      circle at 36% 14%,
+      rgba(255, 255, 255, 0.76),
+      transparent 34%
+    ),
     linear-gradient(180deg, #fff7ea 0%, #e4d0b5 100%);
   box-shadow:
     0 14px 22px rgba(42, 29, 18, 0.12),
-    inset 0 1px 0 rgba(255,255,255,0.72);
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
   clip-path: polygon(
     8px 0,
     100% 0,
@@ -12926,8 +13969,12 @@ body,
   top: 11px !important;
   bottom: 11px !important;
   width: 12px !important;
-  background:
-    radial-gradient(circle, rgba(214, 205, 190, 0.95) 0 4px, transparent 4.4px) center / 12px 18px repeat-y !important;
+  background: radial-gradient(
+      circle,
+      rgba(214, 205, 190, 0.95) 0 4px,
+      transparent 4.4px
+    )
+    center / 12px 18px repeat-y !important;
   opacity: 0.88 !important;
   pointer-events: none;
 }
@@ -12952,9 +13999,18 @@ body,
   transform: translateX(50%) !important;
   opacity: 1 !important;
   background:
-    radial-gradient(circle at 50% 0, rgba(218, 211, 201, 0.96) 0 13px, transparent 13.4px),
-    radial-gradient(circle at 50% 100%, rgba(218, 211, 201, 0.96) 0 13px, transparent 13.4px),
-    radial-gradient(circle, rgba(125, 116, 104, 0.50) 0 3.6px, transparent 4px) center / 24px 16px repeat-y !important;
+    radial-gradient(
+      circle at 50% 0,
+      rgba(218, 211, 201, 0.96) 0 13px,
+      transparent 13.4px
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgba(218, 211, 201, 0.96) 0 13px,
+      transparent 13.4px
+    ),
+    radial-gradient(circle, rgba(125, 116, 104, 0.5) 0 3.6px, transparent 4px)
+      center / 24px 16px repeat-y !important;
   pointer-events: none;
 }
 
@@ -12966,8 +14022,19 @@ body,
   inset: 17px 76px 13px 22px;
   pointer-events: none;
   background:
-    linear-gradient(128deg, transparent 0 56%, rgba(153, 130, 98, 0.11) 57%, rgba(255,255,255,0.42) 62%, transparent 66%),
-    linear-gradient(129deg, transparent 0 42%, rgba(153, 130, 98, 0.08) 43%, transparent 48%);
+    linear-gradient(
+      128deg,
+      transparent 0 56%,
+      rgba(153, 130, 98, 0.11) 57%,
+      rgba(255, 255, 255, 0.42) 62%,
+      transparent 66%
+    ),
+    linear-gradient(
+      129deg,
+      transparent 0 42%,
+      rgba(153, 130, 98, 0.08) 43%,
+      transparent 48%
+    );
 }
 
 /* Active ticket */
@@ -12982,7 +14049,7 @@ body,
   box-shadow:
     0 0 0 3px rgba(216, 162, 75, 0.34),
     0 18px 34px rgba(45, 30, 18, 0.26),
-    inset 0 1px 0 rgba(255,255,255,0.74) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.74) !important;
 }
 
 /* Torn ticket after processed: the right stub is visibly ripped away */
@@ -13051,17 +14118,47 @@ body,
   top: 7px;
   bottom: 7px;
   width: 10px;
-  background: linear-gradient(180deg, rgba(218, 211, 201, 0.95), rgba(187, 176, 160, 0.95));
+  background: linear-gradient(
+    180deg,
+    rgba(218, 211, 201, 0.95),
+    rgba(187, 176, 160, 0.95)
+  );
 }
 
 .score-ticket.is-torn .score-ticket__tear-mark::before {
   left: 0;
-  clip-path: polygon(100% 0, 12% 7%, 100% 14%, 16% 23%, 100% 31%, 10% 39%, 100% 48%, 14% 58%, 100% 68%, 9% 78%, 100% 88%, 15% 100%);
+  clip-path: polygon(
+    100% 0,
+    12% 7%,
+    100% 14%,
+    16% 23%,
+    100% 31%,
+    10% 39%,
+    100% 48%,
+    14% 58%,
+    100% 68%,
+    9% 78%,
+    100% 88%,
+    15% 100%
+  );
 }
 
 .score-ticket.is-torn .score-ticket__tear-mark::after {
   right: 0;
-  clip-path: polygon(0 0, 88% 7%, 0 14%, 84% 23%, 0 31%, 90% 39%, 0 48%, 86% 58%, 0 68%, 91% 78%, 0 88%, 85% 100%);
+  clip-path: polygon(
+    0 0,
+    88% 7%,
+    0 14%,
+    84% 23%,
+    0 31%,
+    90% 39%,
+    0 48%,
+    86% 58%,
+    0 68%,
+    91% 78%,
+    0 88%,
+    85% 100%
+  );
 }
 
 /* Future cards */
@@ -13080,7 +14177,7 @@ body,
 }
 
 .score-ticket__head {
-  border-bottom: 1px dashed rgba(120, 91, 58, 0.30) !important;
+  border-bottom: 1px dashed rgba(120, 91, 58, 0.3) !important;
   padding-bottom: 8px !important;
 }
 
@@ -13132,8 +14229,8 @@ body,
   text-shadow: 0 1px 0 rgba(55, 27, 124, 0.24);
   box-shadow:
     0 8px 16px rgba(85, 46, 177, 0.24),
-    inset 0 1px 0 rgba(255,255,255,0.26),
-    inset 0 -2px 0 rgba(52,24,120,0.18) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -2px 0 rgba(52, 24, 120, 0.18) !important;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
   transform: translateZ(0);
@@ -13148,7 +14245,11 @@ body,
   flex: 0 0 36px !important;
   height: 4px !important;
   border-radius: 999px !important;
-  background: linear-gradient(90deg, rgba(154, 109, 52, 0.28), rgba(174, 119, 48, 0.74)) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(154, 109, 52, 0.28),
+    rgba(174, 119, 48, 0.74)
+  ) !important;
 }
 
 .score-ticket-connector::after {
@@ -13157,14 +14258,26 @@ body,
 }
 
 .score-ticket-connector.is-passed {
-  background: linear-gradient(90deg, #bf8747, rgba(141, 100, 57, 0.34)) !important;
+  background: linear-gradient(
+    90deg,
+    #bf8747,
+    rgba(141, 100, 57, 0.34)
+  ) !important;
 }
 
 /* Footer panel */
 .ticket-scan-overlay__complete {
   background:
-    radial-gradient(circle at 18% 0%, rgba(255,255,255,0.55), transparent 36%),
-    linear-gradient(180deg, rgba(188, 226, 198, 0.95), rgba(145, 205, 164, 0.88)) !important;
+    radial-gradient(
+      circle at 18% 0%,
+      rgba(255, 255, 255, 0.55),
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(188, 226, 198, 0.95),
+      rgba(145, 205, 164, 0.88)
+    ) !important;
 }
 
 /* Do not shrink ticket width in fullscreen/laptop; fixed measurement matches JS trackOffset. */
@@ -13205,8 +14318,8 @@ body,
 .score-ticket.is-active::after {
   box-shadow:
     0 0 0 3px rgba(216, 162, 75, 0.36),
-    0 20px 38px rgba(45, 30, 18, 0.30),
-    inset 0 1px 0 rgba(255,255,255,0.74) !important;
+    0 20px 38px rgba(45, 30, 18, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74) !important;
 }
 
 @media (max-width: 1280px) {
@@ -13249,7 +14362,6 @@ body,
 .score-ticket.is-torn:last-of-type .score-ticket__tear-mark::after {
   transition: clip-path 120ms ease !important;
 }
-
 
 /* =========================================
    CINEMATIC TRANSITION (LOBBY -> GAME)

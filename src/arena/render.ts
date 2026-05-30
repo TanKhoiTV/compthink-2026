@@ -29,6 +29,7 @@ import {
 	getIsReplayComplete,
 	getIsInitialDealInProgress,
 	getDeck,
+	getLocalCoinDebt,
 	currentPlayerId,
 } from "../state.ts";
 import type { TravelCard } from "../shared/types.ts";
@@ -639,8 +640,13 @@ function renderScoreBreakdownPanel(): string {
       </div>
 
       <div class="score-breakdown__details">
-        <div>₡${breakdown.spentCoin} • ⚡${breakdown.spentStamina}</div>
-      </div>
+		<div>₡${breakdown.spentCoin} • ⚡${breakdown.spentStamina}</div>
+		${
+			getLocalCoinDebt() > 0
+				? `<div>💸 Nợ ${getLocalCoinDebt()}₡ (-${getLocalCoinDebt() * 10}VP)</div>`
+				: ""
+		}
+	  </div>
 
       ${timerHtml}
     </section>
@@ -657,6 +663,7 @@ function renderResourceOrbs(): string {
 		startingCoin: STARTING_COIN,
 		startingStamina: STARTING_STAMINA,
 	});
+	const debt = getLocalCoinDebt();
 
 	return `
     <div class="resource-orbs">
@@ -670,7 +677,7 @@ function renderResourceOrbs(): string {
       </div>
       <div class="orb orb--debt">
         <span class="orb__icon">D</span>
-        <span class="orb__value">0</span>
+        <span class="orb__value">${debt}</span>
       </div>
     </div>
   `;

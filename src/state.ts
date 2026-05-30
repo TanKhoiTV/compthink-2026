@@ -89,6 +89,7 @@ let showFocusedPopup = false;
 // ── Timer state ──────────────────────────────────────────────────────────────
 
 let remainingTurnSeconds = 15;
+let localCoinDebt = 0;
 
 // ── Export getters / setters ─────────────────────────────────────────────────
 
@@ -266,6 +267,14 @@ export function getSuppressNextClick(): boolean {
 
 export function setSuppressNextClick(v: boolean) {
 	suppressNextClick = v;
+}
+
+export function getLocalCoinDebt(): number {
+	return localCoinDebt;
+}
+
+export function setLocalCoinDebt(v: number) {
+	localCoinDebt = v;
 }
 
 export function getIsInitialDealInProgress(): boolean {

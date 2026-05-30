@@ -53,16 +53,22 @@ import {
 	setIsInitialDealInProgress,
 	getRemainingTurnSeconds,
 	setRemainingTurnSeconds,
+	getLocalCoinDebt,
+	setLocalCoinDebt,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
 import { saigonFoodCards } from "./shared/data/index.ts";
 import {
 	HAND_SIZE,
+	STARTING_COIN,
+	STARTING_STAMINA,
 	PHASE_DAYS,
 	DRAFT_PICK_SECONDS,
 	TURN_DURATION_SECONDS,
 } from "./shared/constants.ts";
+import { calculateBoardTotals } from "./shared/board.ts";
+import { getRemainingResources } from "./shared/resources.ts";
 import { calculateSimulationResult } from "./shared/scoring.ts";
 import type { GameSoundName } from "./audio/gameAudio.ts";
 import { ROWS } from "./arena/render.ts";
@@ -72,7 +78,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.11.0";
+const VERSION = "0.12.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -88,7 +94,8 @@ const BGM_VOLUME_KEY = "compthink.bgmVolume";
 
 let inGameBgm: HTMLAudioElement | null = null;
 let isMusicMuted = localStorage.getItem(BGM_MUTED_KEY) === "true";
-const musicVolume = Number(localStorage.getItem(BGM_VOLUME_KEY)) || DEFAULT_BGM_VOLUME;
+const musicVolume =
+	Number(localStorage.getItem(BGM_VOLUME_KEY)) || DEFAULT_BGM_VOLUME;
 
 function clampVolume(v: number): number {
 	return Math.max(0, Math.min(1, v));
@@ -279,6 +286,19 @@ function placeHandCardOnBoard(
 	if (handIndex === -1) return;
 
 	const card = hand[handIndex];
+
+	// Calculate resource debt before placing
+	const totals = calculateBoardTotals(getBoardSlots());
+	const remaining = getRemainingResources({
+		totals,
+		startingCoin: STARTING_COIN,
+		startingStamina: STARTING_STAMINA,
+	});
+	const coinDebt = Math.max(0, card.coin - remaining.coin);
+	if (coinDebt > 0) {
+		setLocalCoinDebt(getLocalCoinDebt() + coinDebt);
+	}
+
 	hand.splice(handIndex, 1);
 	setPlayerHand(hand);
 
@@ -518,6 +538,14 @@ function startTurnTimer() {
 
 function startNextDayOrPhase() {
 	stopTurnTimer();
+
+	// Apply coin debt penalty before advancing
+	const debt = getLocalCoinDebt();
+	if (debt > 0) {
+		setAccumulatedVP(getAccumulatedVP() - debt * 10);
+		setLocalCoinDebt(0);
+	}
+
 	// Reset simulation state
 	clearSimulationTimer();
 	setSimulationResult(null);
