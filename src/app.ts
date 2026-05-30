@@ -66,7 +66,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.7.0";
+const VERSION = "0.7.1";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -108,13 +108,39 @@ function setupInGameBgmDelegation() {
 
 setupInGameBgmDelegation();
 
-// Register service worker
+// Register service worker + auto-update on new deploy
 if ("serviceWorker" in navigator) {
 	window.addEventListener("load", () => {
 		navigator.serviceWorker
 			.register("./sw.js")
-			.then((reg) => console.log("SW registered:", reg.scope))
+			.then((reg) => {
+				console.log("SW registered:", reg.scope);
+
+				// If a new SW is already waiting, activate it immediately
+				if (reg.active && reg.waiting) {
+					reg.waiting.postMessage("SKIP_WAITING");
+				}
+
+				// Listen for new SW installations
+				reg.addEventListener("updatefound", () => {
+					const newWorker = reg.installing;
+					if (!newWorker) return;
+
+					newWorker.addEventListener("statechange", () => {
+						if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+							// New SW is ready — activate it
+							newWorker.postMessage("SKIP_WAITING");
+						}
+					});
+				});
+			})
 			.catch((err) => console.error("SW failed:", err));
+	});
+
+	// Reload page when a new SW takes over
+	navigator.serviceWorker.addEventListener("controllerchange", () => {
+		console.log("SW updated — reloading for latest version");
+		window.location.reload();
 	});
 }
 

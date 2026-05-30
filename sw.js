@@ -1,4 +1,4 @@
-const CACHE_NAME = "trekkopoly-v4";
+const CACHE_NAME = "trekkopoly-v5";
 
 // Danh sách các file cần lưu vào bộ nhớ đệm để chơi offline
 const ASSETS_TO_CACHE = [
@@ -25,11 +25,11 @@ self.addEventListener("install", (event) => {
 				console.log("SW: Đang nạp các file tĩnh vào bộ nhớ đệm...");
 				return cache.addAll(ASSETS_TO_CACHE);
 			})
-			.then(() => self.skipWaiting()), // Buộc SW mới kích hoạt ngay lập tức
+			.then(() => self.skipWaiting()),
 	);
 });
 
-// 2. Sự kiện Kích hoạt (Activate) - Dọn dẹp cache cũ khi nâng cấp version (v2, v3...)
+// 2. Sự kiện Kích hoạt (Activate) - Dọn dẹp cache cũ
 self.addEventListener("activate", (event) => {
 	event.waitUntil(
 		caches
@@ -48,47 +48,26 @@ self.addEventListener("activate", (event) => {
 	);
 });
 
-// 3. Chiến lược lai (Hybrid):
-//    - Build assets (JS/CSS): Stale-While-Revalidate — phục vụ ngay từ cache,
-//      đồng thời tải bản mới ở nền và cập nhật cache cho lần sau.
-//      Giúp game luôn chạy code mới nhất sau mỗi lần deploy mà không cần
-//      người dùng xoá cache hay hard refresh.
-//    - Static assets (ảnh, nhạc, video): Cache-First — không đổi thường xuyên.
-//    - index.html: Network-First — luôn lấy bản mới từ server.
-self.addEventListener("fetch", (event) => {
-	const url = new URL(event.request.url);
-	const isBuildAsset =
-		url.pathname.endsWith("/build/client.js") ||
-		url.pathname.endsWith("/build/client.css");
-	const isIndex =
-		url.pathname.endsWith("/") || url.pathname.endsWith("/index.html");
-
-	if (isBuildAsset) {
-		// Stale-While-Revalidate for JS/CSS
-		event.respondWith(
-			caches.open(CACHE_NAME).then((cache) => {
-				return cache.match(event.request).then((cached) => {
-					const fetchPromise = fetch(event.request)
-						.then((network) => {
-							cache.put(event.request, network.clone());
-							return network;
-						})
-						.catch(() => cached); // fallback to cache if offline
-					return cached || fetchPromise;
-				});
-			}),
-		);
-	} else if (isIndex) {
-		// Network-First for index.html
-		event.respondWith(
-			fetch(event.request).catch(() => caches.match(event.request)),
-		);
-	} else {
-		// Cache-First for everything else (images, audio, fonts, etc.)
-		event.respondWith(
-			caches
-				.match(event.request)
-				.then((cached) => cached || fetch(event.request)),
-		);
+// 4. Lắng nghe lệnh từ trang — SKIP_WAITING để SW mới active ngay
+self.addEventListener("message", (event) => {
+	if (event.data === "SKIP_WAITING") {
+		self.skipWaiting();
 	}
+});
+
+// 3. Chiến lược: Network-First cho mọi thứ.
+//    - Luôn fetch từ network trước. Cache là fallback offline.
+//    - Một lần refresh là nhận được bản mới nhất từ deploy.
+//    - Cache được cập nhật ở background khi fetch thành công.
+self.addEventListener("fetch", (event) => {
+	event.respondWith(
+		caches.open(CACHE_NAME).then((cache) => {
+			return fetch(event.request)
+				.then((network) => {
+					cache.put(event.request, network.clone());
+					return network;
+				})
+				.catch(() => cache.match(event.request));
+		}),
+	);
 });
