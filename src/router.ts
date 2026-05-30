@@ -6,6 +6,10 @@
 
 import type { AppScreen } from "./shared/client-types.ts";
 import { renderMainArena } from "./arena/render.ts";
+import {
+	getSuppressNextClick,
+	setSuppressNextClick,
+} from "./state.ts";
 
 // ── Screen state ────────────────────────────────────────────────────────────
 
@@ -132,12 +136,10 @@ document.addEventListener(
 		// Hand card click
 		const handCard = target.closest("[data-hand-card-id]");
 		if (handCard && !handCard.closest(".hand-card__close")) {
-			import("./state.ts").then((s) => {
-				if (s.getSuppressNextClick()) {
-					s.setSuppressNextClick(false);
-					return; // was a hold-to-focus, suppress selection
-				}
-			});
+			if (getSuppressNextClick()) {
+				setSuppressNextClick(false);
+				return; // was a hold-to-focus, suppress selection
+			}
 			const cardId = handCard.getAttribute("data-hand-card-id");
 			if (cardId) {
 				e.preventDefault();
