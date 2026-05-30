@@ -475,6 +475,7 @@ export function renderHandCard(
       data-hand-card-id="${card.id}"
       title="${card.name} — ${affordabilityTitle}"
       data-select-card="true"
+      onpointerdown="event.stopPropagation(); startHandPointerDrag(event, '${card.id}')"
     >
       ${
 				isSelected

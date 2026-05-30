@@ -63,6 +63,9 @@ import {
 	setSuppressNextClick,
 	getHoldTimerId,
 	setHoldTimerId,
+	getHandPointerDragState,
+	setHandPointerDragState,
+	setDraggedHandCardId,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
@@ -684,10 +687,193 @@ function startNextDayOrPhase() {
 
 // ── Expose global functions (called from inline onclick in render.ts) ───────
 
-/**
- * Hand card clicked during placement phase.
- * Toggles selection; also toggles focused popup on re-click.
- */
+// ── Drag-and-drop: pointer drag from hand to board ────────────────────────
+
+function clearBoardDragState() {
+	const dragState = getHandPointerDragState();
+	dragState?.clone?.remove();
+	setHandPointerDragState(null);
+	setDraggedHandCardId(null);
+	document
+		.querySelectorAll(".board-cell--drag-hover, .board-cell--drag-invalid")
+		.forEach((el) => {
+			el.classList.remove("board-cell--drag-hover");
+			el.classList.remove("board-cell--drag-invalid");
+		});
+	document
+		.querySelectorAll(".hand-card--drag-source-hidden")
+		.forEach((el) => el.classList.remove("hand-card--drag-source-hidden"));
+}
+
+function getDropCellFromPointer(event: PointerEvent): HTMLElement | null {
+	const el = document.elementFromPoint(event.clientX, event.clientY);
+	return el?.closest('[data-board-cell="true"]') as HTMLElement | null;
+}
+
+(globalThis as any).startHandPointerDrag = (
+	event: PointerEvent,
+	id: string,
+) => {
+	if (getGamePhase() !== "placement") return;
+	if (getIsInitialDealInProgress()) return;
+	if (event.button !== 0) return;
+
+	const source = event.currentTarget as HTMLElement | null;
+	if (!source) return;
+
+	const card = getPlayerHand().find((c) => c.id === id);
+	if (!card) return;
+
+	// Clear any existing drag state
+	clearBoardDragState();
+
+	setHandPointerDragState({
+		id,
+		source,
+		clone: null,
+		startX: event.clientX,
+		startY: event.clientY,
+		offsetX: 0,
+		offsetY: 0,
+		isDragging: false,
+	});
+
+	document.addEventListener("pointermove", handleHandPointerMove);
+	document.addEventListener("pointerup", handleHandPointerUp);
+	document.addEventListener("pointercancel", handleHandPointerCancel);
+};
+
+function beginHandCardVisualDrag(event: PointerEvent) {
+	const dragState = getHandPointerDragState();
+	if (!dragState || dragState.isDragging) return;
+
+	(globalThis as any).cancelHoldHandCard?.();
+
+	const { source } = dragState;
+	const rect = source.getBoundingClientRect();
+	const clone = source.cloneNode(true) as HTMLElement;
+
+	clone.classList.add("hand-card--drag-clone");
+	clone.classList.remove("hand-card--selected");
+	clone.style.width = `${rect.width}px`;
+	clone.style.height = `${rect.height}px`;
+	clone.style.left = `${rect.left}px`;
+	clone.style.top = `${rect.top}px`;
+	clone.style.transform = "none";
+	clone.style.pointerEvents = "none";
+	document.body.appendChild(clone);
+
+	source.classList.add("hand-card--drag-source-hidden");
+
+	dragState.clone = clone;
+	dragState.offsetX = event.clientX - rect.left;
+	dragState.offsetY = event.clientY - rect.top;
+	dragState.isDragging = true;
+
+	setDraggedHandCardId(dragState.id);
+	setSelectedHandCardId(dragState.id);
+
+	updateHandCardDragPosition(event);
+}
+
+function updateHandCardDragPosition(event: PointerEvent) {
+	const dragState = getHandPointerDragState();
+	if (!dragState?.clone) return;
+
+	dragState.clone.style.left = `${event.clientX - dragState.offsetX}px`;
+	dragState.clone.style.top = `${event.clientY - dragState.offsetY}px`;
+}
+
+function handleHandPointerMove(event: PointerEvent) {
+	const dragState = getHandPointerDragState();
+	if (!dragState) return;
+
+	const dx = event.clientX - dragState.startX;
+	const dy = event.clientY - dragState.startY;
+
+	if (!dragState.isDragging && Math.hypot(dx, dy) >= 8) {
+		beginHandCardVisualDrag(event);
+	}
+
+	if (!dragState.isDragging) return;
+
+	event.preventDefault();
+	updateHandCardDragPosition(event);
+
+	// Clear old hover states
+	document
+		.querySelectorAll(".board-cell--drag-hover, .board-cell--drag-invalid")
+		.forEach((el) => {
+			el.classList.remove("board-cell--drag-hover");
+			el.classList.remove("board-cell--drag-invalid");
+		});
+
+	const dropCell = getDropCellFromPointer(event);
+	if (!dropCell) return;
+
+	const rowIndex = Number(dropCell.dataset.rowIndex);
+	const colIndex = Number(dropCell.dataset.colIndex);
+	const currentDay = getCurrentDayIndex();
+
+	// Only highlight cells for the current day column
+	if (
+		Number.isInteger(rowIndex) &&
+		Number.isInteger(colIndex) &&
+		colIndex === currentDay &&
+		getBoardSlots()[rowIndex]?.[colIndex] === null
+	) {
+		dropCell.classList.add("board-cell--drag-hover");
+	} else {
+		dropCell.classList.add("board-cell--drag-invalid");
+	}
+}
+
+function handleHandPointerUp(event: PointerEvent) {
+	document.removeEventListener("pointermove", handleHandPointerMove);
+	document.removeEventListener("pointerup", handleHandPointerUp);
+	document.removeEventListener("pointercancel", handleHandPointerCancel);
+
+	const dragState = getHandPointerDragState();
+	if (!dragState) return;
+
+	const wasDragging = dragState.isDragging;
+
+	if (wasDragging) {
+		const dropCell = getDropCellFromPointer(event);
+		const rowIndex = Number(dropCell?.dataset.rowIndex);
+		const colIndex = Number(dropCell?.dataset.colIndex);
+		const currentDay = getCurrentDayIndex();
+
+		clearBoardDragState();
+
+		setSuppressNextClick(true);
+		setTimeout(() => setSuppressNextClick(false), 0);
+
+		if (
+			dropCell &&
+			Number.isInteger(rowIndex) &&
+			Number.isInteger(colIndex) &&
+			colIndex === currentDay &&
+			getBoardSlots()[rowIndex]?.[colIndex] === null
+		) {
+			placeHandCardOnBoard(dragState.id, rowIndex, colIndex);
+			return;
+		}
+
+		// Drop rejected — deselect
+		setSelectedHandCardId(null);
+		return;
+	}
+
+	clearBoardDragState();
+}
+
+function handleHandPointerCancel() {
+	document.removeEventListener("pointermove", handleHandPointerMove);
+	document.removeEventListener("pointerup", handleHandPointerUp);
+	document.removeEventListener("pointercancel", handleHandPointerCancel);
+	clearBoardDragState();
+}
 (globalThis as any).selectHandCard = (cardId: string) => {
 	const phase = getGamePhase();
 

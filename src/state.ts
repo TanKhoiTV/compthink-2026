@@ -92,6 +92,39 @@ let showFocusedPopup = false;
 let remainingTurnSeconds = 15;
 let localCoinDebt = 0;
 
+// ── Drag state ───────────────────────────────────────────────────────────────
+
+export type HandPointerDragState = {
+	id: string;
+
+	source: HTMLElement;
+	clone: HTMLElement | null;
+	startX: number;
+	startY: number;
+	offsetX: number;
+	offsetY: number;
+	isDragging: boolean;
+};
+
+let handPointerDragState: HandPointerDragState | null = null;
+let draggedHandCardId: string | null = null;
+
+export function getHandPointerDragState(): HandPointerDragState | null {
+	return handPointerDragState;
+}
+
+export function setHandPointerDragState(state: HandPointerDragState | null) {
+	handPointerDragState = state;
+}
+
+export function getDraggedHandCardId(): string | null {
+	return draggedHandCardId;
+}
+
+export function setDraggedHandCardId(id: string | null) {
+	draggedHandCardId = id;
+}
+
 // ── Export getters / setters ─────────────────────────────────────────────────
 
 export function getDeck(): TravelCard[] {
