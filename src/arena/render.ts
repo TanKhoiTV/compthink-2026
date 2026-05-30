@@ -32,7 +32,11 @@ import {
 import type { TravelCard } from "../shared/types.ts";
 import type { BoardSlots } from "../shared/board.ts";
 import { calculateBoardTotals } from "../shared/board.ts";
-import { getRemainingResources, getCardAffordability, getCardAffordabilityMessage } from "../shared/resources.ts";
+import {
+	getRemainingResources,
+	getCardAffordability,
+	getCardAffordabilityMessage,
+} from "../shared/resources.ts";
 import type { SimulationReplayStep } from "../shared/scoring.ts";
 import { STARTING_COIN, STARTING_STAMINA } from "../shared/constants.ts";
 
@@ -392,7 +396,9 @@ export function renderHandCard(
 		startingStamina: STARTING_STAMINA,
 	});
 	const affordability = getCardAffordability({ card, remaining });
-	const affordabilityClass = !affordability.canAfford ? "hand-card--unaffordable" : "";
+	const affordabilityClass = !affordability.canAfford
+		? "hand-card--unaffordable"
+		: "";
 	const affordabilityTitle = getCardAffordabilityMessage(affordability);
 
 	return `
