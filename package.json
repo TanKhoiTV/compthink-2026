@@ -6,17 +6,23 @@
   "scripts": {
     "build:css": "lessc css/style.less build/client.css",
     "build:js": "rollup -c",
-    "build": "npm run build:css && npm run build:js"
+    "build": "npm run build:css && npm run build:js",
+  "lint": "eslint src/",
+  "test": "vitest run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@rollup/plugin-typescript": "^12.3.0",
+    "eslint": "^10.4.1",
     "less": "^4.6.4",
     "rollup": "^4.60.4",
     "tslib": "^2.8.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0",
+    "vitest": "^4.1.7"
   }
 }
