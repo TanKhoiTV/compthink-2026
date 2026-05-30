@@ -48,6 +48,8 @@ import {
 	getSimulationTimerId,
 	setSimulationTimerId,
 	setIsInitialDealInProgress,
+	getRemainingTurnSeconds,
+	setRemainingTurnSeconds,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
@@ -56,6 +58,7 @@ import {
 	HAND_SIZE,
 	PHASE_DAYS,
 	DRAFT_PICK_SECONDS,
+	TURN_DURATION_SECONDS,
 } from "./shared/constants.ts";
 import { calculateSimulationResult } from "./shared/scoring.ts";
 import type { GameSoundName } from "./audio/gameAudio.ts";
@@ -66,7 +69,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.8.0";
+const VERSION = "0.9.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -215,6 +218,8 @@ function finishDailyDraft() {
 	setDraftPool([]);
 	setSelectedHandCardId(null);
 	playGameSound("returnDeck");
+	setRemainingTurnSeconds(TURN_DURATION_SECONDS);
+	startTurnTimer();
 	rerenderGameShell();
 }
 
@@ -255,6 +260,8 @@ function placeHandCardOnBoard(
  */
 function endCurrentDay() {
 	if (getGamePhase() !== "placement") return;
+
+	stopTurnTimer();
 
 	// Launch simulation instead of immediately advancing
 	setGamePhase("simulation");
@@ -437,7 +444,41 @@ function autoPickDraftCard() {
 	(globalThis as any).selectHandCard?.(picked.id);
 }
 
+// ── Placement turn timer ─────────────────────────────────────────────────────
+
+let placementTimerId: number | null = null;
+
+function stopTurnTimer() {
+	if (placementTimerId !== null) {
+		clearInterval(placementTimerId);
+		placementTimerId = null;
+	}
+}
+
+function startTurnTimer() {
+	stopTurnTimer();
+
+	if (getGamePhase() !== "placement") return;
+
+	setRemainingTurnSeconds(TURN_DURATION_SECONDS);
+
+	placementTimerId = window.setInterval(() => {
+		const secs = getRemainingTurnSeconds() - 1;
+		setRemainingTurnSeconds(secs);
+
+		if (secs <= 0) {
+			setRemainingTurnSeconds(0);
+			stopTurnTimer();
+			endCurrentDay();
+			return;
+		}
+
+		rerenderGameShell();
+	}, 1000);
+}
+
 function startNextDayOrPhase() {
+	stopTurnTimer();
 	// Reset simulation state
 	clearSimulationTimer();
 	setSimulationResult(null);

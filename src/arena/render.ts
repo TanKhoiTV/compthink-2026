@@ -532,8 +532,41 @@ function renderScoreBreakdownPanel(): string {
 	const totalScore = getAccumulatedVP() || breakdown.totalVP;
 	const usedSlots = placedCards.length;
 	const maxSlots = dayIndex * 5 + 5;
+	const phase = getGamePhase();
+	const timerSecs = getRemainingTurnSeconds();
 	const bonusClass =
 		breakdown.bonusVP > 0 ? "score-breakdown__item--bonus" : "";
+
+	function fmtTimer(s: number): string {
+		const safe = Math.max(0, s);
+		const m = Math.floor(safe / 60);
+		const sec = safe % 60;
+		return `${m}:${sec < 10 ? "0" : ""}${sec}`;
+	}
+
+	let timerHtml: string;
+	if (phase === "draft") {
+		const draftSecs = getDraftPickSecondsLeft();
+		const danger = draftSecs <= 3 ? "score-breakdown__timer--danger" : "";
+		timerHtml = `
+      <div class="score-breakdown__timer ${danger}">
+        <span>DRAFT</span>
+        <strong>${draftSecs}s</strong>
+      </div>`;
+	} else if (phase === "placement") {
+		const danger = timerSecs <= 10 ? "score-breakdown__timer--danger" : "";
+		timerHtml = `
+      <div class="score-breakdown__timer ${danger}">
+        <span>TIME</span>
+        <strong>${fmtTimer(timerSecs)}</strong>
+      </div>`;
+	} else {
+		timerHtml = `
+      <div class="score-breakdown__timer">
+        <span>NGÀY</span>
+        <strong>${dayIndex + 1}/5</strong>
+      </div>`;
+	}
 
 	return `
     <section class="score-breakdown">
@@ -561,10 +594,7 @@ function renderScoreBreakdownPanel(): string {
         <div>₡${breakdown.spentCoin} • ⚡${breakdown.spentStamina}</div>
       </div>
 
-      <div class="score-breakdown__timer">
-        <span>NGÀY</span>
-        <strong>${dayIndex + 1}/5</strong>
-      </div>
+      ${timerHtml}
     </section>
   `;
 }
