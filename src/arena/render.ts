@@ -225,15 +225,17 @@ function renderBoardCell(
 	const card = boardSlots[rowIndex]?.[colIndex] ?? null;
 	const isCurrentDayColumn = colIndex === currentDayIndex;
 	const selectedId = getSelectedHandCardId();
-	console.log("[render] isPlaceable check", {
-		phase: getGamePhase(),
-		selected: selectedId,
-		row: rowIndex,
-		col: colIndex,
-		dayIndex: currentDayIndex,
-		colMatchesDay: isCurrentDayColumn,
-		cellEmpty: !card,
-	});
+	if (getGamePhase() === "placement" && selectedId) {
+		console.log("[render] isPlaceable check", {
+			phase: getGamePhase(),
+			selected: selectedId,
+			row: rowIndex,
+			col: colIndex,
+			dayIndex: currentDayIndex,
+			colMatchesDay: isCurrentDayColumn,
+			cellEmpty: !card,
+		});
+	}
 	const isPlaceable =
 		!isDraft &&
 		!isSimulation &&

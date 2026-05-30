@@ -101,6 +101,7 @@ function startDailyDraft() {
  * into the placement hand. Return leftover pool cards to deck.
  */
 function finishDailyDraft() {
+	console.log("[app] finishDailyDraft → placement", { handSize: getPlayerHand().length });
 	// Snapshot the hand into a fresh array to break shared reference
 	setPlayerHand([...getPlayerHand()]);
 	setGamePhase("placement");
