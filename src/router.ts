@@ -57,12 +57,29 @@ export function rerenderGameShell() {
 // ── Card click delegation (backup for inline handlers, hover) ───────────────
 
 function reattachCardClickDelegation() {
-	// Hand card hover (visual feedback, no rerender)
+	// Hand card click and hover (add listeners directly to element)
 	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
 		const cardId = el.getAttribute("data-hand-card-id");
 		if (!cardId) return;
 		el.addEventListener("pointerenter", () => handleHandCardEnter(cardId));
 		el.addEventListener("pointerleave", () => handleHandCardLeave());
+		// Direct click handler as primary (not relying on document delegation)
+		el.addEventListener("click", (e) => {
+			e.stopPropagation();
+			console.log("[router] direct card click", { cardId });
+			(globalThis as any).selectHandCard?.(cardId);
+		});
+	});
+
+	// Board cell click (add listeners directly to each cell)
+	document.querySelectorAll("[data-board-cell]").forEach((el) => {
+		el.addEventListener("click", (e) => {
+			const row = Number(el.getAttribute("data-row-index"));
+			const col = Number(el.getAttribute("data-col-index"));
+			console.log("[router] direct board click", { row, col });
+			e.stopPropagation();
+			(globalThis as any).handleBoardCellClick?.(row, col);
+		});
 	});
 
 	// Focused card close
@@ -86,11 +103,15 @@ console.log("[router] event delegation installed");
 
 document.addEventListener("click", (e) => {
 	const target = e.target as HTMLElement;
+	console.log("[router] click hit doc", {
+		tag: target.tagName,
+		cls: target.className?.slice(0, 60),
+		closestHIC: !!target.closest("[data-hand-card-id]"),
+		closestBoard: !!target.closest("[data-board-cell]"),
+	});
 
 	const boardCell = target.closest("[data-board-cell]");
 	if (boardCell) {
-		console.log("[router] board cell clicked", { row: boardCell.getAttribute("data-row-index"), col: boardCell.getAttribute("data-col-index") });
-		e.stopPropagation();
 		const row = Number(boardCell.getAttribute("data-row-index"));
 		const col = Number(boardCell.getAttribute("data-col-index"));
 		(globalThis as any).handleBoardCellClick?.(row, col);
@@ -99,8 +120,6 @@ document.addEventListener("click", (e) => {
 
 	const handCard = target.closest("[data-hand-card-id]");
 	if (handCard && !target.closest(".hand-card__close")) {
-		console.log("[router] hand/draft card clicked", { cardId: handCard.getAttribute("data-hand-card-id") });
-		e.stopPropagation();
 		const cardId = handCard.getAttribute("data-hand-card-id");
 		if (cardId) {
 			(globalThis as any).selectHandCard?.(cardId);

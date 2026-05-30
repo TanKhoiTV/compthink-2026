@@ -183,7 +183,8 @@ function endCurrentDay() {
 
 	if (phase === "draft") {
 		// ── Draft phase: pick the card for this round ──
-		const pool = getDraftPool(); console.log("[app] draft pool size:", pool.length);
+		const pool = getDraftPool();
+		console.log("[app] draft pool size:", pool.length);
 		const picked = pool.find((c) => c.id === cardId);
 		if (!picked) return;
 
