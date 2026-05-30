@@ -191,6 +191,7 @@ export function renderMainArena(): string {
           </div>
         </div>
         ${renderScoreBreakdownPanel()}
+        ${renderMusicToggle()}
       </div>
 
       ${renderResourceOrbs()}
@@ -512,6 +513,23 @@ export function renderFocusedCard(card: TravelCard): string {
 }
 
 // ── Score panel ─────────────────────────────────────────────────────────────
+
+function renderMusicToggle(): string {
+	const state = (globalThis as any).getMusicState?.() ?? { muted: false };
+	const icon = state.muted ? "🔇" : "🔊";
+	const mutedClass = state.muted ? "is-muted" : "";
+
+	return `
+    <button
+      class="music-toggle-btn ${mutedClass}"
+      onclick="event.stopPropagation(); window.toggleMusicMute()"
+      title="Bật/tắt nhạc nền"
+      type="button"
+    >
+      <span class="music-toggle-btn__icon">${icon}</span>
+    </button>
+  `;
+}
 
 function renderDeckCardStack(): string {
 	const deck = getDeck();

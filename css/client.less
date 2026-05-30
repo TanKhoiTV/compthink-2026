@@ -1867,6 +1867,40 @@ body {
   display: none !important;
 }
 
+/* Music toggle floating button */
+.music-toggle-btn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  margin-left: 8px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(161, 125, 83, 0.22);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
+  box-shadow: 0 4px 10px rgba(86, 61, 34, 0.06);
+}
+
+.music-toggle-btn:hover {
+  background: rgba(255, 248, 235, 0.95);
+  border-color: rgba(161, 125, 83, 0.5);
+}
+
+.music-toggle-btn.is-muted {
+  opacity: 0.55;
+  border-color: rgba(200, 80, 80, 0.3);
+}
+
+.music-toggle-btn.is-muted .music-toggle-btn__icon {
+  filter: grayscale(1);
+}
+
 .arena__top,
 .arena__top--with-score {
   position: relative;

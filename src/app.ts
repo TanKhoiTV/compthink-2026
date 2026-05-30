@@ -72,26 +72,35 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.10.0";
+const VERSION = "0.11.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
 // Initialise audio
 setupGameAudioDelegation();
 
-// ── BGM (background music) ───────────────────────────────────────────────────
+// ── BGM (background music) with volume/mute toggle ──────────────────────────
 
 const IN_GAME_BGM_SRC = "assets/audio/music/in-game-background.mp3";
 const DEFAULT_BGM_VOLUME = 0.5;
+const BGM_MUTED_KEY = "compthink.bgmMuted";
+const BGM_VOLUME_KEY = "compthink.bgmVolume";
 
 let inGameBgm: HTMLAudioElement | null = null;
+let isMusicMuted = localStorage.getItem(BGM_MUTED_KEY) === "true";
+const musicVolume = Number(localStorage.getItem(BGM_VOLUME_KEY)) || DEFAULT_BGM_VOLUME;
+
+function clampVolume(v: number): number {
+	return Math.max(0, Math.min(1, v));
+}
 
 function getInGameBgm(): HTMLAudioElement {
 	if (!inGameBgm) {
 		const audio = new Audio(IN_GAME_BGM_SRC);
 		audio.loop = true;
 		audio.preload = "auto";
-		audio.volume = DEFAULT_BGM_VOLUME;
+		audio.volume = clampVolume(musicVolume);
+		audio.muted = isMusicMuted;
 		inGameBgm = audio;
 	}
 	return inGameBgm;
@@ -99,6 +108,14 @@ function getInGameBgm(): HTMLAudioElement {
 
 function syncInGameBgm() {
 	const audio = getInGameBgm();
+	audio.volume = clampVolume(musicVolume);
+	audio.muted = isMusicMuted;
+
+	if (isMusicMuted || musicVolume <= 0) {
+		audio.pause();
+		return;
+	}
+
 	if (audio.paused) {
 		audio.play().catch(() => {
 			/* Browser blocks autoplay — will retry on next pointerdown */
@@ -113,6 +130,25 @@ function setupInGameBgmDelegation() {
 }
 
 setupInGameBgmDelegation();
+
+// Expose globally for inline click handlers
+(globalThis as any).toggleMusicMute = () => {
+	isMusicMuted = !isMusicMuted;
+	localStorage.setItem(BGM_MUTED_KEY, String(isMusicMuted));
+	syncInGameBgm();
+	// Update the toggle button icon
+	const btn = document.querySelector(".music-toggle-btn");
+	if (btn) {
+		const icon = btn.querySelector(".music-toggle-btn__icon");
+		if (icon) icon.textContent = isMusicMuted ? "🔇" : "🔊";
+		btn.classList.toggle("is-muted", isMusicMuted);
+	}
+};
+
+(globalThis as any).getMusicState = () => ({
+	muted: isMusicMuted,
+	volume: clampVolume(musicVolume),
+});
 
 // Register service worker + auto-update on new deploy
 if ("serviceWorker" in navigator) {
