@@ -28,6 +28,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,6 +53,7 @@ jobs:
           # Build output
           cp build/client.js _site/build/
           cp build/client.css _site/build/
+          cp build/client.js.map _site/build/ 2>/dev/null || true
           # Assets (strip public/ prefix — SW expects /assets/...)
           cp -r public/assets/* _site/assets/
 
