@@ -200,7 +200,9 @@ function runSystemSimulation() {
 			const b = getBoardSlots();
 			return (b as (TravelCard | null)[][])
 				.map((row: (TravelCard | null)[]) => row[dayIndex])
-				.filter((c: TravelCard | null): c is NonNullable<typeof c> => c !== null);
+				.filter(
+					(c: TravelCard | null): c is NonNullable<typeof c> => c !== null,
+				);
 		},
 	});
 

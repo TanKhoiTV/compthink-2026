@@ -31,6 +31,10 @@ import {
 } from "../state.ts";
 import type { TravelCard } from "../shared/types.ts";
 import type { BoardSlots } from "../shared/board.ts";
+import { calculateBoardTotals } from "../shared/board.ts";
+import { getRemainingResources, getCardAffordability, getCardAffordabilityMessage } from "../shared/resources.ts";
+import type { SimulationReplayStep } from "../shared/scoring.ts";
+import { STARTING_COIN, STARTING_STAMINA } from "../shared/constants.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -380,11 +384,22 @@ export function renderHandCard(
 	const titleClass = getHandTitleClass(shortName);
 	const cityClass = getHandCityClass(shortCity);
 
+	// Resource affordability
+	const boardTotals = calculateBoardTotals(getBoardSlots());
+	const remaining = getRemainingResources({
+		totals: boardTotals,
+		startingCoin: STARTING_COIN,
+		startingStamina: STARTING_STAMINA,
+	});
+	const affordability = getCardAffordability({ card, remaining });
+	const affordabilityClass = !affordability.canAfford ? "hand-card--unaffordable" : "";
+	const affordabilityTitle = getCardAffordabilityMessage(affordability);
+
 	return `
     <article
-      class="hand-card ${rarityClass} ${fanClass} ${isSelected ? "hand-card--selected" : ""}"
+      class="hand-card ${rarityClass} ${fanClass} ${isSelected ? "hand-card--selected" : ""} ${affordabilityClass}"
       data-hand-card-id="${card.id}"
-      title="${card.name}"
+      title="${card.name} — ${affordabilityTitle}"
       data-select-card="true"
     >
       ${
@@ -503,19 +518,27 @@ function renderScorePanel(): string {
 // ── Resource orbs ───────────────────────────────────────────────────────────
 
 function renderResourceOrbs(): string {
+	const board = getBoardSlots();
+	const totals = calculateBoardTotals(board);
+	const remaining = getRemainingResources({
+		totals,
+		startingCoin: STARTING_COIN,
+		startingStamina: STARTING_STAMINA,
+	});
+
 	return `
     <div class="resource-orbs">
       <div class="orb orb--coin">
         <span class="orb__icon">C</span>
-        <span class="orb__value">--</span>
+        <span class="orb__value">${remaining.coin}</span>
       </div>
       <div class="orb orb--stamina">
         <span class="orb__icon">S</span>
-        <span class="orb__value">--</span>
+        <span class="orb__value">${remaining.stamina}</span>
       </div>
       <div class="orb orb--debt">
         <span class="orb__icon">D</span>
-        <span class="orb__value">--</span>
+        <span class="orb__value">0</span>
       </div>
     </div>
   `;
@@ -615,9 +638,9 @@ function renderSimulationResultPanel(): string {
 		partialVP += result.replaySteps[i].vpDelta;
 	}
 
-	const stepsHtml = result.replaySteps
+	const stepsHtml = (result.replaySteps as SimulationReplayStep[])
 		.slice(0, Math.max(replayIndex, 1))
-		.map((step, i) => {
+		.map((step: SimulationReplayStep, i: number) => {
 			const isActive = i === replayIndex - 1;
 			const isDone = i < replayIndex - 1;
 			return `

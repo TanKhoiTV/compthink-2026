@@ -19,6 +19,26 @@ export function createEmptyBoardSlots(): BoardSlots {
   return rows.map(() => days.map(() => null));
 }
 
+export function calculateBoardTotals(boardSlots: BoardSlots): BoardTotals {
+  let vp = 0;
+  let coin = 0;
+  let stamina = 0;
+  let usedSlots = 0;
+
+  for (const row of boardSlots) {
+    for (const card of row) {
+      if (card !== null) {
+        vp += card.vp ?? 0;
+        coin += card.coin ?? 0;
+        stamina += card.stamina ?? 0;
+        usedSlots += 1;
+      }
+    }
+  }
+
+  return { vp, coin, stamina, usedSlots };
+}
+
 export function getPlacedCards(boardSlots: BoardSlots): TravelCard[] {
   const placedCards: TravelCard[] = [];
 
