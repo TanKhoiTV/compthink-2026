@@ -604,9 +604,10 @@ function renderSimulationResultPanel(): string {
 	const isComplete = getIsReplayComplete();
 
 	// Current step being shown
-	const currentStep = replayIndex > 0 && replayIndex <= totalSteps
-		? result.replaySteps[replayIndex - 1]
-		: null;
+	const currentStep =
+		replayIndex > 0 && replayIndex <= totalSteps
+			? result.replaySteps[replayIndex - 1]
+			: null;
 
 	// Partial VP from steps processed so far
 	let partialVP = 0;
@@ -614,10 +615,12 @@ function renderSimulationResultPanel(): string {
 		partialVP += result.replaySteps[i].vpDelta;
 	}
 
-	const stepsHtml = result.replaySteps.slice(0, Math.max(replayIndex, 1)).map((step, i) => {
-		const isActive = i === replayIndex - 1;
-		const isDone = i < replayIndex - 1;
-		return `
+	const stepsHtml = result.replaySteps
+		.slice(0, Math.max(replayIndex, 1))
+		.map((step, i) => {
+			const isActive = i === replayIndex - 1;
+			const isDone = i < replayIndex - 1;
+			return `
       <div class="score-ticket ${isActive ? "score-ticket--active" : ""} ${isDone ? "score-ticket--done" : ""} ${step.isBadEvent ? "score-ticket--bad" : ""} ${step.isBoardToken ? "score-ticket--token" : ""}">
         <div class="score-ticket__time">${step.timeLabel}</div>
         <div class="score-ticket__vp ${step.vpDelta > 0 ? "score-ticket__vp--pos" : step.vpDelta < 0 ? "score-ticket__vp--neg" : ""}">${formatSignedVP(step.vpDelta)}</div>
@@ -627,7 +630,8 @@ function renderSimulationResultPanel(): string {
         ${step.eventText ? `<div class="score-ticket__event">${step.eventText}</div>` : ""}
       </div>
     `;
-	}).join("");
+		})
+		.join("");
 
 	return `
     <section class="ticket-scan-overlay" onclick="event.stopPropagation()">

@@ -39,7 +39,6 @@ import {
 	setSimulationResult,
 	getSimulationReplayIndex,
 	setSimulationReplayIndex,
-	getIsReplayComplete,
 	setIsReplayComplete,
 	getSimulationTimerId,
 	setSimulationTimerId,
@@ -55,8 +54,9 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
+const VERSION = "0.2.0-scoring-wired";
 const gameName = "Trekkopoly";
-console.log(`${gameName} running!`);
+console.log(`${gameName} v${VERSION} running!`);
 
 // Initialise audio
 setupGameAudioDelegation();
@@ -184,16 +184,22 @@ function runSystemSimulation() {
 		rows: ROWS,
 		getBoardDisplayName: (card) => card.name,
 		getCardTagKeys: (card) => {
-			if (card.tags && card.tags.length > 0) return card.tags.map((t) => t.toUpperCase());
+			if (card.tags && card.tags.length > 0)
+				return card.tags.map((t) => t.toUpperCase());
 			return [card.tag.toUpperCase()];
 		},
-		countCardsWithTag: (cards, tag) => cards.filter((c) => {
-			const keys = c.tags?.length ? c.tags.map((t) => t.toUpperCase()) : [c.tag.toUpperCase()];
-			return keys.includes(tag);
-		}).length,
+		countCardsWithTag: (cards, tag) =>
+			cards.filter((c) => {
+				const keys = c.tags?.length
+					? c.tags.map((t) => t.toUpperCase())
+					: [c.tag.toUpperCase()];
+				return keys.includes(tag);
+			}).length,
 		getCurrentDayPlacedCards: () => {
 			const b = getBoardSlots();
-			return b.map((row) => row[dayIndex]).filter((c): c is NonNullable<typeof c> => c !== null);
+			return b
+				.map((row) => row[dayIndex])
+				.filter((c): c is NonNullable<typeof c> => c !== null);
 		},
 	});
 
