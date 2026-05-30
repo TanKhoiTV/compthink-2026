@@ -86,9 +86,7 @@ const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 const VERSION = "0.14.0";
 const BUILD_TIME = "__BUILD_TIME_PLACEHOLDER__";
 const gameName = "Trekkopoly";
-console.log(
-	`${gameName} v${VERSION} (build ${BUILD_TIME}) running!`,
-);
+console.log(`${gameName} v${VERSION} (build ${BUILD_TIME}) running!`);
 
 // Initialise audio
 setupGameAudioDelegation();
@@ -319,6 +317,20 @@ function placeHandCardOnBoard(
 	setFocusedBoardCard(null);
 	playGameSound("cardPlace");
 	rerenderGameShell();
+
+	// Flash animation on the placed cell
+	requestAnimationFrame(() => {
+		const cell = document.querySelector(
+			`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`,
+		);
+		if (cell) {
+			cell.classList.add("board-cell--just-placed");
+			setTimeout(
+				() => cell.classList.remove("board-cell--just-placed"),
+				500,
+			);
+		}
+	});
 }
 
 /**
