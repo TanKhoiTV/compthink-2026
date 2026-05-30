@@ -30,6 +30,7 @@ import {
 	getSimulationReplayIndex,
 	getIsReplayComplete,
 	getIsInitialDealInProgress,
+	getIsPassingDraftCards,
 	getDeck,
 	getLocalCoinDebt,
 	currentPlayerId,
@@ -355,6 +356,8 @@ function renderPlayerHandSection(): string {
 		const dangerClass = secondsLeft <= 3 ? "player-hand__meta--danger" : "";
 		const isDealing = getIsInitialDealInProgress();
 		const dealingClass = isDealing ? "player-hand--dealing is-dealing" : "";
+		const isPassing = getIsPassingDraftCards();
+		const passingClass = isPassing ? "is-passing" : "";
 
 		return `
       <section class="player-hand player-hand--draft ${dealingClass}">
@@ -366,7 +369,7 @@ function renderPlayerHandSection(): string {
           <div class="player-hand__meta ${dangerClass}">Còn ${secondsLeft}s • bấm 1 lá để chọn</div>
         </div>
         ${renderDraftHandTopMeta()}
-        <div class="player-hand__cards">
+        <div class="player-hand__cards ${passingClass}">
           ${pool
 						.map(
 							(card, index) => `

@@ -53,6 +53,7 @@ import {
 	getSimulationTimerId,
 	setSimulationTimerId,
 	setIsInitialDealInProgress,
+	setIsPassingDraftCards,
 	getRemainingTurnSeconds,
 	setRemainingTurnSeconds,
 	getLocalCoinDebt,
@@ -325,10 +326,7 @@ function placeHandCardOnBoard(
 		);
 		if (cell) {
 			cell.classList.add("board-cell--just-placed");
-			setTimeout(
-				() => cell.classList.remove("board-cell--just-placed"),
-				500,
-			);
+			setTimeout(() => cell.classList.remove("board-cell--just-placed"), 500);
 		}
 	});
 }
@@ -598,7 +596,7 @@ function startNextDayOrPhase() {
 	const phase = getGamePhase();
 
 	if (phase === "draft") {
-		// ── Draft phase: pick the card for this round ──
+		// ── Draft phase: pick the card, then animate remaining cards away ──
 		const pool = getDraftPool();
 		const picked = pool.find((c) => c.id === cardId);
 		if (!picked) return;
@@ -609,28 +607,43 @@ function startNextDayOrPhase() {
 		currentHand.push(picked);
 		setPlayerHand(currentHand);
 
-		// Return remaining pool cards to deck
 		const remaining = pool.filter((c) => c.id !== cardId);
-		const deck = getDeck();
-		setDeck(shuffleCards([...deck, ...remaining]));
-
 		const round = getDraftRound();
+
 		if (round >= DRAFT_PICK_TARGET) {
+			// Draft done — return remaining to deck, no animation needed
+			const deck = getDeck();
+			setDeck(shuffleCards([...deck, ...remaining]));
 			finishDailyDraft();
 		} else {
-			// Pool shrinks each round simulating a pack being passed around
-			// Round 1: 7 cards, Round 2: 6, ..., Round 5: 3
-			const nextPoolSize = DRAFT_POOL_SIZE - round;
-			const newDeck = getDeck();
-			const shuffled = shuffleCards(newDeck);
-			setDraftPool(shuffled.slice(0, nextPoolSize));
-			setDeck(shuffled.slice(nextPoolSize));
-			setDraftRound(round + 1);
+			// Stop draft timer, show pass animation on remaining cards
+			stopDraftTimer();
+			setIsPassingDraftCards(true);
+			playGameSound("returnDeck");
 			rerenderGameShell();
-			// Timer restart is done inside deal animation callback
+
+			// After animation completes, set up next round
 			window.setTimeout(() => {
-				startDraftTimer();
-			}, 1320);
+				// Return remaining cards to deck
+				const deck = getDeck();
+				setDeck(shuffleCards([...deck, ...remaining]));
+
+				// Pool shrinks each round simulating a pack being passed around
+				// Round 1: 7 cards, Round 2: 6, ..., Round 5: 3
+				const nextPoolSize = DRAFT_POOL_SIZE - round;
+				const newDeck = getDeck();
+				const shuffled = shuffleCards(newDeck);
+				setDraftPool(shuffled.slice(0, nextPoolSize));
+				setDeck(shuffled.slice(nextPoolSize));
+				setDraftRound(round + 1);
+				setIsPassingDraftCards(false);
+				rerenderGameShell();
+
+				// Timer restart is done inside deal animation callback
+				window.setTimeout(() => {
+					startDraftTimer();
+				}, 1320);
+			}, 940);
 		}
 		return;
 	}

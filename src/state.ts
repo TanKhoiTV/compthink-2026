@@ -71,6 +71,7 @@ let accumulatedVP = 0;
 // ── UI interaction state ─────────────────────────────────────────────────────
 
 let isInitialDealInProgress = false;
+let isPassingDraftCards = false;
 let selectedHandCardId: string | null = null;
 let focusedHandCardId: string | null = null;
 let focusedBoardCard: TravelCard | null = null;
@@ -293,6 +294,14 @@ export function getIsInitialDealInProgress(): boolean {
 
 export function setIsInitialDealInProgress(v: boolean) {
 	isInitialDealInProgress = v;
+}
+
+export function getIsPassingDraftCards(): boolean {
+	return isPassingDraftCards;
+}
+
+export function setIsPassingDraftCards(v: boolean) {
+	isPassingDraftCards = v;
 }
 
 export function getPlayerBoards(): Record<PlayerId, BoardSlots> {
