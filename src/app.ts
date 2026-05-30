@@ -370,6 +370,9 @@ function placeHandCardOnBoard(
 	if (getGamePhase() !== "placement") return;
 	if (colIndex !== getCurrentDayIndex()) return;
 
+	const board = getBoardSlots();
+	if (board[rowIndex]?.[colIndex] !== null) return;
+
 	const hand = getPlayerHand();
 	const handIndex = hand.findIndex((c) => c.id === cardId);
 	if (handIndex === -1) return;
@@ -393,7 +396,6 @@ function placeHandCardOnBoard(
 	hand.splice(handIndex, 1);
 	setPlayerHand(hand);
 
-	const board = getBoardSlots();
 	board[rowIndex][colIndex] = card;
 	setCurrentPlayerBoard(board);
 
