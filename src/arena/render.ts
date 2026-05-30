@@ -23,7 +23,7 @@ import {
 	getAccumulatedVP,
 	getRemainingTurnSeconds,
 	getDraftPool,
-	getDraftRound,
+	getDraftPickSecondsLeft,
 	getSimulationResult,
 	getSimulationReplayIndex,
 	getIsReplayComplete,
@@ -313,8 +313,8 @@ function renderPlayerHandSection(): string {
 	if (isDraft) {
 		// ── Draft phase: render draft pool inside player-hand--draft ──
 		const pool = getDraftPool();
-		const round = getDraftRound();
-		const alreadyPicked = hand.length;
+		const secondsLeft = getDraftPickSecondsLeft();
+		const dangerClass = secondsLeft <= 3 ? "player-hand__meta--danger" : "";
 
 		return `
       <section class="player-hand player-hand--draft">
@@ -323,7 +323,7 @@ function renderPlayerHandSection(): string {
             <span class="hand-badge">DRAFT</span>
             <h2>Chọn thẻ ngày ${DAYS[currentDayIndex]}</h2>
           </div>
-          <div class="player-hand__meta">Vòng ${round}/5 · Đã chọn: ${alreadyPicked}/5</div>
+          <div class="player-hand__meta ${dangerClass}">Còn ${secondsLeft}s • bấm 1 lá để chọn</div>
         </div>
         <div class="player-hand__cards">
           ${pool

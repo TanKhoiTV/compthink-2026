@@ -20,6 +20,10 @@ import {
 	setDraftPool,
 	setDraftRound,
 	setDraftSelectedCardId,
+	setDraftPickSecondsLeft,
+	getDraftPickSecondsLeft,
+	setDraftTimerId,
+	getDraftTimerId,
 	setSelectedHandCardId,
 	setFocusedHandCardId,
 	setFocusedBoardCard,
@@ -47,7 +51,7 @@ import {
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
 import { saigonFoodCards } from "./shared/data/index.ts";
-import { HAND_SIZE, PHASE_DAYS } from "./shared/constants.ts";
+import { HAND_SIZE, PHASE_DAYS, DRAFT_PICK_SECONDS } from "./shared/constants.ts";
 import { calculateSimulationResult } from "./shared/scoring.ts";
 import type { GameSoundName } from "./audio/gameAudio.ts";
 import { ROWS } from "./arena/render.ts";
@@ -57,7 +61,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -108,6 +112,7 @@ function startDailyDraft() {
 	setGamePhase("draft");
 	playGameSound("deal");
 	rerenderGameShell();
+	startDraftTimer();
 }
 
 /**
@@ -115,6 +120,7 @@ function startDailyDraft() {
  * into the placement hand. Return leftover pool cards to deck.
  */
 function finishDailyDraft() {
+	stopDraftTimer();
 	// Snapshot the hand into a fresh array to break shared reference
 	setPlayerHand([...getPlayerHand()]);
 	setGamePhase("placement");
@@ -299,6 +305,50 @@ function applyDailyScoreOnce() {
 	setAccumulatedVP(getAccumulatedVP() + result.finalVP);
 }
 
+// ── Draft timer ───────────────────────────────────────────────────────────
+
+function startDraftTimer() {
+	stopDraftTimer();
+
+	if (getGamePhase() !== "draft") return;
+
+	setDraftPickSecondsLeft(DRAFT_PICK_SECONDS);
+
+	const timerId = window.setInterval(() => {
+		const seconds = getDraftPickSecondsLeft() - 1;
+		setDraftPickSecondsLeft(seconds);
+
+		if (seconds <= 0) {
+			setDraftPickSecondsLeft(0);
+			autoPickDraftCard();
+			return;
+		}
+
+		rerenderGameShell();
+	}, 1000);
+
+	setDraftTimerId(timerId);
+}
+
+function stopDraftTimer() {
+	const id = getDraftTimerId();
+	if (id !== null) {
+		clearInterval(id);
+		setDraftTimerId(null);
+	}
+}
+
+function autoPickDraftCard() {
+	stopDraftTimer();
+
+	const pool = getDraftPool();
+	if (pool.length === 0) return;
+
+	// Pick the first unpicked card in the pool
+	const picked = pool[0];
+	(globalThis as any).selectHandCard?.(picked.id);
+}
+
 function startNextDayOrPhase() {
 	// Reset simulation state
 	clearSimulationTimer();
@@ -361,6 +411,7 @@ function startNextDayOrPhase() {
 			setDeck(shuffled.slice(nextPoolSize));
 			setDraftRound(round + 1);
 			rerenderGameShell();
+			startDraftTimer();
 		}
 		return;
 	}

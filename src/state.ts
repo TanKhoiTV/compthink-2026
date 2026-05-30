@@ -27,9 +27,8 @@ let playerHand: TravelCard[] = [];
 
 let draftPool: TravelCard[] = []; // 7 cards shown for current pick round
 let draftSelectedCardId: string | null = null;
-const draftPickSecondsLeft = 10;
-const draftTimerId: number | null = null;
-const isPassingDraftCards = false;
+let draftPickSecondsLeft = 10;
+let draftTimerId: number | null = null;
 let draftRound = 1;
 
 // ── Board state (offline mode) ───────────────────────────────────────────────
@@ -72,7 +71,6 @@ let accumulatedVP = 0;
 // ── UI interaction state ─────────────────────────────────────────────────────
 
 let selectedHandCardId: string | null = null;
-const draggedHandCardId: string | null = null;
 let focusedHandCardId: string | null = null;
 let focusedBoardCard: TravelCard | null = null;
 let suppressNextClick = false;
@@ -90,8 +88,6 @@ let showFocusedPopup = false;
 // ── Timer state ──────────────────────────────────────────────────────────────
 
 let remainingTurnSeconds = 15;
-const turnTimerId: number | null = null;
-const dayAdvanceTimerId: number | null = null;
 
 // ── Export getters / setters ─────────────────────────────────────────────────
 
@@ -197,6 +193,22 @@ export function getDraftRound(): number {
 
 export function setDraftRound(r: number) {
 	draftRound = r;
+}
+
+export function getDraftPickSecondsLeft(): number {
+	return draftPickSecondsLeft;
+}
+
+export function setDraftPickSecondsLeft(s: number) {
+	draftPickSecondsLeft = s;
+}
+
+export function getDraftTimerId(): number | null {
+	return draftTimerId;
+}
+
+export function setDraftTimerId(id: number | null) {
+	draftTimerId = id;
 }
 
 export function getSelectedHandCardId(): string | null {
