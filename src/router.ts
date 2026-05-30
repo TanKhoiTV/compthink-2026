@@ -6,10 +6,7 @@
 
 import type { AppScreen } from "./shared/client-types.ts";
 import { renderMainArena } from "./arena/render.ts";
-import {
-	getSuppressNextClick,
-	setSuppressNextClick,
-} from "./state.ts";
+import { getSuppressNextClick, setSuppressNextClick } from "./state.ts";
 
 // ── Screen state ────────────────────────────────────────────────────────────
 
@@ -98,6 +95,14 @@ function reattachCardClickDelegation() {
 		el.addEventListener("pointerup", () => handleHandCardUp());
 	});
 
+	// Draft card hold-to-focus (same mechanism, different selector)
+	document.querySelectorAll("[data-draft-card-id]").forEach((el) => {
+		const cardId = el.getAttribute("data-draft-card-id");
+		if (!cardId) return;
+		el.addEventListener("pointerdown", () => handleHandCardDown(cardId));
+		el.addEventListener("pointerup", () => handleHandCardUp());
+	});
+
 	// Focused card close
 	const closeBtn = document.getElementById("focused-card-close");
 	if (closeBtn) {
@@ -124,6 +129,10 @@ document.addEventListener(
 		// Draft card click (via [data-draft-card-id] wrapper)
 		const draftCard = target.closest("[data-draft-card-id]");
 		if (draftCard) {
+			if (getSuppressNextClick()) {
+				setSuppressNextClick(false);
+				return;
+			}
 			const cardId = draftCard.getAttribute("data-draft-card-id");
 			if (cardId) {
 				e.preventDefault();
