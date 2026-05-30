@@ -53,7 +53,9 @@ import {
 	getSimulationTimerId,
 	setSimulationTimerId,
 	setIsInitialDealInProgress,
+	getIsInitialDealInProgress,
 	setIsPassingDraftCards,
+	getIsPassingDraftCards,
 	getRemainingTurnSeconds,
 	setRemainingTurnSeconds,
 	getLocalCoinDebt,
@@ -690,6 +692,11 @@ function startNextDayOrPhase() {
 	const phase = getGamePhase();
 
 	if (phase === "draft") {
+		// Guard: prevent clicks during animation transitions
+		if (getIsInitialDealInProgress() || getIsPassingDraftCards()) {
+			return;
+		}
+
 		// ── Draft phase: pick the card, then animate remaining cards away ──
 		const pool = getDraftPool();
 		const picked = pool.find((c) => c.id === cardId);

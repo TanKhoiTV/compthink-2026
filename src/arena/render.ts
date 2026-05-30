@@ -37,7 +37,7 @@ import {
 } from "../state.ts";
 import type { TravelCard } from "../shared/types.ts";
 import type { BoardSlots } from "../shared/board.ts";
-import { calculateBoardTotals } from "../shared/board.ts";
+import { calculateBoardTotals, getPlacedCards } from "../shared/board.ts";
 import {
 	getRemainingResources,
 	getCardAffordability,
@@ -757,12 +757,64 @@ function renderEndDayButton(): string {
 // ── Game Over screen ─────────────────────────────────────────────────────────
 
 function renderGameOverScreen(): string {
+	const totalVP = getAccumulatedVP();
+	const board = getBoardSlots();
+	const totals = calculateBoardTotals(board);
+	const placedCards = getPlacedCards(board);
+	const breakdown = calculateScoreBreakdown({
+		placedCards,
+		getBoardDisplayName: (c) => c.name,
+	});
+
+	const comboLines = (breakdown.lines ?? [])
+		.map((d: string) => `<li class="game-over__detail-item">${d}</li>`)
+		.join("");
+
 	return `
     <div class="game-over-overlay">
       <div class="game-over-card">
-        <h1>Hoàn thành!</h1>
-        <p class="game-over__vp">Tổng VP: ${getAccumulatedVP()}</p>
-        <button onclick="location.reload()" class="game-over__replay">Chơi lại</button>
+        <div class="game-over__header">
+          <span class="game-over__badge">KẾT THÚC</span>
+          <h1 class="game-over__title">Hoàn thành!</h1>
+          <p class="game-over__subtitle">Chuyến đi 5 ngày đã kết thúc</p>
+        </div>
+
+        <div class="game-over__score">
+          <span class="game-over__score-label">Tổng điểm</span>
+          <span class="game-over__score-value">${totalVP}</span>
+          <span class="game-over__score-unit">VP</span>
+        </div>
+
+        <div class="game-over__breakdown">
+          <div class="game-over__row">
+            <span>Điểm cơ bản</span>
+            <span>${breakdown.baseVP}</span>
+          </div>
+          <div class="game-over__row">
+            <span>Thưởng combo</span>
+            <span>${breakdown.bonusVP > 0 ? `+${breakdown.bonusVP}` : "0"}</span>
+          </div>
+          ${comboLines ? `<ul class="game-over__details">${comboLines}</ul>` : ""}
+        </div>
+
+        <div class="game-over__stats">
+          <div class="game-over__stat">
+            <span class="game-over__stat-value">${totals.usedSlots}/25</span>
+            <span class="game-over__stat-label">Số thẻ đã đặt</span>
+          </div>
+          <div class="game-over__stat">
+            <span class="game-over__stat-value">${totals.coin}</span>
+            <span class="game-over__stat-label">🟡 Xu</span>
+          </div>
+          <div class="game-over__stat">
+            <span class="game-over__stat-value">${totals.stamina}</span>
+            <span class="game-over__stat-label">⚡ Thể lực</span>
+          </div>
+        </div>
+
+        <button onclick="location.reload()" class="game-over__replay">
+          Chơi lại
+        </button>
       </div>
     </div>
   `;
