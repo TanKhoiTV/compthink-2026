@@ -83,7 +83,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.13.0";
+const VERSION = "0.14.0";
 const BUILD_TIME = Date.now();
 const gameName = "Trekkopoly";
 console.log(
