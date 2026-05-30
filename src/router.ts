@@ -70,19 +70,13 @@ export function updateTimerDom() {
 		if (phase === "draft") {
 			const secs = s.getDraftPickSecondsLeft();
 			strongEl.textContent = `${secs}s`;
-			timerEl.classList.toggle(
-				"score-breakdown__timer--danger",
-				secs <= 3,
-			);
+			timerEl.classList.toggle("score-breakdown__timer--danger", secs <= 3);
 		} else if (phase === "placement") {
 			const secs = s.getRemainingTurnSeconds();
 			const m = Math.floor(Math.max(0, secs) / 60);
 			const safeSec = Math.max(0, secs) % 60;
 			strongEl.textContent = `${m}:${safeSec < 10 ? "0" : ""}${safeSec}`;
-			timerEl.classList.toggle(
-				"score-breakdown__timer--danger",
-				secs <= 10,
-			);
+			timerEl.classList.toggle("score-breakdown__timer--danger", secs <= 10);
 		}
 	});
 }

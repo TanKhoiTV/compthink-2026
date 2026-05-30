@@ -11,7 +11,11 @@
 
 import { setupGameAudioDelegation, playGameSound } from "./audio/gameAudio.ts";
 import type { SimulationReplayStep } from "./shared/scoring.ts";
-import { rerenderGameShell, transitionToScreen, updateTimerDom } from "./router.ts";
+import {
+	rerenderGameShell,
+	transitionToScreen,
+	updateTimerDom,
+} from "./router.ts";
 import {
 	setDeck,
 	setPlayerHand,
@@ -68,7 +72,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.9.1";
+const VERSION = "0.10.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -553,9 +557,11 @@ function startNextDayOrPhase() {
 		const currentSelected = getSelectedHandCardId();
 
 		// Remove selection from all hand cards
-		document.querySelectorAll("[data-hand-card-id].hand-card--selected").forEach((el) => {
-			el.classList.remove("hand-card--selected");
-		});
+		document
+			.querySelectorAll("[data-hand-card-id].hand-card--selected")
+			.forEach((el) => {
+				el.classList.remove("hand-card--selected");
+			});
 		// Remove any focused popup overlay
 		const popup = document.getElementById("focused-card-close");
 		if (popup) {
@@ -573,7 +579,9 @@ function startNextDayOrPhase() {
 			setSelectedHandCardId(cardId);
 			setFocusedHandCardId(null);
 			setShowFocusedPopup(false);
-			const el = document.querySelector(`[data-hand-card-id="${CSS.escape(cardId)}"]`);
+			const el = document.querySelector(
+				`[data-hand-card-id="${CSS.escape(cardId)}"]`,
+			);
 			el?.classList.add("hand-card--selected");
 		}
 
@@ -585,9 +593,11 @@ function startNextDayOrPhase() {
 	setSelectedHandCardId(null);
 	setFocusedHandCardId(null);
 	setShowFocusedPopup(false);
-	document.querySelectorAll("[data-hand-card-id].hand-card--selected").forEach((el) => {
-		el.classList.remove("hand-card--selected");
-	});
+	document
+		.querySelectorAll("[data-hand-card-id].hand-card--selected")
+		.forEach((el) => {
+			el.classList.remove("hand-card--selected");
+		});
 	const popup = document.getElementById("focused-card-close");
 	if (popup) {
 		const overlay = popup.closest(".hand-card__overlay");

@@ -28,6 +28,7 @@ import {
 	getSimulationReplayIndex,
 	getIsReplayComplete,
 	getIsInitialDealInProgress,
+	getDeck,
 	currentPlayerId,
 } from "../state.ts";
 import type { TravelCard } from "../shared/types.ts";
@@ -215,6 +216,8 @@ export function renderMainArena(): string {
 
         ${!isDraft && phase === "placement" ? renderEndDayButton() : ""}
       </div>
+
+      ${renderDeckCardStack()}
 
       ${phase !== "simulation" ? renderPlayerHandSection() : ""}
       ${phase === "simulation" ? renderSimulationResultPanel() : ""}
@@ -509,6 +512,33 @@ export function renderFocusedCard(card: TravelCard): string {
 }
 
 // ── Score panel ─────────────────────────────────────────────────────────────
+
+function renderDeckCardStack(): string {
+	const deck = getDeck();
+	const remaining = deck.length;
+
+	// Hide during simulation / game over
+	const sim = getIsSimulationMode();
+	const phase = getGamePhase();
+	if (sim || phase === "simulation" || phase === "finished") return "";
+
+	return `
+    <section class="deck-pile-panel">
+      <div class="deck-pile-panel__visual">
+        <div class="deck-card-stack">
+          <div class="deck-card-stack__card deck-card-stack__card--back-3"></div>
+          <div class="deck-card-stack__card deck-card-stack__card--back-2"></div>
+          <div class="deck-card-stack__card deck-card-stack__card--back-1"></div>
+          <div class="deck-card-stack__card deck-card-stack__card--front">
+            <span>CÒN</span>
+            <strong>${remaining}</strong>
+            <em>lá</em>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
 
 function renderScoreBreakdownPanel(): string {
 	const board = getBoardSlots();
