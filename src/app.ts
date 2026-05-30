@@ -66,12 +66,47 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.6.0";
+const VERSION = "0.7.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
 // Initialise audio
 setupGameAudioDelegation();
+
+// ── BGM (background music) ───────────────────────────────────────────────────
+
+const IN_GAME_BGM_SRC = "assets/audio/music/in-game-background.mp3";
+const DEFAULT_BGM_VOLUME = 0.5;
+
+let inGameBgm: HTMLAudioElement | null = null;
+
+function getInGameBgm(): HTMLAudioElement {
+	if (!inGameBgm) {
+		const audio = new Audio(IN_GAME_BGM_SRC);
+		audio.loop = true;
+		audio.preload = "auto";
+		audio.volume = DEFAULT_BGM_VOLUME;
+		inGameBgm = audio;
+	}
+	return inGameBgm;
+}
+
+function syncInGameBgm() {
+	const audio = getInGameBgm();
+	if (audio.paused) {
+		audio.play().catch(() => {
+			/* Browser blocks autoplay — will retry on next pointerdown */
+		});
+	}
+}
+
+function setupInGameBgmDelegation() {
+	const tryPlay = () => syncInGameBgm();
+	document.addEventListener("pointerdown", tryPlay, { passive: true });
+	document.addEventListener("keydown", tryPlay);
+}
+
+setupInGameBgmDelegation();
 
 // Register service worker
 if ("serviceWorker" in navigator) {
@@ -498,3 +533,4 @@ function startNextDayOrPhase() {
 // ── Start the app — render the game screen ──────────────────────────────────
 
 transitionToScreen("game");
+syncInGameBgm();
