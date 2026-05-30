@@ -238,7 +238,6 @@ function renderBoardCell(
         data-board-cell="true"
         data-row-index="${rowIndex}"
         data-col-index="${colIndex}"
-        onclick="event.stopPropagation(); window['handleBoardCellClick'](${rowIndex}, ${colIndex})"
         title="${isCurrentDayColumn ? (isPlaceable ? "Thả thẻ vào ô ngày hiện tại" : "Chỉ xếp thẻ cho ngày hiện tại") : "Không phải ngày hiện tại"}"
       >
         <span class="empty-plus">+</span>
@@ -252,7 +251,6 @@ function renderBoardCell(
       data-board-cell="true"
       data-row-index="${rowIndex}"
       data-col-index="${colIndex}"
-      onclick="event.stopPropagation(); window['handleBoardCellClick'](${rowIndex}, ${colIndex})"
       title="${card.name}"
     >
       ${renderBoardMiniCard(card)}
@@ -372,7 +370,7 @@ export function renderHandCard(
       class="hand-card ${rarityClass} ${fanClass} ${isSelected ? "hand-card--selected" : ""}"
       data-hand-card-id="${card.id}"
       title="${card.name}"
-      onclick="event.stopPropagation(); window['selectHandCard']('${card.id}')" data-select-card="true"
+      data-select-card="true"
     >
       ${
 				isSelected
