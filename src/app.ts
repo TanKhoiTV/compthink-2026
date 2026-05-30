@@ -66,7 +66,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.7.1";
+const VERSION = "0.8.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -127,7 +127,10 @@ if ("serviceWorker" in navigator) {
 					if (!newWorker) return;
 
 					newWorker.addEventListener("statechange", () => {
-						if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+						if (
+							newWorker.state === "installed" &&
+							navigator.serviceWorker.controller
+						) {
 							// New SW is ready — activate it
 							newWorker.postMessage("SKIP_WAITING");
 						}

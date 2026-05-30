@@ -39,6 +39,7 @@ import {
 	getCardAffordabilityMessage,
 } from "../shared/resources.ts";
 import type { SimulationReplayStep } from "../shared/scoring.ts";
+import { calculateScoreBreakdown } from "../shared/scoring.ts";
 import { STARTING_COIN, STARTING_STAMINA } from "../shared/constants.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -188,7 +189,7 @@ export function renderMainArena(): string {
             <h1>${currentPlayerId.toUpperCase()}</h1>
           </div>
         </div>
-        ${renderScorePanel()}
+        ${renderScoreBreakdownPanel()}
       </div>
 
       ${renderResourceOrbs()}
@@ -509,18 +510,62 @@ export function renderFocusedCard(card: TravelCard): string {
 
 // ── Score panel ─────────────────────────────────────────────────────────────
 
-function renderScorePanel(): string {
+function renderScoreBreakdownPanel(): string {
+	const board = getBoardSlots();
+	const dayIndex = getCurrentDayIndex();
+
+	// Collect all placed cards from the board
+	const placedCards: TravelCard[] = [];
+	for (let row = 0; row <= dayIndex; row++) {
+		const col = board[row] || [];
+		for (let colIdx = 0; colIdx < col.length; colIdx++) {
+			const card = col[colIdx];
+			if (card) placedCards.push(card);
+		}
+	}
+
+	const breakdown = calculateScoreBreakdown({
+		placedCards,
+		getBoardDisplayName: (c) => c.name,
+	});
+
+	const totalScore = getAccumulatedVP() || breakdown.totalVP;
+	const usedSlots = placedCards.length;
+	const maxSlots = dayIndex * 5 + 5;
+	const bonusClass =
+		breakdown.bonusVP > 0 ? "score-breakdown__item--bonus" : "";
+
 	return `
-    <div class="score-panel">
-      <div class="score-panel__item">
-        <span class="score-panel__label">VP</span>
-        <span class="score-panel__value">${getAccumulatedVP()}</span>
+    <section class="score-breakdown">
+      <div class="score-breakdown__header">
+        <span>ĐIỂM</span>
+        <strong>${totalScore}</strong>
       </div>
-      <div class="score-panel__item">
-        <span class="score-panel__label">Ngày</span>
-        <span class="score-panel__value">${getCurrentDayIndex() + 1}/5</span>
+
+      <div class="score-breakdown__item">
+        <span>BASE VP</span>
+        <strong>${breakdown.baseVP}</strong>
       </div>
-    </div>
+
+      <div class="score-breakdown__item ${bonusClass}">
+        <span>BONUS</span>
+        <strong>${breakdown.bonusVP > 0 ? `+${breakdown.bonusVP}` : 0}</strong>
+      </div>
+
+      <div class="score-breakdown__item">
+        <span>SLOT</span>
+        <strong>${usedSlots}/${maxSlots}</strong>
+      </div>
+
+      <div class="score-breakdown__details">
+        <div>₡${breakdown.spentCoin} • ⚡${breakdown.spentStamina}</div>
+      </div>
+
+      <div class="score-breakdown__timer">
+        <span>NGÀY</span>
+        <strong>${dayIndex + 1}/5</strong>
+      </div>
+    </section>
   `;
 }
 
