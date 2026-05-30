@@ -52,6 +52,7 @@ export function rerenderGameShell() {
 	if (!app) return;
 	app.innerHTML = renderGameShell();
 	reattachCardClickDelegation();
+	console.log("[router] handlers bound:", document.querySelectorAll("[data-hand-card-id]").length);
 }
 
 // ── Card click delegation (backup for inline handlers, hover) ───────────────
@@ -105,6 +106,7 @@ document.addEventListener(
 		if (handCard && !handCard.closest(".hand-card__close")) {
 			const cardId = handCard.getAttribute("data-hand-card-id");
 			if (cardId) {
+				console.log("[router] capture match — hand card", { cardId });
 				e.preventDefault();
 				e.stopPropagation();
 				(globalThis as any).selectHandCard?.(cardId);
@@ -117,6 +119,7 @@ document.addEventListener(
 		if (boardCell) {
 			const row = Number(boardCell.getAttribute("data-row-index"));
 			const col = Number(boardCell.getAttribute("data-col-index"));
+			console.log("[router] capture match — board cell", { row, col });
 			e.preventDefault();
 			e.stopPropagation();
 			(globalThis as any).handleBoardCellClick?.(row, col);

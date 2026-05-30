@@ -118,6 +118,16 @@ function placeHandCardOnBoard(
 	rowIndex: number,
 	colIndex: number,
 ) {
+	console.log("[app] placeHandCardOnBoard enter", {
+		cardId,
+		rowIndex,
+		colIndex,
+		phase: getGamePhase(),
+		dayIndex: getCurrentDayIndex(),
+		colMatchesDay: colIndex === getCurrentDayIndex(),
+		handSize: getPlayerHand().length,
+		cardInHand: getPlayerHand().some((c) => c.id === cardId),
+	});
 	if (getGamePhase() !== "placement") return;
 	if (colIndex !== getCurrentDayIndex()) return;
 
@@ -213,6 +223,12 @@ function endCurrentDay() {
 	}
 
 	if (phase === "placement") {
+		console.log("[app] selectHandCard called", {
+			cardId,
+			phase,
+			currentSelected: getSelectedHandCardId(),
+			callCount: (window as any).__selectCount = ((window as any).__selectCount ?? 0) + 1,
+		});
 		// ── Placement phase: select/deselect card ──
 		const currentSelected = getSelectedHandCardId();
 		if (currentSelected === cardId) {
@@ -248,6 +264,12 @@ function endCurrentDay() {
 	rowIndex: number,
 	colIndex: number,
 ) => {
+	console.log("[app] handleBoardCellClick", {
+		rowIndex,
+		colIndex,
+		phase: getGamePhase(),
+		selectedId: getSelectedHandCardId(),
+	});
 	if (getGamePhase() === "placement") {
 		const selectedId = getSelectedHandCardId();
 		if (selectedId) {
