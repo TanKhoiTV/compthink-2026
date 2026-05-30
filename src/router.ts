@@ -82,11 +82,14 @@ function reattachCardClickDelegation() {
 // ── Document-level event delegation for board cell & hand card clicks ──────
 // Replaces inline onclick — no event.stopPropagation conflict.
 
+console.log("[router] event delegation installed");
+
 document.addEventListener("click", (e) => {
 	const target = e.target as HTMLElement;
 
 	const boardCell = target.closest("[data-board-cell]");
 	if (boardCell) {
+		console.log("[router] board cell clicked", { row: boardCell.getAttribute("data-row-index"), col: boardCell.getAttribute("data-col-index") });
 		e.stopPropagation();
 		const row = Number(boardCell.getAttribute("data-row-index"));
 		const col = Number(boardCell.getAttribute("data-col-index"));
@@ -96,6 +99,7 @@ document.addEventListener("click", (e) => {
 
 	const handCard = target.closest("[data-hand-card-id]");
 	if (handCard && !target.closest(".hand-card__close")) {
+		console.log("[router] hand/draft card clicked", { cardId: handCard.getAttribute("data-hand-card-id") });
 		e.stopPropagation();
 		const cardId = handCard.getAttribute("data-hand-card-id");
 		if (cardId) {
