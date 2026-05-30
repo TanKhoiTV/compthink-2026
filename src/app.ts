@@ -610,13 +610,26 @@ function startNextDayOrPhase() {
 		const round = getDraftRound();
 
 		if (round >= DRAFT_PICK_TARGET) {
-			// Last round — move card to hand directly, no pass animation
-			const currentHand = getPlayerHand();
-			currentHand.push(picked);
-			setPlayerHand(currentHand);
-			const deck = getDeck();
-			setDeck(shuffleCards([...deck, ...remaining]));
-			finishDailyDraft();
+			// Last round — show pass animation before transitioning to placement
+			stopDraftTimer();
+			setIsPassingDraftCards(true);
+			playGameSound("returnDeck");
+			rerenderGameShell();
+
+			window.setTimeout(() => {
+				// Move picked card to hand
+				const currentHand = getPlayerHand();
+				currentHand.push(picked);
+				setPlayerHand(currentHand);
+
+				// Return remaining cards to deck
+				const deck = getDeck();
+				setDeck(shuffleCards([...deck, ...remaining]));
+
+				setDraftSelectedCardId(null);
+				setIsPassingDraftCards(false);
+				finishDailyDraft();
+			}, 940);
 		} else {
 			// Stop draft timer, show pass animation
 			stopDraftTimer();
@@ -651,9 +664,7 @@ function startNextDayOrPhase() {
 
 				window.requestAnimationFrame(() => {
 					window.requestAnimationFrame(() => {
-						const handElement = document.querySelector(
-							".player-hand--draft",
-						);
+						const handElement = document.querySelector(".player-hand--draft");
 						handElement?.classList.add("deal-active");
 					});
 				});
