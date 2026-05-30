@@ -191,6 +191,12 @@ function endCurrentDay() {
  */
 (globalThis as any).selectHandCard = (cardId: string) => {
 	const phase = getGamePhase();
+	console.log("[app] selectHandCard", {
+		cardId,
+		phase,
+		callCount: ((window as any).__selectCount ?? 0) + 1,
+	});
+	(window as any).__selectCount = ((window as any).__selectCount ?? 0) + 1;
 
 	if (phase === "draft") {
 		// ── Draft phase: pick the card for this round ──
@@ -223,11 +229,9 @@ function endCurrentDay() {
 	}
 
 	if (phase === "placement") {
-		console.log("[app] selectHandCard called", {
+		console.log("[app] selectHandCard placement", {
 			cardId,
-			phase,
 			currentSelected: getSelectedHandCardId(),
-			callCount: (window as any).__selectCount = ((window as any).__selectCount ?? 0) + 1,
 		});
 		// ── Placement phase: select/deselect card ──
 		const currentSelected = getSelectedHandCardId();
