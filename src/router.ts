@@ -90,7 +90,7 @@ document.addEventListener("click", (e) => {
 		e.stopPropagation();
 		const row = Number(boardCell.getAttribute("data-row-index"));
 		const col = Number(boardCell.getAttribute("data-col-index"));
-		(typeof globalThis as any).handleBoardCellClick?.(row, col);
+		(globalThis as any).handleBoardCellClick?.(row, col);
 		return;
 	}
 
@@ -99,7 +99,7 @@ document.addEventListener("click", (e) => {
 		e.stopPropagation();
 		const cardId = handCard.getAttribute("data-hand-card-id");
 		if (cardId) {
-			(typeof globalThis as any).selectHandCard?.(cardId);
+			(globalThis as any).selectHandCard?.(cardId);
 		}
 		return;
 	}
