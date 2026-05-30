@@ -84,12 +84,14 @@ export function updateTimerDom() {
 // ── Card click delegation (backup for inline handlers, hover) ───────────────
 
 function reattachCardClickDelegation() {
-	// Hand card hover (visual feedback, no rerender)
+	// Hand card hover (visual feedback, no rerender) + hold-to-focus
 	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
 		const cardId = el.getAttribute("data-hand-card-id");
 		if (!cardId) return;
 		el.addEventListener("pointerenter", () => handleHandCardEnter(cardId));
 		el.addEventListener("pointerleave", () => handleHandCardLeave());
+		el.addEventListener("pointerdown", () => handleHandCardDown(cardId));
+		el.addEventListener("pointerup", () => handleHandCardUp());
 	});
 
 	// Focused card close
@@ -130,6 +132,12 @@ document.addEventListener(
 		// Hand card click
 		const handCard = target.closest("[data-hand-card-id]");
 		if (handCard && !handCard.closest(".hand-card__close")) {
+			import("./state.ts").then((s) => {
+				if (s.getSuppressNextClick()) {
+					s.setSuppressNextClick(false);
+					return; // was a hold-to-focus, suppress selection
+				}
+			});
 			const cardId = handCard.getAttribute("data-hand-card-id");
 			if (cardId) {
 				e.preventDefault();
@@ -168,4 +176,13 @@ function handleHandCardLeave() {
 	import("./state.ts").then((state) => {
 		state.setFocusedHandCardId(null);
 	});
+	(globalThis as any).cancelHoldHandCard?.();
+}
+
+function handleHandCardDown(cardId: string) {
+	(globalThis as any).startHoldHandCard?.(cardId);
+}
+
+function handleHandCardUp() {
+	(globalThis as any).cancelHoldHandCard?.();
 }

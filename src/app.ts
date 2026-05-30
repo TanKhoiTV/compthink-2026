@@ -55,6 +55,9 @@ import {
 	setRemainingTurnSeconds,
 	getLocalCoinDebt,
 	setLocalCoinDebt,
+	setSuppressNextClick,
+	getHoldTimerId,
+	setHoldTimerId,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
@@ -78,7 +81,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.12.5";
+const VERSION = "0.13.0";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} running!`);
 
@@ -652,6 +655,37 @@ function startNextDayOrPhase() {
 		return;
 	}
 };
+
+// ── Focused card popup (hold 500ms to view enlarged card) ────────────────
+
+(globalThis as any).startHoldHandCard = (cardId: string) => {
+	if (getGamePhase() === "simulation") return;
+
+	clearHoldCardTimer();
+
+	const id = window.setTimeout(() => {
+		setFocusedHandCardId(cardId);
+		setFocusedBoardCard(null);
+		setSuppressNextClick(true);
+		setShowFocusedPopup(true);
+		setHoldTimerId(null);
+		rerenderGameShell();
+	}, 500);
+
+	setHoldTimerId(id);
+};
+
+(globalThis as any).cancelHoldHandCard = () => {
+	clearHoldCardTimer();
+};
+
+function clearHoldCardTimer() {
+	const id = getHoldTimerId();
+	if (id !== null) {
+		clearTimeout(id);
+		setHoldTimerId(null);
+	}
+}
 
 (globalThis as any).clearSelectedHandCard = () => {
 	setSelectedHandCardId(null);
