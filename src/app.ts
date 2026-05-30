@@ -9,7 +9,8 @@
  * Day advance: score base VP → increment day → start new draft or finish.
  */
 
-import { setupGameAudioDelegation } from "./audio/gameAudio.ts";
+import { setupGameAudioDelegation, playGameSound } from "./audio/gameAudio.ts";
+import type { SimulationReplayStep } from "./shared/scoring.ts";
 import { rerenderGameShell, transitionToScreen } from "./router.ts";
 import {
 	setDeck,
@@ -48,6 +49,7 @@ import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
 import { saigonFoodCards } from "./shared/data/index.ts";
 import { HAND_SIZE, PHASE_DAYS } from "./shared/constants.ts";
 import { calculateSimulationResult } from "./shared/scoring.ts";
+import type { GameSoundName } from "./audio/gameAudio.ts";
 import { ROWS } from "./arena/render.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -104,6 +106,7 @@ function startDailyDraft() {
 	setDraftSelectedCardId(null);
 	setPlayerHand([]);
 	setGamePhase("draft");
+	playGameSound("deal");
 	rerenderGameShell();
 }
 
@@ -117,6 +120,7 @@ function finishDailyDraft() {
 	setGamePhase("placement");
 	setDraftPool([]);
 	setSelectedHandCardId(null);
+	playGameSound("returnDeck");
 	rerenderGameShell();
 }
 
@@ -147,6 +151,7 @@ function placeHandCardOnBoard(
 	setSelectedHandCardId(null);
 	setFocusedHandCardId(null);
 	setFocusedBoardCard(null);
+	playGameSound("cardPlace");
 	rerenderGameShell();
 }
 
@@ -231,10 +236,45 @@ function runSystemSimulation() {
 
 		// Advance to next step
 		setSimulationReplayIndex(currentIdx + 1);
+		playSimulationScanSoundForCurrentStep();
 		rerenderGameShell();
 	}, 850);
 
 	setSimulationTimerId(timerId);
+}
+
+function playSimulationScanSoundForCurrentStep() {
+	const result = getSimulationResult();
+	if (!result) return;
+
+	const replayIndex = getSimulationReplayIndex();
+	if (replayIndex <= 0) return;
+
+	const step = result.replaySteps[replayIndex - 1];
+	if (!step) return;
+
+	const eventSoundName = getSimulationEventSoundName(step);
+	const isBad = isBadSimulationReplayStep(step);
+
+	playGameSound(eventSoundName ?? (isBad ? "scanBad" : "scanCell"));
+}
+
+function isBadSimulationReplayStep(step: SimulationReplayStep): boolean {
+	return (
+		step.isBadEvent === true ||
+		step.eventType === "traffic" ||
+		step.eventType === "storm" ||
+		step.eventType === "distance"
+	);
+}
+
+function getSimulationEventSoundName(step: SimulationReplayStep): GameSoundName | null {
+	if (!step.eventType) return null;
+	if (step.eventType === "promo") return "eventPromo";
+	if (step.eventType === "traffic") return "eventTraffic";
+	if (step.eventType === "storm") return "eventStorm";
+	if (step.eventType === "distance") return "eventDistance";
+	return null;
 }
 
 function clearSimulationTimer() {
@@ -295,6 +335,8 @@ function startNextDayOrPhase() {
 		const picked = pool.find((c) => c.id === cardId);
 		if (!picked) return;
 
+		playGameSound("cardSelect");
+
 		const currentHand = getPlayerHand();
 		currentHand.push(picked);
 		setPlayerHand(currentHand);
@@ -323,6 +365,7 @@ function startNextDayOrPhase() {
 
 	if (phase === "placement") {
 		// ── Placement phase: select/deselect card ──
+		playGameSound("cardSelect");
 		const currentSelected = getSelectedHandCardId();
 		if (currentSelected === cardId) {
 			if (getShowFocusedPopup()) {
@@ -364,6 +407,9 @@ function startNextDayOrPhase() {
 		}
 	}
 };
+
+// Expose playGameSound globally for inline onclick handlers
+(globalThis as any).playGameSound = playGameSound;
 
 /**
  * End the current day and advance the game.
