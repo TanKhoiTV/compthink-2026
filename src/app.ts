@@ -603,20 +603,22 @@ function startNextDayOrPhase() {
 
 		playGameSound("cardSelect");
 
-		const currentHand = getPlayerHand();
-		currentHand.push(picked);
-		setPlayerHand(currentHand);
+		// Keep card in pool during pass animation (don't move to hand yet)
+		setDraftSelectedCardId(cardId);
 
 		const remaining = pool.filter((c) => c.id !== cardId);
 		const round = getDraftRound();
 
 		if (round >= DRAFT_PICK_TARGET) {
-			// Draft done — return remaining to deck, no animation needed
+			// Last round — move card to hand directly, no pass animation
+			const currentHand = getPlayerHand();
+			currentHand.push(picked);
+			setPlayerHand(currentHand);
 			const deck = getDeck();
 			setDeck(shuffleCards([...deck, ...remaining]));
 			finishDailyDraft();
 		} else {
-			// Stop draft timer, show pass animation on remaining cards
+			// Stop draft timer, show pass animation
 			stopDraftTimer();
 			setIsPassingDraftCards(true);
 			playGameSound("returnDeck");
@@ -624,23 +626,46 @@ function startNextDayOrPhase() {
 
 			// After animation completes, set up next round
 			window.setTimeout(() => {
+				// Move picked card to hand now
+				const currentHand = getPlayerHand();
+				currentHand.push(picked);
+				setPlayerHand(currentHand);
+
 				// Return remaining cards to deck
 				const deck = getDeck();
 				setDeck(shuffleCards([...deck, ...remaining]));
 
-				// Pool shrinks each round simulating a pack being passed around
-				// Round 1: 7 cards, Round 2: 6, ..., Round 5: 3
+				// Pool shrinks each round: Round 1 → 7, 2 → 6, ..., 5 → 3
 				const nextPoolSize = DRAFT_POOL_SIZE - round;
 				const newDeck = getDeck();
 				const shuffled = shuffleCards(newDeck);
 				setDraftPool(shuffled.slice(0, nextPoolSize));
 				setDeck(shuffled.slice(nextPoolSize));
 				setDraftRound(round + 1);
+				setDraftSelectedCardId(null);
 				setIsPassingDraftCards(false);
+
+				// Deal animation for the new round's pool
+				setIsInitialDealInProgress(true);
 				rerenderGameShell();
 
-				// Timer restart is done inside deal animation callback
+				window.requestAnimationFrame(() => {
+					window.requestAnimationFrame(() => {
+						const handElement = document.querySelector(
+							".player-hand--draft",
+						);
+						handElement?.classList.add("deal-active");
+					});
+				});
+
 				window.setTimeout(() => {
+					setIsInitialDealInProgress(false);
+					const handElement = document.querySelector(".player-hand");
+					handElement?.classList.remove(
+						"player-hand--dealing",
+						"is-dealing",
+						"deal-active",
+					);
 					startDraftTimer();
 				}, 1320);
 			}, 940);

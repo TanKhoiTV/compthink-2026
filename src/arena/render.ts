@@ -353,6 +353,7 @@ function renderPlayerHandSection(): string {
 		// ── Draft phase: render draft pool inside player-hand--draft ──
 		const pool = getDraftPool();
 		const secondsLeft = getDraftPickSecondsLeft();
+		const draftSelectedId = getDraftSelectedCardId();
 		const dangerClass = secondsLeft <= 3 ? "player-hand__meta--danger" : "";
 		const isDealing = getIsInitialDealInProgress();
 		const dealingClass = isDealing ? "player-hand--dealing is-dealing" : "";
@@ -373,7 +374,7 @@ function renderPlayerHandSection(): string {
           ${pool
 						.map(
 							(card, index) => `
-            <div class="daily-draft-card daily-draft-card--${index + 1}" data-draft-card-id="${card.id}">
+            <div class="daily-draft-card daily-draft-card--${index + 1}${card.id === draftSelectedId ? " daily-draft-card--selected" : ""}" data-draft-card-id="${card.id}">
               ${renderHandCard(card, index, null)}
             </div>
           `,
