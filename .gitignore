@@ -32,3 +32,4 @@ TREKPOLOGY/server/data/
 # Sub-package lockfiles (managed by root)
 TREKPOLOGY/package-lock.json
 TREKPOLOGY/server/package-lock.json
+assets
