@@ -225,15 +225,6 @@ function renderBoardCell(
 	const card = boardSlots[rowIndex]?.[colIndex] ?? null;
 	const isCurrentDayColumn = colIndex === currentDayIndex;
 	const selectedId = getSelectedHandCardId();
-	console.log("[render] boardCell", {
-		rowIndex,
-		colIndex,
-		isDraft,
-		isSimulation,
-		isCurrentDayColumn,
-		selectedId,
-		hasCard: !!card,
-	});
 	const isPlaceable =
 		!isDraft &&
 		!isSimulation &&

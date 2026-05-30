@@ -57,29 +57,12 @@ export function rerenderGameShell() {
 // ── Card click delegation (backup for inline handlers, hover) ───────────────
 
 function reattachCardClickDelegation() {
-	// Hand card click and hover (add listeners directly to element)
+	// Hand card hover (visual feedback, no rerender)
 	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
 		const cardId = el.getAttribute("data-hand-card-id");
 		if (!cardId) return;
 		el.addEventListener("pointerenter", () => handleHandCardEnter(cardId));
 		el.addEventListener("pointerleave", () => handleHandCardLeave());
-		// Direct click handler as primary (not relying on document delegation)
-		el.addEventListener("click", (e) => {
-			e.stopPropagation();
-			console.log("[router] direct card click", { cardId });
-			(globalThis as any).selectHandCard?.(cardId);
-		});
-	});
-
-	// Board cell click (add listeners directly to each cell)
-	document.querySelectorAll("[data-board-cell]").forEach((el) => {
-		el.addEventListener("click", (e) => {
-			const row = Number(el.getAttribute("data-row-index"));
-			const col = Number(el.getAttribute("data-col-index"));
-			console.log("[router] direct board click", { row, col });
-			e.stopPropagation();
-			(globalThis as any).handleBoardCellClick?.(row, col);
-		});
 	});
 
 	// Focused card close
@@ -100,29 +83,16 @@ function reattachCardClickDelegation() {
 // Old TREKPOLOGY used capture:true + [data-draft-card-id] for draft cards.
 // This ensures clicks are caught before any inline handler processes them.
 
-console.log("[router] event delegation installed");
-
 document.addEventListener(
 	"click",
 	(e) => {
 		const target = e.target as HTMLElement;
-		const phase = (globalThis as any).getGamePhase?.() || "?";
-
-		console.log("[router] click in capture", {
-			tag: target.tagName,
-			cls: target.className?.slice(0, 60),
-			dd: !!target.closest("[data-draft-card-id]"),
-			hc: !!target.closest("[data-hand-card-id]"),
-			bc: !!target.closest("[data-board-cell]"),
-			phase,
-		});
 
 		// Draft card click (via [data-draft-card-id] wrapper)
 		const draftCard = target.closest("[data-draft-card-id]");
 		if (draftCard) {
 			const cardId = draftCard.getAttribute("data-draft-card-id");
 			if (cardId) {
-				console.log("[router] draft matched");
 				e.preventDefault();
 				e.stopPropagation();
 				(globalThis as any).selectHandCard?.(cardId);
@@ -135,7 +105,6 @@ document.addEventListener(
 		if (handCard && !handCard.closest(".hand-card__close")) {
 			const cardId = handCard.getAttribute("data-hand-card-id");
 			if (cardId) {
-				console.log("[router] hand matched");
 				e.preventDefault();
 				e.stopPropagation();
 				(globalThis as any).selectHandCard?.(cardId);
@@ -148,7 +117,6 @@ document.addEventListener(
 		if (boardCell) {
 			const row = Number(boardCell.getAttribute("data-row-index"));
 			const col = Number(boardCell.getAttribute("data-col-index"));
-			console.log("[router] board matched");
 			e.preventDefault();
 			e.stopPropagation();
 			(globalThis as any).handleBoardCellClick?.(row, col);

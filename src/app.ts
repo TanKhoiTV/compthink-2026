@@ -27,6 +27,7 @@ import {
 	getGamePhase,
 	getCurrentDayIndex,
 	getBoardSlots,
+	setCurrentPlayerBoard,
 	getAccumulatedVP,
 	setAccumulatedVP,
 	getDraftPool,
@@ -100,8 +101,8 @@ function startDailyDraft() {
  * into the placement hand. Return leftover pool cards to deck.
  */
 function finishDailyDraft() {
-	const hand = getPlayerHand();
-	setPlayerHand(hand);
+	// Snapshot the hand into a fresh array to break shared reference
+	setPlayerHand([...getPlayerHand()]);
 	setGamePhase("placement");
 	setDraftPool([]);
 	setSelectedHandCardId(null);
@@ -130,6 +131,7 @@ function placeHandCardOnBoard(
 
 	const board = getBoardSlots();
 	board[rowIndex][colIndex] = card;
+	setCurrentPlayerBoard(board);
 
 	setSelectedHandCardId(null);
 	setFocusedHandCardId(null);
@@ -211,10 +213,6 @@ function endCurrentDay() {
 	}
 
 	if (phase === "placement") {
-		console.log("[app] placement select", {
-			cardId,
-			currentSelected: getSelectedHandCardId(),
-		});
 		// ── Placement phase: select/deselect card ──
 		const currentSelected = getSelectedHandCardId();
 		if (currentSelected === cardId) {
