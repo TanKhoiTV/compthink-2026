@@ -35,10 +35,20 @@ import {
 	getSelectedHandCardId,
 	getShowFocusedPopup,
 	setShowFocusedPopup,
+	getSimulationResult,
+	setSimulationResult,
+	getSimulationReplayIndex,
+	setSimulationReplayIndex,
+	getIsReplayComplete,
+	setIsReplayComplete,
+	getSimulationTimerId,
+	setSimulationTimerId,
 } from "./state.ts";
 import { createInitialDeck, shuffleCards } from "../scr/shared/deck.ts";
 import { saigonFoodCards } from "../scr/shared/data/index.ts";
 import { HAND_SIZE, PHASE_DAYS } from "../scr/shared/constants.ts";
+import { calculateSimulationResult } from "../scr/shared/scoring.ts";
+import { ROWS } from "./arena/render.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -146,17 +156,105 @@ function placeHandCardOnBoard(
 function endCurrentDay() {
 	if (getGamePhase() !== "placement") return;
 
-	// Score base VP from cards placed on today's board column
-	const colIndex = getCurrentDayIndex();
-	const board = getBoardSlots();
-	let dayVP = 0;
-	for (let row = 0; row < board.length; row++) {
-		const card = board[row]?.[colIndex];
-		if (card) {
-			dayVP += card.vp ?? 0;
+	// Launch simulation instead of immediately advancing
+	setGamePhase("simulation");
+	setSelectedHandCardId(null);
+	setFocusedHandCardId(null);
+	setFocusedBoardCard(null);
+	runSystemSimulation();
+	rerenderGameShell();
+}
+
+// ── Simulation system ────────────────────────────────────────────────────────
+
+/**
+ * Run the simulation engine for the current day's board column.
+ * Calculates the result, starts a step-by-step replay, and advances
+ * the day when complete.
+ */
+function runSystemSimulation() {
+	const boardSlots = getBoardSlots();
+	const dayIndex = getCurrentDayIndex();
+	const dayLabel = `Ngày ${dayIndex + 1}`;
+
+	const result = calculateSimulationResult({
+		boardSlots,
+		currentDayIndex: dayIndex,
+		dayLabel,
+		rows: ROWS,
+		getBoardDisplayName: (card) => card.name,
+		getCardTagKeys: (card) => {
+			if (card.tags && card.tags.length > 0) return card.tags.map((t) => t.toUpperCase());
+			return [card.tag.toUpperCase()];
+		},
+		countCardsWithTag: (cards, tag) => cards.filter((c) => {
+			const keys = c.tags?.length ? c.tags.map((t) => t.toUpperCase()) : [c.tag.toUpperCase()];
+			return keys.includes(tag);
+		}).length,
+		getCurrentDayPlacedCards: () => {
+			const b = getBoardSlots();
+			return b.map((row) => row[dayIndex]).filter((c): c is NonNullable<typeof c> => c !== null);
+		},
+	});
+
+	setSimulationResult(result);
+	setSimulationReplayIndex(0);
+	setIsReplayComplete(false);
+
+	// Start replay timer: advance one step every 850ms
+	const timerId = window.setInterval(() => {
+		const currentIdx = getSimulationReplayIndex();
+		const totalSteps = result.replaySteps.length;
+
+		if (currentIdx >= totalSteps) {
+			// Replay complete — apply score then advance
+			clearSimulationTimer();
+			setIsReplayComplete(true);
+			applyDailyScoreOnce();
+			rerenderGameShell();
+
+			// Advance to next day after 2s
+			window.setTimeout(() => {
+				startNextDayOrPhase();
+			}, 2000);
+			return;
 		}
+
+		// Advance to next step
+		setSimulationReplayIndex(currentIdx + 1);
+		rerenderGameShell();
+	}, 850);
+
+	setSimulationTimerId(timerId);
+}
+
+function clearSimulationTimer() {
+	const id = getSimulationTimerId();
+	if (id !== null) {
+		clearInterval(id);
+		setSimulationTimerId(null);
 	}
-	setAccumulatedVP(getAccumulatedVP() + dayVP);
+}
+
+let hasAppliedSimulationScore = false;
+
+function applyDailyScoreOnce() {
+	if (hasAppliedSimulationScore) return;
+	hasAppliedSimulationScore = true;
+
+	const result = getSimulationResult();
+	if (!result) return;
+
+	setAccumulatedVP(getAccumulatedVP() + result.finalVP);
+}
+
+function startNextDayOrPhase() {
+	// Reset simulation state
+	clearSimulationTimer();
+	setSimulationResult(null);
+	setSimulationReplayIndex(0);
+	setIsReplayComplete(false);
+	hasAppliedSimulationScore = false;
 
 	const nextDay = getCurrentDayIndex() + 1;
 

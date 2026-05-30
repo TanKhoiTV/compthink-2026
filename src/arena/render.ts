@@ -20,22 +20,22 @@ import {
 	getFocusedBoardCard,
 	getShowFocusedPopup,
 	getIsSimulationMode,
-	getPhaseNumber,
 	getAccumulatedVP,
 	getRemainingTurnSeconds,
-	getPlayerBoards,
 	getDraftPool,
 	getDraftRound,
+	getSimulationResult,
+	getSimulationReplayIndex,
+	getIsReplayComplete,
 	currentPlayerId,
-	playerIds,
 } from "../state.ts";
 import type { TravelCard } from "../../scr/shared/types.ts";
-import type { BoardSlots, BoardPosition } from "../../scr/shared/board.ts";
+import type { BoardSlots } from "../../scr/shared/board.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const DAYS = [1, 2, 3, 4, 5];
-const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
+export const DAYS = [1, 2, 3, 4, 5];
+export const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
 // ── Helpers ported from TREKPOLOGY src/app.ts / src/data/cardMapper.ts ──────
 
@@ -163,8 +163,9 @@ function getHandCityClass(city: string): string {
 export function renderMainArena(): string {
 	const boardSlots = getBoardSlots();
 	const currentDayIndex = getCurrentDayIndex();
-	const isDraft = getGamePhase() === "draft";
-	const isSimulation = getIsSimulationMode();
+	const phase = getGamePhase();
+	const isDraft = phase === "draft";
+	const isSimulation = phase === "simulation" || getIsSimulationMode();
 	const focusedCard = getShowFocusedPopup()
 		? (getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard())
 		: null;
@@ -202,13 +203,14 @@ export function renderMainArena(): string {
           </section>
         </div>
 
-        ${!isDraft && getGamePhase() === "placement" ? renderEndDayButton() : ""}
+        ${!isDraft && phase === "placement" ? renderEndDayButton() : ""}
       </div>
 
-      ${renderPlayerHandSection()}
+      ${phase !== "simulation" ? renderPlayerHandSection() : ""}
+      ${phase === "simulation" ? renderSimulationResultPanel() : ""}
       ${focusedCard ? renderFocusedCard(focusedCard) : ""}
       ${renderTurnTimer()}
-    </main>\n    ${getGamePhase() === "finished" ? renderGameOverScreen() : ""}
+    </main>\n    ${phase === "finished" ? renderGameOverScreen() : ""}
   `;
 }
 
@@ -232,10 +234,20 @@ function renderBoardCell(
 		selectedId !== null &&
 		card === null;
 
+	// Replay highlight during simulation
+	let replayClass = "";
+	if (isSimulation) {
+		const stepInfo = getReplayStepForBoardCell(rowIndex, colIndex);
+		if (stepInfo) {
+			if (stepInfo.isCurrent) replayClass = "board-cell--replay-current";
+			else if (stepInfo.isDone) replayClass = "board-cell--replay-done";
+		}
+	}
+
 	if (!card) {
 		return `
       <div
-        class="board-cell board-cell--empty ${isSimulation ? "board-cell--locked-mode" : ""} ${!isCurrentDayColumn && !isSimulation ? "board-cell--not-current-day" : ""} ${isPlaceable ? "board-cell--placeable" : ""}"
+        class="board-cell board-cell--empty ${isSimulation ? "board-cell--locked-mode" : ""} ${!isCurrentDayColumn && !isSimulation ? "board-cell--not-current-day" : ""} ${isPlaceable ? "board-cell--placeable" : ""} ${replayClass}"
         data-board-cell="true"
         data-row-index="${rowIndex}"
         data-col-index="${colIndex}"
@@ -248,7 +260,7 @@ function renderBoardCell(
 
 	return `
     <div
-      class="board-cell board-cell--occupied board-cell--clickable"
+      class="board-cell board-cell--occupied board-cell--clickable ${replayClass}"
       data-board-cell="true"
       data-row-index="${rowIndex}"
       data-col-index="${colIndex}"
@@ -551,4 +563,89 @@ function getHandCardById(cardId: string | null): TravelCard | null {
 	if (!cardId) return null;
 	const hand = getPlayerHand();
 	return hand.find((c) => c.id === cardId) ?? null;
+}
+
+// ── Simulation helpers ───────────────────────────────────────────────────────
+
+function formatSignedVP(value: number): string {
+	if (value > 0) return `+${value}`;
+	if (value < 0) return `${value}`;
+	return "0";
+}
+
+function getReplayStepForBoardCell(
+	rowIndex: number,
+	colIndex: number,
+): { stepIndex: number; isCurrent: boolean; isDone: boolean } | null {
+	const result = getSimulationResult();
+	if (!result) return null;
+
+	const replayIndex = getSimulationReplayIndex();
+
+	for (let i = 0; i < result.replaySteps.length; i++) {
+		const step = result.replaySteps[i];
+		if (step.rowIndex === rowIndex && step.dayIndex === colIndex) {
+			return {
+				stepIndex: i,
+				isCurrent: i === replayIndex - 1,
+				isDone: i < replayIndex,
+			};
+		}
+	}
+	return null;
+}
+
+function renderSimulationResultPanel(): string {
+	const result = getSimulationResult();
+	if (!result) return "";
+
+	const replayIndex = getSimulationReplayIndex();
+	const totalSteps = result.replaySteps.length;
+	const isComplete = getIsReplayComplete();
+
+	// Current step being shown
+	const currentStep = replayIndex > 0 && replayIndex <= totalSteps
+		? result.replaySteps[replayIndex - 1]
+		: null;
+
+	// Partial VP from steps processed so far
+	let partialVP = 0;
+	for (let i = 0; i < Math.min(replayIndex, totalSteps); i++) {
+		partialVP += result.replaySteps[i].vpDelta;
+	}
+
+	const stepsHtml = result.replaySteps.slice(0, Math.max(replayIndex, 1)).map((step, i) => {
+		const isActive = i === replayIndex - 1;
+		const isDone = i < replayIndex - 1;
+		return `
+      <div class="score-ticket ${isActive ? "score-ticket--active" : ""} ${isDone ? "score-ticket--done" : ""} ${step.isBadEvent ? "score-ticket--bad" : ""} ${step.isBoardToken ? "score-ticket--token" : ""}">
+        <div class="score-ticket__time">${step.timeLabel}</div>
+        <div class="score-ticket__vp ${step.vpDelta > 0 ? "score-ticket__vp--pos" : step.vpDelta < 0 ? "score-ticket__vp--neg" : ""}">${formatSignedVP(step.vpDelta)}</div>
+        <div class="score-ticket__title">${step.title}</div>
+        ${step.subtitle ? `<div class="score-ticket__subtitle">${step.subtitle}</div>` : ""}
+        ${step.comboText ? `<div class="score-ticket__combo">${step.comboText}</div>` : ""}
+        ${step.eventText ? `<div class="score-ticket__event">${step.eventText}</div>` : ""}
+      </div>
+    `;
+	}).join("");
+
+	return `
+    <section class="ticket-scan-overlay" onclick="event.stopPropagation()">
+      <div class="ticket-scan-overlay__scrim"></div>
+      <div class="ticket-scan-overlay__header">
+        <span>ĐANG QUÉT TÍNH ĐIỂM</span>
+        <strong>Ngày ${getCurrentDayIndex() + 1}</strong>
+        ${currentStep ? `<em>${currentStep.timeLabel}: ${currentStep.title}</em>` : ""}
+      </div>
+      <div class="ticket-scan-strip">
+        ${stepsHtml}
+      </div>
+      <div class="ticket-scan-overlay__footer">
+        <div><span>Tiến trình</span><strong>${Math.min(replayIndex, totalSteps)} / ${totalSteps}</strong></div>
+        <div><span>Điểm ngày</span><strong>${formatSignedVP(partialVP)} VP</strong></div>
+        <div><span>Tổng</span><strong>${getAccumulatedVP()} VP</strong></div>
+        ${isComplete ? `<div class="ticket-scan-overlay__complete"><span>✓ Hoàn tất</span><em>+${result.finalVP} VP</em></div>` : ""}
+      </div>
+    </section>
+  `;
 }

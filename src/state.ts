@@ -14,7 +14,7 @@ import type { PlayerId } from "../scr/shared/client-types.ts";
 //
 //   draft → placement → endDay → draft (next day) or finished
 //
-export type GamePhase = "draft" | "placement" | "endDay" | "finished";
+export type GamePhase = "draft" | "placement" | "simulation" | "finished";
 
 let gamePhase: GamePhase = "draft";
 
@@ -77,8 +77,14 @@ let focusedHandCardId: string | null = null;
 let focusedBoardCard: TravelCard | null = null;
 let suppressNextClick = false;
 let isSimulationMode = false;
-const simulationReplayIndex = 0;
-const isReplayComplete = false;
+// ── Simulation state ─────────────────────────────────────────────────────────
+
+import type { SimulationResult } from "../scr/shared/scoring.ts";
+
+let simulationResult: SimulationResult | null = null;
+let simulationReplayIndex = 0;
+let isReplayComplete = false;
+let simulationTimerId: number | null = null;
 let showFocusedPopup = false;
 
 // ── Timer state ──────────────────────────────────────────────────────────────
@@ -135,6 +141,38 @@ export function getGamePhase(): GamePhase {
 
 export function setGamePhase(p: GamePhase) {
 	gamePhase = p;
+}
+
+export function getSimulationResult(): SimulationResult | null {
+	return simulationResult;
+}
+
+export function setSimulationResult(r: SimulationResult | null) {
+	simulationResult = r;
+}
+
+export function getSimulationReplayIndex(): number {
+	return simulationReplayIndex;
+}
+
+export function setSimulationReplayIndex(i: number) {
+	simulationReplayIndex = i;
+}
+
+export function getIsReplayComplete(): boolean {
+	return isReplayComplete;
+}
+
+export function setIsReplayComplete(v: boolean) {
+	isReplayComplete = v;
+}
+
+export function getSimulationTimerId(): number | null {
+	return simulationTimerId;
+}
+
+export function setSimulationTimerId(id: number | null) {
+	simulationTimerId = id;
 }
 
 export function getDraftPool(): TravelCard[] {
