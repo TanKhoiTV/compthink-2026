@@ -102,46 +102,47 @@ function reattachCardClickDelegation() {
 
 console.log("[router] event delegation installed");
 
-document.addEventListener("click", (e) => {
-	const target = e.target as HTMLElement;
+document.addEventListener(
+	"click",
+	(e) => {
+		const target = e.target as HTMLElement;
 
-	// Draft card click (via [data-draft-card-id] wrapper)
-	const draftCard = target.closest("[data-draft-card-id]");
-	if (draftCard) {
-		const cardId = draftCard.getAttribute("data-draft-card-id");
-		if (cardId) {
-			console.log("[router] draft card click via delegation", { cardId });
+			// Draft card click (via [data-draft-card-id] wrapper)
+		const draftCard = target.closest("[data-draft-card-id]");
+		if (draftCard) {
+			const cardId = draftCard.getAttribute("data-draft-card-id");
+			if (cardId) {
+				e.preventDefault();
+				e.stopPropagation();
+				(globalThis as any).selectHandCard?.(cardId);
+				return;
+			}
+		}
+
+		// Hand card / board cell click (via [data-hand-card-id] or [data-board-cell])
+		const handCard = target.closest("[data-hand-card-id]");
+		if (handCard && !handCard.closest(".hand-card__close")) {
+			const cardId = handCard.getAttribute("data-hand-card-id");
+			if (cardId) {
+				e.preventDefault();
+				e.stopPropagation();
+				(globalThis as any).selectHandCard?.(cardId);
+				return;
+			}
+		}
+
+		const boardCell = target.closest("[data-board-cell]");
+		if (boardCell) {
+			const row = Number(boardCell.getAttribute("data-row-index"));
+			const col = Number(boardCell.getAttribute("data-col-index"));
 			e.preventDefault();
 			e.stopPropagation();
-			(globalThis as any).selectHandCard?.(cardId);
+			(globalThis as any).handleBoardCellClick?.(row, col);
 			return;
 		}
-	}
-
-	// Hand card / board cell click (via [data-hand-card-id] or [data-board-cell])
-	const handCard = target.closest("[data-hand-card-id]");
-	if (handCard && !handCard.closest(".hand-card__close")) {
-		const cardId = handCard.getAttribute("data-hand-card-id");
-		if (cardId) {
-			console.log("[router] hand card click via delegation", { cardId });
-			e.preventDefault();
-			e.stopPropagation();
-			(globalThis as any).selectHandCard?.(cardId);
-			return;
-		}
-	}
-
-	const boardCell = target.closest("[data-board-cell]");
-	if (boardCell) {
-		const row = Number(boardCell.getAttribute("data-row-index"));
-		const col = Number(boardCell.getAttribute("data-col-index"));
-		console.log("[router] board cell click via delegation", { row, col });
-		e.preventDefault();
-		e.stopPropagation();
-		(globalThis as any).handleBoardCellClick?.(row, col);
-		return;
-	}
-}, true);  /* capture phase — matches old TREKPOLOGY */
+	},
+	true,
+); /* capture phase — matches old TREKPOLOGY */
 
 // ── Hover handlers (no rerender — CSS handles visual feedback) ──────────────
 

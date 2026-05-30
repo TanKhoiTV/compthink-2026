@@ -178,13 +178,11 @@ function endCurrentDay() {
  * Toggles selection; also toggles focused popup on re-click.
  */
 (globalThis as any).selectHandCard = (cardId: string) => {
-	console.log("[app] selectHandCard called", { cardId, phase: getGamePhase() });
 	const phase = getGamePhase();
 
 	if (phase === "draft") {
 		// ── Draft phase: pick the card for this round ──
 		const pool = getDraftPool();
-		console.log("[app] draft pool size:", pool.length);
 		const picked = pool.find((c) => c.id === cardId);
 		if (!picked) return;
 
@@ -213,6 +211,7 @@ function endCurrentDay() {
 	}
 
 	if (phase === "placement") {
+		console.log("[app] placement select", { cardId, currentSelected: getSelectedHandCardId() });
 		// ── Placement phase: select/deselect card ──
 		const currentSelected = getSelectedHandCardId();
 		if (currentSelected === cardId) {
