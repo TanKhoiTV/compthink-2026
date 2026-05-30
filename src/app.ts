@@ -27,6 +27,7 @@ import {
 	getGamePhase,
 	getCurrentDayIndex,
 	getBoardSlots,
+	setCurrentPlayerBoard,
 	getAccumulatedVP,
 	setAccumulatedVP,
 	getDraftPool,
@@ -100,8 +101,8 @@ function startDailyDraft() {
  * into the placement hand. Return leftover pool cards to deck.
  */
 function finishDailyDraft() {
-	const hand = getPlayerHand();
-	setPlayerHand(hand);
+	// Snapshot the hand into a fresh array to break shared reference
+	setPlayerHand([...getPlayerHand()]);
 	setGamePhase("placement");
 	setDraftPool([]);
 	setSelectedHandCardId(null);
@@ -130,6 +131,7 @@ function placeHandCardOnBoard(
 
 	const board = getBoardSlots();
 	board[rowIndex][colIndex] = card;
+	setCurrentPlayerBoard(board);
 
 	setSelectedHandCardId(null);
 	setFocusedHandCardId(null);
@@ -199,11 +201,13 @@ function endCurrentDay() {
 		if (round >= DRAFT_PICK_TARGET) {
 			finishDailyDraft();
 		} else {
-			// Deal a new pool of 6 for the next round
+			// Pool shrinks each round simulating a pack being passed around
+			// Round 1: 7 cards, Round 2: 6, ..., Round 5: 3
+			const nextPoolSize = DRAFT_POOL_SIZE - round;
 			const newDeck = getDeck();
 			const shuffled = shuffleCards(newDeck);
-			setDraftPool(shuffled.slice(0, DRAFT_POOL_SIZE - 1));
-			setDeck(shuffled.slice(DRAFT_POOL_SIZE - 1));
+			setDraftPool(shuffled.slice(0, nextPoolSize));
+			setDeck(shuffled.slice(nextPoolSize));
 			setDraftRound(round + 1);
 			rerenderGameShell();
 		}

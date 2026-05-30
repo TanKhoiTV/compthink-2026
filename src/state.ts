@@ -51,7 +51,7 @@ function getCurrentPlayerBoard(): BoardSlots {
 	return playerBoards[currentPlayerId];
 }
 
-function setCurrentPlayerBoard(nextBoard: BoardSlots) {
+export function setCurrentPlayerBoard(nextBoard: BoardSlots) {
 	playerBoards[currentPlayerId] = nextBoard;
 }
 

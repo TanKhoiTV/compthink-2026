@@ -79,31 +79,52 @@ function reattachCardClickDelegation() {
 	}
 }
 
-// ── Document-level event delegation for board cell & hand card clicks ──────
-// Replaces inline onclick — no event.stopPropagation conflict.
+// ── Document-level click delegation (capture phase, matches TREKPOLOGY pattern) ──
+// Old TREKPOLOGY used capture:true + [data-draft-card-id] for draft cards.
+// This ensures clicks are caught before any inline handler processes them.
 
-document.addEventListener("click", (e) => {
-	const target = e.target as HTMLElement;
+document.addEventListener(
+	"click",
+	(e) => {
+		const target = e.target as HTMLElement;
 
-	const boardCell = target.closest("[data-board-cell]");
-	if (boardCell) {
-		e.stopPropagation();
-		const row = Number(boardCell.getAttribute("data-row-index"));
-		const col = Number(boardCell.getAttribute("data-col-index"));
-		(typeof globalThis as any).handleBoardCellClick?.(row, col);
-		return;
-	}
-
-	const handCard = target.closest("[data-hand-card-id]");
-	if (handCard && !target.closest(".hand-card__close")) {
-		e.stopPropagation();
-		const cardId = handCard.getAttribute("data-hand-card-id");
-		if (cardId) {
-			(typeof globalThis as any).selectHandCard?.(cardId);
+		// Draft card click (via [data-draft-card-id] wrapper)
+		const draftCard = target.closest("[data-draft-card-id]");
+		if (draftCard) {
+			const cardId = draftCard.getAttribute("data-draft-card-id");
+			if (cardId) {
+				e.preventDefault();
+				e.stopPropagation();
+				(globalThis as any).selectHandCard?.(cardId);
+				return;
+			}
 		}
-		return;
-	}
-});
+
+		// Hand card click
+		const handCard = target.closest("[data-hand-card-id]");
+		if (handCard && !handCard.closest(".hand-card__close")) {
+			const cardId = handCard.getAttribute("data-hand-card-id");
+			if (cardId) {
+				e.preventDefault();
+				e.stopPropagation();
+				(globalThis as any).selectHandCard?.(cardId);
+				return;
+			}
+		}
+
+		// Board cell click
+		const boardCell = target.closest("[data-board-cell]");
+		if (boardCell) {
+			const row = Number(boardCell.getAttribute("data-row-index"));
+			const col = Number(boardCell.getAttribute("data-col-index"));
+			e.preventDefault();
+			e.stopPropagation();
+			(globalThis as any).handleBoardCellClick?.(row, col);
+			return;
+		}
+	},
+	true,
+); /* capture phase — matches old TREKPOLOGY */
 
 // ── Hover handlers (no rerender — CSS handles visual feedback) ──────────────
 
