@@ -758,7 +758,7 @@ function renderEndDayButton(): string {
 // ── Game Over screen ─────────────────────────────────────────────────────────
 
 function renderGameOverScreen(): string {
-	const totalVP = getAccumulatedVP();
+	const breakdownTotal = getAccumulatedVP();
 	const board = getBoardSlots();
 	const totals = calculateBoardTotals(board);
 	const placedCards = getPlacedCards(board);
@@ -766,6 +766,10 @@ function renderGameOverScreen(): string {
 		placedCards,
 		getBoardDisplayName: (c) => c.name,
 	});
+
+	// Debt penalty: accumulatedVP may be lower than card score due to debt
+	const debtPenalty = breakdown.totalVP - breakdownTotal;
+	const finalScore = breakdownTotal;
 
 	const comboLines = (breakdown.lines ?? [])
 		.map((d: string) => `<li class="game-over__detail-item">${d}</li>`)
@@ -782,7 +786,7 @@ function renderGameOverScreen(): string {
 
         <div class="game-over__score">
           <span class="game-over__score-label">Tổng điểm</span>
-          <span class="game-over__score-value">${totalVP}</span>
+          <span class="game-over__score-value">${finalScore}</span>
           <span class="game-over__score-unit">VP</span>
         </div>
 
@@ -796,6 +800,15 @@ function renderGameOverScreen(): string {
             <span>${breakdown.bonusVP > 0 ? `+${breakdown.bonusVP}` : "0"}</span>
           </div>
           ${comboLines ? `<ul class="game-over__details">${comboLines}</ul>` : ""}
+          ${
+						debtPenalty > 0
+							? `
+          <div class="game-over__row game-over__row--debt">
+            <span>Nợ xu (×10 VP)</span>
+            <span>-${debtPenalty}</span>
+          </div>`
+							: ""
+					}
         </div>
 
         <div class="game-over__stats">
@@ -816,6 +829,18 @@ function renderGameOverScreen(): string {
         <button onclick="location.reload()" class="game-over__replay">
           Chơi lại
         </button>
+
+        <div class="game-over__actions">
+          <button onclick="downloadTravelCertificateHtml()" class="game-over__action">
+            🏆 Chứng nhận hành trình
+          </button>
+          <button onclick="downloadTravelTimelineTxt()" class="game-over__action game-over__action--alt">
+            📋 Tải lịch trình (.txt)
+          </button>
+          <button onclick="downloadTravelTimelineJson()" class="game-over__action game-over__action--alt">
+            📊 Tải lịch trình (.json)
+          </button>
+        </div>
       </div>
     </div>
   `;

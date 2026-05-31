@@ -14526,6 +14526,14 @@ body,
   color: #4e3a2b;
 }
 
+.game-over__row--debt {
+  color: #dc2626;
+  font-weight: 700;
+  border-top: 1px dashed rgba(220, 38, 38, 0.25);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
 .game-over__details {
   list-style: none;
   padding: 0;
@@ -14600,6 +14608,44 @@ body,
 
 .game-over__replay:active {
   transform: scale(0.97);
+}
+
+.game-over__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.game-over__action {
+  display: block;
+  padding: 10px 24px;
+  border: 2px solid rgba(124, 58, 237, 0.3);
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #7c3aed;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.game-over__action:hover {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: #7c3aed;
+}
+
+.game-over__action--alt {
+  border-color: rgba(78, 51, 37, 0.25);
+  color: var(--muted, #6b5c4e);
+}
+
+.game-over__action--alt:hover {
+  background: rgba(78, 51, 37, 0.06);
+  border-color: var(--ink, #4e3325);
 }
 
 @keyframes fadeIn {

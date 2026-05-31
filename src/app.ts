@@ -1127,6 +1127,23 @@ function hideFocusedCardOverlay() {
 // Expose playGameSound globally for inline onclick handlers
 (globalThis as any).playGameSound = playGameSound;
 
+// ── Certificate / Export ────────────────────────────────────────────────────
+
+import {
+	downloadTravelCertificateHtml,
+	downloadTravelTimeline,
+} from "./export/certificate.ts";
+
+(globalThis as any).downloadTravelCertificateHtml = () => {
+	downloadTravelCertificateHtml();
+};
+(globalThis as any).downloadTravelTimelineTxt = () => {
+	downloadTravelTimeline("txt");
+};
+(globalThis as any).downloadTravelTimelineJson = () => {
+	downloadTravelTimeline("json");
+};
+
 /**
  * End the current day and advance the game.
  */
