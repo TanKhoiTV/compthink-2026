@@ -87,16 +87,14 @@ import { getRemainingResources } from "./shared/resources.ts";
 import { calculateSimulationResult } from "./shared/scoring.ts";
 import type { GameSoundName } from "./audio/gameAudio.ts";
 import { ROWS } from "./arena/render.ts";
+import { VERSION, BUILD_TIME, APP_NAME } from "./version.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.14.2";
-const BUILD_TIME = "__BUILD_TIME_PLACEHOLDER__";
-const gameName = "Trekkopoly";
-console.log(`${gameName} v${VERSION} (build ${BUILD_TIME}) running!`);
+console.log(`${APP_NAME} v${VERSION} (build ${BUILD_TIME}) running!`);
 
 // ── Exhaust lock token system ──────────────────────────────────────────────
 
