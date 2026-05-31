@@ -5,7 +5,7 @@
  * pure game logic. They add display-level fields (labels, computed names)
  * on top of the canonical scr/shared/ types.
  */
-import type { GameCardEffect, Rarity, TravelCard } from "./types.ts";
+import type { TravelCard } from "./types.ts";
 
 export type PlayerId = "p1" | "p2" | "p3" | "p4";
 

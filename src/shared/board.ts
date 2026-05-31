@@ -92,12 +92,6 @@ export function countCardsWithTag(cards: TravelCard[], tag: string): number {
 
 // ─── Canonical validation (adapted from original scr/shared/board.ts) ─────────
 
-/** Map row index to legacy TimeSlot name. */
-function rowIndexToSlot(rowIndex: number): string {
-	const slots = ["early_morning", "morning", "afternoon", "evening", "night"];
-	return slots[rowIndex] ?? "unknown";
-}
-
 /** Map legacy TimeSlot name to row index. */
 function slotToRowIndex(slot: string): number {
 	const slots: Record<string, number> = {
@@ -132,7 +126,7 @@ export const TIME_SLOTS = [
 export const DISTANCE_LIMIT_KM = 20;
 
 export function cellId(position: GridPosition) {
-	return `day-\${position.day}-\${position.slot}`;
+	return `day-${position.day}-${position.slot}`;
 }
 
 export function validateGridPlacement(
@@ -189,9 +183,8 @@ export function placeCardOnBoard(
 
 export function validateDistance(
 	boardSlots: BoardSlots,
-	cards: TravelCard[],
+	_cards: TravelCard[],
 ): { totalKm: number; penalty: number; warnings: string[] } {
-	const byId = new Map(cards.map((card) => [card.id, card]));
 	let previous: TravelCard | undefined;
 	let previousCol: number | undefined;
 	let totalKm = 0;

@@ -467,8 +467,8 @@ async function handleLoginSubmit(event: SubmitEvent) {
 		rerenderGameShell();
 		// Re-init video bindings after DOM refresh
 		setTimeout(() => initDashboardHub(), 0);
-	} catch (err: any) {
-		statusEl.textContent = err.message || "Lỗi đăng nhập";
+	} catch (err: unknown) {
+		statusEl.textContent = err instanceof Error ? err.message : "Lỗi đăng nhập";
 		statusEl.className = "hub-auth__status hub-auth__status--error";
 	}
 }
@@ -526,8 +526,8 @@ async function handleRegisterSubmit(event: SubmitEvent) {
 		const { rerenderGameShell } = await import("../router.ts");
 		rerenderGameShell();
 		setTimeout(() => initDashboardHub(), 0);
-	} catch (err: any) {
-		statusEl.textContent = err.message || "Lỗi đăng ký";
+	} catch (err: unknown) {
+		statusEl.textContent = err instanceof Error ? err.message : "Lỗi đăng ký";
 		statusEl.className = "hub-auth__status hub-auth__status--error";
 	}
 }

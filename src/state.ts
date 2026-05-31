@@ -14,7 +14,7 @@ import type { PlayerId } from "./shared/client-types.ts";
 //
 //   draft → placement → endDay → draft (next day) or finished
 //
-export type GamePhase = "draft" | "placement" | "simulation" | "finished";
+type GamePhase = "draft" | "placement" | "simulation" | "finished";
 
 let gamePhase: GamePhase = "draft";
 
