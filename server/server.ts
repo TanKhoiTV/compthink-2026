@@ -137,7 +137,17 @@ function handleWebSocket(req: Request): Response {
 	}
 
 	// Upgrade the HTTP request to a WebSocket connection
-	const { socket, response } = Deno.upgradeWebSocket(req);
+	// Deno.upgradeWebSocket works on both HTTP/1.1 (with Upgrade header)
+	// and HTTP/2 (via Deno Deploy's proxy layer) — it throws if the
+	// request is not a valid WebSocket upgrade.
+	let socket: WebSocket;
+	let response: Response;
+	try {
+		({ socket, response } = Deno.upgradeWebSocket(req));
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : String(err);
+		return errorResponse(400, `WebSocket upgrade failed: ${msg}`);
+	}
 
 	const session = createPlayerSession(playerId, name, socket);
 	session.room = room;
@@ -266,11 +276,11 @@ async function router(req: Request): Promise<Response> {
 		}
 
 		// WebSocket upgrade endpoint
+		// Deno Deploy uses HTTP/2 at the edge — the Upgrade header may be
+		// absent because the WebSocket negotiation happens at the proxy layer.
+		// Deno.upgradeWebSocket() handles the upgrade internally regardless;
+		// if the request is not a valid upgrade it throws, which we catch below.
 		if (pathname === "/ws" && method === "GET") {
-			const upgradeHeader = req.headers.get("Upgrade");
-			if (upgradeHeader?.toLowerCase() !== "websocket") {
-				return addCors(errorResponse(426, "Upgrade required"));
-			}
 			return handleWebSocket(req);
 		}
 
