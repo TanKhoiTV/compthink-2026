@@ -611,7 +611,7 @@ function renderScoreBreakdownPanel(): string {
 		<div>₡${breakdown.spentCoin} • ⚡${breakdown.spentStamina}</div>
 		${
 			getLocalCoinDebt() > 0
-				? `<div>💸 Nợ ${getLocalCoinDebt()}₡ (-${getLocalCoinDebt() * 10}VP)</div>`
+				? `<button type="button" class="debt-link" onclick="event.stopPropagation(); window.openDebtTokenModal()" title="Bấm để quản lý nợ">💸 Nợ ${getLocalCoinDebt()}₡ (-${getLocalCoinDebt() * 10}VP)</button>`
 				: ""
 		}
 	  </div>

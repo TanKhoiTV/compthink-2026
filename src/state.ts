@@ -87,6 +87,11 @@ let isReplayComplete = false;
 let simulationTimerId: number | null = null;
 let showFocusedPopup = false;
 
+// ── Debt modal state ─────────────────────────────────────────────────────────
+
+let debtModalVisible = false;
+let debtModalNotice = "";
+
 // ── Timer state ──────────────────────────────────────────────────────────────
 
 let remainingTurnSeconds = 15;
@@ -319,6 +324,22 @@ export function getLocalCoinDebt(): number {
 
 export function setLocalCoinDebt(v: number) {
 	localCoinDebt = v;
+}
+
+export function getDebtModalVisible(): boolean {
+	return debtModalVisible;
+}
+
+export function setDebtModalVisible(v: boolean) {
+	debtModalVisible = v;
+}
+
+export function getDebtModalNotice(): string {
+	return debtModalNotice;
+}
+
+export function setDebtModalNotice(v: string) {
+	debtModalNotice = v;
 }
 
 export function getIsInitialDealInProgress(): boolean {

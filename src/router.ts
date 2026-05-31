@@ -6,7 +6,18 @@
 
 import type { AppScreen } from "./shared/client-types.ts";
 import { renderMainArena } from "./arena/render.ts";
-import { getSuppressNextClick, setSuppressNextClick } from "./state.ts";
+import {
+	getSuppressNextClick,
+	setSuppressNextClick,
+	getDebtModalVisible,
+	getLocalCoinDebt,
+	getDebtModalNotice,
+} from "./state.ts";
+import { renderDebtTokenModal } from "./arena/extra-panels.ts";
+import { getBoardSlots } from "./state.ts";
+import { calculateBoardTotals } from "./shared/board.ts";
+import { getRemainingResources } from "./shared/resources.ts";
+import { STARTING_COIN, STARTING_STAMINA } from "./shared/constants.ts";
 
 // ── Screen state ────────────────────────────────────────────────────────────
 
@@ -41,12 +52,30 @@ export function renderGameShell(): string {
 			return '<div class="dashboard-screen"><p>Dashboard (sẽ render sau)</p></div>';
 		case "lobby":
 			return '<div class="lobby-screen"><p>Phòng chờ (sẽ render sau)</p></div>';
-		case "game":
+		case "game": {
+			const debtAmount = getLocalCoinDebt();
+			const debtModalVisible = getDebtModalVisible();
+			const debtModalNotice = getDebtModalNotice();
+			const remaining =
+				debtModalVisible && debtAmount > 0
+					? getRemainingResources({
+							totals: calculateBoardTotals(getBoardSlots()),
+							startingCoin: STARTING_COIN,
+							startingStamina: STARTING_STAMINA,
+						})
+					: { coin: 0, stamina: 0 };
 			return `<div class="game-shell">
 				<aside class="players-column players-column--left"></aside>
 				${renderMainArena()}
 				<aside class="players-column players-column--right"></aside>
-			</div>`;
+			</div>
+			${debtModalVisible && debtAmount > 0 ? renderDebtTokenModal(
+				debtModalVisible,
+				debtAmount,
+				remaining.coin,
+				debtModalNotice,
+			) : ""}`;
+		}
 		default:
 			return '<div class="loading-screen"><p>Đang tải...</p></div>';
 	}
