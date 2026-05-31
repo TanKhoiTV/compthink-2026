@@ -56,11 +56,23 @@ self.addEventListener("message", (event) => {
 // 3. Chiến lược: Network-First cho app shell, Network-Only cho media.
 //    - App shell (JS, CSS, HTML): network-first, cache fallback offline.
 //    - Media (video, audio): network-only — too large to cache, avoid stream clone errors.
+//    - API/WebSocket requests to remote server: network-only — POST can't be cached
+//      and cache.put() rejects on non-GET, causing the whole fetch to hang.
 self.addEventListener("fetch", (event) => {
 	const url = new URL(event.request.url);
 
 	// Skip caching for large media files — serve from network only
 	if (url.pathname.match(/\.(mp4|webm|ogg|mp3|wav|m4a|mov)$/i)) {
+		return;
+	}
+
+	// Skip caching for API requests to the remote game server
+	if (url.hostname !== location.hostname) {
+		return;
+	}
+
+	// Only cache GET requests — POST/PUT/DELETE can't be stored in Cache API
+	if (event.request.method !== "GET") {
 		return;
 	}
 
