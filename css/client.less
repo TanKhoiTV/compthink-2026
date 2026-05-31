@@ -8893,8 +8893,7 @@ body,
 #app {
   position: fixed !important;
   inset: 0 !important;
-  display: grid !important;
-  place-items: center !important;
+  overflow: hidden !important;
 }
 
 /*
@@ -8903,9 +8902,19 @@ body,
   zoom scale cả layout lẫn hitbox, nên kéo thả không bị lệch như transform.
 */
 .game-shell {
-  position: relative !important;
-  left: auto !important;
-  top: auto !important;
+  position: absolute !important;
+
+  /* Center the LOGICAL 1600×900 box in the zoom-scaled viewport coordinate system.
+     getBoundingClientRect multiplies logical positions by zoom, so to get the
+     visual center at viewport center we need:
+       logicalLeft * zoom + 800*zoom = viewportWidth/2
+       logicalLeft = viewportWidth/(2*zoom) - 800
+     Which is equivalent to:
+       left: calc((100vw / var(--ui-scale) - 1600px) / 2)
+     This measures the viewport in zoomed coordinates (100vw/uiScale), then
+     centers the 1600px box within that coordinate system. */
+  left: calc((100vw / var(--ui-scale) - 1600px) / 2) !important;
+  top: calc((100vh / var(--ui-scale) - 900px) / 2) !important;
 
   width: 1600px !important;
   height: 900px !important;
@@ -8920,6 +8929,11 @@ body,
   zoom: var(--ui-scale) !important;
 
   overflow: hidden !important;
+
+  /* No margin offset needed — zoom scales from the absolute top-left which is
+     already at (100vw-1600px)/2. The visual box extends to the right/down from
+     this position. Since zoom is centered here, the visual center stays at the
+     viewport center for any scale value. */
   margin: 0 !important;
 }
 
