@@ -29,6 +29,11 @@ import {
 	type PlayerSession,
 } from "./player.ts";
 import type { TravelCard } from "../src/shared/types.ts";
+import {
+	registerUser,
+	loginUser,
+	verifyAuthToken,
+} from "./auth.ts";
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -88,8 +93,7 @@ function handleListRooms(): Response {
 }
 
 async function handleCreateRoom(req: Request): Promise<Response> {
-	let body: { cards?: TravelCard[]; maxPlayers?: number; maxDays?: number } =
-		{};
+	let body: { cards?: TravelCard[]; maxPlayers?: number; maxDays?: number };
 
 	try {
 		body = await req.json();
@@ -217,6 +221,50 @@ async function router(req: Request): Promise<Response> {
 
 		if (pathname === "/rooms" && method === "POST") {
 			return addCors(await handleCreateRoom(req));
+		}
+
+		// Auth: register
+		if (pathname === "/api/auth/register" && method === "POST") {
+			try {
+				const body = await req.json();
+				const result = await registerUser({
+					username: body.username,
+					password: body.password,
+					displayName: body.displayName,
+				});
+				return addCors(json(result));
+			} catch (err: unknown) {
+				const message = err instanceof Error ? err.message : String(err);
+				return addCors(errorResponse(400, message));
+			}
+		}
+
+		// Auth: login
+		if (pathname === "/api/auth/login" && method === "POST") {
+			try {
+				const body = await req.json();
+				const result = await loginUser({
+					username: body.username,
+					password: body.password,
+				});
+				return addCors(json(result));
+			} catch (err: unknown) {
+				const message = err instanceof Error ? err.message : String(err);
+				return addCors(errorResponse(400, message));
+			}
+		}
+
+		// Auth: verify token
+		if (pathname === "/api/auth/me" && method === "GET") {
+			const authHeader = req.headers.get("Authorization") || "";
+			const token = authHeader.startsWith("Bearer ")
+				? authHeader.slice(7)
+				: null;
+			const user = await verifyAuthToken(token);
+			if (!user) {
+				return addCors(errorResponse(401, "Chưa đăng nhập hoặc token hết hạn."));
+			}
+			return addCors(json({ user }));
 		}
 
 		// WebSocket upgrade endpoint

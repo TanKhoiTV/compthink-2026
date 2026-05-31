@@ -17,8 +17,19 @@ import { rpcCall } from "../online/socketClient.ts";
 import { renderHandCard, renderBoardMiniCard } from "../arena/render.ts";
 import type { RoomSnapshot, TravelCard, PlayerState } from "../shared/types.ts";
 import type { BoardSlots } from "../shared/board.ts";
-import { boardCellsToSlots, DAYS, TIME_SLOTS, SLOT_NAMES } from "../shared/board.ts";
-import { getRarityLabel, getTagLabel, getShortName, getShortCity, getBonusText } from "../shared/card-mapper.ts";
+import {
+	boardCellsToSlots,
+	DAYS,
+	TIME_SLOTS,
+	SLOT_NAMES,
+} from "../shared/board.ts";
+import {
+	getRarityLabel,
+	getTagLabel,
+	getShortName,
+	getShortCity,
+	getBonusText,
+} from "../shared/card-mapper.ts";
 
 // ── Main entry ──────────────────────────────────────────────────────────────
 
@@ -82,22 +93,23 @@ function renderOnlineDraft(
         <div class="board-block">
           <div class="days-header">
       			${DAYS.map((d) => {
-              const isCurrent = d === snapshot.day;
-              const isPast = d < snapshot.day;
-              return `<div class="day-pill ${isCurrent ? "day-pill--current" : ""} ${isPast ? "day-pill--done" : ""}">NGÀY ${d}</div>`;
-            }).join("")}
+							const isCurrent = d === snapshot.day;
+							const isPast = d < snapshot.day;
+							return `<div class="day-pill ${isCurrent ? "day-pill--current" : ""} ${isPast ? "day-pill--done" : ""}">NGÀY ${d}</div>`;
+						}).join("")}
           </div>
 
           <section class="online-draft-section">
             <div class="online-draft__hand">
               <h2>Bài trên tay (${handCards.length})</h2>
               <div class="online-draft__cards">
-                ${handCards.length === 0
-                  ? '<p class="online-draft__empty">Đã chọn hết bài, chờ người chơi khác...</p>'
-                  : handCards
-                      .map((card, idx) => renderDraftCard(card, idx))
-                      .join("")
-                }
+                ${
+									handCards.length === 0
+										? '<p class="online-draft__empty">Đã chọn hết bài, chờ người chơi khác...</p>'
+										: handCards
+												.map((card, idx) => renderDraftCard(card, idx))
+												.join("")
+								}
               </div>
             </div>
 
@@ -112,7 +124,9 @@ function renderOnlineDraft(
 }
 
 function renderDraftCard(card: TravelCard, _index: number): string {
-	const rarityClass = card.rarity ? `hand-card--${card.rarity}` : "hand-card--common";
+	const rarityClass = card.rarity
+		? `hand-card--${card.rarity}`
+		: "hand-card--common";
 	const shortName = getShortName(card.name);
 	const shortCity = getShortCity(card.city || "");
 
@@ -192,27 +206,32 @@ function renderOnlinePlacement(
         <div class="board-block">
           <div class="days-header">
       			${DAYS.map((d) => {
-              const isCurrent = d === currentDay;
-              const isPast = d < currentDay;
-              return `<div class="day-pill ${isCurrent ? "day-pill--current" : ""} ${isPast ? "day-pill--done" : ""}">NGÀY ${d}</div>`;
-            }).join("")}
+							const isCurrent = d === currentDay;
+							const isPast = d < currentDay;
+							return `<div class="day-pill ${isCurrent ? "day-pill--current" : ""} ${isPast ? "day-pill--done" : ""}">NGÀY ${d}</div>`;
+						}).join("")}
           </div>
 
           <section class="board-grid">
-            ${TIME_SLOTS.map((slot, rowIdx) => `
+            ${TIME_SLOTS.map(
+							(slot, rowIdx) => `
               <div class="time-label">${SLOT_NAMES[slot] || slot}</div>
               ${DAYS.map((_, colIdx) => renderOnlineBoardCell(boardSlots, rowIdx, colIdx, dayIndex, chosenCards)).join("")}
-            `).join("")}
+            `,
+						).join("")}
           </section>
         </div>
 
-        ${chosenCards.length > 0 ? `
+        ${
+					chosenCards.length > 0
+						? `
           <div class="online-placement__chosen">
             <h3>Bài đã chọn (${chosenCards.length}) — chọn thẻ rồi click vào ô trống</h3>
             <div class="online-placement__chosen-cards">
-              ${chosenCards.map((card, idx) => {
-                const isSelectedCard = selectedPlaceCardId === card.card_id;
-                return `
+              ${chosenCards
+								.map((card, idx) => {
+									const isSelectedCard = selectedPlaceCardId === card.card_id;
+									return `
                   <div class="online-placement-card" data-online-place-card-id="${card.card_id}">
                     <div class="placement-card ${isSelectedCard ? "placement-card--selected" : ""}"
                          data-select-place="${card.card_id}">
@@ -220,14 +239,18 @@ function renderOnlinePlacement(
                     </div>
                     <button class="online-placement-card__place" data-online-place="${card.card_id}">📌 Đặt</button>
                   </div>
-                `}).join("")}
+                `;
+								})
+								.join("")}
             </div>
           </div>
-        ` : `
+        `
+						: `
           <div class="online-placement__done">
             <p>✅ Đã xếp xong bài cho ngày ${currentDay}.</p>
           </div>
-        `}
+        `
+				}
 
         <div class="online-placement__actions">
           <button class="online-confirm-btn" data-online-confirm-day="true">
@@ -308,7 +331,9 @@ function renderOnlineScoring(
               </tr>
             </thead>
             <tbody>
-              ${snapshot.players.map((p) => `
+              ${snapshot.players
+								.map(
+									(p) => `
                 <tr class="${p.playerId === myPlayer.playerId ? "score-row--me" : ""}">
                   <td><strong>${escapeHtml(p.name)}</strong></td>
                   <td>${p.resources.vp}</td>
@@ -316,7 +341,9 @@ function renderOnlineScoring(
                   <td>${p.resources.stamina}</td>
                   <td>${p.ready ? "✅ Sẵn sàng" : "⏳ Đang tính..."}</td>
                 </tr>
-              `).join("")}
+              `,
+								)
+								.join("")}
             </tbody>
           </table>
 
@@ -331,7 +358,9 @@ function renderOnlineScoring(
 
 function renderOnlineFinished(snapshot: RoomSnapshot): string {
 	const winner = snapshot.players.find((p) => p.playerId === snapshot.winnerId);
-	const sorted = [...snapshot.players].sort((a, b) => b.resources.vp - a.resources.vp);
+	const sorted = [...snapshot.players].sort(
+		(a, b) => b.resources.vp - a.resources.vp,
+	);
 
 	return `
     <main class="arena">
@@ -362,7 +391,9 @@ function renderOnlineFinished(snapshot: RoomSnapshot): string {
               </tr>
             </thead>
             <tbody>
-              ${sorted.map((p, i) => `
+              ${sorted
+								.map(
+									(p, i) => `
                 <tr class="${p.playerId === snapshot.winnerId ? "score-row--winner" : ""}">
                   <td>${i + 1}</td>
                   <td><strong>${escapeHtml(p.name)}</strong></td>
@@ -370,7 +401,9 @@ function renderOnlineFinished(snapshot: RoomSnapshot): string {
                   <td>${p.resources.xu}</td>
                   <td>${p.resources.stamina}</td>
                 </tr>
-              `).join("")}
+              `,
+								)
+								.join("")}
             </tbody>
           </table>
 
@@ -412,7 +445,9 @@ export function initOnlineGameGlobals() {
 	// Draft: store card
 	document.querySelectorAll("[data-online-store]").forEach((btn) => {
 		btn.addEventListener("click", (e) => {
-			const cardId = (e.currentTarget as HTMLElement).getAttribute("data-online-store");
+			const cardId = (e.currentTarget as HTMLElement).getAttribute(
+				"data-online-store",
+			);
 			if (cardId) handleOnlineDraftCard(cardId, "store");
 		});
 	});
@@ -420,7 +455,9 @@ export function initOnlineGameGlobals() {
 	// Draft: rest card
 	document.querySelectorAll("[data-online-rest]").forEach((btn) => {
 		btn.addEventListener("click", (e) => {
-			const cardId = (e.currentTarget as HTMLElement).getAttribute("data-online-rest");
+			const cardId = (e.currentTarget as HTMLElement).getAttribute(
+				"data-online-rest",
+			);
 			if (cardId) handleOnlineDraftCard(cardId, "rest");
 		});
 	});
@@ -441,7 +478,9 @@ export function initOnlineGameGlobals() {
 	// Placement: select card
 	document.querySelectorAll("[data-select-place]").forEach((el) => {
 		el.addEventListener("click", (e) => {
-			const cardId = (e.currentTarget as HTMLElement).getAttribute("data-select-place");
+			const cardId = (e.currentTarget as HTMLElement).getAttribute(
+				"data-select-place",
+			);
 			if (cardId) selectPlaceCard(cardId);
 		});
 	});
@@ -449,7 +488,9 @@ export function initOnlineGameGlobals() {
 	// Placement: place button
 	document.querySelectorAll("[data-online-place]").forEach((btn) => {
 		btn.addEventListener("click", (e) => {
-			const cardId = (e.currentTarget as HTMLElement).getAttribute("data-online-place");
+			const cardId = (e.currentTarget as HTMLElement).getAttribute(
+				"data-online-place",
+			);
 			if (cardId) selectPlaceCard(cardId);
 		});
 	});
@@ -492,7 +533,11 @@ async function handleOnlineDraftCard(cardId: string, mode: "store" | "rest") {
 	}
 }
 
-async function handleOnlinePlaceCard(cardId: string, day: number, slot: string) {
+async function handleOnlinePlaceCard(
+	cardId: string,
+	day: number,
+	slot: string,
+) {
 	try {
 		await rpcCall("placeCard", { cardId, day, slot });
 		selectedPlaceCardId = null;
