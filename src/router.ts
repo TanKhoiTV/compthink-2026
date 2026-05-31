@@ -7,6 +7,7 @@
 import type { AppScreen } from "./shared/client-types.ts";
 import { renderMainArena } from "./arena/render.ts";
 import { renderDashboard } from "./screens/dashboard.ts";
+import { renderOnlineGameArena } from "./screens/onlineGame.ts";
 import {
 	renderOnlineEntryScreen,
 	renderOnlineLobbyRoomScreen,
@@ -15,6 +16,8 @@ import {
 	getCurrentLobbySnapshot,
 	getSavedSession,
 	getCurrentPlayerName,
+	getCurrentRoomId,
+	getCurrentGameSnapshot,
 } from "./online/lobbyClient.ts";
 import {
 	getSuppressNextClick,
@@ -84,6 +87,18 @@ export function renderGameShell(): string {
 			return renderOnlineEntryScreen(savedSession, displayName);
 		}
 		case "game": {
+			const roomId = getCurrentRoomId();
+
+			// Online multiplayer mode
+			if (roomId && getCurrentGameSnapshot()) {
+				return `<div class="game-shell">
+					<aside class="players-column players-column--left"></aside>
+					${renderOnlineGameArena()}
+					<aside class="players-column players-column--right"></aside>
+				</div>`;
+			}
+
+			// Single-player mode
 			const debtAmount = getLocalCoinDebt();
 			const debtModalVisible = getDebtModalVisible();
 			const debtModalNotice = getDebtModalNotice();
@@ -144,6 +159,11 @@ export function rerenderGameShell() {
 	} else if (currentAppScreen === "lobby") {
 		// Lobby globals are already bound in app.ts initLobbyGlobals()
 		// No post-render side-effects needed — lobby is static HTML
+	} else if (currentAppScreen === "game" && getCurrentRoomId()) {
+		// Online game — init action handlers
+		import("./screens/onlineGame.ts").then((mod) => {
+			mod.initOnlineGameGlobals();
+		});
 	}
 }
 

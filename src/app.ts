@@ -84,7 +84,7 @@ import "./online/lobbyClient.ts"; // Side-effect: binds lobby globals
 import type { PlayerId } from "./shared/client-types.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
-import { saigonFoodCards } from "./shared/data/index.ts";
+import { allCards } from "./shared/data/cards.all.ts";
 import {
 	HAND_SIZE,
 	STARTING_COIN,
@@ -317,7 +317,7 @@ if ("serviceWorker" in navigator) {
 // ── Initialise deck ────────────────────────────────────────────────────────────
 
 const fullDeck = createInitialDeck({
-	cards: saigonFoodCards,
+	cards: allCards,
 	fallbackCards: [],
 	handSize: HAND_SIZE,
 });

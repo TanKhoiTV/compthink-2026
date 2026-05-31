@@ -15,7 +15,7 @@ import {
 	setOnRoomSnapshot,
 	setOnDisconnect,
 } from "./socketClient.ts";
-import type { RoomSnapshot } from "../shared/types.ts";
+import type { RoomSnapshot, TravelCard } from "../shared/types.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -50,6 +50,10 @@ let currentRoomId: string | null = null;
 let currentPlayerId: string | null = null;
 let currentPlayerName: string | null = null;
 let currentLobbySnapshot: LobbySnapshot | null = null;
+
+// Online game state — set by handleRoomSnapshot when game starts
+let currentGameSnapshot: RoomSnapshot | null = null;
+let currentCards: TravelCard[] = [];
 
 // ── Saved session (localStorage) ───────────────────────────────────────────
 
@@ -136,14 +140,9 @@ async function createRoomFromLobby() {
 
 		// Use all Saigon phase 1 cards for now
 		const cards = getCardsByPhasePool("SAIGON");
+		currentCards = cards;
 
-		const result = await createRoomAndJoin(
-			cards,
-			playerId,
-			playerName,
-			2,
-			5,
-		);
+		const result = await createRoomAndJoin(cards, playerId, playerName, 2, 5);
 
 		currentRoomId = result.roomId;
 
@@ -217,11 +216,7 @@ async function reconnectSavedRoomFromLobby() {
 		currentPlayerId = saved.playerId;
 		currentPlayerName = saved.playerName;
 
-		await connectToRoom(
-			saved.roomId,
-			saved.playerId,
-			saved.playerName,
-		);
+		await connectToRoom(saved.roomId, saved.playerId, saved.playerName);
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		alert(`Không thể reconnect: ${message}`);
@@ -285,14 +280,16 @@ function handleRoomSnapshot(snapshot: RoomSnapshot) {
 	if (snapshot.phase === "lobby") {
 		// Still in lobby — update player list
 		currentLobbySnapshot = buildLobbySnapshot(snapshot);
+		currentGameSnapshot = null;
 		// Re-render the lobby screen
 		import("../router.ts").then(({ rerenderGameShell }) => {
 			rerenderGameShell();
 		});
-	} else if (snapshot.phase === "draft" || snapshot.phase === "placement") {
-		// Game has started — transition to game screen
-		// Store the snapshot for the game to use
+	} else {
+		// Game has started (draft/placement/scoring/finished) —
+		// store snapshot and switch to game screen
 		currentLobbySnapshot = null;
+		currentGameSnapshot = snapshot;
 		import("../router.ts").then(({ transitionToScreen }) => {
 			transitionToScreen("game");
 		});
@@ -379,6 +376,14 @@ export function getCurrentPlayerId(): string | null {
 
 export function getCurrentPlayerName(): string | null {
 	return currentPlayerName;
+}
+
+export function getCurrentGameSnapshot(): RoomSnapshot | null {
+	return currentGameSnapshot;
+}
+
+export function getCurrentCards(): TravelCard[] {
+	return currentCards;
 }
 
 // Auto-init lobby globals on module load
