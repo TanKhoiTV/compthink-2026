@@ -316,19 +316,31 @@ if ("serviceWorker" in navigator) {
 
 // ── Initialise deck ────────────────────────────────────────────────────────────
 
-const fullDeck = createInitialDeck({
-	cards: allCards,
-	fallbackCards: [],
-	handSize: HAND_SIZE,
-});
+// ── Lazy single-player game init ──────────────────────────────────────────
+// DON'T start the game on module load — it runs under dashboard/online too.
+// Defer until user clicks single-player "Chơi".
 
-setDeck(shuffleCards(fullDeck));
-setPlayerHand([]);
-setCurrentDayIndex(0);
+let singlePlayerStarted = false;
 
-// ── Start Day 1 draft ─────────────────────────────────────────────────────────
+function startSinglePlayerGame() {
+	if (singlePlayerStarted) return;
+	singlePlayerStarted = true;
 
-startDailyDraft();
+	const fullDeck = createInitialDeck({
+		cards: allCards,
+		fallbackCards: [],
+		handSize: HAND_SIZE,
+	});
+
+	setDeck(shuffleCards(fullDeck));
+	setPlayerHand([]);
+	setCurrentDayIndex(0);
+
+	startDailyDraft();
+}
+
+// Expose globally so dashboard.ts's gotoMapSelection can call it
+(globalThis as any).startSinglePlayerGame = startSinglePlayerGame;
 
 // ── Global game loop functions ────────────────────────────────────────────
 
