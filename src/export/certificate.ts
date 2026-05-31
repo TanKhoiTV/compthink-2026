@@ -11,6 +11,7 @@ import {
 	STARTING_STAMINA,
 	PHASE_DAYS,
 } from "../shared/constants.ts";
+import { getTagLabel } from "../shared/card-mapper.ts";
 
 const TIME_LABELS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
@@ -136,17 +137,7 @@ export function buildTravelTimelineExport(): TimelineExportData {
 	};
 }
 
-function getTagLabel(tag: string): string {
-	const labels: Record<string, string> = {
-		FOOD: "Ẩm thực",
-		CULTURE: "Văn hoá",
-		ADVENTURE: "Phiêu lưu",
-		RELAX: "Thư giãn",
-		SHOPPING: "Mua sắm",
-		NATURE: "Thiên nhiên",
-	};
-	return labels[tag] ?? tag;
-}
+
 
 function escapeHtml(value: string): string {
 	return String(value ?? "")
