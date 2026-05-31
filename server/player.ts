@@ -169,7 +169,7 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
 
 			case "startGame": {
 				requireRoom(session);
-				startGame(session.room!);
+				startGame(session.room!, session.playerId);
 				sendResult(session, id, { ok: true });
 				break;
 			}

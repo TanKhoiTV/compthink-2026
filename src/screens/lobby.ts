@@ -7,10 +7,24 @@
  * CSS classes match existing styles in css/client.less.
  */
 
+/**
+ * Escape HTML special characters to prevent XSS when injecting
+ * user-controlled values into HTML templates.
+ */
+function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+}
+
 export function renderOnlineEntryScreen(
 	savedSession: { roomId: string; playerId: string; playerName: string } | null,
 	userDisplayName: string,
 ): string {
+	const safeName = escapeHtml(userDisplayName);
 	return `
     <main class="online-entry-screen">
       <section class="online-entry-card">
@@ -19,7 +33,7 @@ export function renderOnlineEntryScreen(
           <h1>Online Room</h1>
           <p>Tạo phòng, mời bạn bè bằng mã phòng, rồi bắt đầu khi mọi người sẵn sàng.</p>
           <p class="online-entry-card__welcome">
-            Xin chào, <strong>${userDisplayName}</strong>
+            Xin chào, <strong>${safeName}</strong>
           </p>
           <button
             type="button"
@@ -35,7 +49,7 @@ export function renderOnlineEntryScreen(
             <h2>Tạo phòng</h2>
             <label>
               Tên của bạn
-              <input id="lobby-create-name" value="${userDisplayName}" maxlength="18" />
+              <input id="lobby-create-name" value="${safeName}" maxlength="18" />
             </label>
             <button
               type="button"
@@ -49,7 +63,7 @@ export function renderOnlineEntryScreen(
             <h2>Vào phòng</h2>
             <label>
               Tên của bạn
-              <input id="lobby-join-name" value="${userDisplayName}" maxlength="18" />
+              <input id="lobby-join-name" value="${safeName}" maxlength="18" />
             </label>
             <label>
               Room code
@@ -66,18 +80,18 @@ export function renderOnlineEntryScreen(
         </div>
 
         ${
-					savedSession
-						? `
+						savedSession
+							? `
               <div class="online-entry-card__resume">
                 <div>
                   <strong>Phiên cũ</strong>
-                  <span>Room ${savedSession.roomId} • ${savedSession.playerId} • ${savedSession.playerName}</span>
+                  <span>Room ${escapeHtml(savedSession.roomId)} • ${escapeHtml(savedSession.playerId)} • ${escapeHtml(savedSession.playerName)}</span>
                 </div>
                 <button onclick="event.stopPropagation(); window.reconnectSavedRoomFromLobby()">Reconnect</button>
                 <button class="online-entry-card__ghost" onclick="event.stopPropagation(); window.clearSavedRoomFromLobby()">Xóa lưu</button>
               </div>
             `
-						: ""
+							: ""
 				}
       </section>
     </main>
@@ -101,9 +115,18 @@ export function renderOnlineLobbyRoomScreen(
 ): string {
 	if (phase !== "lobby") return "";
 
+	const safeRoomId = escapeHtml(roomId);
+	const safePlayerId = escapeHtml(playerId);
+	const safeSelfName = escapeHtml(selfPlayerName);
+
 	const playersHtml = players
 		.map((player) => {
 			const isSelf = player.id === playerId;
+			const safePid = escapeHtml(player.id);
+			const safePName = escapeHtml(player.name);
+			const safeDisplayName = player.isConnected || player.hasJoined
+				? safePName
+				: "Đang chờ...";
 
 			const slotClass = player.isConnected
 				? "is-connected"
@@ -118,14 +141,11 @@ export function renderOnlineLobbyRoomScreen(
 					? "OFFLINE"
 					: "-";
 
-			const hasOccupiedSlot = player.isConnected || player.hasJoined;
-			const playerDisplayName = hasOccupiedSlot ? player.name : "Đang chờ...";
-
 			return `
         <div class="online-lobby-player ${slotClass} ${isSelf ? "is-self" : ""}">
-          <div class="online-lobby-player__slot">${player.id.toUpperCase()}</div>
+          <div class="online-lobby-player__slot">${safePid.toUpperCase()}</div>
           <div class="online-lobby-player__info">
-            <strong>${playerDisplayName}</strong>
+            <strong>${safeDisplayName}</strong>
             <span>${player.isConnected ? (player.isReady ? "Sẵn sàng" : "Chưa sẵn sàng") : player.hasJoined ? "Đã offline • giữ slot" : "Trống"}</span>
           </div>
           <div class="online-lobby-player__status ${player.isReady ? "is-ready" : ""} ${player.hasJoined && !player.isConnected ? "is-offline" : ""}">${statusText}</div>
@@ -140,8 +160,8 @@ export function renderOnlineLobbyRoomScreen(
         <div class="online-lobby-card__header">
           <div>
             <span>ONLINE ROOM</span>
-            <h1>${roomId}</h1>
-            <p>Bạn là ${playerId.toUpperCase()} • ${selfPlayerName}</p>
+            <h1>${safeRoomId}</h1>
+            <p>Bạn là ${safePlayerId.toUpperCase()} • ${safeSelfName}</p>
           </div>
 
           <div class="online-lobby-card__header-actions">

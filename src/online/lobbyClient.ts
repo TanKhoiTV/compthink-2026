@@ -123,6 +123,10 @@ async function createRoomFromLobby() {
 	const playerName = nameInput?.value?.trim() || "Player";
 
 	try {
+		// Register callbacks BEFORE connecting so initial snapshot isn't lost
+		setOnRoomSnapshot(handleRoomSnapshot);
+		setOnDisconnect(handleDisconnect);
+
 		// Use all Saigon phase 1 cards for now
 		const cards = getCardsByPhasePool("SAIGON");
 
@@ -143,10 +147,6 @@ async function createRoomFromLobby() {
 			playerId: result.playerId,
 			playerName,
 		});
-
-		// Wire up snapshot callback and start listening
-		setOnRoomSnapshot(handleRoomSnapshot);
-		setOnDisconnect(handleDisconnect);
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		alert(`Không thể tạo phòng: ${message}`);
@@ -171,6 +171,10 @@ async function joinRoomFromLobby() {
 	}
 
 	try {
+		// Register callbacks BEFORE connecting so initial snapshot isn't lost
+		setOnRoomSnapshot(handleRoomSnapshot);
+		setOnDisconnect(handleDisconnect);
+
 		const playerId = crypto.randomUUID();
 		const result = await connectToRoom(roomId, playerId, playerName);
 
@@ -183,10 +187,6 @@ async function joinRoomFromLobby() {
 			playerId: result.playerId,
 			playerName,
 		});
-
-		// Wire up callbacks
-		setOnRoomSnapshot(handleRoomSnapshot);
-		setOnDisconnect(handleDisconnect);
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		alert(`Không thể vào phòng: ${message}`);
@@ -200,6 +200,10 @@ async function reconnectSavedRoomFromLobby() {
 	if (!saved) return;
 
 	try {
+		// Register callbacks BEFORE connecting so initial snapshot isn't lost
+		setOnRoomSnapshot(handleRoomSnapshot);
+		setOnDisconnect(handleDisconnect);
+
 		const result = await connectToRoom(
 			saved.roomId,
 			saved.playerId,
@@ -209,9 +213,6 @@ async function reconnectSavedRoomFromLobby() {
 		currentRoomId = saved.roomId;
 		currentPlayerId = result.playerId;
 		currentPlayerName = saved.playerName;
-
-		setOnRoomSnapshot(handleRoomSnapshot);
-		setOnDisconnect(handleDisconnect);
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		alert(`Không thể reconnect: ${message}`);
@@ -292,16 +293,38 @@ function handleRoomSnapshot(snapshot: RoomSnapshot) {
 function buildLobbySnapshot(snapshot: RoomSnapshot): LobbySnapshot | null {
 	if (!currentPlayerId || !currentPlayerName) return null;
 
-	const players: LobbyPlayer[] = snapshot.players.map((p) => ({
-		id: p.playerId,
-		name: p.name,
-		isConnected: true, // If in snapshot, they're connected
-		hasJoined: true,
-		isReady: p.ready,
-	}));
+	// Build slots up to maxPlayers, filling empty slots with placeholder
+	const maxPlayers = snapshot.maxPlayers ?? 2;
+	const players: LobbyPlayer[] = [];
 
-	const isHost = snapshot.players[0]?.playerId === currentPlayerId;
-	const allReady = players.length >= 1 && players.every((p) => p.isReady);
+	for (let i = 0; i < maxPlayers; i++) {
+		const p = snapshot.players[i];
+		if (p) {
+			players.push({
+				id: p.playerId,
+				name: p.name,
+				isConnected: true,
+				hasJoined: true,
+				isReady: p.ready,
+			});
+		} else {
+			players.push({
+				id: "",
+				name: "",
+				isConnected: false,
+				hasJoined: false,
+				isReady: false,
+			});
+		}
+	}
+
+	// Host is the player in slot 0
+	const hostSlot = snapshot.players[0];
+	const isHost = hostSlot ? hostSlot.playerId === currentPlayerId : false;
+
+	// Room is full when all slots have connected players
+	const slotsFull = snapshot.players.length >= maxPlayers;
+	const allReady = slotsFull && players.every((p) => p.isReady);
 
 	return {
 		roomId: snapshot.roomId,
@@ -310,7 +333,7 @@ function buildLobbySnapshot(snapshot: RoomSnapshot): LobbySnapshot | null {
 		phase: snapshot.phase,
 		players,
 		isHost,
-		canStart: isHost && players.length >= 1 && allReady,
+		canStart: isHost && slotsFull && allReady,
 	};
 }
 

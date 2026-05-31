@@ -192,15 +192,22 @@ export function toggleReady(room: Room, playerId: string): void {
 
 // ─── Phase: LOBBY → DRAFT ─────────────────────────────────────────────────────
 
-export function startGame(room: Room): void {
-	if (room.players.length < 1) {
-		throw new Error("Need at least 1 player to start.");
+export function startGame(room: Room, callerPlayerId?: string): void {
+	// Room must be full
+	if (room.players.length < room.maxPlayers) {
+		throw new Error(
+			`Room must be full to start. ${room.players.length}/${room.maxPlayers} players.`,
+		);
 	}
 
-	// Only the first player (host) can start
+	// Only the host (first player) can start
 	const host = room.players[0];
 	if (!host) {
 		throw new Error("No host found.");
+	}
+
+	if (callerPlayerId && callerPlayerId !== host.playerId) {
+		throw new Error(`Only ${host.name} (host) can start the game.`);
 	}
 
 	// Check all connected players are ready
