@@ -6,6 +6,7 @@
 
 import type { AppScreen } from "./shared/client-types.ts";
 import { renderMainArena } from "./arena/render.ts";
+import { renderDashboard } from "./screens/dashboard.ts";
 import {
 	getSuppressNextClick,
 	setSuppressNextClick,
@@ -49,7 +50,7 @@ export function renderGameShell(): string {
 		case "loading":
 			return '<div class="loading-screen"><p>Đang tải...</p></div>';
 		case "dashboard":
-			return '<div class="dashboard-screen"><p>Dashboard (sẽ render sau)</p></div>';
+			return renderDashboard();
 		case "lobby":
 			return '<div class="lobby-screen"><p>Phòng chờ (sẽ render sau)</p></div>';
 		case "game": {
@@ -69,12 +70,16 @@ export function renderGameShell(): string {
 				${renderMainArena()}
 				<aside class="players-column players-column--right"></aside>
 			</div>
-			${debtModalVisible && debtAmount > 0 ? renderDebtTokenModal(
-				debtModalVisible,
-				debtAmount,
-				remaining.coin,
-				debtModalNotice,
-			) : ""}`;
+			${
+				debtModalVisible && debtAmount > 0
+					? renderDebtTokenModal(
+							debtModalVisible,
+							debtAmount,
+							remaining.coin,
+							debtModalNotice,
+						)
+					: ""
+			}`;
 		}
 		default:
 			return '<div class="loading-screen"><p>Đang tải...</p></div>';
@@ -87,6 +92,14 @@ export function rerenderGameShell() {
 	// biome-ignore lint/suspicious/noInnerHTML: game shell template from own code, not user input
 	app.innerHTML = renderGameShell();
 	reattachCardClickDelegation();
+
+	// Post-render: init dashboard globals & video hub if on dashboard
+	if (currentAppScreen === "dashboard") {
+		import("./screens/dashboard.ts").then((mod) => {
+			mod.initDashboardGlobals();
+			setTimeout(() => mod.initDashboardHub(), 0);
+		});
+	}
 }
 
 /**
