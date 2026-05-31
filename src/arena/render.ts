@@ -531,12 +531,11 @@ function renderScoreBreakdownPanel(): string {
 	const board = getBoardSlots();
 	const dayIndex = getCurrentDayIndex();
 
-	// Collect all placed cards from the board
+	// Collect all placed cards from completed days (all time slots)
 	const placedCards: TravelCard[] = [];
-	for (let row = 0; row <= dayIndex; row++) {
-		const col = board[row] || [];
-		for (let colIdx = 0; colIdx < col.length; colIdx++) {
-			const card = col[colIdx];
+	for (let colIdx = 0; colIdx <= dayIndex; colIdx++) {
+		for (let row = 0; row < board.length; row++) {
+			const card = board[row]?.[colIdx];
 			if (card) placedCards.push(card);
 		}
 	}
@@ -810,7 +809,10 @@ function getSimEventIcon(eventType?: string | null): string {
 	return "✦";
 }
 
-function getSimEventTitle(eventType?: string | null, eventText?: string | null): string {
+function getSimEventTitle(
+	eventType?: string | null,
+	eventText?: string | null,
+): string {
 	if (eventText) return eventText;
 	if (eventType === "storm") return "Mưa giông";
 	if (eventType === "traffic") return "Kẹt xe";
@@ -831,15 +833,19 @@ function renderSimulationResultPanel(): string {
 	const TICKET_WIDTH = 366;
 	const FIRST_TICKET_CENTER = 223;
 	const endBoost =
-		replayIndex === totalSteps - 1 ? 460
-		: replayIndex === totalSteps - 2 ? 180
-		: 0;
-	const trackOffset = FIRST_TICKET_CENTER + replayIndex * TICKET_WIDTH + endBoost;
+		replayIndex === totalSteps - 1
+			? 460
+			: replayIndex === totalSteps - 2
+				? 180
+				: 0;
+	const trackOffset =
+		FIRST_TICKET_CENTER + replayIndex * TICKET_WIDTH + endBoost;
 
 	// Current step being shown
-	const currentStep = replayIndex > 0 && replayIndex <= totalSteps
-		? result.replaySteps[replayIndex - 1]
-		: null;
+	const currentStep =
+		replayIndex > 0 && replayIndex <= totalSteps
+			? result.replaySteps[replayIndex - 1]
+			: null;
 
 	// Partial VP from steps processed so far
 	let partialVP = 0;
@@ -881,26 +887,35 @@ function renderSimulationResultPanel(): string {
 
         ${step.comboText ? `<div class="score-ticket__combo">COMBO</div>` : ""}
 
-        ${hasEvent ? `
+        ${
+					hasEvent
+						? `
         <div class="score-ticket__stamp">
           <b>${eventIcon}</b>
           <span>${eventTitle}</span>
-        </div>` : ""}
+        </div>`
+						: ""
+				}
       </article>`;
 		})
 		.join("");
 
 	// Day rail
-	const dayRailHtml = result.daySummaries?.map((ds: { dayIndex: number; label: string; vp: number }, i: number) => {
-		const activeDay = getCurrentDayIndex();
-		const isDayActive = i === activeDay;
-		const isDayDone = i < activeDay;
-		return `
+	const dayRailHtml =
+		result.daySummaries
+			?.map(
+				(ds: { dayIndex: number; label: string; vp: number }, i: number) => {
+					const activeDay = getCurrentDayIndex();
+					const isDayActive = i === activeDay;
+					const isDayDone = i < activeDay;
+					return `
       <div class="replay-day ${isDayActive ? "replay-day--active" : ""} ${isDayDone ? "replay-day--done" : ""}">
         <span class="replay-day__label">${ds.label?.replace("Ngày ", "") ?? i + 1}</span>
         <span class="replay-day__vp">${formatSignedVP(ds.vp)}</span>
       </div>`;
-	}).join("") ?? "";
+				},
+			)
+			.join("") ?? "";
 
 	return `
     <section class="ticket-scan-overlay" onclick="event.stopPropagation()">
