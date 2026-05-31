@@ -127,24 +127,29 @@ async function createRoomFromLobby() {
 		setOnRoomSnapshot(handleRoomSnapshot);
 		setOnDisconnect(handleDisconnect);
 
+		// Set player identity BEFORE connecting so snapshot handler
+		// has currentPlayerId/currentPlayerName when it receives the
+		// initial roomSnapshot during the WebSocket handshake.
+		const playerId = crypto.randomUUID();
+		currentPlayerId = playerId;
+		currentPlayerName = playerName;
+
 		// Use all Saigon phase 1 cards for now
 		const cards = getCardsByPhasePool("SAIGON");
 
 		const result = await createRoomAndJoin(
 			cards,
-			crypto.randomUUID(),
+			playerId,
 			playerName,
 			2,
 			5,
 		);
 
 		currentRoomId = result.roomId;
-		currentPlayerId = result.playerId;
-		currentPlayerName = playerName;
 
 		saveSession({
 			roomId: result.roomId,
-			playerId: result.playerId,
+			playerId,
 			playerName,
 		});
 	} catch (err: unknown) {
@@ -176,11 +181,13 @@ async function joinRoomFromLobby() {
 		setOnDisconnect(handleDisconnect);
 
 		const playerId = crypto.randomUUID();
+		// Set identity before connect so snapshot handler has it ready
+		currentPlayerId = playerId;
+		currentPlayerName = playerName;
+
 		const result = await connectToRoom(roomId, playerId, playerName);
 
 		currentRoomId = roomId;
-		currentPlayerId = result.playerId;
-		currentPlayerName = playerName;
 
 		saveSession({
 			roomId,
@@ -204,15 +211,17 @@ async function reconnectSavedRoomFromLobby() {
 		setOnRoomSnapshot(handleRoomSnapshot);
 		setOnDisconnect(handleDisconnect);
 
-		const result = await connectToRoom(
+		// Reconnect uses saved identity — set before connect so snapshot
+		// handler has currentPlayerId/currentPlayerName ready
+		currentRoomId = saved.roomId;
+		currentPlayerId = saved.playerId;
+		currentPlayerName = saved.playerName;
+
+		await connectToRoom(
 			saved.roomId,
 			saved.playerId,
 			saved.playerName,
 		);
-
-		currentRoomId = saved.roomId;
-		currentPlayerId = result.playerId;
-		currentPlayerName = saved.playerName;
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		alert(`Không thể reconnect: ${message}`);
