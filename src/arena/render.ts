@@ -802,6 +802,23 @@ function getReplayStepForBoardCell(
 	return null;
 }
 
+function getSimEventIcon(eventType?: string | null): string {
+	if (eventType === "storm") return "⛈";
+	if (eventType === "traffic") return "🚦";
+	if (eventType === "distance") return "🧭";
+	if (eventType === "promo") return "🏷";
+	return "✦";
+}
+
+function getSimEventTitle(eventType?: string | null, eventText?: string | null): string {
+	if (eventText) return eventText;
+	if (eventType === "storm") return "Mưa giông";
+	if (eventType === "traffic") return "Kẹt xe";
+	if (eventType === "distance") return "Xa tuyến";
+	if (eventType === "promo") return "Ưu đãi";
+	return "";
+}
+
 function renderSimulationResultPanel(): string {
 	const result = getSimulationResult();
 	if (!result) return "";
@@ -810,11 +827,19 @@ function renderSimulationResultPanel(): string {
 	const totalSteps = result.replaySteps.length;
 	const isComplete = getIsReplayComplete();
 
+	// Track offset for horizontal scroll animation (matches old TREKPOLOGY)
+	const TICKET_WIDTH = 366;
+	const FIRST_TICKET_CENTER = 223;
+	const endBoost =
+		replayIndex === totalSteps - 1 ? 460
+		: replayIndex === totalSteps - 2 ? 180
+		: 0;
+	const trackOffset = FIRST_TICKET_CENTER + replayIndex * TICKET_WIDTH + endBoost;
+
 	// Current step being shown
-	const currentStep =
-		replayIndex > 0 && replayIndex <= totalSteps
-			? result.replaySteps[replayIndex - 1]
-			: null;
+	const currentStep = replayIndex > 0 && replayIndex <= totalSteps
+		? result.replaySteps[replayIndex - 1]
+		: null;
 
 	// Partial VP from steps processed so far
 	let partialVP = 0;
@@ -823,34 +848,82 @@ function renderSimulationResultPanel(): string {
 	}
 
 	const stepsHtml = (result.replaySteps as SimulationReplayStep[])
-		.slice(0, Math.max(replayIndex, 1))
 		.map((step: SimulationReplayStep, i: number) => {
-			const isActive = i === replayIndex - 1;
-			const isDone = i < replayIndex - 1;
+			const isLast = i === totalSteps - 1;
+			const shouldTear = !isComplete && isLast && i === replayIndex;
+			const isActive = !isComplete && i === replayIndex && !shouldTear;
+			const isDone = isComplete || i < replayIndex || shouldTear;
+			const isFuture = !isComplete && i > replayIndex;
+			const hasEvent = Boolean(step.eventType || step.eventText);
+			const eventTitle = getSimEventTitle(step.eventType, step.eventText);
+			const eventIcon = getSimEventIcon(step.eventType);
+
 			return `
-      <div class="score-ticket ${isActive ? "score-ticket--active" : ""} ${isDone ? "score-ticket--done" : ""} ${step.isBadEvent ? "score-ticket--bad" : ""} ${step.isBoardToken ? "score-ticket--token" : ""}">
-        <div class="score-ticket__time">${step.timeLabel}</div>
-        <div class="score-ticket__vp ${step.vpDelta > 0 ? "score-ticket__vp--pos" : step.vpDelta < 0 ? "score-ticket__vp--neg" : ""}">${formatSignedVP(step.vpDelta)}</div>
-        <div class="score-ticket__title">${step.title}</div>
-        ${step.subtitle ? `<div class="score-ticket__subtitle">${step.subtitle}</div>` : ""}
-        ${step.comboText ? `<div class="score-ticket__combo">${step.comboText}</div>` : ""}
-        ${step.eventText ? `<div class="score-ticket__event">${step.eventText}</div>` : ""}
-      </div>
-    `;
+      <article
+        class="score-ticket ${isActive ? "is-active" : ""} ${isDone ? "is-torn" : ""} ${isFuture ? "is-future" : ""} ${step.isEmpty ? "is-empty" : ""} ${hasEvent ? "has-event" : ""} ${step.isBadEvent ? "score-ticket--bad" : ""} ${step.eventType ? `score-ticket--event-${step.eventType}` : ""}">
+        <div class="score-ticket__perforation score-ticket__perforation--left"></div>
+        <div class="score-ticket__perforation score-ticket__perforation--right"></div>
+
+        <div class="score-ticket__head">
+          <span>${step.timeLabel}</span>
+          <strong>${formatSignedVP(step.vpDelta)} VP</strong>
+        </div>
+
+        <div class="score-ticket__body">
+          <h4>${step.title}</h4>
+          <p>${step.subtitle ?? ""}</p>
+        </div>
+
+        <div class="score-ticket__stats">
+          <span class="${step.coinDelta > 0 ? "is-cost" : ""}">Xu ${step.coinDelta}</span>
+          <span class="${step.staminaDelta > 0 ? "is-cost" : ""}">Lực ${step.staminaDelta}</span>
+        </div>
+
+        ${step.comboText ? `<div class="score-ticket__combo">COMBO</div>` : ""}
+
+        ${hasEvent ? `
+        <div class="score-ticket__stamp">
+          <b>${eventIcon}</b>
+          <span>${eventTitle}</span>
+        </div>` : ""}
+      </article>`;
 		})
 		.join("");
+
+	// Day rail
+	const dayRailHtml = result.daySummaries?.map((ds: { dayIndex: number; label: string; vp: number }, i: number) => {
+		const activeDay = getCurrentDayIndex();
+		const isDayActive = i === activeDay;
+		const isDayDone = i < activeDay;
+		return `
+      <div class="replay-day ${isDayActive ? "replay-day--active" : ""} ${isDayDone ? "replay-day--done" : ""}">
+        <span class="replay-day__label">${ds.label?.replace("Ngày ", "") ?? i + 1}</span>
+        <span class="replay-day__vp">${formatSignedVP(ds.vp)}</span>
+      </div>`;
+	}).join("") ?? "";
 
 	return `
     <section class="ticket-scan-overlay" onclick="event.stopPropagation()">
       <div class="ticket-scan-overlay__scrim"></div>
+
       <div class="ticket-scan-overlay__header">
         <span>ĐANG QUÉT TÍNH ĐIỂM</span>
         <strong>Ngày ${getCurrentDayIndex() + 1}</strong>
-        ${currentStep ? `<em>${currentStep.timeLabel}: ${currentStep.title}</em>` : ""}
+        <em>${currentStep ? `Đang tính: ${currentStep.timeLabel}` : "Đang chuẩn bị..."}</em>
       </div>
+
       <div class="ticket-scan-strip">
-        ${stepsHtml}
+        <div class="ticket-scan-strip__backdrop"></div>
+        <div
+          class="ticket-scan-track"
+          style="transform: translateX(calc(50% - ${trackOffset}px)); --scan-index: ${replayIndex};"
+        >
+          ${stepsHtml}
+        </div>
       </div>
+
+      ${dayRailHtml ? `<div class="replay-day-rail">${dayRailHtml}</div>` : ""}
+
       <div class="ticket-scan-overlay__footer">
         <div><span>Tiến trình</span><strong>${Math.min(replayIndex, totalSteps)} / ${totalSteps}</strong></div>
         <div><span>Điểm ngày</span><strong>${formatSignedVP(partialVP)} VP</strong></div>
