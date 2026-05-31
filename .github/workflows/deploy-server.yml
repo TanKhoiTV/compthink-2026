@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "server/**"
-      - "scr/shared/**"
+      - "src/shared/**"
       - ".github/workflows/deploy-server.yml"
 
   # Manual trigger from Actions tab
