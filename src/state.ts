@@ -9,12 +9,13 @@ import { createEmptyBoardSlots } from "./shared/board.ts";
 import type { TravelCard } from "./shared/types.ts";
 import type { BoardSlots } from "./shared/board.ts";
 import type { PlayerId } from "./shared/client-types.ts";
+import { clearTimer } from "./services/timer-service.ts";
 
 // ── Game phase FSM ───────────────────────────────────────────────────────────
 //
 //   draft → placement → endDay → draft (next day) or finished
 //
-type GamePhase = "draft" | "placement" | "simulation" | "finished";
+export type GamePhase = "draft" | "placement" | "simulation" | "finished";
 
 let gamePhase: GamePhase = "draft";
 
@@ -91,6 +92,7 @@ let showFocusedPopup = false;
 
 let debtModalVisible = false;
 let debtModalNotice = "";
+let debtModalTimerId: number | null = null;
 
 // ── Timer state ──────────────────────────────────────────────────────────────
 
@@ -340,6 +342,22 @@ export function getDebtModalNotice(): string {
 
 export function setDebtModalNotice(v: string) {
 	debtModalNotice = v;
+}
+
+export function getDebtModalTimerId(): number | null {
+	return debtModalTimerId;
+}
+
+export function setDebtModalTimerId(id: number | null) {
+	debtModalTimerId = id;
+}
+
+export function clearDebtModalTimer() {
+	const id = getDebtModalTimerId();
+	if (id !== null) {
+		clearTimer(id);
+		setDebtModalTimerId(null);
+	}
 }
 
 export function getIsInitialDealInProgress(): boolean {

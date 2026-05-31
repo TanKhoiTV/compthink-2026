@@ -72,6 +72,9 @@ import {
 	setSimulationAdvanceTimeoutId,
 	setDebtModalVisible,
 	setDebtModalNotice,
+	getDebtModalTimerId,
+	setDebtModalTimerId,
+	clearDebtModalTimer,
 	getPlayerBoards,
 	getOpponentPlayerIds,
 	addDiscardedResourceBonus,
@@ -89,6 +92,17 @@ import {
 	DRAFT_PICK_SECONDS,
 	TURN_DURATION_SECONDS,
 } from "./shared/constants.ts";
+import {
+	DEAL_ANIMATION_MS,
+	PASS_ANIMATION_MS,
+	SIMULATION_STEP_INTERVAL_MS,
+	SIMULATION_ADVANCE_DELAY_MS,
+	BOARD_CELL_FLASH_MS,
+	HOLD_TO_FOCUS_MS,
+	DEBT_MODAL_AUTO_CLOSE_MS,
+	TIMER_TICK_INTERVAL_MS,
+	FOCUSED_CARD_ZINDEX,
+} from "./shared/animations.ts";
 import { calculateBoardTotals } from "./shared/board.ts";
 import { getRemainingResources } from "./shared/resources.ts";
 import { calculateSimulationResult } from "./shared/scoring.ts";
@@ -335,7 +349,7 @@ function startDailyDraft() {
 	playGameSound("deal");
 	rerenderGameShell();
 
-	// Deal animation: after render, add .deal-active to trigger CSS, then finish after 1320ms
+	// Deal animation: after render, add .deal-active to trigger CSS, then finish
 	window.requestAnimationFrame(() => {
 		window.requestAnimationFrame(() => {
 			const handElement = document.querySelector(".player-hand--draft");
@@ -352,7 +366,7 @@ function startDailyDraft() {
 			"deal-active",
 		);
 		startDraftTimer();
-	}, 1320);
+	}, DEAL_ANIMATION_MS);
 }
 
 /**
@@ -443,7 +457,10 @@ function placeHandCardOnBoard(
 		);
 		if (cell) {
 			cell.classList.add("board-cell--just-placed");
-			setTimeout(() => cell.classList.remove("board-cell--just-placed"), 500);
+			setTimeout(
+				() => cell.classList.remove("board-cell--just-placed"),
+				BOARD_CELL_FLASH_MS,
+			);
 		}
 	});
 
@@ -546,7 +563,7 @@ function runSystemSimulation() {
 	setSimulationReplayIndex(0);
 	setIsReplayComplete(false);
 
-	// Start replay timer: advance one step every 850ms
+	// Start replay timer: advance one step at a time
 	const timerId = window.setInterval(() => {
 		const currentIdx = getSimulationReplayIndex();
 		const totalSteps = result.replaySteps.length;
@@ -558,11 +575,11 @@ function runSystemSimulation() {
 			applyDailyScoreOnce();
 			rerenderGameShell();
 
-			// Advance to next day after 2s
+			// Advance to next day after a short pause
 			const advanceTimeoutId = window.setTimeout(() => {
 				setSimulationAdvanceTimeoutId(null);
 				startNextDayOrPhase();
-			}, 2000);
+			}, SIMULATION_ADVANCE_DELAY_MS);
 			setSimulationAdvanceTimeoutId(advanceTimeoutId);
 			return;
 		}
@@ -571,7 +588,7 @@ function runSystemSimulation() {
 		setSimulationReplayIndex(currentIdx + 1);
 		playSimulationScanSoundForCurrentStep();
 		rerenderGameShell();
-	}, 850);
+	}, SIMULATION_STEP_INTERVAL_MS);
 
 	setSimulationTimerId(timerId);
 }
@@ -660,7 +677,7 @@ function startDraftTimer() {
 		}
 
 		updateTimerDom();
-	}, 1000);
+	}, TIMER_TICK_INTERVAL_MS);
 
 	setDraftTimerId(timerId);
 }
@@ -714,7 +731,7 @@ function startTurnTimer() {
 		}
 
 		updateTimerDom();
-	}, 1000);
+	}, TIMER_TICK_INTERVAL_MS);
 }
 
 function startNextDayOrPhase() {
@@ -1047,7 +1064,7 @@ function handleHandPointerCancel() {
 				setDraftSelectedCardId(null);
 				setIsPassingDraftCards(false);
 				finishDailyDraft();
-			}, 940);
+			}, PASS_ANIMATION_MS);
 		} else {
 			// Stop draft timer, show pass animation
 			stopDraftTimer();
@@ -1096,8 +1113,8 @@ function handleHandPointerCancel() {
 						"deal-active",
 					);
 					startDraftTimer();
-				}, 1320);
-			}, 940);
+				}, DEAL_ANIMATION_MS);
+			}, PASS_ANIMATION_MS);
 		}
 		return;
 	}
@@ -1136,7 +1153,7 @@ function handleHandPointerCancel() {
 	}
 };
 
-// ── Focused card popup (hold 500ms to view enlarged card) ────────────────
+// ── Focused card popup (hold to view enlarged card) ────────────────────
 
 (globalThis as any).startHoldHandCard = (cardId: string) => {
 	if (getGamePhase() === "simulation") return;
@@ -1152,7 +1169,7 @@ function handleHandPointerCancel() {
 
 		// Direct DOM injection — avoids flicker from full rerender
 		showFocusedCardOverlay(cardId);
-	}, 500);
+	}, HOLD_TO_FOCUS_MS);
 
 	setHoldTimerId(id);
 };
@@ -1193,9 +1210,13 @@ function showFocusedCardOverlay(cardId: string) {
 	const wrapper = document.createElement("div");
 	wrapper.id = "focused-card-wrapper";
 	wrapper.style.position = "relative";
-	wrapper.style.zIndex = "10000";
-	// biome-ignore lint/suspicious/noInnerHTML: template from own render code, not user input
-	wrapper.innerHTML = html;
+	wrapper.style.zIndex = String(FOCUSED_CARD_ZINDEX);
+	// Use DOMParser to safely parse HTML from our own render function
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(html, "text/html");
+	while (doc.body.firstChild) {
+		wrapper.appendChild(doc.body.firstChild);
+	}
 
 	const app = document.getElementById("app");
 	if (app) {
@@ -1294,6 +1315,7 @@ import {
 (globalThis as any).closeDebtTokenModal = () => {
 	setDebtModalVisible(false);
 	setDebtModalNotice("");
+	clearDebtModalTimer(); // Clean up any active timer
 	rerenderGameShell();
 };
 
@@ -1332,7 +1354,18 @@ import {
 	playGameSound("eventPromo");
 
 	if (newDebt <= 0) {
-		setTimeout(() => (globalThis as any).closeDebtTokenModal(), 800);
+		// Store timer ID for cleanup
+		const timerId = window.setTimeout(() => {
+			(globalThis as any).closeDebtTokenModal();
+		}, DEBT_MODAL_AUTO_CLOSE_MS);
+		// Use state to track debt modal timer for proper cleanup
+		if (!getDebtModalTimerId()) {
+			setDebtModalTimerId(timerId);
+		} else {
+			// Clear existing timer if any
+			clearDebtModalTimer();
+			setDebtModalTimerId(timerId);
+		}
 	}
 
 	rerenderGameShell();

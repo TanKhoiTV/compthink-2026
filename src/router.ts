@@ -95,15 +95,25 @@ export function renderGameShell(): string {
 export function rerenderGameShell() {
 	const app = document.getElementById("app");
 	if (!app) return;
-	// biome-ignore lint/suspicious/noInnerHTML: game shell template from own code, not user input
-	app.innerHTML = renderGameShell();
+	// Use DOMParser to safely parse HTML from our own render function
+	const html = renderGameShell();
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(html, "text/html");
+
+	// Clear existing content
+	app.textContent = "";
+
+	// Append parsed nodes
+	while (doc.body.firstChild) {
+		app.appendChild(doc.body.firstChild);
+	}
 	reattachCardClickDelegation();
 
 	// Post-render: init dashboard globals & video hub if on dashboard
 	if (currentAppScreen === "dashboard") {
 		import("./screens/dashboard.ts").then((mod) => {
 			mod.initDashboardGlobals();
-			setTimeout(() => mod.initDashboardHub(), 0);
+			mod.initDashboardHubWithCleanup();
 		});
 	}
 }
