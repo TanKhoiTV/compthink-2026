@@ -1387,3 +1387,28 @@ import {
 // ── Start the app — render dashboard ───────────────────────────────────────
 
 transitionToScreen("dashboard");
+
+// ── Version watermark ────────────────────────────────────────────────────
+// Always visible bottom-right so testers can report which version they see.
+
+(function addVersionWatermark() {
+	const existing = document.getElementById("version-watermark");
+	if (existing) return;
+
+	const el = document.createElement("div");
+	el.id = "version-watermark";
+	el.textContent = `${APP_NAME} v${VERSION}`;
+	Object.assign(el.style, {
+		position: "fixed",
+		bottom: "6px",
+		right: "10px",
+		fontSize: "11px",
+		color: "rgba(255,255,255,0.35)",
+		fontFamily: "monospace",
+		pointerEvents: "none",
+		userSelect: "none",
+		zIndex: "9999",
+		letterSpacing: "0.5px",
+	});
+	document.body.appendChild(el);
+})();

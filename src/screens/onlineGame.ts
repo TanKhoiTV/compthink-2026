@@ -228,12 +228,14 @@ function renderOnlineBoardGrid(
 
 	return `
     <section class="board-grid">
-      ${TIME_SLOTS.map((slot, rowIdx) => `
+      ${TIME_SLOTS.map(
+				(slot, rowIdx) => `
         <div class="time-label">${SLOT_NAMES[slot] || slot}</div>
         ${DAYS.map((_, colIdx) =>
 					renderOnlineBoardCell(boardSlots, rowIdx, colIdx, dayIndex, canPlace),
 				).join("")}
-      `).join("")}
+      `,
+			).join("")}
     </section>
   `;
 }
@@ -265,9 +267,11 @@ function renderOnlineBoardCell(
 	return `
     <div class="board-cell board-cell--occupied" title="${card.name}">
       ${renderBoardMiniCard(card)}
-      ${isCurrentDay
-				? `<button class="board-cell__return" data-online-return-card="${colIdx + 1}|${TIME_SLOTS[rowIdx]}" title="Trả bài về tay">↩️</button>`
-				: ""}
+      ${
+				isCurrentDay
+					? `<button class="board-cell__return" data-online-return-card="${colIdx + 1}|${TIME_SLOTS[rowIdx]}" title="Trả bài về tay">↩️</button>`
+					: ""
+			}
     </div>
   `;
 }
@@ -346,7 +350,11 @@ function renderOnlinePlacementContent(
 	const chosenCards = resolveCards(myPlayer.chosen, allCards);
 	const currentDay = snapshot.day;
 
-	const boardHtml = renderOnlineBoardGrid(boardSlots, currentDay, chosenCards.length > 0);
+	const boardHtml = renderOnlineBoardGrid(
+		boardSlots,
+		currentDay,
+		chosenCards.length > 0,
+	);
 
 	return `
     ${boardHtml}
@@ -488,9 +496,11 @@ function renderOnlineFinishedContent(snapshot: RoomSnapshot): string {
         </div>
       </div>
 
-      ${winner
-				? `<div class="winner-banner" style="text-align:center;font-size:1.2rem;padding:12px;margin:8px 0;background:linear-gradient(135deg,#ffd70022,#ff8c0022);border-radius:8px;">🥇 ${escapeHtml(winner.name)} chiến thắng với ${winner.resources.vp} VP!</div>`
-				: ""}
+      ${
+				winner
+					? `<div class="winner-banner" style="text-align:center;font-size:1.2rem;padding:12px;margin:8px 0;background:linear-gradient(135deg,#ffd70022,#ff8c0022);border-radius:8px;">🥇 ${escapeHtml(winner.name)} chiến thắng với ${winner.resources.vp} VP!</div>`
+					: ""
+			}
 
       <table class="score-table" style="width:100%;max-width:600px;margin:8px auto;border-collapse:collapse;">
         <thead>
