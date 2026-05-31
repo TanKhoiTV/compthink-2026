@@ -4,7 +4,7 @@
  * Protocol: JSON-RPC 2.0 over WebSocket.
  * Server: ws://localhost:8080/ws?roomId=X&playerId=Y&name=Z
  *
- * This replaces TREKPOLOGY's Socket.IO client (src/online/socketClient.ts).
+ * This replaces Trekkopoly's Socket.IO client (src/online/socketClient.ts).
  */
 
 import type { RoomSnapshot } from "../shared/types.ts";

@@ -1,7 +1,7 @@
 /**
  * lobby.ts — Create/join room forms and lobby screen rendering.
  *
- * Ported from TREKPOLOGY (commit b2a4891) — deleted in 9e78dd8
+ * Ported from Trekkopoly (commit b2a4891) — deleted in 9e78dd8
  * as "never imported". Now wires into router.ts via app.ts globals.
  *
  * CSS classes match existing styles in css/client.less.
@@ -29,7 +29,7 @@ export function renderOnlineEntryScreen(
     <main class="online-entry-screen">
       <section class="online-entry-card">
         <div class="online-entry-card__brand">
-          <span>TREKPOLOGY</span>
+          <span>Trekkopoly</span>
           <h1>Online Room</h1>
           <p>Tạo phòng, mời bạn bè bằng mã phòng, rồi bắt đầu khi mọi người sẵn sàng.</p>
           <p class="online-entry-card__welcome">

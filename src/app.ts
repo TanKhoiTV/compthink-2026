@@ -1,7 +1,7 @@
 /**
  * app.ts — Application entry point and game loop.
  *
- * Mirrors the old TREKPOLOGY/src/app.ts game loop (single-player local mode):
+ * Mirrors the old Trekkopoly/src/app.ts game loop (single-player local mode):
  *   draft → placement → endDay → draft (next day) → ... → finished
  *
  * Draft: 7 cards, pick 1 per round × 5 rounds → 5 cards in hand.

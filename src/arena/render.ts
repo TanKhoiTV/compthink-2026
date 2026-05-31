@@ -1,7 +1,7 @@
 /**
  * arena/render.ts — Board grid, hand strip (fan layout), draft pool, focused card rendering.
  *
- * Rebuilt from TREKPOLOGY/src/app.ts (lines 1798–2190, 4110–4560, 1890–1962)
+ * Rebuilt from Trekkopoly/src/app.ts (lines 1798–2190, 4110–4560, 1890–1962)
  * to match the CSS structure in css/client.less.
  *
  * Key structural differences from the first extraction:
@@ -68,7 +68,7 @@ export const HAND_CITY_MEDIUM = 28;
 export const DAYS = [1, 2, 3, 4, 5];
 export const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
-// ── Helpers ported from TREKPOLOGY src/data/cardMapper.ts ────────────────────
+// ── Helpers ported from Trekkopoly src/data/cardMapper.ts ────────────────────
 
 function getTextFitClass(
 	text: string,
@@ -875,7 +875,7 @@ function renderSimulationResultPanel(): string {
 	const totalSteps = result.replaySteps.length;
 	const isComplete = getIsReplayComplete();
 
-	// Track offset for horizontal scroll animation (matches old TREKPOLOGY)
+	// Track offset for horizontal scroll animation (matches old Trekkopoly)
 	const TICKET_WIDTH = 366;
 	const FIRST_TICKET_CENTER = 223;
 	const endBoost =

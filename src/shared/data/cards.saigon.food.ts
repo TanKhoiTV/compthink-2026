@@ -2,7 +2,7 @@ import type { TravelCard } from '../types.ts';
 
 /**
  * Phase 1 Saigon food cards (30 cards)
- * Source: TREKPOLOGY/src/data/cards.phase1.ts
+ * Source: Trekkopoly/src/data/cards.phase1.ts
  * Image files: public/assets/images/cards/saigon/food/sg_food_NNN.jpg
  *
  * Only 6 card images exist (sg_food_001-006.jpg). Cards beyond 006

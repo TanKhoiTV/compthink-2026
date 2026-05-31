@@ -293,7 +293,12 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
 						"returnBoardCard requires day and slot",
 					);
 				}
-				const result = returnBoardCard(session.room!, session.playerId, day, slot);
+				const result = returnBoardCard(
+					session.room!,
+					session.playerId,
+					day,
+					slot,
+				);
 				sendResult(session, id, {
 					ok: true,
 					cardId: result.cardId,

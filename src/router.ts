@@ -1,7 +1,7 @@
 /**
  * router.ts — Screen shell, transitions, and rerender loop.
  *
- * Extracted from TREKPOLOGY/src/app.ts (lines 5362–5703, 5911–6093).
+ * Extracted from Trekkopoly/src/app.ts (lines 5362–5703, 5911–6093).
  */
 
 import type { AppScreen } from "./shared/client-types.ts";
@@ -228,8 +228,8 @@ function reattachCardClickDelegation() {
 	}
 }
 
-// ── Document-level click delegation (capture phase, matches TREKPOLOGY pattern) ──
-// Old TREKPOLOGY used capture:true + [data-draft-card-id] for draft cards.
+// ── Document-level click delegation (capture phase, matches Trekkopoly pattern) ──
+// Old Trekkopoly used capture:true + [data-draft-card-id] for draft cards.
 // This ensures clicks are caught before any inline handler processes them.
 
 document.addEventListener(
@@ -281,7 +281,7 @@ document.addEventListener(
 		}
 	},
 	true,
-); /* capture phase — matches old TREKPOLOGY */
+); /* capture phase — matches old Trekkopoly */
 
 // ── Hover handlers (no rerender — CSS handles visual feedback) ──────────────
 

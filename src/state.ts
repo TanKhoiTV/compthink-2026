@@ -1,7 +1,7 @@
 /**
  * state.ts — Mutable game state for the client.
  *
- * Extracted from TREKPOLOGY/src/app.ts (lines 996–1092).
+ * Extracted from Trekkopoly/src/app.ts (lines 996–1092).
  * All state lives here as module-level `let` bindings with exported getters.
  */
 

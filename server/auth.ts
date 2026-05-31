@@ -1,7 +1,7 @@
 /**
  * auth.ts — User registration, login, and JWT token verification.
  *
- * Ported from TREKPOLOGY/server/auth.ts to Deno's Web Crypto API.
+ * Ported from Trekkopoly/server/auth.ts to Deno's Web Crypto API.
  * Uses PBKDF2 for password hashing and HMAC-SHA256 for token signing.
  * Stores users in server/data/users.json.
  */

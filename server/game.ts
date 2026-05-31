@@ -317,7 +317,12 @@ export function returnBoardCard(
 	// Remove card from board
 	player.board = player.board.map((c, i) =>
 		i === cellIndex
-			? { ...c, card_id: undefined, cardName: undefined, type: "empty" as const }
+			? {
+					...c,
+					card_id: undefined,
+					cardName: undefined,
+					type: "empty" as const,
+				}
 			: c,
 	);
 
