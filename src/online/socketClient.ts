@@ -25,10 +25,10 @@ const isProduction =
 		window.location.hostname.includes("github.io"));
 
 let serverBaseUrl = isProduction
-	? "https://trekkopoly-3ecx8dx2y5kj.compthink-2026.deno.net"
+	? "https://trekkopoly.compthink-2026.deno.net"
 	: "http://localhost:8080";
 let wsBaseUrl = isProduction
-	? "wss://trekkopoly-3ecx8dx2y5kj.compthink-2026.deno.net"
+	? "wss://trekkopoly.compthink-2026.deno.net"
 	: "ws://localhost:8080";
 
 // ── Public API ──────────────────────────────────────────────────────────────
