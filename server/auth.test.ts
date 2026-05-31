@@ -134,7 +134,8 @@ Deno.test("registerUser — case insensitive username", async () => {
 	});
 
 	await assertRejects(
-		() => registerUser({ username: user.toUpperCase(), password: "password123" }),
+		() =>
+			registerUser({ username: user.toUpperCase(), password: "password123" }),
 		Error,
 		"đã tồn tại",
 	);

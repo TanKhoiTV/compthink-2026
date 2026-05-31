@@ -260,14 +260,18 @@ function renderOnlinePlacement(
           </button>
         </div>
 
-        ${myPlayer.resources.debtToken > 0 ? `
+        ${
+					myPlayer.resources.debtToken > 0
+						? `
         <div class="placement__debt-pay">
           <span class="debt-label">💳 Nợ: <strong>${myPlayer.resources.debtToken} xu</strong></span>
           <button class="online-debt-btn" data-online-pay-debt="all">
             💰 Trả nợ (${Math.min(myPlayer.resources.xu, myPlayer.resources.debtToken)} xu)
           </button>
         </div>
-        ` : ""}
+        `
+						: ""
+				}
 
         <div class="online-draft__opponents">
           ${opponentInfo || ""}

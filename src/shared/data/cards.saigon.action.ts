@@ -2,7 +2,7 @@ import type { TravelCard } from '../types.ts';
 
 /**
  * Phase 1 Saigon action cards (20 cards)
- * Converted from TREKPOLOGY/src/data/cards.phase1.ts
+ * Converted from Trekkopoly/src/data/cards.phase1.ts
  */
 export const saigonActionCards: TravelCard[] = [
   {

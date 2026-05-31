@@ -3,7 +3,7 @@
  * Centralizes all GameCardData → TravelCard UI field transformations
  * (short names, labels, bonus text, rarity) so every module shares one source.
  *
- * Ported from TREKPOLOGY/src/data/cardMapper.ts.
+ * Ported from Trekkopoly/src/data/cardMapper.ts.
  */
 
 // ── Main tag detection ─────────────────────────────────────────────────────

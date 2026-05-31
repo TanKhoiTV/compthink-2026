@@ -48,13 +48,16 @@ function makeCard(i: number): TravelCard {
 		name: `Test Card ${i}`,
 		city,
 		coordinates: {
-			lat: 10.8 + (i * 0.1),
-			lng: 106.7 + (i * 0.05),
+			lat: 10.8 + i * 0.1,
+			lng: 106.7 + i * 0.05,
 		},
 		vp: (i % 10) + 1,
 		coin: (i % 5) + 1,
 		stamina: (i % 3) + 1,
-		rarity: (i % 3 === 0 ? "rare" : i % 3 === 1 ? "common" : "epic") as "common" | "rare" | "epic",
+		rarity: (i % 3 === 0 ? "rare" : i % 3 === 1 ? "common" : "epic") as
+			| "common"
+			| "rare"
+			| "epic",
 		tag: tags[i % tags.length],
 		tags: [tags[i % tags.length]],
 		image: "",

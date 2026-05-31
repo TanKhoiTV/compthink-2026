@@ -1,7 +1,7 @@
 /**
  * extra-panels.ts — Score panels, resource orbs, ranking, debt, effect tokens, deck pile.
  *
- * Extracted from TREKPOLOGY/src/app.ts (lines 3346–4109).
+ * Extracted from Trekkopoly/src/app.ts (lines 3346–4109).
  */
 
 /* ── Score Breakdown Panel ──────────────────────────────────────────────── */

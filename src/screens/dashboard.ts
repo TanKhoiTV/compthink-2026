@@ -1,7 +1,7 @@
 /**
  * dashboard.ts — Dashboard hub screen (hero + auth/explore + modals).
  *
- * Ported from TREKPOLOGY/src/ui/dashboard.ts.
+ * Ported from Trekkopoly/src/ui/dashboard.ts.
  * Exports: renderDashboard(), initDashboardHub(), initDashboardGlobals()
  */
 
@@ -387,7 +387,7 @@ export function renderDashboard(isLoading = false) {
           <button class="hub-modal__close" onclick="document.getElementById('modal-about').classList.remove('hub-modal--open')">&times;</button>
           <h2>Về Chúng Tôi</h2>
           <div class="hub-modal__content">
-            <p><strong>TREKPOLOGY</strong> là tựa game thẻ bài chiến lược lấy cảm hứng từ vẻ đẹp văn hoá và thiên nhiên Việt Nam.</p>
+            <p><strong>Trekkopoly</strong> là tựa game thẻ bài chiến lược lấy cảm hứng từ vẻ đẹp văn hoá và thiên nhiên Việt Nam.</p>
             <p>Chúng tôi tin rằng du lịch không chỉ là di chuyển — mà là khám phá, học hỏi và kết nối. Mỗi thẻ bài là một câu chuyện thật từ đất nước Việt Nam.</p>
             <h3>🔮 Sắp ra mắt</h3>
             <p>Đà Lạt • Hội An • Hạ Long • Hà Nội</p>
@@ -398,7 +398,7 @@ export function renderDashboard(isLoading = false) {
 
       <!-- Topbar -->
       <header class="hub-topbar">
-        <div class="hub-topbar__logo">TREKPOLOGY</div>
+        <div class="hub-topbar__logo">Trekkopoly</div>
         <nav class="hub-topbar__nav">
           <button onclick="document.getElementById('modal-rules').classList.add('hub-modal--open')">Hướng Dẫn Chơi</button>
           <button onclick="document.getElementById('modal-about').classList.add('hub-modal--open')">Về Chúng Tôi</button>
