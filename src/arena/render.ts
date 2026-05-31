@@ -37,6 +37,7 @@ import {
 	getDiscardedResourceCoinBonus,
 	getDiscardedResourceStaminaBonus,
 } from "../state.ts";
+import type { GamePhase } from "../state.ts";
 import {
 	getRarityLabel,
 	getTagLabel,
@@ -58,6 +59,12 @@ import { STARTING_COIN, STARTING_STAMINA } from "../shared/constants.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
+// Text length thresholds for responsive card sizing
+export const HAND_TITLE_SHORT = 16;
+export const HAND_TITLE_MEDIUM = 23;
+export const HAND_CITY_SHORT = 18;
+export const HAND_CITY_MEDIUM = 28;
+
 export const DAYS = [1, 2, 3, 4, 5];
 export const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
@@ -76,11 +83,35 @@ function getTextFitClass(
 }
 
 function getHandTitleClass(name: string): string {
-	return getTextFitClass(name, "hand-card__name", 16, 23);
+	return getTextFitClass(
+		name,
+		"hand-card__name",
+		HAND_TITLE_SHORT,
+		HAND_TITLE_MEDIUM,
+	);
 }
 
 function getHandCityClass(city: string): string {
-	return getTextFitClass(city, "hand-card__city", 18, 28);
+	return getTextFitClass(
+		city,
+		"hand-card__city",
+		HAND_CITY_SHORT,
+		HAND_CITY_MEDIUM,
+	);
+}
+
+// ── Helper functions for conditional rendering ─────────────────────────
+
+function shouldShowEndDayButton(phase: GamePhase, isDraft: boolean): boolean {
+	return !isDraft && phase === "placement";
+}
+
+function shouldShowPlayerHand(phase: GamePhase): boolean {
+	return phase !== "simulation";
+}
+
+function shouldShowSimulationPanel(phase: GamePhase): boolean {
+	return phase === "simulation";
 }
 
 // ── Main arena ──────────────────────────────────────────────────────────────
@@ -129,10 +160,10 @@ export function renderMainArena(): string {
           </section>
         </div>
 
-        ${!isDraft && phase === "placement" ? renderEndDayButton() : ""}
-
-        ${phase !== "simulation" ? renderPlayerHandSection() : ""}
-        ${phase === "simulation" ? renderSimulationResultPanel() : ""}
+        ${shouldShowEndDayButton(phase, isDraft) ? renderEndDayButton() : ""}
+        
+        ${shouldShowPlayerHand(phase) ? renderPlayerHandSection() : ""}
+        ${shouldShowSimulationPanel(phase) ? renderSimulationResultPanel() : ""}
       </div>
 
       ${renderDeckCardStack()}
@@ -361,8 +392,10 @@ export function renderHandCard(
 		? `hand-card--${card.rarity}`
 		: "hand-card--common";
 	const fanClass = `hand-card--fan-${index + 1}`;
-	const shortName = (card as any).shortName || getShortName(card.name);
-	const shortCity = (card as any).shortCity || getShortCity(card.city || "");
+	const shortName =
+		(card as { shortName?: string }).shortName ?? getShortName(card.name);
+	const shortCity =
+		(card as { shortCity?: string }).shortCity ?? getShortCity(card.city || "");
 	const titleClass = getHandTitleClass(shortName);
 	const cityClass = getHandCityClass(shortCity);
 
@@ -488,7 +521,9 @@ export function renderFocusedCard(card: TravelCard): string {
 // ── Score panel ─────────────────────────────────────────────────────────────
 
 function renderMusicToggle(): string {
-	const state = (globalThis as any).getMusicState?.() ?? { muted: false };
+	const state = (
+		globalThis as { getMusicState?: () => { muted: boolean } }
+	).getMusicState?.() ?? { muted: false };
 	const icon = state.muted ? "🔇" : "🔊";
 	const mutedClass = state.muted ? "is-muted" : "";
 

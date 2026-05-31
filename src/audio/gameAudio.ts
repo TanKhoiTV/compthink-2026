@@ -1,3 +1,5 @@
+import { RETURN_SOUND_THROTTLE_MS } from "../shared/animations.ts";
+
 export type GameSoundName =
 	| "button"
 	| "cardSelect"
@@ -45,7 +47,8 @@ const activeGameFileSoundTimers: Partial<Record<GameFileSoundName, number>> =
 
 export function getGameAudioContext(): AudioContext | null {
 	const AudioContextConstructor =
-		window.AudioContext ?? (window as any).webkitAudioContext;
+		window.AudioContext ??
+		(window as { webkitAudioContext?: any }).webkitAudioContext;
 
 	if (!AudioContextConstructor) return null;
 
@@ -353,7 +356,7 @@ export function playGameSound(name: GameSoundName) {
 	}
 
 	if (name === "returnDeck") {
-		if (now - lastReturnSoundAt < 850) return;
+		if (now - lastReturnSoundAt < RETURN_SOUND_THROTTLE_MS) return;
 		lastReturnSoundAt = now;
 
 		playFileSound("returnDeck", {

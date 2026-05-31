@@ -11,6 +11,27 @@ export const HERO_VIDEO_SRC = "assets/videos/chuyencanh.mp4";
 
 // ── Video interaction ───────────────────────────────────────────────────────
 
+// Timer management for dashboard
+let dashboardHubTimerId: number | null = null;
+
+function clearDashboardHubTimer() {
+	if (dashboardHubTimerId !== null) {
+		clearTimeout(dashboardHubTimerId);
+		dashboardHubTimerId = null;
+	}
+}
+
+export function initDashboardHubWithCleanup() {
+	// Clear any existing timer
+	clearDashboardHubTimer();
+
+	// Set new timer with cleanup
+	dashboardHubTimerId = window.setTimeout(() => {
+		initDashboardHub();
+		dashboardHubTimerId = null;
+	}, 0);
+}
+
 export function initDashboardHub() {
 	const media = document.getElementById("hub-hero-media") as HTMLElement | null;
 	const video = document.getElementById(
@@ -465,8 +486,8 @@ async function handleLoginSubmit(event: SubmitEvent) {
 		// Refresh the dashboard to show explore panel
 		const { rerenderGameShell } = await import("../router.ts");
 		rerenderGameShell();
-		// Re-init video bindings after DOM refresh
-		setTimeout(() => initDashboardHub(), 0);
+		// Re-init video bindings after DOM refresh with cleanup
+		initDashboardHubWithCleanup();
 	} catch (err: unknown) {
 		statusEl.textContent = err instanceof Error ? err.message : "Lỗi đăng nhập";
 		statusEl.className = "hub-auth__status hub-auth__status--error";
@@ -525,7 +546,7 @@ async function handleRegisterSubmit(event: SubmitEvent) {
 		authClientState.user = data.user ?? data;
 		const { rerenderGameShell } = await import("../router.ts");
 		rerenderGameShell();
-		setTimeout(() => initDashboardHub(), 0);
+		initDashboardHubWithCleanup();
 	} catch (err: unknown) {
 		statusEl.textContent = err instanceof Error ? err.message : "Lỗi đăng ký";
 		statusEl.className = "hub-auth__status hub-auth__status--error";
@@ -561,7 +582,7 @@ export function initDashboardGlobals() {
 		authClientState.user = null;
 		import("../router.ts").then(({ rerenderGameShell }) => {
 			rerenderGameShell();
-			setTimeout(() => initDashboardHub(), 0);
+			initDashboardHubWithCleanup();
 		});
 	};
 
@@ -570,7 +591,11 @@ export function initDashboardGlobals() {
 		if (panel) {
 			panel.scrollIntoView({ behavior: "smooth", block: "center" });
 			panel.classList.add("hub-auth--pulse");
-			setTimeout(() => panel.classList.remove("hub-auth--pulse"), 700);
+			const pulseTimerId = window.setTimeout(() => {
+				panel.classList.remove("hub-auth--pulse");
+			}, 700);
+			// Store for potential cleanup
+			panel.setAttribute("data-pulse-timer", pulseTimerId.toString());
 		}
 	};
 

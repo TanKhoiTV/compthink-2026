@@ -14,7 +14,7 @@ import type { PlayerId } from "./shared/client-types.ts";
 //
 //   draft → placement → endDay → draft (next day) or finished
 //
-type GamePhase = "draft" | "placement" | "simulation" | "finished";
+export type GamePhase = "draft" | "placement" | "simulation" | "finished";
 
 let gamePhase: GamePhase = "draft";
 
@@ -91,6 +91,7 @@ let showFocusedPopup = false;
 
 let debtModalVisible = false;
 let debtModalNotice = "";
+let debtModalTimerId: number | null = null;
 
 // ── Timer state ──────────────────────────────────────────────────────────────
 
@@ -340,6 +341,22 @@ export function getDebtModalNotice(): string {
 
 export function setDebtModalNotice(v: string) {
 	debtModalNotice = v;
+}
+
+export function getDebtModalTimerId(): number | null {
+	return debtModalTimerId;
+}
+
+export function setDebtModalTimerId(id: number | null) {
+	debtModalTimerId = id;
+}
+
+export function clearDebtModalTimer() {
+	const id = getDebtModalTimerId();
+	if (id !== null) {
+		clearTimeout(id);
+		setDebtModalTimerId(null);
+	}
 }
 
 export function getIsInitialDealInProgress(): boolean {
