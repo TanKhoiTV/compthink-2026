@@ -70,12 +70,14 @@ import {
 	setPlacingInProgress,
 	getSimulationAdvanceTimeoutId,
 	setSimulationAdvanceTimeoutId,
-	getDebtModalVisible,
 	setDebtModalVisible,
-	getDebtModalNotice,
 	setDebtModalNotice,
+	getPlayerBoards,
+	getOpponentPlayerIds,
 	addDiscardedResourceBonus,
 } from "./state.ts";
+import { isConnected } from "./online/socketClient.ts";
+import type { PlayerId } from "./shared/client-types.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
 import { saigonFoodCards } from "./shared/data/index.ts";
@@ -444,6 +446,42 @@ function placeHandCardOnBoard(
 			setTimeout(() => cell.classList.remove("board-cell--just-placed"), 500);
 		}
 	});
+
+	// Place bot cards after player move (if offline)
+	if (!isConnected()) {
+		placeBotCardsAfterPlayerMove(card);
+	}
+}
+
+/**
+ * Place bot cards on opponent boards after the player places a card.
+ * Each bot places one card (up to 3 per day) using the player's card as a template.
+ */
+function placeBotCardsAfterPlayerMove(sourceCard: TravelCard) {
+	const opponentIds = getOpponentPlayerIds();
+	opponentIds.forEach((playerId: PlayerId) => {
+		const board = getPlayerBoards()[playerId];
+		const dayIndex = getCurrentDayIndex();
+
+		if (!board || !board.length) return;
+
+		// Count existing cards in this bot's current day
+		let count = 0;
+		for (const row of board) {
+			if (row[dayIndex] !== null) count += 1;
+		}
+		if (count >= 3) return;
+
+		// Find first empty slot in current day
+		for (let rowIndex = 0; rowIndex < board.length; rowIndex += 1) {
+			if (board[rowIndex]?.[dayIndex] === null) {
+				board[rowIndex][dayIndex] = sourceCard;
+				break;
+			}
+		}
+	});
+
+	rerenderGameShell();
 }
 
 /**
@@ -747,14 +785,14 @@ function getDeckDiscardTargetFromPointer(
 	event: PointerEvent,
 ): HTMLElement | null {
 	const el = document.elementFromPoint(event.clientX, event.clientY);
-	return el?.closest(
-		'[data-discard-drop-zone="true"]',
-	) as HTMLElement | null;
+	return el?.closest('[data-discard-drop-zone="true"]') as HTMLElement | null;
 }
 
 function canDiscardHandCard(): boolean {
 	const phase = getGamePhase();
-	return phase !== "draft" && phase !== "simulation" && !getIsInitialDealInProgress();
+	return (
+		phase !== "draft" && phase !== "simulation" && !getIsInitialDealInProgress()
+	);
 }
 
 function clearDeckDiscardHoverClass() {

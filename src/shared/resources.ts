@@ -1,73 +1,76 @@
-import type { TravelCard } from "./types.ts"
+import type { TravelCard } from "./types.ts";
 import type { BoardTotals } from "./board.ts";
 
 export type ResourceState = {
-  coin: number;
-  stamina: number;
+	coin: number;
+	stamina: number;
 };
 
 export type CardAffordability = {
-  canAfford: boolean;
-  missingCoin: number;
-  missingStamina: number;
+	canAfford: boolean;
+	missingCoin: number;
+	missingStamina: number;
 };
 
 export type GetRemainingResourcesParams = {
-  totals: BoardTotals;
-  startingCoin: number;
-  startingStamina: number;
-  discardBonusCoin?: number;
-  discardBonusStamina?: number;
+	totals: BoardTotals;
+	startingCoin: number;
+	startingStamina: number;
+	discardBonusCoin?: number;
+	discardBonusStamina?: number;
 };
 
 export type GetCardAffordabilityParams = {
-  card: TravelCard;
-  remaining: ResourceState;
+	card: TravelCard;
+	remaining: ResourceState;
 };
 
 export function getRemainingResources({
-  totals,
-  startingCoin,
-  startingStamina,
-  discardBonusCoin = 0,
-  discardBonusStamina = 0,
+	totals,
+	startingCoin,
+	startingStamina,
+	discardBonusCoin = 0,
+	discardBonusStamina = 0,
 }: GetRemainingResourcesParams): ResourceState {
-  return {
-    coin: Math.max(0, startingCoin - totals.coin + discardBonusCoin),
-    stamina: Math.max(0, startingStamina - totals.stamina + discardBonusStamina),
-  };
+	return {
+		coin: Math.max(0, startingCoin - totals.coin + discardBonusCoin),
+		stamina: Math.max(
+			0,
+			startingStamina - totals.stamina + discardBonusStamina,
+		),
+	};
 }
 
 export function getCardAffordability({
-  card,
-  remaining,
+	card,
+	remaining,
 }: GetCardAffordabilityParams): CardAffordability {
-  const missingCoin = Math.max(0, card.coin - remaining.coin);
-  const missingStamina = Math.max(0, card.stamina - remaining.stamina);
+	const missingCoin = Math.max(0, card.coin - remaining.coin);
+	const missingStamina = Math.max(0, card.stamina - remaining.stamina);
 
-  return {
-    canAfford: missingCoin === 0 && missingStamina === 0,
-    missingCoin,
-    missingStamina,
-  };
+	return {
+		canAfford: missingCoin === 0 && missingStamina === 0,
+		missingCoin,
+		missingStamina,
+	};
 }
 
 export function getCardAffordabilityMessage(
-  affordability: CardAffordability
+	affordability: CardAffordability,
 ): string {
-  const reasons: string[] = [];
+	const reasons: string[] = [];
 
-  if (affordability.missingCoin > 0) {
-    reasons.push(`thiếu ${affordability.missingCoin} xu`);
-  }
+	if (affordability.missingCoin > 0) {
+		reasons.push(`thiếu ${affordability.missingCoin} xu`);
+	}
 
-  if (affordability.missingStamina > 0) {
-    reasons.push(`thiếu ${affordability.missingStamina} thể lực`);
-  }
+	if (affordability.missingStamina > 0) {
+		reasons.push(`thiếu ${affordability.missingStamina} thể lực`);
+	}
 
-  if (reasons.length === 0) {
-    return "Đủ tài nguyên để đặt lá này";
-  }
+	if (reasons.length === 0) {
+		return "Đủ tài nguyên để đặt lá này";
+	}
 
-  return `Không đủ tài nguyên: ${reasons.join(", ")}`;
+	return `Không đủ tài nguyên: ${reasons.join(", ")}`;
 }

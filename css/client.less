@@ -7,11 +7,6 @@
 
 @paper: #f3ede3;
 
-/* Hide the static placeholder h1 in index.html — our JS handles the title */
-#game-container > h1 {
-  display: none;
-}
-
 /* Clip any sub-pixel rendering artifacts from the wrapper element */
 #game-container {
   width: 100%;
@@ -14995,7 +14990,7 @@ body {
    ============================================== */
 
 :root {
-  --map-accent:   #9a7c57;
+  --map-accent: #9a7c57;
   --map-accent-h: #b89167;
 }
 
@@ -15021,7 +15016,11 @@ body {
   justify-content: space-between;
   padding: 0 36px;
   z-index: 20;
-  background: linear-gradient(to bottom, rgba(20,14,10,0.72) 0%, transparent 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(20, 14, 10, 0.72) 0%,
+    transparent 100%
+  );
 }
 
 .hub-topbar__logo {
@@ -15029,7 +15028,7 @@ body {
   font-weight: 900;
   letter-spacing: 3px;
   color: #fff;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
 .hub-topbar__nav {
@@ -15038,9 +15037,9 @@ body {
 }
 
 .hub-topbar__nav button {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -15052,7 +15051,7 @@ body {
 }
 
 .hub-topbar__nav button:hover {
-  background: rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
@@ -15065,11 +15064,11 @@ body {
 .hub-topbar__user {
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255, 255, 255, 0.92);
   padding: 5px 14px;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(6px);
 }
 
@@ -15085,23 +15084,23 @@ body {
 }
 
 .hub-topbar__guest {
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(154,124,87,0.32);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(154, 124, 87, 0.32);
   color: #fff;
 }
 
 .hub-topbar__guest:hover {
-  background: rgba(154,124,87,0.52);
+  background: rgba(154, 124, 87, 0.52);
 }
 
 .hub-topbar__logout {
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.82);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .hub-topbar__logout:hover {
-  background: rgba(255,255,255,0.14);
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
@@ -15155,10 +15154,28 @@ body {
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 90% 70% at 18% 78%, rgba(15,10,6,0.18) 0%, transparent 58%),
-    radial-gradient(ellipse 55% 45% at 88% 18%, rgba(154,124,87,0.12) 0%, transparent 62%),
-    linear-gradient(to right, rgba(12,8,5,0.72) 0%, rgba(12,8,5,0.28) 42%, rgba(12,8,5,0.08) 100%),
-    linear-gradient(to top, rgba(10,7,4,0.88) 0%, rgba(10,7,4,0.34) 38%, transparent 72%);
+    radial-gradient(
+      ellipse 90% 70% at 18% 78%,
+      rgba(15, 10, 6, 0.18) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 88% 18%,
+      rgba(154, 124, 87, 0.12) 0%,
+      transparent 62%
+    ),
+    linear-gradient(
+      to right,
+      rgba(12, 8, 5, 0.72) 0%,
+      rgba(12, 8, 5, 0.28) 42%,
+      rgba(12, 8, 5, 0.08) 100%
+    ),
+    linear-gradient(
+      to top,
+      rgba(10, 7, 4, 0.88) 0%,
+      rgba(10, 7, 4, 0.34) 38%,
+      transparent 72%
+    );
 }
 
 .hub-hero__hitarea {
@@ -15180,25 +15197,27 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(12,8,5,0.58);
-  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(12, 8, 5, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(8px);
   border-radius: 999px;
   padding: 4px 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
-  transition: background 0.18s ease, border-color 0.18s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .hub-hero__audio-controls:hover {
-  background: rgba(12,8,5,0.74);
-  border-color: rgba(255,255,255,0.24);
+  background: rgba(12, 8, 5, 0.74);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
 .hub-hero__video-volume {
   width: 80px;
   height: 4px;
   -webkit-appearance: none;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -15217,7 +15236,7 @@ body {
   border-radius: 50%;
   background: #fff;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .hub-hero__video-mute {
@@ -15227,11 +15246,13 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255, 255, 255, 0.92);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: transform 0.18s ease, color 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    color 0.18s ease;
 }
 
 .hub-hero__video-mute:hover {
@@ -15275,15 +15296,27 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(154,124,87,0.18) 0%, transparent 45%),
-    radial-gradient(circle at 80% 20%, rgba(198,173,143,0.12) 0%, transparent 40%),
-    radial-gradient(circle at 60% 80%, rgba(154,124,87,0.10) 0%, transparent 35%);
+    radial-gradient(
+      circle at 20% 50%,
+      rgba(154, 124, 87, 0.18) 0%,
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(198, 173, 143, 0.12) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 60% 80%,
+      rgba(154, 124, 87, 0.1) 0%,
+      transparent 35%
+    );
   mask-image: repeating-linear-gradient(
     -45deg,
     transparent,
     transparent 2px,
-    rgba(255,255,255,0.015) 2px,
-    rgba(255,255,255,0.015) 4px
+    rgba(255, 255, 255, 0.015) 2px,
+    rgba(255, 255, 255, 0.015) 4px
   );
 }
 
@@ -15316,14 +15349,14 @@ body {
   font-weight: 900;
   line-height: 1.05;
   color: #fff;
-  text-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
   margin-bottom: 16px;
   letter-spacing: -0.5px;
 }
 
 .hero-sub {
   font-size: 15px;
-  color: rgba(255,255,255,0.72);
+  color: rgba(255, 255, 255, 0.72);
   line-height: 1.65;
   margin-bottom: 32px;
   font-weight: 400;
@@ -15343,8 +15376,8 @@ body {
   background: var(--map-accent);
   color: white;
   box-shadow:
-    0 8px 24px rgba(0,0,0,0.35),
-    inset 0 -3px 0 rgba(0,0,0,0.2);
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
 }
 
@@ -15352,8 +15385,8 @@ body {
   background: var(--map-accent-h);
   transform: translateY(-3px);
   box-shadow:
-    0 14px 32px rgba(0,0,0,0.4),
-    inset 0 -3px 0 rgba(0,0,0,0.2);
+    0 14px 32px rgba(0, 0, 0, 0.4),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.2);
 }
 
 .btn-play:active {
@@ -15363,7 +15396,7 @@ body {
 .hero-auth-hint {
   margin-top: 14px;
   font-size: 12px;
-  color: rgba(255,255,255,0.58);
+  color: rgba(255, 255, 255, 0.58);
   line-height: 1.5;
 }
 
@@ -15425,7 +15458,7 @@ body {
   gap: 6px;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.55);
+  background: rgba(255, 255, 255, 0.55);
   border: 1px solid #e8dccb;
 }
 
@@ -15459,7 +15492,7 @@ body {
   padding: 16px;
   border-radius: 14px;
   border: 1px solid #e8dccb;
-  background: rgba(255,255,255,0.72);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .hub-auth__panel.is-active {
@@ -15481,17 +15514,19 @@ body {
   border: 1px solid #dcccb8;
   border-radius: 10px;
   padding: 11px 12px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255, 255, 255, 0.92);
   color: #3e2e22;
   font-size: 14px;
   font-weight: 700;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .hub-auth__panel input:focus {
   border-color: var(--map-accent);
-  box-shadow: 0 0 0 3px rgba(154,124,87,0.18);
+  box-shadow: 0 0 0 3px rgba(154, 124, 87, 0.18);
 }
 
 .hub-auth__panel button[type="submit"] {
@@ -15508,15 +15543,17 @@ body {
   background: linear-gradient(180deg, var(--map-accent-h), var(--map-accent));
   box-shadow:
     0 10px 22px rgba(80, 55, 25, 0.18),
-    inset 0 -2px 0 rgba(0,0,0,0.14);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+    inset 0 -2px 0 rgba(0, 0, 0, 0.14);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .hub-auth__panel button[type="submit"]:hover {
   transform: translateY(-1px);
   box-shadow:
     0 14px 26px rgba(80, 55, 25, 0.22),
-    inset 0 -2px 0 rgba(0,0,0,0.14);
+    inset 0 -2px 0 rgba(0, 0, 0, 0.14);
 }
 
 .hub-auth__status {
@@ -15541,11 +15578,11 @@ body {
 
 @keyframes hubAuthPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(154,124,87,0.28);
+    box-shadow: 0 0 0 0 rgba(154, 124, 87, 0.28);
   }
 
   100% {
-    box-shadow: 0 0 0 14px rgba(154,124,87,0);
+    box-shadow: 0 0 0 14px rgba(154, 124, 87, 0);
   }
 }
 
@@ -15588,7 +15625,7 @@ body {
 }
 
 .news-item {
-  background: rgba(255,255,255,0.65);
+  background: rgba(255, 255, 255, 0.65);
   border: 1px solid #e8dccb;
   padding: 14px 16px;
   border-radius: 10px;
@@ -15597,7 +15634,7 @@ body {
 
 .news-item:hover {
   border-color: #c6ad8f;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 2px 12px rgba(78, 58, 43, 0.07);
   transform: translateX(-3px);
 }
@@ -15614,11 +15651,21 @@ body {
   margin-bottom: 7px;
 }
 
-.news-badge--new      { background: #38d873; }
-.news-badge--culture  { background: #8b5cf6; }
-.news-badge--food     { background: #f97316; }
-.news-badge--nature   { background: #22c55e; }
-.news-badge--heritage { background: #0ea5e9; }
+.news-badge--new {
+  background: #38d873;
+}
+.news-badge--culture {
+  background: #8b5cf6;
+}
+.news-badge--food {
+  background: #f97316;
+}
+.news-badge--nature {
+  background: #22c55e;
+}
+.news-badge--heritage {
+  background: #0ea5e9;
+}
 
 .news-item h4 {
   font-size: 14px;
@@ -15663,7 +15710,7 @@ body {
   width: 90%;
   max-height: 78vh;
   overflow-y: auto;
-  box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
   transform: translateY(14px);
   transition: transform 0.22s ease;
 }

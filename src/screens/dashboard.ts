@@ -7,15 +7,12 @@
 
 import { authClientState } from "../online/socketClient.ts";
 
-
-export const HERO_VIDEO_SRC = "assets/videos/one-minute-in-vietnam.mp4";
+export const HERO_VIDEO_SRC = "assets/videos/chuyencanh.mp4";
 
 // ── Video interaction ───────────────────────────────────────────────────────
 
 export function initDashboardHub() {
-	const media = document.getElementById(
-		"hub-hero-media",
-	) as HTMLElement | null;
+	const media = document.getElementById("hub-hero-media") as HTMLElement | null;
 	const video = document.getElementById(
 		"hub-hero-video",
 	) as HTMLVideoElement | null;
@@ -47,9 +44,7 @@ export function initDashboardHub() {
 		);
 		muteButton.setAttribute(
 			"aria-label",
-			video.muted || video.volume === 0
-				? "Bật tiếng video"
-				: "Tắt tiếng video",
+			video.muted || video.volume === 0 ? "Bật tiếng video" : "Tắt tiếng video",
 		);
 		muteButton.setAttribute(
 			"aria-pressed",
@@ -335,8 +330,7 @@ function renderHubTopbarUser(isLoggedIn: boolean, displayName: string) {
 export function renderDashboard(isLoading = false) {
 	const user = authClientState.user;
 	const isLoggedIn = Boolean(user);
-	const displayName =
-		user?.displayName || user?.username || "Nhà Lữ Hành";
+	const displayName = user?.displayName || user?.username || "Nhà Lữ Hành";
 
 	return `
     <div class="dashboard-hub ${isLoading ? "dashboard-hub--loading" : ""}">
@@ -482,7 +476,9 @@ async function handleLoginSubmit(event: SubmitEvent) {
 async function handleRegisterSubmit(event: SubmitEvent) {
 	event.preventDefault();
 	const displayName = (
-		document.getElementById("hub-auth-register-display-name") as HTMLInputElement
+		document.getElementById(
+			"hub-auth-register-display-name",
+		) as HTMLInputElement
 	)?.value;
 	const username = (
 		document.getElementById("hub-auth-register-username") as HTMLInputElement
