@@ -93,7 +93,7 @@ export function countCardsWithTag(cards: TravelCard[], tag: string): number {
 // ─── Canonical validation (adapted from original scr/shared/board.ts) ─────────
 
 /** Map legacy TimeSlot name to row index. */
-function slotToRowIndex(slot: string): number {
+export function slotToRowIndex(slot: string): number {
 	const slots: Record<string, number> = {
 		early_morning: 0,
 		morning: 1,
@@ -123,10 +123,43 @@ export const TIME_SLOTS = [
 	"evening",
 	"night",
 ] as const;
+
+export const SLOT_NAMES: Record<string, string> = {
+	early_morning: "Sáng",
+	morning: "Trưa",
+	afternoon: "Chiều",
+	evening: "Tối",
+	night: "Khuya",
+};
 export const DISTANCE_LIMIT_KM = 20;
 
 export function cellId(position: GridPosition) {
 	return `day-${position.day}-${position.slot}`;
+}
+
+/**
+ * Convert a server-side BoardCell[] into client-side BoardSlots.
+ * Resolves card_id → TravelCard via the provided card catalogue.
+ */
+export function boardCellsToSlots(
+	cells: BoardCell[],
+	cards: TravelCard[],
+): BoardSlots {
+	const byId = new Map(cards.map((c) => [c.card_id, c]));
+	const slots: BoardSlots = createEmptyBoardSlots();
+
+	for (const cell of cells) {
+		const rowIdx = slotToRowIndex(cell.slot);
+		const colIdx = cell.day - 1;
+		if (rowIdx < 0 || colIdx < 0 || colIdx >= slots[0].length) continue;
+
+		if (cell.card_id) {
+			const card = byId.get(cell.card_id);
+			if (card) slots[rowIdx][colIdx] = card;
+		}
+	}
+
+	return slots;
 }
 
 export function validateGridPlacement(
