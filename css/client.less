@@ -14819,6 +14819,168 @@ body {
   border-color: var(--ink, #4e3325);
 }
 
+/* ── Debt modal (ported from TREKPOLOGY effect-token-modal) ────────────── */
+
+.debt-link {
+	display: inline-block;
+	background: none;
+	border: none;
+	color: #c0392b;
+	cursor: pointer;
+	font-size: 12px;
+	padding: 0;
+	text-decoration: underline;
+	font-family: inherit;
+	line-height: inherit;
+}
+
+.debt-link:hover {
+	color: #e74c3c;
+}
+
+.debt-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.5);
+	animation: fadeIn 0.15s ease-out;
+}
+
+.debt-modal {
+	background: #fff;
+	border-radius: 12px;
+	width: 360px;
+	max-width: 92vw;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	font-family: system-ui, sans-serif;
+}
+
+.debt-modal__close {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	background: transparent;
+	border: none;
+	font-size: 18px;
+	cursor: pointer;
+	color: #999;
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+}
+
+.debt-modal__close:hover {
+	background: #f0f0f0;
+	color: #333;
+}
+
+.debt-modal__header {
+	padding: 24px 20px 16px;
+	text-align: center;
+	border-bottom: 1px solid #eee;
+}
+
+.debt-modal__seal-preview {
+	margin-bottom: 12px;
+}
+
+.debt-modal__title-wrap h3 {
+	margin: 4px 0;
+	font-size: 18px;
+	color: #c0392b;
+}
+
+.debt-modal__title-wrap p {
+	margin: 0;
+	font-size: 13px;
+	color: #666;
+}
+
+.debt-modal__eyebrow {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	color: #999;
+}
+
+.debt-modal__body {
+	padding: 16px 20px 20px;
+}
+
+.debt-modal__info {
+	display: flex;
+	justify-content: space-around;
+	margin-bottom: 12px;
+}
+
+.debt-modal__info > div {
+	text-align: center;
+}
+
+.debt-modal__info span {
+	display: block;
+	font-size: 11px;
+	color: #999;
+	margin-bottom: 2px;
+}
+
+.debt-modal__info strong {
+	font-size: 20px;
+	color: #333;
+}
+
+.debt-modal__notice {
+	background: #fef9e7;
+	border: 1px solid #f9e79f;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 13px;
+	color: #7d6608;
+	margin-bottom: 12px;
+}
+
+.debt-modal__actions {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+}
+
+.debt-modal__pay-btn {
+	background: #27ae60;
+	color: #fff;
+	border: none;
+	padding: 8px 20px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.debt-modal__pay-btn:hover {
+	background: #219a52;
+}
+
+.debt-modal__close-btn {
+	background: #ecf0f1;
+	color: #555;
+	border: 1px solid #ddd;
+	padding: 8px 20px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.debt-modal__close-btn:hover {
+	background: #dfe4e6;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

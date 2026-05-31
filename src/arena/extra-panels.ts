@@ -144,19 +144,102 @@ export function renderSimulationResultPanel(
   `;
 }
 
+/* ── Debt Seal Glyph (SVG) ──────────────────────────────────────────────── */
+
+export function renderDebtSealGlyph(): string {
+  return `
+    <svg class="player-effect-seal__icon-svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <path class="player-effect-seal__icon-solid" d="M30.8 10.2c.8-1.5 2.9-1.5 3.7 0l2.2 4.1c.3.5.8.9 1.4 1l4.8 1c1.8.4 2.3 2.6.9 3.7l-3.3 2.7c-.5.4-.8 1-.8 1.6l.1 1.8c4.4 1.8 7.5 5.9 7.5 10.7c0 6.4-5.1 11.5-11.5 11.5h-7.6c-6.8 0-12.4-5.5-12.4-12.3c0-4.8 2.8-8.9 6.9-10.8l.1-.9c.1-.7-.2-1.3-.7-1.8l-3-2.5c-1.4-1.2-.8-3.4 1-3.8l4.4-.9c.6-.1 1.1-.5 1.4-1l2.3-4.1Z"/>
+      <path class="player-effect-seal__icon-cut" d="M34.8 29.6l-3.2 5l3.5 3.2l-2.5 4.6l4.1 3.6"/>
+      <text class="player-effect-seal__icon-mark" x="31.9" y="38.6" text-anchor="middle">$</text>
+    </svg>
+  `;
+}
+
 /* ── Debt Token Modal ──────────────────────────────────────────────────── */
 
-export function renderDebtTokenModal(): string {
+export function renderDebtTokenModal(
+  isVisible: boolean,
+  debtAmount: number,
+  remainingCoin: number,
+  notice: string,
+): string {
+  if (!isVisible || debtAmount <= 0) return "";
+
+  const totalPenalty = debtAmount * 10;
+  const canPay = remainingCoin >= 1;
+  const paidOff = notice.includes("Đã trả hết");
+
   return `
-    <dialog id="debt-token-modal" class="debt-modal">
-      <form method="dialog" class="debt-modal__content">
-        <h2>Bạn đang nợ!</h2>
-        <p>Bạn đã tiêu quá số xu cho phép. Mỗi debt token sẽ bị trừ 3 VP vào cuối game.</p>
-        <menu>
-          <button value="cancel" id="debt-modal-close">Đóng</button>
-        </menu>
-      </form>
-    </dialog>
+    <div
+      class="debt-modal-backdrop"
+      onclick="event.stopPropagation(); window.closeDebtTokenModal()"
+    >
+      <section
+        class="debt-modal"
+        onclick="event.stopPropagation()"
+      >
+        <button
+          type="button"
+          class="debt-modal__close"
+          onclick="event.stopPropagation(); window.closeDebtTokenModal()"
+          aria-label="Đóng"
+          title="Đóng"
+        >
+          ✕
+        </button>
+
+        <div class="debt-modal__header">
+          <div class="debt-modal__seal-preview">
+            <span class="player-effect-seal player-effect-seal--debt player-effect-seal--preview">
+              <span class="player-effect-seal__surface">
+                <span class="player-effect-seal__ring"></span>
+                <span class="player-effect-seal__glyph player-effect-seal__glyph--debt" aria-hidden="true">${renderDebtSealGlyph()}</span>
+              </span>
+              <span class="player-effect-seal__count">${debtAmount}</span>
+            </span>
+          </div>
+
+          <div class="debt-modal__title-wrap">
+            <span class="debt-modal__eyebrow">TOKEN NỢ</span>
+            <h3>Nợ ${debtAmount} xu</h3>
+            <p>Cuối game nếu chưa trả: <strong>-${totalPenalty} VP</strong></p>
+          </div>
+        </div>
+
+        <div class="debt-modal__body">
+          <div class="debt-modal__info">
+            <div>
+              <span>Hiện đang nợ</span>
+              <strong>${debtAmount} xu</strong>
+            </div>
+            <div>
+              <span>Xu hiện có</span>
+              <strong>${remainingCoin} xu</strong>
+            </div>
+          </div>
+
+          ${
+            notice
+              ? `<p class="debt-modal__notice">${notice}</p>`
+              : ""
+          }
+
+          <div class="debt-modal__actions">
+            ${
+              !paidOff && canPay
+                ? `<button type="button" class="debt-modal__pay-btn" onclick="event.stopPropagation(); window.payCurrentCoinDebt()">
+                    Trả bớt nợ
+                  </button>`
+                : ""
+            }
+            <button type="button" class="debt-modal__close-btn" onclick="event.stopPropagation(); window.closeDebtTokenModal()">
+              ${paidOff ? "Đóng" : canPay ? "Để sau" : "OK"}
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
   `;
 }
 
