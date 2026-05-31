@@ -421,9 +421,12 @@ export function renderDashboard(isLoading = false) {
               <button class="btn-play" onclick="window.gotoMapSelection()">
                 ▶ &nbsp;BẮT ĐẦU HÀNH TRÌNH
               </button>
+              <button class="btn-play btn-play--online" onclick="window.gotoOnlineLobby()" style="margin-top:8px;background:var(--color-accent, #2a6e3f);">
+                🌐 &nbsp;CHƠI ONLINE
+              </button>
               ${
 								!isLoggedIn
-									? `<p class="hero-auth-hint">Đăng nhập ở panel bên phải để vào phòng online.</p>`
+									? `<p class="hero-auth-hint" style="margin-top:8px">Đăng nhập ở panel bên phải để vào phòng online.</p>`
 									: ""
 							}
             </div>
