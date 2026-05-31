@@ -9030,6 +9030,25 @@ body,
   }
 }
 
+/* Small viewports — combined width+height to prevent overflow from solo height rules */
+@media (max-width: 1366px) and (max-height: 800px) {
+  :root {
+    --ui-scale: 0.78;
+  }
+}
+
+@media (max-width: 1200px) and (max-height: 800px) {
+  :root {
+    --ui-scale: 0.7;
+  }
+}
+
+@media (max-width: 1024px) and (max-height: 800px) {
+  :root {
+    --ui-scale: 0.64;
+  }
+}
+
 /* Large desktop / F11 */
 @media (min-width: 1700px) and (min-height: 960px) {
   :root {
