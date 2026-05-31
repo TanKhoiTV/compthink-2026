@@ -11,6 +11,13 @@
 #game-container > h1 {
   display: none;
 }
+
+/* Clip any sub-pixel rendering artifacts from the wrapper element */
+#game-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
 @paper-light: #fbf8f1;
 @ink: #4e3a2b;
 @dash: #c6ad8f;
@@ -8770,11 +8777,11 @@ body,
   overflow: hidden !important;
   background:
     radial-gradient(
-      circle at center,
-      rgba(255, 255, 255, 0.4),
-      transparent 58%
+      ellipse at center,
+      transparent 60%,
+      rgba(80, 55, 25, 0.06) 100%
     ),
-    linear-gradient(180deg, #f5efe6, #e8dccb) !important;
+    #e9dece no-repeat !important;
 }
 
 .game-shell {
@@ -8875,25 +8882,39 @@ body,
 }
 
 html,
-body,
-#app {
+body {
   width: 100%;
   height: 100%;
   margin: 0;
   overflow: hidden !important;
+  /* Solid warm-beige base with a subtle edge vignette for the letterbox.
+     This replaces the radial+linear gradient overlay so borders around the
+     zoom-scaled game shell look like an intentional frame rather than blank
+     space or white-ish highlights. */
   background:
     radial-gradient(
-      circle at center,
-      rgba(255, 255, 255, 0.75),
-      transparent 58%
+      ellipse at center,
+      transparent 60%,
+      rgba(80, 55, 25, 0.06) 100%
     ),
-    linear-gradient(180deg, #f5efe6, #e8dccb) !important;
+    #e9dece no-repeat !important;
 }
 
 #app {
+  width: 100%;
+  height: 100%;
   position: fixed !important;
   inset: 0 !important;
   overflow: hidden !important;
+  /* Same letterbox styling so the fixed-position #app fills the viewport
+     with the same warm-beige frame look. */
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 60%,
+      rgba(80, 55, 25, 0.06) 100%
+    ),
+    #e9dece no-repeat !important;
 }
 
 /*

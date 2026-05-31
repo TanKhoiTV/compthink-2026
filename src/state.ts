@@ -345,4 +345,28 @@ export function setPlayerBoards(boards: Record<PlayerId, BoardSlots>) {
 	playerBoards = boards;
 }
 
+// ── Placement re-entrancy guard ───────────────────────────────────────────
+
+let placingInProgress = false;
+
+export function getPlacingInProgress(): boolean {
+	return placingInProgress;
+}
+
+export function setPlacingInProgress(v: boolean) {
+	placingInProgress = v;
+}
+
+// ── Simulation advance timeout (2s delay after replay) ────────────────────
+
+let simulationAdvanceTimeoutId: number | null = null;
+
+export function getSimulationAdvanceTimeoutId(): number | null {
+	return simulationAdvanceTimeoutId;
+}
+
+export function setSimulationAdvanceTimeoutId(id: number | null) {
+	simulationAdvanceTimeoutId = id;
+}
+
 export { currentPlayerId, playerIds };
