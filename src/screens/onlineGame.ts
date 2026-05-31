@@ -12,6 +12,8 @@ import {
 	getCurrentGameSnapshot,
 	getCurrentCards,
 	getCurrentPlayerId,
+	sendPayDebt,
+	sendReturnBoardCard,
 } from "../online/lobbyClient.ts";
 import { rpcCall } from "../online/socketClient.ts";
 import { renderHandCard, renderBoardMiniCard } from "../arena/render.ts";
@@ -258,6 +260,15 @@ function renderOnlinePlacement(
           </button>
         </div>
 
+        ${myPlayer.resources.debtToken > 0 ? `
+        <div class="placement__debt-pay">
+          <span class="debt-label">💳 Nợ: <strong>${myPlayer.resources.debtToken} xu</strong></span>
+          <button class="online-debt-btn" data-online-pay-debt="all">
+            💰 Trả nợ (${Math.min(myPlayer.resources.xu, myPlayer.resources.debtToken)} xu)
+          </button>
+        </div>
+        ` : ""}
+
         <div class="online-draft__opponents">
           ${opponentInfo || ""}
         </div>
@@ -274,15 +285,17 @@ function renderOnlineBoardCell(
 	chosenCards: TravelCard[],
 ): string {
 	const card = boardSlots[rowIdx]?.[colIdx] ?? null;
+	const day = DAYS[colIdx];
+	const slot = TIME_SLOTS[rowIdx];
 	const isCurrentDay = colIdx === currentDayIndex;
 	const canPlace = isCurrentDay && card === null && chosenCards.length > 0;
 
 	if (!card) {
 		return `
       <div class="board-cell board-cell--empty ${!isCurrentDay ? "board-cell--not-current-day" : ""} ${canPlace ? "board-cell--placeable" : ""}"
-           data-online-slot="${DAYS[colIdx]}-${TIME_SLOTS[rowIdx]}"
-           data-day="${DAYS[colIdx]}"
-           data-slot="${TIME_SLOTS[rowIdx]}"
+           data-online-slot="${day}-${slot}"
+           data-day="${day}"
+           data-slot="${slot}"
            title="${isCurrentDay ? "Đặt thẻ vào ô này" : "Không phải ngày hiện tại"}">
         <span class="empty-plus" ${canPlace ? 'style="cursor:pointer"' : ""}>+</span>
       </div>
@@ -290,9 +303,10 @@ function renderOnlineBoardCell(
 	}
 
 	return `
-    <div class="board-cell board-cell--occupied board-cell--clickable"
+    <div class="board-cell board-cell--occupied"
          title="${card.name}">
       ${renderBoardMiniCard(card)}
+      ${isCurrentDay ? `<button class="board-cell__return" data-online-return-card="${day}|${slot}" title="Trả bài về tay">↩️</button>` : ""}
     </div>
   `;
 }
@@ -506,6 +520,28 @@ export function initOnlineGameGlobals() {
 	if (leaveBtn) {
 		leaveBtn.addEventListener("click", () => handleOnlineLeaveGame());
 	}
+
+	// Placement: pay debt
+	document.querySelectorAll("[data-online-pay-debt]").forEach((btn) => {
+		btn.addEventListener("click", () => {
+			handleOnlinePayDebt();
+		});
+	});
+
+	// Placement: return board card
+	document.querySelectorAll("[data-online-return-card]").forEach((btn) => {
+		btn.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const val = (e.currentTarget as HTMLElement).getAttribute(
+				"data-online-return-card",
+			);
+			if (val) {
+				const [dayStr, slot] = val.split("|");
+				const day = parseInt(dayStr, 10);
+				if (day > 0 && slot) handleOnlineReturnBoardCard(day, slot);
+			}
+		});
+	});
 }
 
 // ── Action handlers ─────────────────────────────────────────────────────────
@@ -566,4 +602,12 @@ async function handleOnlineLeaveGame() {
 	// Navigate to lobby entry
 	const { transitionToScreen } = await import("../router.ts");
 	transitionToScreen("lobby");
+}
+
+async function handleOnlinePayDebt() {
+	await sendPayDebt();
+}
+
+async function handleOnlineReturnBoardCard(day: number, slot: string) {
+	await sendReturnBoardCard(day, slot);
 }

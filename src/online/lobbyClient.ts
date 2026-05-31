@@ -250,6 +250,31 @@ function leaveRoomFromLobby() {
 	gotoOnlineLobby();
 }
 
+// ── Debt payment ──────────────────────────────────────────────────────────
+
+export async function sendPayDebt(amount?: number): Promise<void> {
+	try {
+		await rpcCall("payDebt", amount ? { amount } : {});
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : String(err);
+		console.warn("[lobby] payDebt failed:", message);
+	}
+}
+
+// ── Return board card ───────────────────────────────────────────────────────
+
+export async function sendReturnBoardCard(
+	day: number,
+	slot: string,
+): Promise<void> {
+	try {
+		await rpcCall("returnBoardCard", { day, slot });
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : String(err);
+		console.warn("[lobby] returnBoardCard failed:", message);
+	}
+}
+
 // ── Ready toggle ───────────────────────────────────────────────────────────
 
 async function toggleReadyFromLobby() {

@@ -261,7 +261,9 @@ export async function verifyAuthToken(
 	if (parts.length !== 3) return null;
 
 	const [encodedHeader, encodedPayload, signature] = parts;
-	const expectedSignature = await hmacSign(`${encodedHeader}.${encodedPayload}`);
+	const expectedSignature = await hmacSign(
+		`${encodedHeader}.${encodedPayload}`,
+	);
 
 	// Constant-time comparison
 	const sigBuf = new TextEncoder().encode(signature);

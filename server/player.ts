@@ -20,6 +20,8 @@ import {
 	skipSlot,
 	confirmDay,
 	toggleReady,
+	payDebt,
+	returnBoardCard,
 	exportSnapshot,
 	type Room,
 } from "./game.ts";
@@ -262,6 +264,39 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
 				confirmDay(session.room!, session.playerId);
 				sendResult(session, id, {
 					ok: true,
+					snapshot: exportSnapshot(session.room!, session.playerId),
+				});
+				break;
+			}
+
+			// ── Debt / board management ──────────────────────────────────────────
+
+			case "payDebt": {
+				requireRoom(session);
+				const { amount } = params as { amount?: number };
+				const result = payDebt(session.room!, session.playerId, amount);
+				sendResult(session, id, {
+					ok: true,
+					paid: result.paid,
+					remainingDebt: result.remainingDebt,
+					snapshot: exportSnapshot(session.room!, session.playerId),
+				});
+				break;
+			}
+
+			case "returnBoardCard": {
+				requireRoom(session);
+				const { day, slot } = params as { day: number; slot: string };
+				if (day == null || !slot) {
+					throw rpcError(
+						RPC_ERRORS.INVALID_PARAMS.code,
+						"returnBoardCard requires day and slot",
+					);
+				}
+				const result = returnBoardCard(session.room!, session.playerId, day, slot);
+				sendResult(session, id, {
+					ok: true,
+					cardId: result.cardId,
 					snapshot: exportSnapshot(session.room!, session.playerId),
 				});
 				break;
