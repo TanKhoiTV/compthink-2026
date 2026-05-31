@@ -18,6 +18,10 @@ import { renderDebtTokenModal } from "./arena/extra-panels.ts";
 import { getBoardSlots } from "./state.ts";
 import { calculateBoardTotals } from "./shared/board.ts";
 import { getRemainingResources } from "./shared/resources.ts";
+import {
+	getDiscardedResourceCoinBonus,
+	getDiscardedResourceStaminaBonus,
+} from "./state.ts";
 import { STARTING_COIN, STARTING_STAMINA } from "./shared/constants.ts";
 
 // ── Screen state ────────────────────────────────────────────────────────────
@@ -63,6 +67,8 @@ export function renderGameShell(): string {
 							totals: calculateBoardTotals(getBoardSlots()),
 							startingCoin: STARTING_COIN,
 							startingStamina: STARTING_STAMINA,
+							discardBonusCoin: getDiscardedResourceCoinBonus?.() ?? 0,
+							discardBonusStamina: getDiscardedResourceStaminaBonus?.() ?? 0,
 						})
 					: { coin: 0, stamina: 0 };
 			return `<div class="game-shell">

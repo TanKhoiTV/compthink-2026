@@ -34,6 +34,8 @@ import {
 	getDeck,
 	getLocalCoinDebt,
 	currentPlayerId,
+	getDiscardedResourceCoinBonus,
+	getDiscardedResourceStaminaBonus,
 } from "../state.ts";
 import {
 	getRarityLabel,
@@ -364,12 +366,14 @@ export function renderHandCard(
 	const titleClass = getHandTitleClass(shortName);
 	const cityClass = getHandCityClass(shortCity);
 
-	// Resource affordability
+	// Resource affordability (includes discard bonus)
 	const boardTotals = calculateBoardTotals(getBoardSlots());
 	const remaining = getRemainingResources({
 		totals: boardTotals,
 		startingCoin: STARTING_COIN,
 		startingStamina: STARTING_STAMINA,
+		discardBonusCoin: getDiscardedResourceCoinBonus(),
+		discardBonusStamina: getDiscardedResourceStaminaBonus(),
 	});
 	const affordability = getCardAffordability({ card, remaining });
 	const affordabilityClass = !affordability.canAfford
@@ -510,7 +514,11 @@ function renderDeckCardStack(): string {
 	if (sim || phase === "simulation" || phase === "finished") return "";
 
 	return `
-    <section class="deck-pile-panel">
+    <section
+      class="deck-pile-panel"
+      data-discard-drop-zone="true"
+      title="Kéo thả lá bài trên tay vào đây để discard và nhận lại Xu/Thể lực bằng chi phí của lá."
+    >
       <div class="deck-pile-panel__visual">
         <div class="deck-card-stack">
           <div class="deck-card-stack__card deck-card-stack__card--back-3"></div>
@@ -629,6 +637,8 @@ function renderResourceOrbs(): string {
 		totals,
 		startingCoin: STARTING_COIN,
 		startingStamina: STARTING_STAMINA,
+		discardBonusCoin: getDiscardedResourceCoinBonus(),
+		discardBonusStamina: getDiscardedResourceStaminaBonus(),
 	});
 	const debt = getLocalCoinDebt();
 

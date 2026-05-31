@@ -390,4 +390,30 @@ export function setSimulationAdvanceTimeoutId(id: number | null) {
 	simulationAdvanceTimeoutId = id;
 }
 
+// ── Discard resource bonus (refunded from discarded hand cards) ────────────
+
+let discardedResourceCoinBonus = 0;
+let discardedResourceStaminaBonus = 0;
+
+export function getDiscardedResourceCoinBonus(): number {
+	return discardedResourceCoinBonus;
+}
+
+export function setDiscardedResourceCoinBonus(v: number) {
+	discardedResourceCoinBonus = v;
+}
+
+export function getDiscardedResourceStaminaBonus(): number {
+	return discardedResourceStaminaBonus;
+}
+
+export function setDiscardedResourceStaminaBonus(v: number) {
+	discardedResourceStaminaBonus = v;
+}
+
+export function addDiscardedResourceBonus(coin: number, stamina: number) {
+	discardedResourceCoinBonus += coin;
+	discardedResourceStaminaBonus += stamina;
+}
+
 export { currentPlayerId, playerIds };
