@@ -28,6 +28,10 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Run server tests
+        run: deno task test
+        working-directory: server
+
       - name: Deploy to Deno Deploy
         run: deno deploy --org "${{ vars.DENO_DEPLOY_ORG }}" --app "${{ vars.DENO_DEPLOY_APP }}" --prod
         env:
