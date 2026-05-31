@@ -205,6 +205,7 @@ body {
   overflow: visible;
   background: #e9dece;
   flex: 1 0 auto;
+  justify-content: center;
 }
 
 .board-block {
@@ -2317,6 +2318,26 @@ body {
    15. RESPONSIVE OVERRIDES
    ========================================= */
 
+/* ── Large screens (4K, ultrawide) ──────────────────────────────────── */
+
+@media (min-width: 1701px) {
+  :root {
+    --center-width: min(1800px, calc(100vw - 320px));
+    --cell-w: clamp(
+      160px,
+      calc(
+        (var(--center-width) - var(--time-col) - (var(--gap) * 5) - 32px) / 5
+      ),
+      280px
+    );
+    --cell-h: clamp(96px, calc((100vh - 320px) / 5), 130px);
+    --hand-card-w: 196px;
+    --hand-card-h: 286px;
+    --hand-height: 328px;
+    --hand-overlap: 90px;
+  }
+}
+
 @media (max-width: 1700px) {
   :root {
     --center-width: min(1180px, calc(100vw - 500px));
@@ -2491,13 +2512,13 @@ body {
 
 @media (max-width: 768px) {
   :root {
-    --cell-h: clamp(54px, calc((100vh - 380px) / 5), 72px);
-    --cell-w: clamp(80px, calc((100vw - 280px) / 5), 120px);
-    --hand-card-w: 96px;
-    --hand-card-h: 152px;
-    --hand-height: 176px;
-    --hand-overlap: 36px;
-    --time-col: 40px;
+    --cell-h: clamp(48px, calc((100vh - 360px) / 5), 64px);
+    --cell-w: clamp(72px, calc((100vw - 200px) / 5), 110px);
+    --hand-card-w: 86px;
+    --hand-card-h: 138px;
+    --hand-height: 160px;
+    --hand-overlap: 30px;
+    --time-col: 36px;
     --gap: 4px;
   }
 
@@ -2523,12 +2544,35 @@ body {
   }
 
   .game-over-card {
-    width: min(420px, calc(100vw - 32px));
-    padding: 24px 18px;
+    width: min(380px, calc(100vw - 32px));
+    padding: 20px 14px;
   }
 
   .game-over__score-value {
-    font-size: 40px;
+    font-size: 34px;
+  }
+}
+
+@media (max-height: 800px) {
+  :root {
+    --cell-h: clamp(48px, calc((100vh - 340px) / 5), 70px);
+    --hand-card-h: 130px;
+    --hand-height: 152px;
+    --hand-overlap: 28px;
+    --top-height: 48px;
+  }
+
+  .player-hand {
+    flex: 0 0 var(--hand-height);
+    height: var(--hand-height);
+    min-height: var(--hand-height);
+  }
+
+  .arena__top,
+  .arena__top--with-score {
+    min-height: var(--top-height);
+    height: var(--top-height);
+    gap: 4px;
   }
 }
 
