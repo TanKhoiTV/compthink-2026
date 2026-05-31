@@ -42,7 +42,11 @@ export function renderGameShell(): string {
 		case "lobby":
 			return '<div class="lobby-screen"><p>Phòng chờ (sẽ render sau)</p></div>';
 		case "game":
-			return renderMainArena();
+			return `<div class="game-shell">
+				<aside class="players-column players-column--left"></aside>
+				${renderMainArena()}
+				<aside class="players-column players-column--right"></aside>
+			</div>`;
 		default:
 			return '<div class="loading-screen"><p>Đang tải...</p></div>';
 	}
