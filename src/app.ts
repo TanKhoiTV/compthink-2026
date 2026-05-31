@@ -66,6 +66,10 @@ import {
 	getHandPointerDragState,
 	setHandPointerDragState,
 	setDraggedHandCardId,
+	getPlacingInProgress,
+	setPlacingInProgress,
+	getSimulationAdvanceTimeoutId,
+	setSimulationAdvanceTimeoutId,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
@@ -89,7 +93,7 @@ import { ROWS } from "./arena/render.ts";
 const DRAFT_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = HAND_SIZE; // 5
 
-const VERSION = "0.14.1";
+const VERSION = "0.14.2";
 const BUILD_TIME = "__BUILD_TIME_PLACEHOLDER__";
 const gameName = "Trekkopoly";
 console.log(`${gameName} v${VERSION} (build ${BUILD_TIME}) running!`);
@@ -374,9 +378,15 @@ function placeHandCardOnBoard(
 ) {
 	if (getGamePhase() !== "placement") return;
 	if (colIndex !== getCurrentDayIndex()) return;
+	// Re-entrancy guard — prevent double-fire from click + drag-drop racing
+	if (getPlacingInProgress()) return;
+	setPlacingInProgress(true);
 
 	const board = getBoardSlots();
-	if (board[rowIndex]?.[colIndex] !== null) return;
+	if (board[rowIndex]?.[colIndex] !== null) {
+		setPlacingInProgress(false);
+		return;
+	}
 
 	const hand = getPlayerHand();
 	const handIndex = hand.findIndex((c) => c.id === cardId);
@@ -417,6 +427,9 @@ function placeHandCardOnBoard(
 	setFocusedBoardCard(null);
 	playGameSound("cardPlace");
 	rerenderGameShell();
+
+	// Release re-entrancy guard after render completes
+	setPlacingInProgress(false);
 
 	// Flash animation on the placed cell
 	requestAnimationFrame(() => {
@@ -505,9 +518,11 @@ function runSystemSimulation() {
 			rerenderGameShell();
 
 			// Advance to next day after 2s
-			window.setTimeout(() => {
+			const advanceTimeoutId = window.setTimeout(() => {
+				setSimulationAdvanceTimeoutId(null);
 				startNextDayOrPhase();
 			}, 2000);
+			setSimulationAdvanceTimeoutId(advanceTimeoutId);
 			return;
 		}
 
@@ -561,6 +576,14 @@ function clearSimulationTimer() {
 	if (id !== null) {
 		clearInterval(id);
 		setSimulationTimerId(null);
+	}
+}
+
+function cancelSimulationAdvanceTimeout() {
+	const id = getSimulationAdvanceTimeoutId();
+	if (id !== null) {
+		clearTimeout(id);
+		setSimulationAdvanceTimeoutId(null);
 	}
 }
 
@@ -654,7 +677,13 @@ function startTurnTimer() {
 }
 
 function startNextDayOrPhase() {
+	// Guard: only advance from simulation or placement; prevents stale
+	// timeouts from a previous replay from advancing the game out of order.
+	const phase = getGamePhase();
+	if (phase !== "simulation" && phase !== "placement") return;
+
 	stopTurnTimer();
+	cancelSimulationAdvanceTimeout();
 
 	// Apply coin debt penalty before advancing
 	const debt = getLocalCoinDebt();
