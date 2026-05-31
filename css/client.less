@@ -8941,10 +8941,15 @@ body,
 @supports not (zoom: 1) {
   .game-shell {
     zoom: 1 !important;
+    /* For transform: scale(), getBoundingClientRect is NOT multiplied by scale
+       (unlike zoom). Use simple viewport centering without /ui-scale divisor.
+       transform-origin: center center ensures the visual center stays aligned
+       with the logical center at any scale, so no margin offset is needed. */
+    left: calc((100vw - 1600px) / 2) !important;
+    top: calc((100vh - 900px) / 2) !important;
     transform: scale(var(--ui-scale)) !important;
-    transform-origin: top left !important;
-    margin-left: calc(1600px * (1 - var(--ui-scale)) / 2) !important;
-    margin-top: calc(900px * (1 - var(--ui-scale)) / 2) !important;
+    transform-origin: center center !important;
+    margin: 0 !important;
   }
 }
 
