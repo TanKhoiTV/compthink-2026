@@ -7,13 +7,11 @@ const ASSETS_TO_CACHE = [
 	"./manifest.json",
 	"./build/client.js",
 	"./build/client.css",
-	"assets/videos/chuyencanh2.mp4",
 	"assets/images/cities/danang.jpg",
 	"assets/images/cities/hanoi.jpeg",
 	"assets/images/cities/saigon.jpg",
 	"assets/images/backgrounds/lobby-bg.jpg",
 	"assets/images/backgrounds/saigon-collage-hover/saigon-collage-bg.png",
-	"assets/audio/music/in-game-background.mp3",
 ];
 
 // 1. Sự kiện Cài đặt (Install) - Gom hàng vào kho Cache
@@ -55,11 +53,17 @@ self.addEventListener("message", (event) => {
 	}
 });
 
-// 3. Chiến lược: Network-First cho mọi thứ.
-//    - Luôn fetch từ network trước. Cache là fallback offline.
-//    - Một lần refresh là nhận được bản mới nhất từ deploy.
-//    - Cache được cập nhật ở background khi fetch thành công.
+// 3. Chiến lược: Network-First cho app shell, Network-Only cho media.
+//    - App shell (JS, CSS, HTML): network-first, cache fallback offline.
+//    - Media (video, audio): network-only — too large to cache, avoid stream clone errors.
 self.addEventListener("fetch", (event) => {
+	const url = new URL(event.request.url);
+
+	// Skip caching for large media files — serve from network only
+	if (url.pathname.match(/\.(mp4|webm|ogg|mp3|wav|m4a|mov)$/i)) {
+		return;
+	}
+
 	event.respondWith(
 		caches.open(CACHE_NAME).then((cache) => {
 			return fetch(event.request)
