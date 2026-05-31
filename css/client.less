@@ -2489,6 +2489,49 @@ body {
   }
 }
 
+@media (max-width: 768px) {
+  :root {
+    --cell-h: clamp(54px, calc((100vh - 380px) / 5), 72px);
+    --cell-w: clamp(80px, calc((100vw - 280px) / 5), 120px);
+    --hand-card-w: 96px;
+    --hand-card-h: 152px;
+    --hand-height: 176px;
+    --hand-overlap: 36px;
+    --time-col: 40px;
+    --gap: 4px;
+  }
+
+  .arena__top,
+  .arena__top--with-score {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    min-height: auto;
+    padding: 4px 6px;
+  }
+
+  .score-breakdown {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .board-grid__time-labels {
+    font-size: 11px;
+  }
+
+  .player-hand__cards {
+    gap: calc(var(--hand-overlap) * -1);
+  }
+
+  .game-over-card {
+    width: min(420px, calc(100vw - 32px));
+    padding: 24px 18px;
+  }
+
+  .game-over__score-value {
+    font-size: 40px;
+  }
+}
+
 /* =========================================
    HAND FAN SMOOTH INTERACTION FINAL
    Fix giật/nhấp nháy khi rê chuột giữa các lá bài.
