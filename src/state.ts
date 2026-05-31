@@ -9,6 +9,7 @@ import { createEmptyBoardSlots } from "./shared/board.ts";
 import type { TravelCard } from "./shared/types.ts";
 import type { BoardSlots } from "./shared/board.ts";
 import type { PlayerId } from "./shared/client-types.ts";
+import { clearTimer } from "./services/timer-service.ts";
 
 // ── Game phase FSM ───────────────────────────────────────────────────────────
 //
@@ -354,7 +355,7 @@ export function setDebtModalTimerId(id: number | null) {
 export function clearDebtModalTimer() {
 	const id = getDebtModalTimerId();
 	if (id !== null) {
-		clearTimeout(id);
+		clearTimer(id);
 		setDebtModalTimerId(null);
 	}
 }

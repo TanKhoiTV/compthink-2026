@@ -26,8 +26,11 @@ export function setTimer(
 	label: string,
 ): number {
 	const id = window.setTimeout(() => {
-		callback();
-		activeTimers.delete(id);
+		try {
+			callback();
+		} finally {
+			activeTimers.delete(id);
+		}
 	}, delayMs);
 
 	activeTimers.set(id, {

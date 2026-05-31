@@ -393,9 +393,10 @@ export function renderHandCard(
 		: "hand-card--common";
 	const fanClass = `hand-card--fan-${index + 1}`;
 	const shortName =
-		(card as { shortName?: string }).shortName ?? getShortName(card.name);
+		(card as { shortName?: string }).shortName?.trim() || getShortName(card.name);
 	const shortCity =
-		(card as { shortCity?: string }).shortCity ?? getShortCity(card.city || "");
+		(card as { shortCity?: string }).shortCity?.trim() ||
+		getShortCity(card.city || "");
 	const titleClass = getHandTitleClass(shortName);
 	const cityClass = getHandCityClass(shortCity);
 
