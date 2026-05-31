@@ -8,6 +8,15 @@ import type { AppScreen } from "./shared/client-types.ts";
 import { renderMainArena } from "./arena/render.ts";
 import { renderDashboard } from "./screens/dashboard.ts";
 import {
+	renderOnlineEntryScreen,
+	renderOnlineLobbyRoomScreen,
+} from "./screens/lobby.ts";
+import {
+	getCurrentLobbySnapshot,
+	getSavedSession,
+	getCurrentPlayerName,
+} from "./online/lobbyClient.ts";
+import {
 	getSuppressNextClick,
 	setSuppressNextClick,
 	getDebtModalVisible,
@@ -55,8 +64,25 @@ export function renderGameShell(): string {
 			return '<div class="loading-screen"><p>Đang tải...</p></div>';
 		case "dashboard":
 			return renderDashboard();
-		case "lobby":
-			return '<div class="lobby-screen"><p>Phòng chờ (sẽ render sau)</p></div>';
+		case "lobby": {
+			const snapshot = getCurrentLobbySnapshot();
+			const savedSession = getSavedSession();
+			const displayName = getCurrentPlayerName() || "Nhà Lữ Hành";
+
+			if (snapshot && snapshot.phase === "lobby") {
+				return renderOnlineLobbyRoomScreen(
+					snapshot.roomId,
+					snapshot.playerId,
+					snapshot.playerName,
+					snapshot.phase,
+					snapshot.players,
+					snapshot.isHost,
+					snapshot.canStart,
+				);
+			}
+
+			return renderOnlineEntryScreen(savedSession, displayName);
+		}
 		case "game": {
 			const debtAmount = getLocalCoinDebt();
 			const debtModalVisible = getDebtModalVisible();
@@ -109,12 +135,15 @@ export function rerenderGameShell() {
 	}
 	reattachCardClickDelegation();
 
-	// Post-render: init dashboard globals & video hub if on dashboard
+	// Post-render: init screen-specific globals & effects
 	if (currentAppScreen === "dashboard") {
 		import("./screens/dashboard.ts").then((mod) => {
 			mod.initDashboardGlobals();
 			mod.initDashboardHubWithCleanup();
 		});
+	} else if (currentAppScreen === "lobby") {
+		// Lobby globals are already bound in app.ts initLobbyGlobals()
+		// No post-render side-effects needed — lobby is static HTML
 	}
 }
 

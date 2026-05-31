@@ -80,6 +80,7 @@ import {
 	addDiscardedResourceBonus,
 } from "./state.ts";
 import { isConnected } from "./online/socketClient.ts";
+import "./online/lobbyClient.ts"; // Side-effect: binds lobby globals
 import type { PlayerId } from "./shared/client-types.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";

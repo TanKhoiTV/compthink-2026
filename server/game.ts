@@ -172,12 +172,45 @@ function doTransition(room: Room, to: GamePhase, note: string): void {
 	room.phase = to;
 }
 
+// ─── Lobby: toggle ready ─────────────────────────────────────────────────────
+
+/**
+ * Toggle the ready flag for a player in the lobby.
+ * When all connected players are ready, the host can start the game.
+ */
+export function toggleReady(room: Room, playerId: string): void {
+	assertPhase(room, "lobby", "toggleReady");
+
+	const player = getPlayer(room, playerId);
+	player.ready = !player.ready;
+
+	const status = player.ready ? "ready" : "not ready";
+	room.log.push(`${player.name} is ${status}.`);
+
+	room.broadcast(room);
+}
+
 // ─── Phase: LOBBY → DRAFT ─────────────────────────────────────────────────────
 
 export function startGame(room: Room): void {
 	if (room.players.length < 1) {
 		throw new Error("Need at least 1 player to start.");
 	}
+
+	// Only the first player (host) can start
+	const host = room.players[0];
+	if (!host) {
+		throw new Error("No host found.");
+	}
+
+	// Check all connected players are ready
+	const notReady = room.players.filter((p) => !p.ready);
+	if (notReady.length > 0) {
+		throw new Error(
+			`Not all players are ready: ${notReady.map((p) => p.name).join(", ")}`,
+		);
+	}
+
 	doTransition(room, "draft", "Game started.");
 	beginDraftingPhase(room);
 	room.broadcast(room);
