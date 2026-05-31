@@ -35,6 +35,13 @@ import {
 	getLocalCoinDebt,
 	currentPlayerId,
 } from "../state.ts";
+import {
+	getRarityLabel,
+	getTagLabel,
+	getShortName,
+	getShortCity,
+	getBonusText,
+} from "../shared/card-mapper.ts";
 import type { TravelCard } from "../shared/types.ts";
 import type { BoardSlots } from "../shared/board.ts";
 import { calculateBoardTotals, getPlacedCards } from "../shared/board.ts";
@@ -52,106 +59,7 @@ import { STARTING_COIN, STARTING_STAMINA } from "../shared/constants.ts";
 export const DAYS = [1, 2, 3, 4, 5];
 export const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
-// ── Helpers ported from TREKPOLOGY src/app.ts / src/data/cardMapper.ts ──────
-
-function getRarityLabel(rarity: string | undefined): string {
-	switch (rarity) {
-		case "common":
-			return "★";
-		case "uncommon":
-			return "★★";
-		case "epic":
-			return "★★★★";
-		case "legendary":
-			return "★★★★★";
-		default:
-			return "★";
-	}
-}
-
-function getTagLabel(tag: string): string {
-	switch (tag) {
-		case "FOOD":
-			return "Ẩm thực";
-		case "CULTURE":
-			return "Văn hóa";
-		case "ACTION":
-			return "Khám phá";
-		case "UTILITY":
-			return "Tiện ích";
-		case "OUTDOOR":
-			return "Ngoài trời";
-		case "INDOOR":
-			return "Trong nhà";
-		default:
-			return "Khác";
-	}
-}
-
-function getBonusText(card: TravelCard): string {
-	const effect = card.onPlayEffect;
-	if (effect && effect.has_effect) {
-		switch (effect.effect_type) {
-			case "RECOVER_LA":
-				return `Khi đặt xuống: hồi ${effect.effect_value} thể lực`;
-			case "RECOVER_XU":
-				return `Khi đặt xuống: hồi ${effect.effect_value} xu`;
-			case "GAIN_VP":
-				return `Khi đặt xuống: +${effect.effect_value} VP`;
-		}
-	}
-
-	const tags = card.tags ?? [];
-	if (tags.includes("FOOD")) return "Nếu có 2 lá Ẩm thực: +5 VP";
-	if (tags.includes("CULTURE")) return "Nếu có 2 lá Văn hóa: +8 VP";
-	if (tags.includes("ACTION")) return "Nếu đặt sau lá Khám phá: +10 VP";
-	return "Không có hiệu ứng đặc biệt";
-}
-
-function getShortName(name: string): string {
-	const trimmed = name.trim();
-	const manual: Record<string, string> = {
-		"Cà Phê Bệt Nhà Thờ Đức Bà": "Cà Phê Bệt",
-		"Bánh Tráng Nướng Hồ Con Rùa": "Bánh Tráng",
-		"Cà Phê Vợt Cheo Leo": "Cà Phê Vợt",
-		"Phá Lấu Bò Cô Oanh": "Phá Lấu",
-		"Súp Cua Chợ Tân Định": "Súp Cua",
-		"Bánh Mì Huỳnh Hoa": "Bánh Mì",
-		"Phố Ẩm Thực Hồ Thị Kỷ": "Hồ Thị Kỷ",
-		"Cà Phê Chung Cư 42 Nguyễn Huệ": "Cà Phê 42",
-		"Phố Sủi Cảo Hà Tôn Quyền": "Sủi Cảo",
-		"Cơm Tấm Ba Ghiền": "Cơm Tấm",
-		"Phố Ốc Vĩnh Khánh": "Ốc Vĩnh Khánh",
-		"Bánh Xèo Đinh Công Tráng": "Bánh Xèo",
-		"Chè Hà Ký Chợ Lớn": "Chè Hà Ký",
-		"Phở Hòa Pasteur": "Phở Hòa",
-		"Lẩu Cá Kèo Bà Huyện Thanh Quan": "Lẩu Cá Kèo",
-		"Dimsum Tiến Phát": "Dimsum",
-		"Nhà Hàng Chay Hum": "Chay Hum",
-		"Ăn Tối Du Thuyền Sông Sài Gòn": "Du Thuyền Tối",
-		"Tầng 79 Landmark 81": "Landmark 81",
-		"Cơm Quê Dượng Bầu": "Dượng Bầu",
-	};
-	if (manual[trimmed]) return manual[trimmed];
-	if (trimmed.length <= 14) return trimmed;
-	const words = trimmed.split(/\s+/);
-	if (words.length <= 3) return trimmed;
-	return words.slice(0, 3).join(" ");
-}
-
-function getShortCity(city: string): string {
-	const trimmed = city.trim();
-	const manual: Record<string, string> = {
-		"Sài Gòn": "Sài Gòn",
-		"Hà Nội": "Hà Nội",
-		"Đà Lạt": "Đà Lạt",
-		"Đà Nẵng": "Đà Nẵng",
-		"Quảng Ninh": "Quảng Ninh",
-	};
-	if (manual[trimmed]) return manual[trimmed];
-	if (trimmed.length <= 12) return trimmed;
-	return trimmed.slice(0, 12).trim() + "…";
-}
+// ── Helpers ported from TREKPOLOGY src/data/cardMapper.ts ────────────────────
 
 function getTextFitClass(
 	text: string,
