@@ -3,6 +3,8 @@ import { PLAYER_IDS, shuffleCards } from "./gameEngine.js";
 
 const DRAFT_STARTING_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = 5;
+const DRAFT_DEAL_HOLD_SECONDS = 9;
+const DRAFT_PASS_AND_DEAL_HOLD_SECONDS = 10;
 
 function getActiveDraftPlayerIds(state: RoomState): PlayerId[] {
   const connectedPlayerIds = PLAYER_IDS.filter((playerId) => {
@@ -31,6 +33,7 @@ export function startDraftForCurrentDay(state: RoomState) {
   state.phase = "draft";
   state.draftRound = 1;
   state.timer = 10;
+  state.draftTimerHold = DRAFT_DEAL_HOLD_SECONDS;
 
   const activePlayerIds = getActiveDraftPlayerIds(state);
 
@@ -41,6 +44,7 @@ export function startDraftForCurrentDay(state: RoomState) {
     player.pickedDraftCards = [];
     player.hand = [];
     player.selectedDraftCardId = null;
+    player.draftPickConfirmed = false;
   });
 
   /*
@@ -84,6 +88,42 @@ export function selectDraftCard(
   return null;
 }
 
+export function confirmDraftPick(
+  state: RoomState,
+  payload: {
+    playerId: PlayerId;
+  }
+): string | null {
+  if (state.phase !== "draft") {
+    return "Chưa tới phase chia bài.";
+  }
+
+  const player = state.players[payload.playerId];
+
+  if (!player) return "Không tìm thấy người chơi.";
+  if (!player.isConnected) return "Người chơi chưa kết nối.";
+  if (player.selectedDraftCardId === null) {
+    return "Bạn chưa chọn lá bài.";
+  }
+
+  player.draftPickConfirmed = true;
+
+  const activePlayerIds = getActiveDraftPlayerIds(state);
+  const allConfirmed = activePlayerIds.every((playerId) => {
+    const activePlayer = state.players[playerId];
+
+    if (activePlayer.draftPool.length === 0) return true;
+
+    return activePlayer.draftPickConfirmed;
+  });
+
+  if (allConfirmed) {
+    finishDraftRound(state);
+  }
+
+  return null;
+}
+
 export function finishDraftRound(state: RoomState) {
   if (state.phase !== "draft") return;
 
@@ -101,6 +141,7 @@ export function finishDraftRound(state: RoomState) {
     player.pickedDraftCards.push(selectedCard);
     player.draftPool = player.draftPool.filter((card) => card.id !== selectedCard.id);
     player.selectedDraftCardId = null;
+    player.draftPickConfirmed = false;
   }
 
   const everyonePickedEnough = activePlayerIds.every((playerId) => {
@@ -120,6 +161,7 @@ export function finishDraftRound(state: RoomState) {
 
   state.draftRound += 1;
   state.timer = 10;
+  state.draftTimerHold = DRAFT_PASS_AND_DEAL_HOLD_SECONDS;
   logDraftDebug(state, "finishDraftRound");
 }
 
@@ -152,6 +194,7 @@ function rotateDraftPoolsClockwise(state: RoomState, activePlayerIds: PlayerId[]
 function finishDraftAndStartPlanning(state: RoomState) {
   state.phase = "planning";
   state.timer = 60;
+  state.draftTimerHold = 0;
 
   const leftoverDraftCards: ServerTravelCardData[] = [];
 

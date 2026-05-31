@@ -56,6 +56,7 @@ export type PlayerPrivateState = PlayerPublicState & {
   pickedDraftCards: ServerTravelCardData[];
   hand: ServerTravelCardData[];
   selectedDraftCardId: string | null;
+  draftPickConfirmed?: boolean;
 };
 
 export type RoomState = {
@@ -65,6 +66,7 @@ export type RoomState = {
   dayIndex: number;
   draftRound: number;
   timer: number;
+  draftTimerHold: number;
   deck: ServerTravelCardData[];
   players: Record<PlayerId, PlayerPrivateState>;
 };
@@ -110,6 +112,11 @@ export type ClientToServerEvents = {
     roomId: string;
     playerId: PlayerId;
     cardId: string;
+  }) => void;
+
+  "draft:confirmPick": (payload: {
+    roomId: string;
+    playerId: PlayerId;
   }) => void;
 
   "planning:placeCard": (payload: {

@@ -228,6 +228,15 @@ export function selectOnlineDraftCard(cardId) {
         cardId,
     });
 }
+export function confirmOnlineDraftPick() {
+    if (!onlineClientState.roomId || !onlineClientState.playerId) {
+        return;
+    }
+    socket.emit("draft:confirmPick", {
+        roomId: onlineClientState.roomId,
+        playerId: onlineClientState.playerId,
+    });
+}
 export function sendPlaceCard(payload) {
     if (!onlineClientState.roomId || !onlineClientState.playerId) {
         return;

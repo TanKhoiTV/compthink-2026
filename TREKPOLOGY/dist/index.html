@@ -1,8 +1,22 @@
-<script type="module" crossorigin src="/assets/index-D85cH43h.js"></script>
-<link rel="stylesheet" crossorigin href="/assets/index-BNVENyqv.css">
+<script type="module" crossorigin src="/assets/index-DbUe2fH5.js"></script>
+<link rel="stylesheet" crossorigin href="/assets/index-CYf2LYFt.css">
 
 <body>
-  <div id="app"></div>
+  <div id="lobby-bg" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    background-image: url('/assets/lobby-background-Bs864oZ5.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  "></div>
+  <div id="app" style="position: relative; z-index: 1;"></div>
   <video id="cinematic-transition-video" src="/assets/chuyencanh2-_DATj6uv.mp4" playsinline preload="auto" style="display: none;"></video>
   <div id="white-flash-overlay" style="display: none;"></div>
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>

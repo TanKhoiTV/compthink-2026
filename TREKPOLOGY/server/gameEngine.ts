@@ -2787,6 +2787,7 @@ export function createEmptyPlayer(
     pickedDraftCards: [],
     hand: [],
     selectedDraftCardId: null,
+    draftPickConfirmed: false,
   };
 }
 
@@ -2825,6 +2826,7 @@ export function getPlayerViewState(state: RoomState, playerId: PlayerId) {
     dayIndex: state.dayIndex,
     draftRound: state.draftRound,
     timer: state.timer,
+    draftTimerHold: state.draftTimerHold,
     selfPlayerId: playerId,
     players: getPublicPlayers(state),
     self: {

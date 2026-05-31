@@ -243,6 +243,11 @@ export function tickRoom(state: RoomState) {
     return;
   }
 
+  if (state.phase === "draft" && (state.draftTimerHold ?? 0) > 0) {
+    state.draftTimerHold -= 1;
+    return;
+  }
+
   if (state.timer > 0) {
     state.timer -= 1;
   }

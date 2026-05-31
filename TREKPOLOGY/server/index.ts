@@ -6,7 +6,7 @@ import type {
   RoomState,
   ServerToClientEvents,
 } from "./types.js";
-import { finishDraftRound, selectDraftCard } from "./draftEngine.js";
+import { confirmDraftPick, selectDraftCard } from "./draftEngine.js";
 import { getPlayerViewState } from "./gameEngine.js";
 import {
   createRoom,
@@ -207,12 +207,22 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const everyoneSelected = Object.values(state.players).every((player) => {
-      return player.draftPool.length === 0 || player.selectedDraftCardId !== null;
-    });
+    emitRoomState(payload.roomId);
+  });
 
-    if (everyoneSelected) {
-      finishDraftRound(state);
+  socket.on("draft:confirmPick", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = confirmDraftPick(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
     }
 
     emitRoomState(payload.roomId);

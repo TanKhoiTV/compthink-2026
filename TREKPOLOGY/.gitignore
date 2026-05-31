@@ -1,1 +1,17 @@
-node_modules
+node_modules/
+server/node_modules/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Dev scripts tạm (patch CSS / đọc snippet)
+*.py
+
+# Server: source là .ts, chạy bằng tsx — không commit bản .js compile
+server/*.js
+
+# Vite cache
+.vite/

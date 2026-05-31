@@ -9,7 +9,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { authClientState } from "../online/socketClient.js";
 export const HERO_VIDEO_SRC = "./assets/videos/one-minute-in-vietnam.mp4";
+const HUB_HERO_MUTED_KEY = "trek.hubHeroMuted";
+let globalHeroVideo = null;
+export function cleanupDashboardHub() {
+    if (globalHeroVideo) {
+        try {
+            globalHeroVideo.pause();
+            globalHeroVideo.muted = true;
+            globalHeroVideo.removeAttribute('src');
+            globalHeroVideo.load();
+        }
+        catch (_a) { }
+        globalHeroVideo = null;
+    }
+}
 export function initDashboardHub() {
+    cleanupDashboardHub();
     const media = document.getElementById("hub-hero-media");
     const video = document.getElementById("hub-hero-video");
     const hitarea = document.getElementById("hub-hero-video-hitarea");
@@ -17,6 +32,7 @@ export function initDashboardHub() {
     const volumeSlider = document.getElementById("hub-hero-video-volume");
     if (!media || !video || !hitarea || !muteButton || !volumeSlider)
         return;
+    globalHeroVideo = video;
     video.playsInline = true;
     video.volume = parseFloat(volumeSlider.value) || 0.85;
     const updateVideoStatus = () => {
@@ -33,7 +49,8 @@ export function initDashboardHub() {
         hitarea.setAttribute("aria-label", "Tạm dừng video");
     };
     const tryAutoplay = () => __awaiter(this, void 0, void 0, function* () {
-        video.muted = false;
+        let userMutedState = localStorage.getItem(HUB_HERO_MUTED_KEY) === "true";
+        video.muted = userMutedState;
         try {
             yield video.play();
             updateVideoStatus();
@@ -61,6 +78,7 @@ export function initDashboardHub() {
         else {
             video.muted = true;
         }
+        localStorage.setItem(HUB_HERO_MUTED_KEY, String(video.muted));
         if (!video.paused) {
             void video.play();
         }

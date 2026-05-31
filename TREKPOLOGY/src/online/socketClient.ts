@@ -58,6 +58,7 @@ export type OnlineRoomState = {
   dayIndex: number;
   draftRound: number;
   timer: number;
+  draftTimerHold: number;
   selfPlayerId: PlayerId;
   players: Record<PlayerId, PlayerPublicState>;
   self: {
@@ -375,6 +376,17 @@ export function selectOnlineDraftCard(cardId: string) {
     roomId: onlineClientState.roomId,
     playerId: onlineClientState.playerId,
     cardId,
+  });
+}
+
+export function confirmOnlineDraftPick() {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("draft:confirmPick", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
   });
 }
 

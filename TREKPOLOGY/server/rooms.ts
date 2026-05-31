@@ -184,6 +184,7 @@ export function createRoom(firstPlayerName: string): {
     dayIndex: 0,
     draftRound: 0,
     timer: 0,
+    draftTimerHold: 0,
     deck: shuffleCards(createServerDeck()),
     players: {
       p1: createEmptyPlayer("p1", firstPlayerName || "An", true),
