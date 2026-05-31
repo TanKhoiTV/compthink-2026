@@ -1238,7 +1238,6 @@ import {
 	rerenderGameShell();
 };
 
-// ── Start the app — render the game screen ──────────────────────────────────
+// ── Start the app — render dashboard ───────────────────────────────────────
 
-transitionToScreen("game");
-syncInGameBgm();
+transitionToScreen("dashboard");
