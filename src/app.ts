@@ -70,6 +70,10 @@ import {
 	setPlacingInProgress,
 	getSimulationAdvanceTimeoutId,
 	setSimulationAdvanceTimeoutId,
+	getDebtModalVisible,
+	setDebtModalVisible,
+	getDebtModalNotice,
+	setDebtModalNotice,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
@@ -1176,6 +1180,62 @@ import {
  */
 (globalThis as any).endCurrentDay = () => {
 	endCurrentDay();
+};
+
+// ── Debt modal globals ───────────────────────────────────────────────────────
+
+(globalThis as any).openDebtTokenModal = () => {
+	if (getLocalCoinDebt() <= 0) return;
+	setDebtModalVisible(true);
+	setDebtModalNotice("");
+	rerenderGameShell();
+};
+
+(globalThis as any).closeDebtTokenModal = () => {
+	setDebtModalVisible(false);
+	setDebtModalNotice("");
+	rerenderGameShell();
+};
+
+(globalThis as any).payCurrentCoinDebt = () => {
+	const debtAmount = getLocalCoinDebt();
+	if (debtAmount <= 0) {
+		(globalThis as any).closeDebtTokenModal();
+		return;
+	}
+
+	const remaining = getRemainingResources({
+		totals: calculateBoardTotals(getBoardSlots()),
+		startingCoin: STARTING_COIN,
+		startingStamina: STARTING_STAMINA,
+	});
+	const payableAmount = Math.min(remaining.coin, getLocalCoinDebt());
+
+	if (payableAmount <= 0) {
+		setDebtModalNotice("Bạn chưa có xu để trả nợ lúc này.");
+		rerenderGameShell();
+		return;
+	}
+
+	setLocalCoinDebt(getLocalCoinDebt() - payableAmount);
+	// Deduct coin from resources (eventResourceModifier pattern)
+	// We deduct by settng localCoinDebt less — in single-player the coin
+	// tracking already deducted the original placement cost; paying debt
+	// is an additional coin expense tracked via the debt board tokens.
+
+	const newDebt = getLocalCoinDebt();
+	const notice =
+		newDebt > 0
+			? `Đã trả ${payableAmount} xu. Hiện còn nợ ${newDebt} xu.`
+			: `Đã trả hết nợ (${payableAmount} xu).`;
+	setDebtModalNotice(notice);
+	playGameSound("eventPromo");
+
+	if (newDebt <= 0) {
+		setTimeout(() => (globalThis as any).closeDebtTokenModal(), 800);
+	}
+
+	rerenderGameShell();
 };
 
 // ── Start the app — render the game screen ──────────────────────────────────
