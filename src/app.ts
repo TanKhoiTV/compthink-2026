@@ -74,6 +74,7 @@ import {
 	setDebtModalVisible,
 	getDebtModalNotice,
 	setDebtModalNotice,
+	addDiscardedResourceBonus,
 } from "./state.ts";
 import type { TravelCard } from "./shared/types.ts";
 import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
@@ -725,6 +726,7 @@ function clearBoardDragState() {
 	dragState?.clone?.remove();
 	setHandPointerDragState(null);
 	setDraggedHandCardId(null);
+	clearDeckDiscardHoverClass();
 	document
 		.querySelectorAll(".board-cell--drag-hover, .board-cell--drag-invalid")
 		.forEach((el) => {
@@ -739,6 +741,50 @@ function clearBoardDragState() {
 function getDropCellFromPointer(event: PointerEvent): HTMLElement | null {
 	const el = document.elementFromPoint(event.clientX, event.clientY);
 	return el?.closest('[data-board-cell="true"]') as HTMLElement | null;
+}
+
+function getDeckDiscardTargetFromPointer(
+	event: PointerEvent,
+): HTMLElement | null {
+	const el = document.elementFromPoint(event.clientX, event.clientY);
+	return el?.closest(
+		'[data-discard-drop-zone="true"]',
+	) as HTMLElement | null;
+}
+
+function canDiscardHandCard(): boolean {
+	const phase = getGamePhase();
+	return phase !== "draft" && phase !== "simulation" && !getIsInitialDealInProgress();
+}
+
+function clearDeckDiscardHoverClass() {
+	document
+		.querySelectorAll(".deck-pile-panel--discard-hover")
+		.forEach((el) => el.classList.remove("deck-pile-panel--discard-hover"));
+}
+
+function discardHandCardToDeck(cardId: string) {
+	if (!canDiscardHandCard()) return;
+
+	const hand = getPlayerHand();
+	const handIndex = hand.findIndex((c) => c.id === cardId);
+	if (handIndex === -1) return;
+
+	const card = hand[handIndex];
+	playGameSound("returnDeck");
+
+	hand.splice(handIndex, 1);
+	setPlayerHand(hand);
+
+	addDiscardedResourceBonus(card.coin, card.stamina);
+
+	setSelectedHandCardId(null);
+	setDraggedHandCardId(null);
+	setFocusedHandCardId(null);
+	setFocusedBoardCard(null);
+	setSuppressNextClick(false);
+
+	rerenderGameShell();
 }
 
 (globalThis as any).startHandPointerDrag = (
@@ -832,12 +878,20 @@ function handleHandPointerMove(event: PointerEvent) {
 	updateHandCardDragPosition(event);
 
 	// Clear old hover states
+	clearDeckDiscardHoverClass();
 	document
 		.querySelectorAll(".board-cell--drag-hover, .board-cell--drag-invalid")
 		.forEach((el) => {
 			el.classList.remove("board-cell--drag-hover");
 			el.classList.remove("board-cell--drag-invalid");
 		});
+
+	// Check discard zone hover first
+	const discardTarget = getDeckDiscardTargetFromPointer(event);
+	if (discardTarget && canDiscardHandCard()) {
+		discardTarget.classList.add("deck-pile-panel--discard-hover");
+		return;
+	}
 
 	const dropCell = getDropCellFromPointer(event);
 	if (!dropCell) return;
@@ -871,14 +925,22 @@ function handleHandPointerUp(event: PointerEvent) {
 
 	if (wasDragging) {
 		const dropCell = getDropCellFromPointer(event);
+		const discardTarget = getDeckDiscardTargetFromPointer(event);
 		const rowIndex = Number(dropCell?.dataset.rowIndex);
 		const colIndex = Number(dropCell?.dataset.colIndex);
 		const currentDay = getCurrentDayIndex();
+		const cardId = dragState.id;
 
 		clearBoardDragState();
 
 		setSuppressNextClick(true);
 		setTimeout(() => setSuppressNextClick(false), 0);
+
+		// Check discard zone first
+		if (discardTarget && canDiscardHandCard()) {
+			discardHandCardToDeck(cardId);
+			return;
+		}
 
 		if (
 			dropCell &&
@@ -887,7 +949,7 @@ function handleHandPointerUp(event: PointerEvent) {
 			colIndex === currentDay &&
 			getBoardSlots()[rowIndex]?.[colIndex] === null
 		) {
-			placeHandCardOnBoard(dragState.id, rowIndex, colIndex);
+			placeHandCardOnBoard(cardId, rowIndex, colIndex);
 			return;
 		}
 

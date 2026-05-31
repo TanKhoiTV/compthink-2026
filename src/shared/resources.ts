@@ -16,6 +16,8 @@ export type GetRemainingResourcesParams = {
   totals: BoardTotals;
   startingCoin: number;
   startingStamina: number;
+  discardBonusCoin?: number;
+  discardBonusStamina?: number;
 };
 
 export type GetCardAffordabilityParams = {
@@ -27,10 +29,12 @@ export function getRemainingResources({
   totals,
   startingCoin,
   startingStamina,
+  discardBonusCoin = 0,
+  discardBonusStamina = 0,
 }: GetRemainingResourcesParams): ResourceState {
   return {
-    coin: Math.max(0, startingCoin - totals.coin),
-    stamina: Math.max(0, startingStamina - totals.stamina),
+    coin: Math.max(0, startingCoin - totals.coin + discardBonusCoin),
+    stamina: Math.max(0, startingStamina - totals.stamina + discardBonusStamina),
   };
 }
 
