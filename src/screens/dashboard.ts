@@ -603,6 +603,8 @@ export function initDashboardGlobals() {
 	};
 
 	(globalThis as any).gotoMapSelection = () => {
+		// Init single-player state lazily (only when user clicks Play)
+		(globalThis as any).startSinglePlayerGame?.();
 		import("../router.ts").then(({ transitionToScreen }) => {
 			transitionToScreen("game");
 		});
