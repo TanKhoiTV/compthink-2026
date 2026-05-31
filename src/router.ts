@@ -89,7 +89,7 @@ export function renderGameShell(): string {
 		case "game": {
 			const roomId = getCurrentRoomId();
 
-			// Online multiplayer mode
+			// Online multiplayer mode — opponent panel is rendered inside the arena
 			if (roomId && getCurrentGameSnapshot()) {
 				return `<div class="game-shell">
 					<aside class="players-column players-column--left"></aside>
