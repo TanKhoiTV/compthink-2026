@@ -8923,6 +8923,17 @@ body,
   margin: 0 !important;
 }
 
+/* Safari/iOS fallback: CSS zoom is non-standard, not supported on WebKit */
+@supports not (zoom: 1) {
+  .game-shell {
+    zoom: 1 !important;
+    transform: scale(var(--ui-scale)) !important;
+    transform-origin: top left !important;
+    margin-left: calc(1600px * (1 - var(--ui-scale)) / 2) !important;
+    margin-top: calc(900px * (1 - var(--ui-scale)) / 2) !important;
+  }
+}
+
 .players-column {
   width: var(--side-width) !important;
   height: 900px !important;
@@ -9035,6 +9046,20 @@ body,
 @media (min-width: 1920px) and (min-height: 1080px) {
   :root {
     --ui-scale: 1.2;
+  }
+}
+
+/* 1440p / 2K */
+@media (min-width: 2560px) and (min-height: 1440px) {
+  :root {
+    --ui-scale: 1.6;
+  }
+}
+
+/* 4K UHD */
+@media (min-width: 3840px) and (min-height: 2160px) {
+  :root {
+    --ui-scale: 2.2;
   }
 }
 
