@@ -29,11 +29,7 @@ import {
 	type PlayerSession,
 } from "./player.ts";
 import type { TravelCard } from "../src/shared/types.ts";
-import {
-	registerUser,
-	loginUser,
-	verifyAuthToken,
-} from "./auth.ts";
+import { registerUser, loginUser, verifyAuthToken } from "./auth.ts";
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -262,7 +258,9 @@ async function router(req: Request): Promise<Response> {
 				: null;
 			const user = await verifyAuthToken(token);
 			if (!user) {
-				return addCors(errorResponse(401, "Chưa đăng nhập hoặc token hết hạn."));
+				return addCors(
+					errorResponse(401, "Chưa đăng nhập hoặc token hết hạn."),
+				);
 			}
 			return addCors(json({ user }));
 		}

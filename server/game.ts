@@ -243,6 +243,96 @@ function beginDraftingPhase(room: Room): void {
 }
 
 /**
+ * Pay down debt using available xu.
+ */
+export function payDebt(
+	room: Room,
+	playerId: string,
+	amount?: number,
+): PayDebtResult {
+	const player = getPlayer(room, playerId);
+	const currentDebt = player.resources.debtToken;
+
+	if (currentDebt <= 0) {
+		throw new Error("Không có nợ để trả.");
+	}
+
+	const requestedAmount = Math.max(1, Math.floor(amount ?? currentDebt));
+	const payableAmount = Math.min(
+		player.resources.xu,
+		currentDebt,
+		requestedAmount,
+	);
+
+	if (payableAmount <= 0) {
+		throw new Error(
+			`Không đủ xu để trả nợ. Đang nợ ${currentDebt} xu, có ${player.resources.xu} xu.`,
+		);
+	}
+
+	player.resources.xu -= payableAmount;
+	player.resources.debtToken -= payableAmount;
+
+	room.log.push(
+		`${player.name} paid ${payableAmount} debt (${player.resources.debtToken} remaining).`,
+	);
+
+	room.broadcast(room);
+	return { paid: payableAmount, remainingDebt: player.resources.debtToken };
+}
+
+/**
+ * Return a placed card from the board back to the player's chosen cards.
+ * Only allowed for cards on the current day.
+ */
+export function returnBoardCard(
+	room: Room,
+	playerId: string,
+	day: number,
+	slot: string,
+): ReturnCardResult {
+	const player = getPlayer(room, playerId);
+
+	if (day !== room.day) {
+		throw new Error(`Chỉ được rút bài của ngày hiện tại (ngày ${room.day}).`);
+	}
+
+	// Find the cell at this position
+	const cellIndex = player.board.findIndex(
+		(c) => c.day === day && c.slot === slot,
+	);
+	if (cellIndex === -1 || !player.board[cellIndex].card_id) {
+		throw new Error("Ô này không có bài để rút.");
+	}
+
+	const cell = player.board[cellIndex];
+
+	// Don't allow returning debt/lock tokens
+	if (cell.type === "debt" || cell.type === "lock" || cell.locked) {
+		throw new Error("Không thể rút token nợ/khóa về tay.");
+	}
+
+	const cardId = cell.card_id!;
+
+	// Remove card from board
+	player.board = player.board.map((c, i) =>
+		i === cellIndex
+			? { ...c, card_id: undefined, cardName: undefined, type: "empty" as const }
+			: c,
+	);
+
+	// Return to chosen so it can be re-placed
+	player.chosen.push(cardId);
+
+	room.log.push(
+		`${player.name} returned card ${cardId} from board (day ${day} ${slot}).`,
+	);
+
+	room.broadcast(room);
+	return { cardId };
+}
+
+/**
  * A player picks a card from their hand — either stores it (chosen) or
  * discards it for a rest bonus.
  */
