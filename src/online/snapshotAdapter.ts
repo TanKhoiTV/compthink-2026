@@ -63,17 +63,23 @@ export function applySnapshotToState(
 	const slots = boardCellsToSlots(myPlayer.board, cards);
 	setBoardSlots(slots);
 
-	// ── Hand (for draft phase) ────────────────────────────────────────────────
+	// ── Hand cards ───────────────────────────────────────────────────────────
+	// Populate both hand and chosen from the snapshot
 	const handCards = myPlayer.hand
 		.map((cardId) => cards.find((c) => c.card_id === cardId))
 		.filter((c): c is TravelCard => c !== undefined);
-	setPlayerHand(handCards);
-
-	// Also populate chosen cards so placement knows what's available
 	const chosenCards = myPlayer.chosen
 		.map((cardId) => cards.find((c) => c.card_id === cardId))
 		.filter((c): c is TravelCard => c !== undefined);
 	setPlayerChosenCards(chosenCards);
+
+	// playerHand is used by renderPlayerHandSection(): show hand in draft,
+	// chosen cards in placement
+	if (snapshot.phase === "placement") {
+		setPlayerHand(chosenCards);
+	} else {
+		setPlayerHand(handCards);
+	}
 
 	// ── Draft pool ────────────────────────────────────────────────────────────
 	// In snapshot, the player's hand IS the draft pool (the set of cards to
