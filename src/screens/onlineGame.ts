@@ -20,11 +20,7 @@ import {
 import { rpcCall } from "../online/socketClient.ts";
 import { renderHandCard, renderBoardMiniCard } from "../arena/render.ts";
 import type { RoomSnapshot, TravelCard, PlayerState } from "../shared/types.ts";
-import {
-	boardCellsToSlots,
-	DAYS,
-	TIME_SLOTS,
-} from "../shared/board.ts";
+import { boardCellsToSlots, DAYS, TIME_SLOTS, SLOT_NAMES } from "../shared/board.ts";
 
 // ── Main entry ──────────────────────────────────────────────────────────────
 
@@ -73,17 +69,11 @@ export function renderOnlineGameArena(): string {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function opponents(
-	snapshot: RoomSnapshot,
-	playerId: string,
-): PlayerState[] {
+function opponents(snapshot: RoomSnapshot, playerId: string): PlayerState[] {
 	return snapshot.players.filter((p) => p.playerId !== playerId);
 }
 
-function resolveCards(
-	ids: string[],
-	allCards: TravelCard[],
-): TravelCard[] {
+function resolveCards(ids: string[], allCards: TravelCard[]): TravelCard[] {
 	return ids
 		.map((id) => allCards.find((c) => c.card_id === id))
 		.filter((c): c is TravelCard => c !== undefined);
@@ -138,8 +128,6 @@ function renderOnlineGameArenaShell(
 function cards(): TravelCard[] {
 	return getCurrentCards() ?? [];
 }
-
-
 
 function escapeHtml(str: string): string {
 	const div = document.createElement("div");
@@ -310,13 +298,13 @@ function renderOnlinePlacementContent(
 	}
 
 	// Find cards on locked board cells (debt/lock tokens)
-	const debtCards: TravelCard[] = boardSlots.flat().filter((c): c is TravelCard => {
-		if (!c) return false;
-		const cell = myPlayer.board.find(
-			(bc) => bc.card_id === c.card_id,
-		);
-		return cell?.locked === true;
-	});
+	const debtCards: TravelCard[] = boardSlots
+		.flat()
+		.filter((c): c is TravelCard => {
+			if (!c) return false;
+			const cell = myPlayer.board.find((bc) => bc.card_id === c.card_id);
+			return cell?.locked === true;
+		});
 
 	return `
     <section class="player-hand">
@@ -350,16 +338,16 @@ function renderOnlinePlacementContent(
     <section class="debt-section">
       <h3>💳 Trả nợ</h3>
       ${debtCards
-					.map((card) => {
-						const buttonLabel = `Trả 10xu để nhận lại thẻ`;
-						return `
+				.map((card) => {
+					const buttonLabel = `Trả 10xu để nhận lại thẻ`;
+					return `
           <div class="debt-item">
             <span>${escapeHtml(card.name)}</span>
             <button data-online-pay-debt="${card.card_id}">${buttonLabel}</button>
           </div>
         `;
-					})
-					.join("")}
+				})
+				.join("")}
     </section>
     `
 				: ""
@@ -430,7 +418,9 @@ function renderOnlineBoardGrid(
 
 	return `
     <section class="board-grid">
-      ${TIME_SLOTS.map((_slot, rowIdx) =>
+      ${TIME_SLOTS.map((slot, rowIdx) =>
+				`<div class="time-label">${SLOT_NAMES[slot] ?? slot}</div>
+				` +
 				DAYS.map((_day, colIdx) => {
 					const cell = boardSlots[rowIdx]?.[colIdx] ?? null;
 					const isCurrentDay = colIdx === currentDay - 1;
@@ -439,7 +429,7 @@ function renderOnlineBoardGrid(
 
 					return `
             <div
-              class="board-cell${cell ? " board-cell--occupied" : " board-cell--empty"}${canPlace ? " board-cell--placeable" : ""}${!isCurrentDay ? " board-cell--not-current-day" : ""}"
+              class="board-cell${cell ? " board-cell--occupied board-cell--clickable" : " board-cell--empty"}${canPlace ? " board-cell--placeable" : ""}${!isCurrentDay ? " board-cell--not-current-day" : ""}"
               data-online-board="${rowIdx},${colIdx}"
               title="${cell ? escapeHtml(cell.name) : isCurrentDay ? (canPlace ? "Thả thẻ vào ô này" : "") : "Không phải ngày hiện tại"}"
             >
@@ -498,11 +488,7 @@ function startOnlineDealAnimation(): void {
 	});
 	// Clean up after animation completes (1320ms = DEAL_ANIMATION_MS)
 	window.setTimeout(() => {
-		hand.classList.remove(
-			"player-hand--dealing",
-			"is-dealing",
-			"deal-active",
-		);
+		hand.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
 	}, 1320);
 }
 
@@ -593,10 +579,7 @@ export function initOnlineGameGlobals() {
 				"data-card-slot",
 			);
 			if (day && slot) {
-				(sendReturnBoardCard as (day: number, slot: string) => void)(
-					day,
-					slot,
-				);
+				(sendReturnBoardCard as (day: number, slot: string) => void)(day, slot);
 			}
 		});
 	});
