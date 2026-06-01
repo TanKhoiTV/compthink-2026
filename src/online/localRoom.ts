@@ -139,8 +139,6 @@ export function cleanupLocalGame(): void {
 	localPlayerId = null;
 }
 
-
-
 /**
  * Get the current local room (for direct game function calls).
  */
@@ -163,7 +161,7 @@ export function getLocalPlayerId(): string | null {
 export function localDraftCard(cardId: string, mode: "store" | "rest"): void {
 	if (!localRoom || !localPlayerId) return;
 	try {
-// Clear the draft timer — player is making a choice
+		// Clear the draft timer — player is making a choice
 		stopDraftTimer();
 		draftCard(localRoom, localPlayerId, cardId, mode);
 		applySnapshotAndRender();

@@ -19,11 +19,7 @@ import {
 import { rpcCall } from "../online/socketClient.ts";
 import { renderHandCard, renderBoardGrid } from "../arena/render.ts";
 import type { RoomSnapshot, TravelCard, PlayerState } from "../shared/types.ts";
-import {
-	boardCellsToSlots,
-	DAYS,
-	TIME_SLOTS,
-} from "../shared/board.ts";
+import { boardCellsToSlots, DAYS, TIME_SLOTS } from "../shared/board.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import {
 	setIsInitialDealInProgress,
@@ -40,10 +36,7 @@ import {
 } from "../services/game-timer.ts";
 import { detectHandTransition } from "../services/animation-controller.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
-import {
-	TURN_DURATION_SECONDS,
-} from "../shared/constants.ts";
-
+import { TURN_DURATION_SECONDS } from "../shared/constants.ts";
 
 // Timer DOM updates are handled by the shared game-timer.ts module.
 // Animation state tracking is handled by animation-controller.ts
@@ -138,13 +131,17 @@ function renderOnlineGameArenaShell(
 								`<div class="day-pill ${index === snapshot.day - 1 ? "day-pill--current" : ""} ${index < snapshot.day - 1 ? "day-pill--done" : ""}">NGÀY ${day}</div>`,
 						).join("")}
           </div>
-          ${phase === "placement" || phase === "scoring" ? renderBoardGrid(
-					boardCellsToSlots(myPlayer.board, cards()),
-					snapshot.day - 1,
-					false,
-					false,
-					phase === "placement" ? getOnlineSelectedCardId() : null,
-				) : ""}
+          ${
+						phase === "placement" || phase === "scoring"
+							? renderBoardGrid(
+									boardCellsToSlots(myPlayer.board, cards()),
+									snapshot.day - 1,
+									false,
+									false,
+									phase === "placement" ? getOnlineSelectedCardId() : null,
+								)
+							: ""
+					}
         </div>
 
         <div class="online-content-area">

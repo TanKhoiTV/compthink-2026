@@ -7,7 +7,10 @@
  */
 
 import { TIMER_TICK_INTERVAL_MS } from "../shared/animations.ts";
-import { DRAFT_PICK_SECONDS, TURN_DURATION_SECONDS } from "../shared/constants.ts";
+import {
+	DRAFT_PICK_SECONDS,
+	TURN_DURATION_SECONDS,
+} from "../shared/constants.ts";
 import { updateTimerDom } from "../router.ts";
 
 // ── Types ──────────────────────────────────────────────────────────────────

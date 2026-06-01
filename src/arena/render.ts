@@ -74,7 +74,7 @@ export const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
  * Shared board grid renderer — used by both SP (renderMainArena) and
  * online (renderOnlineGameArenaShell) modes.
  *
- * @param boardSlots - The current board state (TravelCard|null[][]) 
+ * @param boardSlots - The current board state (TravelCard|null[][])
  * @param currentDayIndex - 0-based current day index
  * @param isDraft - true during draft phase
  * @param isSimulation - true during simulation phase
@@ -91,8 +91,16 @@ export function renderBoardGrid(
 		(row, rowIndex) => `
               <div class="time-label">${row}</div>
               ${DAYS.map((_, colIndex) =>
-				renderBoardCell(boardSlots, rowIndex, colIndex, currentDayIndex, isDraft, isSimulation, selectedCardId),
-			).join("")}
+								renderBoardCell(
+									boardSlots,
+									rowIndex,
+									colIndex,
+									currentDayIndex,
+									isDraft,
+									isSimulation,
+									selectedCardId,
+								),
+							).join("")}
             `,
 	).join("");
 }
