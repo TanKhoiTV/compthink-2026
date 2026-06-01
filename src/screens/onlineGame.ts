@@ -28,46 +28,24 @@ import { playGameSound } from "../audio/gameAudio.ts";
 import {
 	setIsInitialDealInProgress,
 	setIsPassingDraftCards,
-	getDraftTimerId,
-	setDraftTimerId,
-	getPlacementTimerId,
-	setPlacementTimerId,
 	setRemainingTurnSeconds,
-	setDraftPickSecondsLeft,
 	getPlayerHand,
 } from "../state.ts";
+import {
+	startDraftTimer as startSharedDraftTimer,
+	stopDraftTimer,
+	startPlacementTimer as startSharedPlacementTimer,
+	stopPlacementTimer,
+	isDraftTimerRunning,
+} from "../services/game-timer.ts";
 import { detectHandTransition } from "../services/animation-controller.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
 import {
-	DRAFT_PICK_SECONDS,
 	TURN_DURATION_SECONDS,
 } from "../shared/constants.ts";
-import { TIMER_TICK_INTERVAL_MS } from "../shared/animations.ts";
 
-// ── Local timer DOM update (avoids circular dependency with router.ts) ──────
 
-function updateTimerDom(): void {
-	const timerEl = document.querySelector(".score-breakdown__timer");
-	if (!timerEl) return;
-	const strongEl = timerEl.querySelector("strong");
-	if (!strongEl) return;
-
-	import("../state.ts").then((s) => {
-		const phase = s.getGamePhase();
-		if (phase === "draft") {
-			const secs = s.getDraftPickSecondsLeft();
-			strongEl.textContent = `${secs}s`;
-			timerEl.classList.toggle("score-breakdown__timer--danger", secs <= 3);
-		} else if (phase === "placement") {
-			const secs = s.getRemainingTurnSeconds();
-			const m = Math.floor(Math.max(0, secs) / 60);
-			const safeSec = Math.max(0, secs) % 60;
-			strongEl.textContent = `${m}:${safeSec < 10 ? "0" : ""}${safeSec}`;
-			timerEl.classList.toggle("score-breakdown__timer--danger", secs <= 10);
-		}
-	});
-}
-
+// Timer DOM updates are handled by the shared game-timer.ts module.
 // Animation state tracking is handled by animation-controller.ts
 
 // ── Main entry ──────────────────────────────────────────────────────────────
@@ -659,7 +637,7 @@ function updateOnlineGameAnimations(): void {
 				);
 
 				// Start draft pick timer after deal animation completes
-				startOnlineDraftTimer();
+				startSharedDraftTimer(() => handleOnlineDraftExpiry());
 			}, DEAL_ANIMATION_MS);
 		}
 
@@ -668,15 +646,12 @@ function updateOnlineGameAnimations(): void {
 		}
 
 		// Fallback: cards present but no timer running
-		if (getPlayerHand().length > 0) {
-			const timerId = getDraftTimerId();
-			if (timerId === null) {
-				startOnlineDraftTimer();
-			}
+		if (getPlayerHand().length > 0 && !isDraftTimerRunning()) {
+			startSharedDraftTimer(() => handleOnlineDraftExpiry());
 		}
 	} else {
 		// Not in draft — clear the draft timer
-		stopOnlineDraftTimer();
+		stopDraftTimer();
 	}
 
 	// Update placement timer
@@ -686,93 +661,24 @@ function updateOnlineGameAnimations(): void {
 		);
 		if (myPlayer && !myPlayer.ready) {
 			setRemainingTurnSeconds(TURN_DURATION_SECONDS);
-			startOnlinePlacementTimer();
+			startSharedPlacementTimer(() => handleOnlineConfirmDay());
 		}
 	} else {
-		stopOnlinePlacementTimer();
+		stopPlacementTimer();
 	}
 }
 
 // Draft timer functions for online mode
-function startOnlineDraftTimer(): void {
-	stopOnlineDraftTimer();
-
-	const hand =
-		getCurrentCards()?.filter(
-			(c) =>
-				getCurrentGameSnapshot()
-					?.players.find((p) => p.playerId === getCurrentPlayerId())
-					?.hand.includes(c.card_id) ?? [],
-		) ?? [];
-
-	if (hand.length === 0) return;
-
-	// Guard: only start the timer if we're still in the draft phase
+/**
+ * Handle draft timer expiry in online mode: auto-pick first card.
+ */
+function handleOnlineDraftExpiry(): void {
 	const snapshot = getCurrentGameSnapshot();
 	if (!snapshot || snapshot.phase !== "draft") return;
 
-	let secondsLeft = DRAFT_PICK_SECONDS;
-	setDraftPickSecondsLeft(secondsLeft);
-
-	const timerId = window.setInterval(() => {
-		secondsLeft--;
-		setDraftPickSecondsLeft(secondsLeft);
-		updateTimerDom();
-
-		if (secondsLeft <= 0) {
-			stopOnlineDraftTimer();
-
-			// Auto-pick the first card in hand
-			const firstCard = hand[0];
-			if (firstCard) {
-				// Re-check phase — the game may have transitioned since the timer started
-				const currentSnapshot = getCurrentGameSnapshot();
-				if (!currentSnapshot || currentSnapshot.phase !== "draft") return;
-				handleOnlineDraftCard(firstCard.card_id, "store");
-			}
-		}
-	}, TIMER_TICK_INTERVAL_MS);
-
-	setDraftTimerId(timerId);
-}
-
-function stopOnlineDraftTimer(): void {
-	const id = getDraftTimerId();
-	if (id !== null) {
-		clearInterval(id);
-		setDraftTimerId(null);
-	}
-}
-
-// Placement timer functions for online mode
-function startOnlinePlacementTimer(): void {
-	stopOnlinePlacementTimer();
-
-	let secondsLeft = TURN_DURATION_SECONDS;
-	setRemainingTurnSeconds(secondsLeft);
-
-	const timerId = window.setInterval(() => {
-		secondsLeft--;
-		setRemainingTurnSeconds(secondsLeft);
-		updateTimerDom();
-
-		if (secondsLeft <= 0) {
-			stopOnlinePlacementTimer();
-
-			if (getCurrentGameSnapshot()) {
-				handleOnlineConfirmDay();
-			}
-		}
-	}, TIMER_TICK_INTERVAL_MS);
-
-	setPlacementTimerId(timerId);
-}
-
-function stopOnlinePlacementTimer(): void {
-	const id = getPlacementTimerId();
-	if (id !== null) {
-		clearInterval(id);
-		setPlacementTimerId(null);
+	const firstCard = getPlayerHand()[0];
+	if (firstCard) {
+		handleOnlineDraftCard(firstCard.id, "store");
 	}
 }
 

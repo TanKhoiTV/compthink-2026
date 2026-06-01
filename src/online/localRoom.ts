@@ -29,21 +29,24 @@ import { createBotPlayer, scheduleBotTurns } from "../../server/bot.ts";
 import type { TravelCard, TimeSlot } from "../shared/types.ts";
 import { syncAllStateFromSnapshot } from "./snapshotAdapter.ts";
 import { detectHandTransition } from "../services/animation-controller.ts";
-import { rerenderGameShell, updateTimerDom } from "../router.ts";
+import {
+	startDraftTimer as startSharedDraftTimer,
+	stopDraftTimer,
+	startPlacementTimer as startSharedPlacementTimer,
+	stopPlacementTimer,
+	isDraftTimerRunning,
+} from "../services/game-timer.ts";
+import { rerenderGameShell } from "../router.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import {
 	setIsInitialDealInProgress,
 	setIsPassingDraftCards,
 	getPlayerHand,
-	setDraftPickSecondsLeft,
 	setRemainingTurnSeconds,
 } from "../state.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
-import {
-	DRAFT_PICK_SECONDS,
-	TURN_DURATION_SECONDS,
-} from "../shared/constants.ts";
+import { TURN_DURATION_SECONDS } from "../shared/constants.ts";
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -51,8 +54,7 @@ let localRoom: Room | null = null;
 let localPlayerId: string | null = null;
 let localCards: TravelCard[] = [];
 let botTimerIds: number[] = [];
-let draftTimerId: number | null = null;
-let placementTimerId: number | null = null;
+// Timer state managed by services/game-timer.ts
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -131,18 +133,13 @@ export function cleanupLocalGame(): void {
 		clearTimeout(id);
 	}
 	botTimerIds = [];
-	clearDraftTimer();
-	clearPlacementTimer();
+	stopDraftTimer();
+	stopPlacementTimer();
 	localRoom = null;
 	localPlayerId = null;
 }
 
-function clearDraftTimer(): void {
-	if (draftTimerId !== null) {
-		clearInterval(draftTimerId);
-		draftTimerId = null;
-	}
-}
+
 
 /**
  * Get the current local room (for direct game function calls).
@@ -166,8 +163,8 @@ export function getLocalPlayerId(): string | null {
 export function localDraftCard(cardId: string, mode: "store" | "rest"): void {
 	if (!localRoom || !localPlayerId) return;
 	try {
-		// Clear the draft timer — player is making a choice
-		clearDraftTimer();
+// Clear the draft timer — player is making a choice
+		stopDraftTimer();
 		draftCard(localRoom, localPlayerId, cardId, mode);
 		applySnapshotAndRender();
 		scheduleBots();
@@ -207,7 +204,7 @@ export function localDiscardCard(cardId: string): void {
 export function localConfirmDay(): void {
 	if (!localRoom || !localPlayerId) return;
 	try {
-		clearPlacementTimer();
+		stopPlacementTimer();
 		confirmDay(localRoom, localPlayerId);
 		applySnapshotAndRender();
 		scheduleBots();
@@ -274,12 +271,12 @@ function applySnapshotAndRender(): void {
 		}
 
 		// Fallback: cards present but no timer running
-		if (getPlayerHand().length > 0 && draftTimerId === null) {
+		if (getPlayerHand().length > 0 && !isDraftTimerRunning()) {
 			startDraftTimer();
 		}
 	} else {
 		// Not in draft — clear the draft timer
-		clearDraftTimer();
+		stopDraftTimer();
 	}
 
 	// Update the placement timer
@@ -290,7 +287,7 @@ function applySnapshotAndRender(): void {
 			startPlacementTimer();
 		}
 	} else {
-		clearPlacementTimer();
+		stopPlacementTimer();
 	}
 
 	rerenderGameShell();
@@ -301,42 +298,26 @@ function applySnapshotAndRender(): void {
  * When time expires, auto-pick the first card in hand.
  */
 function startDraftTimer(): void {
-	clearDraftTimer();
-
 	const hand = getPlayerHand();
 	if (hand.length === 0) return;
-
-	// Guard: only start the timer if we're still in the draft phase
 	if (!localRoom || !localPlayerId) return;
 	if (exportSnapshot(localRoom, localPlayerId).phase !== "draft") return;
 
-	let secondsLeft = DRAFT_PICK_SECONDS;
-	setDraftPickSecondsLeft(secondsLeft);
-
-	draftTimerId = window.setInterval(() => {
-		secondsLeft--;
-		setDraftPickSecondsLeft(secondsLeft);
-		updateTimerDom();
-
-		if (secondsLeft <= 0) {
-			clearDraftTimer();
-
-			// Auto-pick the first card in hand
-			const firstCard = getPlayerHand()[0];
-			if (firstCard && localRoom && localPlayerId) {
-				// Re-check phase — the game may have transitioned since the timer started
-				if (exportSnapshot(localRoom, localPlayerId).phase !== "draft") return;
-				try {
-					draftCard(localRoom, localPlayerId, firstCard.id, "store");
-					applySnapshotAndRender();
-					scheduleBots();
-				} catch (err: unknown) {
-					const msg = err instanceof Error ? err.message : String(err);
-					console.warn("[localRoom] auto-draft failed:", msg);
-				}
+	startSharedDraftTimer(() => {
+		// Auto-pick the first card in hand
+		const firstCard = getPlayerHand()[0];
+		if (firstCard && localRoom && localPlayerId) {
+			if (exportSnapshot(localRoom, localPlayerId).phase !== "draft") return;
+			try {
+				draftCard(localRoom, localPlayerId, firstCard.id, "store");
+				applySnapshotAndRender();
+				scheduleBots();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				console.warn("[localRoom] auto-draft failed:", msg);
 			}
 		}
-	}, 1000);
+	});
 }
 
 /**
@@ -344,38 +325,20 @@ function startDraftTimer(): void {
  * When time expires, auto-confirm the day.
  */
 function startPlacementTimer(): void {
-	clearPlacementTimer();
+	if (!localRoom || !localPlayerId) return;
 
-	let secondsLeft = TURN_DURATION_SECONDS;
-	setRemainingTurnSeconds(secondsLeft);
-
-	placementTimerId = window.setInterval(() => {
-		secondsLeft--;
-		setRemainingTurnSeconds(secondsLeft);
-		updateTimerDom();
-
-		if (secondsLeft <= 0) {
-			clearPlacementTimer();
-
-			if (localRoom && localPlayerId) {
-				try {
-					confirmDay(localRoom, localPlayerId);
-					applySnapshotAndRender();
-					scheduleBots();
-				} catch (err: unknown) {
-					const msg = err instanceof Error ? err.message : String(err);
-					console.warn("[localRoom] auto-confirm failed:", msg);
-				}
+	startSharedPlacementTimer(() => {
+		if (localRoom && localPlayerId) {
+			try {
+				confirmDay(localRoom, localPlayerId);
+				applySnapshotAndRender();
+				scheduleBots();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				console.warn("[localRoom] auto-confirm failed:", msg);
 			}
 		}
-	}, 1000);
-}
-
-function clearPlacementTimer(): void {
-	if (placementTimerId !== null) {
-		clearInterval(placementTimerId);
-		placementTimerId = null;
-	}
+	});
 }
 
 /**
