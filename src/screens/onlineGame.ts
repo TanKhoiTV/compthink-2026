@@ -35,7 +35,9 @@ import {
 	setPlacementTimerId,
 	setRemainingTurnSeconds,
 	setDraftPickSecondsLeft,
+	getPlayerHand,
 } from "../state.ts";
+import { detectHandTransition } from "../services/animation-controller.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
 import {
 	DRAFT_PICK_SECONDS,
@@ -67,8 +69,7 @@ function updateTimerDom(): void {
 	});
 }
 
-// Animation state tracking for online mode
-let wasHandEmpty = true;
+// Animation state tracking is handled by animation-controller.ts
 
 // ── Main entry ──────────────────────────────────────────────────────────────
 
@@ -669,13 +670,11 @@ function updateOnlineGameAnimations(): void {
 	const snapshot = getCurrentGameSnapshot();
 	if (!snapshot) return;
 
-	const handEl = document.querySelector(".player-hand--draft");
-	const hadHandCards = wasHandEmpty === false; // Previous state
-	const hasHandCards = handEl?.querySelector(".hand-card") !== null;
+	// Use shared animation controller (module-level variable, not DOM query)
+	const transition = detectHandTransition(getPlayerHand().length);
 
 	if (snapshot.phase === "draft") {
-		if (hasHandCards && !hadHandCards) {
-			// Pass complete — new cards just arrived. Play deal animation.
+		if (transition.type === "deal") {
 			playGameSound("deal");
 			setIsPassingDraftCards(false);
 			setIsInitialDealInProgress(true);
@@ -697,15 +696,12 @@ function updateOnlineGameAnimations(): void {
 			}, DEAL_ANIMATION_MS);
 		}
 
-		if (!hasHandCards && hadHandCards) {
-			// Hand just got emptied — player picked, remaining cards passed back.
-			// Play pass animation.
+		if (transition.type === "pass") {
 			setIsPassingDraftCards(true);
 		}
 
-		// Fallback: cards are in the DOM but no timer running (e.g., DOM wasn't
-		// ready during the first call, or refresh after transitionToScreen).
-		if (hasHandCards) {
+		// Fallback: cards present but no timer running
+		if (getPlayerHand().length > 0) {
 			const timerId = getDraftTimerId();
 			if (timerId === null) {
 				startOnlineDraftTimer();
@@ -729,8 +725,6 @@ function updateOnlineGameAnimations(): void {
 		stopOnlinePlacementTimer();
 	}
 
-	// Update hand empty state for next comparison
-	wasHandEmpty = !hasHandCards;
 }
 
 // Draft timer functions for online mode

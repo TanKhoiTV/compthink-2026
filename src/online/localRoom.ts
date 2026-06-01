@@ -28,6 +28,7 @@ import {
 import { createBotPlayer, scheduleBotTurns } from "../../server/bot.ts";
 import type { TravelCard, TimeSlot } from "../shared/types.ts";
 import { syncAllStateFromSnapshot } from "./snapshotAdapter.ts";
+import { detectHandTransition } from "../services/animation-controller.ts";
 import { rerenderGameShell, updateTimerDom } from "../router.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import {
@@ -238,16 +239,11 @@ function applySnapshotAndRender(): void {
 	const snapshot = exportSnapshot(localRoom, localPlayerId);
 	syncAllStateFromSnapshot(snapshot, localCards, localPlayerId);
 
-	// ── Draft animation triggers ───────────────────────────────────────────
-	// Track previous hand size to detect pass (hand shrinks) vs deal (new cards)
-	const handEl = document.querySelector(".player-hand--draft");
-	const hadHandCards = handEl?.querySelector(".hand-card");
+	// ── Animation detection (shared controller, not DOM query) ────────────
+	const transition = detectHandTransition(getPlayerHand().length);
 
 	if (snapshot.phase === "draft") {
-		const hasHandCards = handEl?.querySelector(".hand-card");
-
-		if (hasHandCards && !hadHandCards) {
-			// Pass complete — new cards just arrived. Play deal animation.
+		if (transition.type === "deal") {
 			playGameSound("deal");
 			setIsPassingDraftCards(false);
 			setIsInitialDealInProgress(true);
@@ -273,15 +269,12 @@ function applySnapshotAndRender(): void {
 			}, DEAL_ANIMATION_MS);
 		}
 
-		if (!hasHandCards && hadHandCards) {
-			// Hand just got emptied — player picked, remaining cards passed back.
-			// Play pass animation.
+		if (transition.type === "pass") {
 			setIsPassingDraftCards(true);
 		}
 
-		// Fallback: cards are in the DOM but no timer running (e.g., DOM wasn't
-		// ready during the first call, or refresh after transitionToScreen).
-		if (hasHandCards && draftTimerId === null) {
+		// Fallback: cards present but no timer running
+		if (getPlayerHand().length > 0 && draftTimerId === null) {
 			startDraftTimer();
 		}
 	} else {
