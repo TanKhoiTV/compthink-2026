@@ -69,19 +69,28 @@ const RPC_ERRORS = {
 
 // ─── Player session ───────────────────────────────────────────────────────────
 
+export interface AuthUser {
+	id: string;
+	username: string;
+	displayName: string;
+}
+
 export interface PlayerSession {
 	playerId: string;
 	name: string;
 	socket: WebSocket;
 	room: Room | null;
+	/** The authenticated user linked to this session, if any. */
+	user: AuthUser | null;
 }
 
 export function createPlayerSession(
 	playerId: string,
 	name: string,
 	socket: WebSocket,
+	user: AuthUser | null = null,
 ): PlayerSession {
-	return { playerId, name, socket, room: null };
+	return { playerId, name, socket, room: null, user };
 }
 
 // ─── Send helpers ─────────────────────────────────────────────────────────────

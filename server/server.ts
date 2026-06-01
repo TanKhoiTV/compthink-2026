@@ -121,11 +121,28 @@ async function handleCreateRoom(req: Request): Promise<Response> {
 
 // ─── WebSocket handler ────────────────────────────────────────────────────────
 
-function handleWebSocket(req: Request): Response {
+async function handleWebSocket(req: Request): Promise<Response> {
 	const url = new URL(req.url);
 	const roomId = url.searchParams.get("roomId");
 	const playerId = url.searchParams.get("playerId") ?? crypto.randomUUID();
-	const name = url.searchParams.get("name") ?? `Player-${playerId.slice(0, 4)}`;
+	let name = url.searchParams.get("name") ?? `Player-${playerId.slice(0, 4)}`;
+	const token = url.searchParams.get("token") ?? null;
+
+	// Validate auth token if provided — use authenticated user's display name
+	let authUser: import("./player.ts").AuthUser | null = null;
+	if (token) {
+		const validated = await verifyAuthToken(token).catch(() => null);
+		if (validated) {
+			authUser = validated;
+			// Prefer the authenticated user's display name over the query param
+			name = authUser.displayName;
+		} else {
+			// Token is invalid — still allow connection but without auth
+			console.warn(
+				`[ws] Invalid token provided for player ${playerId} in room ${roomId}`,
+			);
+		}
+	}
 
 	if (!roomId) {
 		return errorResponse(400, "Missing roomId query parameter");
@@ -149,7 +166,7 @@ function handleWebSocket(req: Request): Response {
 		return errorResponse(400, `WebSocket upgrade failed: ${msg}`);
 	}
 
-	const session = createPlayerSession(playerId, name, socket);
+	const session = createPlayerSession(playerId, name, socket, authUser);
 	session.room = room;
 	sessions.set(playerId, session);
 
@@ -281,7 +298,7 @@ async function router(req: Request): Promise<Response> {
 		// Deno.upgradeWebSocket() handles the upgrade internally regardless;
 		// if the request is not a valid upgrade it throws, which we catch below.
 		if (pathname === "/ws" && method === "GET") {
-			return handleWebSocket(req);
+			return await handleWebSocket(req);
 		}
 
 		return addCors(errorResponse(404, `Not found: ${method} ${pathname}`));
