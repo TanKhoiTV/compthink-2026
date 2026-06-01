@@ -38,7 +38,10 @@ import {
 } from "../state.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
-import { DRAFT_PICK_SECONDS, TURN_DURATION_SECONDS } from "../shared/constants.ts";
+import {
+	DRAFT_PICK_SECONDS,
+	TURN_DURATION_SECONDS,
+} from "../shared/constants.ts";
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +50,7 @@ let localPlayerId: string | null = null;
 let localCards: TravelCard[] = [];
 let botTimerIds: number[] = [];
 let draftTimerId: number | null = null;
+let placementTimerId: number | null = null;
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -126,6 +130,7 @@ export function cleanupLocalGame(): void {
 	}
 	botTimerIds = [];
 	clearDraftTimer();
+	clearPlacementTimer();
 	localRoom = null;
 	localPlayerId = null;
 }
@@ -189,6 +194,7 @@ export function localPlaceCard(
 export function localConfirmDay(): void {
 	if (!localRoom || !localPlayerId) return;
 	try {
+		clearPlacementTimer();
 		confirmDay(localRoom, localPlayerId);
 		applySnapshotAndRender();
 		scheduleBots();
@@ -267,12 +273,13 @@ function applySnapshotAndRender(): void {
 
 	// Update the placement timer
 	if (snapshot.phase === "placement") {
-		const myPlayer = snapshot.players.find(
-			(p) => p.playerId === localPlayerId,
-		);
+		const myPlayer = snapshot.players.find((p) => p.playerId === localPlayerId);
 		if (myPlayer && !myPlayer.ready) {
 			setRemainingTurnSeconds(TURN_DURATION_SECONDS);
+			startPlacementTimer();
 		}
+	} else {
+		clearPlacementTimer();
 	}
 
 	rerenderGameShell();
@@ -313,6 +320,45 @@ function startDraftTimer(): void {
 			}
 		}
 	}, 1000);
+}
+
+/**
+ * Start a countdown timer for the placement phase.
+ * When time expires, auto-confirm the day.
+ */
+function startPlacementTimer(): void {
+	clearPlacementTimer();
+
+	let secondsLeft = TURN_DURATION_SECONDS;
+	setRemainingTurnSeconds(secondsLeft);
+
+	placementTimerId = window.setInterval(() => {
+		secondsLeft--;
+		setRemainingTurnSeconds(secondsLeft);
+		updateTimerDom();
+
+		if (secondsLeft <= 0) {
+			clearPlacementTimer();
+
+			if (localRoom && localPlayerId) {
+				try {
+					confirmDay(localRoom, localPlayerId);
+					applySnapshotAndRender();
+					scheduleBots();
+				} catch (err: unknown) {
+					const msg = err instanceof Error ? err.message : String(err);
+					console.warn("[localRoom] auto-confirm failed:", msg);
+				}
+			}
+		}
+	}, 1000);
+}
+
+function clearPlacementTimer(): void {
+	if (placementTimerId !== null) {
+		clearInterval(placementTimerId);
+		placementTimerId = null;
+	}
 }
 
 /**
