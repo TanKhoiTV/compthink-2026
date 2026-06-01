@@ -228,22 +228,31 @@ async function router(req: Request): Promise<Response> {
 	const url = new URL(req.url);
 	const { pathname, method } = { pathname: url.pathname, method: req.method };
 
-	// CORS preflight for local dev
+	// Determine allowed origin from the request's Origin header
+	const origin = allowedOrigin(req);
+
+	// Helper: wrap any Response with CORS headers for this origin
+	const withCors = (res: Response): Response => addCors(res, origin);
+
+	// CORS preflight
 	if (method === "OPTIONS") {
-		return new Response(null, { status: 204, headers: corsHeaders() });
+		return new Response(null, {
+			status: 204,
+			headers: corsHeaders(origin),
+		});
 	}
 
 	try {
 		if (pathname === "/health" && method === "GET") {
-			return addCors(handleHealth());
+			return withCors(handleHealth());
 		}
 
 		if (pathname === "/rooms" && method === "GET") {
-			return addCors(handleListRooms());
+			return withCors(handleListRooms());
 		}
 
 		if (pathname === "/rooms" && method === "POST") {
-			return addCors(await handleCreateRoom(req));
+			return withCors(await handleCreateRoom(req));
 		}
 
 		// Auth: register
@@ -255,10 +264,10 @@ async function router(req: Request): Promise<Response> {
 					password: body.password,
 					displayName: body.displayName,
 				});
-				return addCors(json(result));
+				return jsonRes(result, origin);
 			} catch (err: unknown) {
 				const message = err instanceof Error ? err.message : String(err);
-				return addCors(errorResponse(400, message));
+				return errorRes(400, message, origin);
 			}
 		}
 
@@ -270,10 +279,10 @@ async function router(req: Request): Promise<Response> {
 					username: body.username,
 					password: body.password,
 				});
-				return addCors(json(result));
+				return jsonRes(result, origin);
 			} catch (err: unknown) {
 				const message = err instanceof Error ? err.message : String(err);
-				return addCors(errorResponse(400, message));
+				return errorRes(400, message, origin);
 			}
 		}
 
@@ -281,70 +290,83 @@ async function router(req: Request): Promise<Response> {
 		if (pathname === "/api/auth/me" && method === "GET") {
 			const authHeader = req.headers.get("Authorization") || "";
 			const token = authHeader.startsWith("Bearer ")
-				? authHeader.slice(7)
-				: null;
+			? authHeader.slice(7)
+			: null;
 			const user = await verifyAuthToken(token);
 			if (!user) {
-				return addCors(
-					errorResponse(401, "Chưa đăng nhập hoặc token hết hạn."),
-				);
+				return jsonRes({ error: "Chưa đăng nhập hoặc token hết hạn." }, origin, 401);
 			}
-			return addCors(json({ user }));
+			return jsonRes({ user }, origin);
 		}
 
 		// WebSocket upgrade endpoint
-		// Deno Deploy uses HTTP/2 at the edge — the Upgrade header may be
-		// absent because the WebSocket negotiation happens at the proxy layer.
-		// Deno.upgradeWebSocket() handles the upgrade internally regardless;
-		// if the request is not a valid upgrade it throws, which we catch below.
 		if (pathname === "/ws" && method === "GET") {
 			return await handleWebSocket(req);
 		}
 
-		return addCors(errorResponse(404, `Not found: ${method} ${pathname}`));
+		return jsonRes({ error: `Not found: ${method} ${pathname}` }, origin, 404);
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		console.error("[server] Unhandled error:", message);
-		return addCors(errorResponse(500, "Internal Server Error"));
+		return errorRes(500, "Internal Server Error", origin);
 	}
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 
-function json(data: unknown, status = 200): Response {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: { "Content-Type": "application/json", ...corsHeaders() },
-	});
+/**
+ * Determine the allowed origin for CORS.
+ * Echoes the request's Origin if it matches known client domains,
+ * otherwise returns the Origin verbatim (safe for public APIs).
+ */
+function allowedOrigin(req: Request): string {
+	const requestOrigin = req.headers.get("Origin");
+	const allowedOrigins = [
+		"https://tankhoitv.github.io",
+		"http://localhost:5173",
+		"http://localhost:8080",
+	];
+	if (requestOrigin) {
+		// Allow known domains OR any origin (loose cors for dev)
+		if (allowedOrigins.includes(requestOrigin)) {
+			return requestOrigin;
+		}
+	}
+	return requestOrigin ?? "*";
 }
 
-function errorResponse(status: number, message: string): Response {
-	return new Response(JSON.stringify({ error: message }), {
-		status,
-		headers: { "Content-Type": "application/json", ...corsHeaders() },
-	});
-}
-
-function corsHeaders(): Record<string, string> {
-	// Production: set CORS_ORIGIN to your Pages URL (e.g. https://tankhoitv.github.io)
-	// Dev: leave unset for localhost (falls back to "*")
-	const origin = Deno.env.get("CORS_ORIGIN") ?? "*";
+function corsHeaders(origin: string): Record<string, string> {
 	return {
 		"Access-Control-Allow-Origin": origin,
-		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+		"Vary": "Origin",
 	};
 }
 
-function addCors(response: Response): Response {
+function addCors(response: Response, origin: string): Response {
 	const headers = new Headers(response.headers);
-	for (const [k, v] of Object.entries(corsHeaders())) {
+	for (const [k, v] of Object.entries(corsHeaders(origin))) {
 		headers.set(k, v);
 	}
 	return new Response(response.body, {
 		status: response.status,
 		headers,
 	});
+}
+
+function jsonRes(data: unknown, origin: string, status = 200): Response {
+	return addCors(
+		new Response(JSON.stringify(data), {
+			status,
+			headers: { "Content-Type": "application/json" },
+		}),
+		origin,
+	);
+}
+
+function errorRes(status: number, message: string, origin: string): Response {
+	return jsonRes({ error: message }, origin, status);
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
