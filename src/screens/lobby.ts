@@ -85,7 +85,7 @@ export function renderOnlineEntryScreen(
               <div class="online-entry-card__resume">
                 <div>
                   <strong>Phiên cũ</strong>
-                  <span>Room ${escapeHtml(savedSession.roomId)} • ${escapeHtml(savedSession.playerId)} • ${escapeHtml(savedSession.playerName)}</span>
+                  <span>Room ${escapeHtml(savedSession.roomId)} • ${escapeHtml(savedSession.playerName)}</span>
                 </div>
                 <button onclick="event.stopPropagation(); window.reconnectSavedRoomFromLobby()">Reconnect</button>
                 <button class="online-entry-card__ghost" onclick="event.stopPropagation(); window.clearSavedRoomFromLobby()">Xóa lưu</button>
