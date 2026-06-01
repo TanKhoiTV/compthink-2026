@@ -264,10 +264,32 @@ function getOnlineSelfDraftPool() {
 function getOnlineDraftDisplayPool() {
     if (!isOnlineRoomActive())
         return null;
+    const serverPool = getOnlineSelfDraftPool();
+    /*
+      Fix online draft bị mất bài ở tab khác:
+      server vẫn có state.self.draftPool nhưng client đôi khi đang giữ
+      onlineDraftDisplayPool rỗng/null do animation/pass state. Khi đó UI không render bài,
+      dù hết giờ server vẫn auto-pick được. Luôn fallback về serverPool nếu có bài.
+    */
     if (isPassingDraftCards && !isOnlineFinalDraftReturnAnimating) {
-        return onlineDraftPassSnapshotPool !== null && onlineDraftPassSnapshotPool !== void 0 ? onlineDraftPassSnapshotPool : onlineDraftDisplayPool;
+        const passPool = onlineDraftPassSnapshotPool !== null && onlineDraftPassSnapshotPool !== void 0 ? onlineDraftPassSnapshotPool : onlineDraftDisplayPool;
+        if (passPool && passPool.length > 0) {
+            return passPool;
+        }
+        if (serverPool && serverPool.length > 0) {
+            onlineDraftDisplayPool = [...serverPool];
+            return onlineDraftDisplayPool;
+        }
+        return passPool !== null && passPool !== void 0 ? passPool : serverPool;
     }
-    return onlineDraftDisplayPool !== null && onlineDraftDisplayPool !== void 0 ? onlineDraftDisplayPool : getOnlineSelfDraftPool();
+    if (onlineDraftDisplayPool && onlineDraftDisplayPool.length > 0) {
+        return onlineDraftDisplayPool;
+    }
+    if (serverPool && serverPool.length > 0) {
+        onlineDraftDisplayPool = [...serverPool];
+        return onlineDraftDisplayPool;
+    }
+    return onlineDraftDisplayPool !== null && onlineDraftDisplayPool !== void 0 ? onlineDraftDisplayPool : serverPool;
 }
 function getDraftPoolSignature(cards) {
     return (cards !== null && cards !== void 0 ? cards : []).map((card) => card.id).join(",");
@@ -276,6 +298,59 @@ function setOnlineDraftDisplayPoolFromServer() {
     const serverPool = getOnlineSelfDraftPool();
     onlineDraftDisplayPool = serverPool ? [...serverPool] : null;
     onlineDraftPendingPool = null;
+}
+function recoverOnlineDraftDisplayAfterTabVisible(reason = "visible-sync") {
+    var _a, _b;
+    if (!isOnlineRoomActive())
+        return false;
+    const state = onlineClientState.roomState;
+    if (!state || state.phase !== "draft")
+        return false;
+    const serverPool = getOnlineSelfDraftPool();
+    if (!serverPool || serverPool.length === 0)
+        return false;
+    const visiblePool = (_a = onlineDraftDisplayPool !== null && onlineDraftDisplayPool !== void 0 ? onlineDraftDisplayPool : onlineDraftPassSnapshotPool) !== null && _a !== void 0 ? _a : onlineDraftPendingPool;
+    const hasVisibleCards = !!visiblePool && visiblePool.length > 0;
+    const animationExpired = draftDealVisualEndsAt > 0 && Date.now() > draftDealVisualEndsAt + 180;
+    const visualDealStillRunning = isInitialDealInProgress ||
+        isDraftCenterDealing ||
+        isPassingDraftCards ||
+        Date.now() < draftDealVisualEndsAt;
+    const staleAnimation = animationExpired && visualDealStillRunning;
+    /*
+      Khi tab bị background, browser pause timer/animation.
+      Nếu focus lại mà server đang có pool thật, ưu tiên hiện bài ngay,
+      không chạy animation chia bài muộn ở tab đó nữa.
+    */
+    if (hasVisibleCards && !staleAnimation && !visualDealStillRunning)
+        return false;
+    clearOnlineDraftAnimationTimer();
+    clearDraftCenterDealAnimation();
+    onlineDraftDisplayPool = [...serverPool];
+    onlineDraftPassSnapshotPool = null;
+    onlineDraftPendingPool = null;
+    draftHandPendingCardId = null;
+    draftPoolFlyReturnCardId = null;
+    isPassingDraftCards = false;
+    isInitialDealInProgress = false;
+    shouldActivateOnlineDealAnimation = false;
+    shouldActivateOnlinePassAnimation = false;
+    draftDealVisualEndsAt = 0;
+    draftSelectedCardId = (_b = state.self.selectedDraftCardId) !== null && _b !== void 0 ? _b : null;
+    lastOnlineRenderSignature = "";
+    console.debug(`[DRAFT SYNC] recovered draft pool after tab visible: ${reason}`, {
+        poolSize: serverPool.length,
+        timer: state.timer,
+        round: state.draftRound,
+    });
+    return true;
+}
+function syncOnlineDraftDisplayAfterTabVisible() {
+    if (document.visibilityState !== "visible")
+        return;
+    if (recoverOnlineDraftDisplayAfterTabVisible("visibility/focus")) {
+        rerenderGameShell();
+    }
 }
 function isOnlineInterRoundPoolPassActive() {
     return isPassingDraftCards && !isOnlineFinalDraftReturnAnimating;
@@ -717,7 +792,7 @@ function applyOnlineRoomStateToLocal() {
     }
     const serverDraftPool = (_c = state.self.draftPool) !== null && _c !== void 0 ? _c : [];
     const onlinePoolSignature = getDraftPoolSignature(serverDraftPool);
-    const hasDisplayPool = onlineDraftDisplayPool !== null;
+    const hasDisplayPool = onlineDraftDisplayPool !== null && onlineDraftDisplayPool.length > 0;
     if (isOnlineRoomActive()) {
         const enteredDraft = state.phase === "draft" && lastOnlineAnimationPhase !== "draft";
         const pickedDraftCount = (_e = (_d = state.self.pickedDraftCards) === null || _d === void 0 ? void 0 : _d.length) !== null && _e !== void 0 ? _e : 0;
@@ -737,14 +812,28 @@ function applyOnlineRoomStateToLocal() {
             draftPoolFlyReturnCardId = null;
             onlineDraftPassSnapshotPool = null;
             setOnlineDraftDisplayPoolFromServer();
-            shouldActivateOnlineDealAnimation = true;
+            /*
+              Nếu tab đang ở background hoặc mình quay lại khi lượt draft đã chạy vài giây,
+              KHÔNG chạy lại animation chia bài từ đầu. Nếu chạy lại, tab đó sẽ kẹt
+              "Đang chia bài..." và không render pool chọn bài, dù server vẫn có bài.
+            */
+            const shouldSkipOnlineDealAnimation = document.visibilityState !== "visible" ||
+                state.timer < DRAFT_PICK_SECONDS - 1;
+            shouldActivateOnlineDealAnimation = !shouldSkipOnlineDealAnimation;
             shouldActivateOnlinePassAnimation = false;
-            isInitialDealInProgress = true;
+            isInitialDealInProgress = !shouldSkipOnlineDealAnimation;
             isPassingDraftCards = false;
             hasPlayedOnlinePlanningDealAfterDraft = false;
-            onlineDraftAnimationTimerId = window.setTimeout(() => {
-                finishOnlineDraftDealVisualOnly();
-            }, DRAFT_CENTER_DEAL_TOTAL_MS);
+            if (shouldSkipOnlineDealAnimation) {
+                isDraftCenterDealing = false;
+                draftDealVisualEndsAt = 0;
+                onlineDraftAnimationTimerId = null;
+            }
+            else {
+                onlineDraftAnimationTimerId = window.setTimeout(() => {
+                    finishOnlineDraftDealVisualOnly();
+                }, DRAFT_CENTER_DEAL_TOTAL_MS);
+            }
         }
         else if (state.phase === "draft" &&
             lastOnlineAnimationPhase === "draft" &&
@@ -767,6 +856,11 @@ function applyOnlineRoomStateToLocal() {
                     setOnlineDraftDisplayPoolFromServer();
                 }
             }
+        }
+        else if (state.phase === "draft" &&
+            serverDraftPool.length > 0 &&
+            (!onlineDraftDisplayPool || onlineDraftDisplayPool.length === 0)) {
+            setOnlineDraftDisplayPoolFromServer();
         }
         else if (state.phase === "draft" && !hasDisplayPool) {
             setOnlineDraftDisplayPoolFromServer();
@@ -947,6 +1041,8 @@ let selectedHandCardId = null;
 let draggedHandCardId = null;
 let handPointerDragState = null;
 let lastPlacedBoardPosition = null;
+let lastUtilityEffectFlash = null;
+let resourceOrbFlashType = null;
 let focusedHandCardId = null;
 let focusedBoardCard = null;
 let focusedBoardPosition = null;
@@ -1520,6 +1616,159 @@ function getCardBonusBadge(card) {
     }
     return "";
 }
+function stripCardText(value) {
+    return value
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+function getUtilityPlacementEffect(card) {
+    var _a;
+    const effect = card.onPlayEffect;
+    const tags = getCardTagKeys(card);
+    const isUtilityCard = tags.includes("UTILITY") ||
+        String(card.tag || "").toLowerCase() === "utility" ||
+        stripCardText(card.tagLabel || "").toLowerCase().includes("tiện ích");
+    const fullText = stripCardText([
+        card.name,
+        card.shortName || "",
+        card.description || "",
+        card.bonusText || "",
+        card.tagLabel || "",
+    ].join(" ")).toLowerCase();
+    const explicitValue = Number((_a = effect === null || effect === void 0 ? void 0 : effect.effect_value) !== null && _a !== void 0 ? _a : 0);
+    const numberMatch = fullText.match(/(?:\+|nhận|hoi|hồi|cộng|thêm)\s*(\d+)/i);
+    const inferredValue = numberMatch ? Number(numberMatch[1]) : 1;
+    const value = explicitValue > 0 ? explicitValue : inferredValue;
+    if (effect === null || effect === void 0 ? void 0 : effect.has_effect) {
+        if (effect.effect_type === "RECOVER_XU") {
+            return {
+                type: "coin",
+                value,
+                label: `+${value} Xu`,
+                icon: "🪙",
+            };
+        }
+        if (effect.effect_type === "RECOVER_LA") {
+            return {
+                type: "stamina",
+                value,
+                label: `+${value} Thể lực`,
+                icon: "⚡",
+            };
+        }
+        if (effect.effect_type === "GAIN_VP") {
+            return {
+                type: "vp",
+                value,
+                label: `+${value} VP`,
+                icon: "★",
+            };
+        }
+    }
+    /*
+      Fallback cho data utility nếu mapper/server chưa truyền onPlayEffect.
+      Đọc mô tả/bonus để vẫn hiện đúng hiệu ứng.
+    */
+    if (!isUtilityCard)
+        return null;
+    if (fullText.includes("xu") ||
+        fullText.includes("tiền") ||
+        fullText.includes("coin") ||
+        fullText.includes("gold")) {
+        return {
+            type: "coin",
+            value,
+            label: `+${value} Xu`,
+            icon: "🪙",
+        };
+    }
+    if (fullText.includes("thể lực") ||
+        fullText.includes("the luc") ||
+        fullText.includes("năng lượng") ||
+        fullText.includes("nang luong") ||
+        fullText.includes("stamina") ||
+        fullText.includes("nl")) {
+        return {
+            type: "stamina",
+            value,
+            label: `+${value} Thể lực`,
+            icon: "⚡",
+        };
+    }
+    if (fullText.includes("vp") || fullText.includes("điểm") || fullText.includes("diem")) {
+        return {
+            type: "vp",
+            value,
+            label: `+${value} VP`,
+            icon: "★",
+        };
+    }
+    return {
+        type: "vp",
+        value,
+        label: `+${value} VP`,
+        icon: "★",
+    };
+}
+function triggerUtilityEffectFlash(params) {
+    const flashId = Date.now();
+    lastUtilityEffectFlash = Object.assign(Object.assign({}, params), { id: flashId });
+    resourceOrbFlashType = params.type;
+    window.setTimeout(() => {
+        if ((lastUtilityEffectFlash === null || lastUtilityEffectFlash === void 0 ? void 0 : lastUtilityEffectFlash.id) === flashId) {
+            lastUtilityEffectFlash = null;
+        }
+        if (resourceOrbFlashType === params.type) {
+            resourceOrbFlashType = null;
+        }
+        rerenderArena();
+    }, 1050);
+}
+function applyUtilityPlacementEffect(card, rowIndex, colIndex) {
+    const effect = getUtilityPlacementEffect(card);
+    if (!effect)
+        return false;
+    if (effect.type === "coin") {
+        eventResourceModifier = Object.assign(Object.assign({}, eventResourceModifier), { coin: eventResourceModifier.coin + effect.value });
+        playGameSound("eventPromo");
+    }
+    else if (effect.type === "stamina") {
+        eventResourceModifier = Object.assign(Object.assign({}, eventResourceModifier), { stamina: eventResourceModifier.stamina + effect.value });
+        playGameSound("eventPromo");
+    }
+    else if (effect.type === "vp") {
+        accumulatedVP += effect.value;
+        playGameSound("eventPromo");
+    }
+    triggerUtilityEffectFlash({
+        rowIndex,
+        colIndex,
+        type: effect.type,
+        value: effect.value,
+    });
+    return true;
+}
+function renderUtilityEffectFlash(rowIndex, colIndex) {
+    if (!lastUtilityEffectFlash ||
+        lastUtilityEffectFlash.rowIndex !== rowIndex ||
+        lastUtilityEffectFlash.colIndex !== colIndex) {
+        return "";
+    }
+    const { type, value } = lastUtilityEffectFlash;
+    const icon = type === "coin" ? "🪙" : type === "stamina" ? "⚡" : "★";
+    const label = type === "coin" ? `+${value} Xu` : type === "stamina" ? `+${value} Thể lực` : `+${value} VP`;
+    return `
+    <div class="utility-effect-pop utility-effect-pop--${type}" aria-hidden="true">
+      <div class="utility-effect-pop__burst"></div>
+      <div class="utility-effect-pop__icon">${icon}</div>
+      <div class="utility-effect-pop__label">${label}</div>
+      <div class="utility-effect-pop__spark utility-effect-pop__spark--1"></div>
+      <div class="utility-effect-pop__spark utility-effect-pop__spark--2"></div>
+      <div class="utility-effect-pop__spark utility-effect-pop__spark--3"></div>
+    </div>
+  `;
+}
 function renderBoardMiniCard(card, replayStep) {
     var _a, _b, _c, _d, _e;
     const displayName = getBoardDisplayName(card);
@@ -2061,6 +2310,13 @@ function getDraftLeftoverReturnCards() {
 function isDraftPickTimerFrozen() {
     var _a, _b;
     const hold = (_b = (_a = onlineClientState.roomState) === null || _a === void 0 ? void 0 : _a.draftTimerHold) !== null && _b !== void 0 ? _b : 0;
+    if (isOnlineRoomActive()) {
+        const serverPool = getOnlineSelfDraftPool();
+        const animationExpired = draftDealVisualEndsAt > 0 && Date.now() > draftDealVisualEndsAt + 180;
+        if ((serverPool === null || serverPool === void 0 ? void 0 : serverPool.length) && animationExpired) {
+            return hold > 0;
+        }
+    }
     return (isDraftCenterDealing ||
         isInitialDealInProgress ||
         isPassingDraftCards ||
@@ -2433,13 +2689,20 @@ function resetSinglePlayerDraftPool() {
     if (!currentPlayer)
         return;
     /*
-      Chơi 1 người: sau khi chọn 1 lá, 6 lá còn lại quay về deck rồi roll pool mới.
-      Như vậy mỗi lượt pick thật sự là một lượt random mới, không phải chuyền bài ảo với bot.
+      Chơi 1 người đúng yêu cầu:
+      - Lượt 1: random 7 lá.
+      - Pick xong 1 lá: trả 6 lá còn lại về deck.
+      - Lượt 2: random lại 6 lá mới.
+      - Lượt 3: random lại 5 lá mới.
+      - Lượt 4: random lại 4 lá mới.
+      - Lượt 5: random lại 3 lá mới.
+      => Không giữ pool cũ, nhưng số lá giảm dần theo số lá đã pick.
     */
     if (currentPlayer.pool.length > 0) {
         deck = shuffleCards([...deck, ...currentPlayer.pool]);
     }
-    const nextPool = drawRandomCardsFromDeck(DRAFT_STARTING_POOL_SIZE);
+    const nextPoolSize = Math.max(DRAFT_STARTING_POOL_SIZE - currentPlayer.picked.length, DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1);
+    const nextPool = drawRandomCardsFromDeck(nextPoolSize);
     draftPlayers = draftPlayers.map((player, index) => {
         if (index !== activeIndex)
             return player;
@@ -2604,6 +2867,10 @@ function finishDraftPick(cardId) {
                 completeDailyDraftPhase();
                 return;
             }
+            /*
+              Chơi 1 người: mỗi lượt random lại pool mới, nhưng size giảm dần.
+              7 lá -> pick -> random 6 lá -> pick -> random 5 lá -> ... -> đủ 5 lá.
+            */
             resetSinglePlayerDraftPool();
             preloadDraftImages();
             draftRound += 1;
@@ -3634,7 +3901,7 @@ function renderResourceOrbs() {
     const remaining = getRemainingResources();
     return `
     <div class="resource-orbs" aria-label="Tài nguyên hiện tại">
-      <div class="resource-orb resource-orb--coin" title="Xu hiện có">
+      <div class="resource-orb resource-orb--coin ${resourceOrbFlashType === "coin" ? "resource-orb--effect-pulse" : ""}" title="Xu hiện có">
         <div class="resource-orb__frame">
           <div class="resource-orb__icon resource-orb__icon--coin">💰</div>
           <div class="resource-orb__value">${remaining.coin}</div>
@@ -3642,7 +3909,7 @@ function renderResourceOrbs() {
         <div class="resource-orb__label">TIỀN</div>
       </div>
 
-      <div class="resource-orb resource-orb--stamina" title="Thể lực hiện có">
+      <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
         <div class="resource-orb__frame">
           <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
           <div class="resource-orb__value">${remaining.stamina}</div>
@@ -4300,6 +4567,7 @@ function renderMainArena() {
                             title="${isCurrentDayColumn ? (isPlaceable ? "Thả lá đang kéo vào ô ngày hiện tại" : "Chỉ xếp bài cho ngày hiện tại") : "Không phải ngày hiện tại"}"
                           >
                             <span class="empty-plus">+</span>
+                            ${renderUtilityEffectFlash(rowIndex, colIndex)}
                           </div>
                         `;
             }
@@ -4313,6 +4581,7 @@ function renderMainArena() {
                           title="Ô đã có bài - bấm để xem lớn"
                         >
                           ${renderBoardMiniCard(card, getReplayStepForBoardCell(rowIndex, colIndex))}
+                            ${renderUtilityEffectFlash(rowIndex, colIndex)}
                         </div>
                       `;
         })
@@ -4425,6 +4694,15 @@ function placeHandCardOnBoard(cardId, rowIndex, colIndex) {
     const selectedCard = playerHand[handIndex];
     if (isOnlineRoomActive()) {
         playGameSound("cardPlace");
+        const onlineUtilityEffect = getUtilityPlacementEffect(selectedCard);
+        if (onlineUtilityEffect) {
+            triggerUtilityEffectFlash({
+                rowIndex,
+                colIndex,
+                type: onlineUtilityEffect.type,
+                value: onlineUtilityEffect.value,
+            });
+        }
         sendPlaceCard({
             cardId: selectedCard.id,
             rowIndex,
@@ -4442,6 +4720,9 @@ function placeHandCardOnBoard(cardId, rowIndex, colIndex) {
         focusedBoardCard = null;
         focusedBoardPosition = null;
         suppressNextClick = false;
+        if (onlineUtilityEffect) {
+            rerenderArena();
+        }
         return;
     }
     const remainingBeforePlace = getRemainingResources();
@@ -4449,14 +4730,17 @@ function placeHandCardOnBoard(cardId, rowIndex, colIndex) {
     const staminaDebt = Math.max(0, selectedCard.stamina - remainingBeforePlace.stamina);
     playGameSound("cardPlace");
     playerHand.splice(handIndex, 1);
-    getBoardSlots()[rowIndex][colIndex] = selectedCard;
-    addLocalDebtOrExhaustToken({
-        rowIndex,
-        colIndex,
-        card: selectedCard,
-        coinDebt,
-        staminaDebt,
-    });
+    const didApplyUtilityEffect = applyUtilityPlacementEffect(selectedCard, rowIndex, colIndex);
+    if (!didApplyUtilityEffect) {
+        getBoardSlots()[rowIndex][colIndex] = selectedCard;
+        addLocalDebtOrExhaustToken({
+            rowIndex,
+            colIndex,
+            card: selectedCard,
+            coinDebt,
+            staminaDebt,
+        });
+    }
     sendPlaceCard({
         cardId: selectedCard.id,
         rowIndex,
@@ -6313,4 +6597,6 @@ globalThis.copyTravelTimeline = window.copyTravelTimeline;
 globalThis.playGameSound = playGameSound;
 globalThis.debugOnlineBoards = window.debugOnlineBoards;
 globalThis.selectDraftCard = window.selectDraftCard;
+document.addEventListener("visibilitychange", syncOnlineDraftDisplayAfterTabVisible);
+window.addEventListener("focus", syncOnlineDraftDisplayAfterTabVisible);
 rerenderGameShell();

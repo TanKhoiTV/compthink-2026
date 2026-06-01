@@ -13887,3 +13887,189 @@ body,
     opacity: 1;
   }
 }
+
+/* =========================================================
+   UTILITY CARD PLACEMENT EFFECTS
+   - Utility +Xu / hồi Thể lực / +VP hiện effect tại ô vừa đặt.
+   - Orb TIỀN / THỂ LỰC pulse để người chơi thấy tác dụng.
+   ========================================================= */
+
+.board-cell {
+  position: relative;
+}
+
+.utility-effect-pop {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  animation: utilityEffectPopLife 1050ms ease both;
+}
+
+.utility-effect-pop__burst {
+  position: absolute;
+  width: 94px;
+  height: 94px;
+  border-radius: 999px;
+  opacity: 0.9;
+  animation: utilityEffectBurst 1050ms ease-out both;
+}
+
+.utility-effect-pop--coin .utility-effect-pop__burst {
+  background: radial-gradient(circle, rgba(255, 225, 118, 0.58), rgba(245, 158, 11, 0.22) 42%, transparent 68%);
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.38);
+}
+
+.utility-effect-pop--stamina .utility-effect-pop__burst {
+  background: radial-gradient(circle, rgba(255, 144, 164, 0.52), rgba(225, 72, 102, 0.22) 42%, transparent 68%);
+  box-shadow: 0 0 28px rgba(225, 72, 102, 0.36);
+}
+
+.utility-effect-pop--vp .utility-effect-pop__burst {
+  background: radial-gradient(circle, rgba(125, 211, 252, 0.50), rgba(45, 139, 211, 0.22) 42%, transparent 68%);
+  box-shadow: 0 0 28px rgba(45, 139, 211, 0.34);
+}
+
+.utility-effect-pop__icon {
+  position: relative;
+  z-index: 2;
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  font-weight: 1000;
+  background: rgba(255, 252, 244, 0.96);
+  border: 2px solid rgba(255, 255, 255, 0.70);
+  box-shadow: 0 12px 22px rgba(49, 33, 18, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  animation: utilityEffectIconRise 1050ms cubic-bezier(0.2, 0.84, 0.22, 1) both;
+}
+
+.utility-effect-pop__label {
+  position: absolute;
+  z-index: 3;
+  top: calc(50% + 32px);
+  min-width: 86px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: white;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 1000;
+  letter-spacing: 0.02em;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.18);
+  box-shadow: 0 8px 14px rgba(49, 33, 18, 0.18);
+  animation: utilityEffectLabelRise 1050ms ease both;
+}
+
+.utility-effect-pop--stamina .utility-effect-pop__label {
+  min-width: 104px;
+}
+
+.utility-effect-pop--coin .utility-effect-pop__label {
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+}
+
+.utility-effect-pop--stamina .utility-effect-pop__label {
+  background: linear-gradient(135deg, #ef476f, #a32143);
+}
+
+.utility-effect-pop--vp .utility-effect-pop__label {
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+}
+
+.utility-effect-pop__spark {
+  position: absolute;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  opacity: 0;
+  animation: utilityEffectSpark 850ms ease-out both;
+}
+
+.utility-effect-pop--coin .utility-effect-pop__spark { background: #facc15; }
+.utility-effect-pop--stamina .utility-effect-pop__spark { background: #fb7185; }
+.utility-effect-pop--vp .utility-effect-pop__spark { background: #7dd3fc; }
+
+.utility-effect-pop__spark--1 { transform: translate(-28px, -20px); animation-delay: 80ms; }
+.utility-effect-pop__spark--2 { transform: translate(32px, -16px); animation-delay: 150ms; }
+.utility-effect-pop__spark--3 { transform: translate(2px, 32px); animation-delay: 220ms; }
+
+.resource-orb--effect-pulse .resource-orb__frame {
+  animation: resourceOrbUtilityPulse 1050ms ease both;
+}
+
+.resource-orb--effect-pulse.resource-orb--coin .resource-orb__frame {
+  box-shadow: 0 0 0 6px rgba(250, 204, 21, 0.18), 0 0 34px rgba(245, 158, 11, 0.38), inset 0 1px 0 rgba(255,255,255,0.55) !important;
+}
+
+.resource-orb--effect-pulse.resource-orb--stamina .resource-orb__frame {
+  box-shadow: 0 0 0 6px rgba(251, 113, 133, 0.18), 0 0 34px rgba(225, 72, 102, 0.36), inset 0 1px 0 rgba(255,255,255,0.55) !important;
+}
+
+.resource-orb--effect-pulse .resource-orb__icon {
+  animation: resourceOrbIconBounce 1050ms ease both;
+}
+
+.resource-orb--effect-pulse .resource-orb__value {
+  animation: resourceOrbValueFlash 1050ms ease both;
+}
+
+@keyframes utilityEffectPopLife {
+  0% { opacity: 0; transform: scale(0.76); }
+  12% { opacity: 1; transform: scale(1); }
+  72% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.08) translateY(-10px); }
+}
+
+@keyframes utilityEffectBurst {
+  0% { opacity: 0; transform: scale(0.2); }
+  22% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.55); }
+}
+
+@keyframes utilityEffectIconRise {
+  0% { opacity: 0; transform: translateY(14px) scale(0.6) rotate(-8deg); }
+  20% { opacity: 1; transform: translateY(0) scale(1.08) rotate(3deg); }
+  55% { transform: translateY(-7px) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(-32px) scale(0.88); }
+}
+
+@keyframes utilityEffectLabelRise {
+  0% { opacity: 0; transform: translateY(10px) scale(0.88); }
+  24% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; transform: translateY(-4px); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.92); }
+}
+
+@keyframes utilityEffectSpark {
+  0% { opacity: 0; scale: 0.25; }
+  20% { opacity: 1; scale: 1; }
+  100% { opacity: 0; translate: 0 -26px; scale: 0.2; }
+}
+
+@keyframes resourceOrbUtilityPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  20% { transform: scale(1.10); filter: brightness(1.22); }
+  55% { transform: scale(1.03); filter: brightness(1.08); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes resourceOrbIconBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  24% { transform: translateY(-4px) scale(1.15); }
+  54% { transform: translateY(1px) scale(1.02); }
+}
+
+@keyframes resourceOrbValueFlash {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.18); }
+  48% { transform: scale(1.04); }
+}
+

@@ -153,10 +153,26 @@ export function finishDraftRound(state: RoomState) {
     return;
   }
 
-  if (activePlayerIds.length === 1) {
-    resetSinglePlayerDraftPool(state, activePlayerIds[0]);
-  } else {
+  if (activePlayerIds.length > 1) {
     rotateDraftPoolsClockwise(state, activePlayerIds);
+  } else {
+    /*
+      Online 1 người: không giữ pool cũ.
+      Trả bài dư về deck rồi random lại pool mới với số lá giảm dần:
+      7 -> pick -> 6 -> pick -> 5 -> pick -> 4 -> pick -> 3.
+    */
+    const onlyPlayerId = activePlayerIds[0];
+    const onlyPlayer = state.players[onlyPlayerId];
+    returnCardsToDeck(state, onlyPlayer.draftPool);
+
+    const nextPoolSize = Math.max(
+      DRAFT_STARTING_POOL_SIZE - onlyPlayer.pickedDraftCards.length,
+      DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1
+    );
+
+    onlyPlayer.draftPool = drawRandomCardsFromDeck(state, nextPoolSize);
+    onlyPlayer.selectedDraftCardId = null;
+    onlyPlayer.draftPickConfirmed = false;
   }
 
   state.draftRound += 1;
@@ -168,13 +184,14 @@ export function finishDraftRound(state: RoomState) {
 function resetSinglePlayerDraftPool(state: RoomState, playerId: PlayerId) {
   const player = state.players[playerId];
 
-  /*
-    Chơi 1 người: chọn 1 lá xong thì 6 lá còn lại quay về deck,
-    deck được shuffle lại, rồi roll pool 7 lá mới.
-    Như vậy mỗi lần chọn đều có ý nghĩa, không phải chọn tiếp từ pool cũ.
-  */
   returnCardsToDeck(state, player.draftPool);
-  player.draftPool = drawRandomCardsFromDeck(state, DRAFT_STARTING_POOL_SIZE);
+
+  const nextPoolSize = Math.max(
+    DRAFT_STARTING_POOL_SIZE - player.pickedDraftCards.length,
+    DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1
+  );
+
+  player.draftPool = drawRandomCardsFromDeck(state, nextPoolSize);
   player.selectedDraftCardId = null;
 }
 
