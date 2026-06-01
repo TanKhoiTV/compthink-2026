@@ -14,6 +14,7 @@ import {
 	disconnectFromRoom,
 	setOnRoomSnapshot,
 	setOnDisconnect,
+	getAuthDisplayName,
 } from "./socketClient.ts";
 import type { RoomSnapshot, TravelCard } from "../shared/types.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
@@ -132,7 +133,9 @@ async function createRoomFromLobby() {
 	const nameInput = document.getElementById(
 		"lobby-create-name",
 	) as HTMLInputElement | null;
-	const playerName = nameInput?.value?.trim() || "Player";
+	// Use logged-in display name if available (overrides input)
+	const displayName = getAuthDisplayName();
+	const playerName = (displayName ?? nameInput?.value?.trim()) || "Player";
 
 	try {
 		// Register callbacks BEFORE connecting so initial snapshot isn't lost
@@ -174,7 +177,8 @@ async function joinRoomFromLobby() {
 	const codeInput = document.getElementById(
 		"lobby-room-code",
 	) as HTMLInputElement | null;
-	const playerName = nameInput?.value?.trim() || "Player";
+	const displayName = getAuthDisplayName();
+	const playerName = (displayName ?? nameInput?.value?.trim()) || "Player";
 	const roomId = codeInput?.value?.trim().toUpperCase();
 
 	if (!roomId) {

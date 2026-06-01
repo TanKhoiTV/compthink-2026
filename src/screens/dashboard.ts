@@ -5,7 +5,7 @@
  * Exports: renderDashboard(), initDashboardHub(), initDashboardGlobals()
  */
 
-import { authClientState } from "../online/socketClient.ts";
+import { authClientState, saveAuthSession, clearAuthSession } from "../online/socketClient.ts";
 
 export const HERO_VIDEO_SRC = "assets/videos/chuyencanh.mp4";
 
@@ -485,7 +485,7 @@ async function handleLoginSubmit(event: SubmitEvent) {
 		}
 		statusEl.textContent = "Đăng nhập thành công!";
 		statusEl.className = "hub-auth__status hub-auth__status--success";
-		authClientState.user = data.user ?? data;
+		saveAuthSession(data.token, data.user ?? data);
 		// Refresh the dashboard to show explore panel
 		const { rerenderGameShell } = await import("../router.ts");
 		rerenderGameShell();
@@ -546,7 +546,7 @@ async function handleRegisterSubmit(event: SubmitEvent) {
 		}
 		statusEl.textContent = "Tạo tài khoản thành công! Đang đăng nhập...";
 		statusEl.className = "hub-auth__status hub-auth__status--success";
-		authClientState.user = data.user ?? data;
+		saveAuthSession(data.token, data.user ?? data);
 		const { rerenderGameShell } = await import("../router.ts");
 		rerenderGameShell();
 		initDashboardHubWithCleanup();
@@ -582,7 +582,7 @@ export function initDashboardGlobals() {
 	};
 
 	(globalThis as any).logoutFromAuthScreen = () => {
-		authClientState.user = null;
+		clearAuthSession();
 		import("../router.ts").then(({ rerenderGameShell }) => {
 			rerenderGameShell();
 			initDashboardHubWithCleanup();

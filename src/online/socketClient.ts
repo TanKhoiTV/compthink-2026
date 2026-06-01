@@ -31,7 +31,7 @@ let wsBaseUrl = isProduction
 	? "wss://trekkopoly.compthink-2026.deno.net"
 	: "ws://localhost:8080";
 
-// ── Public API ──────────────────────────────────────────────────────────────
+// ── Auth state ────────────────────────────────────────────────────────────
 
 export type AuthUser = {
 	id: string;
@@ -39,15 +39,81 @@ export type AuthUser = {
 	displayName: string;
 };
 
-export type AuthClientState = {
+export interface AuthClientState {
 	isReady: boolean;
 	user: AuthUser | null;
-};
+	token: string | null;
+}
 
 export const authClientState: AuthClientState = {
 	isReady: false,
 	user: null,
+	token: null,
 };
+
+const AUTH_TOKEN_KEY = "trekkopoly_auth_token";
+const AUTH_USER_KEY = "trekkopoly_auth_user";
+
+/** Load saved auth session from localStorage (called once at startup). */
+export function loadAuthSession(): void {
+	try {
+		const token = localStorage.getItem(AUTH_TOKEN_KEY);
+		const userRaw = localStorage.getItem(AUTH_USER_KEY);
+		if (token && userRaw) {
+			authClientState.token = token;
+			authClientState.user = JSON.parse(userRaw) as AuthUser;
+			authClientState.isReady = true;
+		}
+	} catch {
+		// Corrupted storage — ignore
+	}
+}
+
+/** Save auth token + user to state and localStorage. */
+export function saveAuthSession(token: string, user: AuthUser): void {
+	authClientState.token = token;
+	authClientState.user = user;
+	authClientState.isReady = true;
+	try {
+		localStorage.setItem(AUTH_TOKEN_KEY, token);
+		localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+	} catch {
+		// Storage full or unavailable
+	}
+}
+
+/** Clear auth session from state and localStorage. */
+export function clearAuthSession(): void {
+	authClientState.token = null;
+	authClientState.user = null;
+	authClientState.isReady = false;
+	try {
+		localStorage.removeItem(AUTH_TOKEN_KEY);
+		localStorage.removeItem(AUTH_USER_KEY);
+	} catch {
+		// ignore
+	}
+}
+
+/** Get the auth token for WebSocket connections. */
+export function getAuthToken(): string | null {
+	return authClientState.token;
+}
+
+/**
+ * Get the display name of the logged-in user, or null if not logged in.
+ */
+export function getAuthDisplayName(): string | null {
+	return authClientState.user?.displayName ?? null;
+}
+
+/**
+ * Get the saved auth token or null if no active session.
+ * Kept for backward compatibility — prefer getAuthToken().
+ */
+export function getToken(): string | null {
+	return authClientState.token;
+}
 
 export function configureServerUrls(httpUrl: string, wsUrl: string) {
 	serverBaseUrl = httpUrl;
@@ -73,6 +139,8 @@ export function isConnected(): boolean {
 /**
  * Connect to a game room via WebSocket.
  * Automatically sends joinRoom after the connection opens.
+ * If the user is logged in, the auth token is passed as a query param
+ * so the server can link the WebSocket session to the authenticated user.
  */
 export function connectToRoom(
 	roomId: string,
@@ -85,7 +153,12 @@ export function connectToRoom(
 			socket = null;
 		}
 
-		const url = `${wsBaseUrl}/ws?roomId=${encodeURIComponent(roomId)}&playerId=${encodeURIComponent(playerId)}&name=${encodeURIComponent(name)}`;
+		// Append auth token if logged in
+		const token = getAuthToken();
+		let url = `${wsBaseUrl}/ws?roomId=${encodeURIComponent(roomId)}&playerId=${encodeURIComponent(playerId)}&name=${encodeURIComponent(name)}`;
+		if (token) {
+			url += `&token=${encodeURIComponent(token)}`;
+		}
 		socket = new WebSocket(url);
 
 		socket.onopen = () => {

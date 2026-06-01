@@ -19,6 +19,7 @@ import {
 	getCurrentRoomId,
 	getCurrentGameSnapshot,
 } from "./online/lobbyClient.ts";
+import { getAuthDisplayName } from "./online/socketClient.ts";
 import {
 	getSuppressNextClick,
 	setSuppressNextClick,
@@ -70,7 +71,7 @@ export function renderGameShell(): string {
 		case "lobby": {
 			const snapshot = getCurrentLobbySnapshot();
 			const savedSession = getSavedSession();
-			const displayName = getCurrentPlayerName() || "Nhà Lữ Hành";
+			const displayName = getCurrentPlayerName() || getAuthDisplayName() || "Nhà Lữ Hành";
 
 			if (snapshot && snapshot.phase === "lobby") {
 				return renderOnlineLobbyRoomScreen(

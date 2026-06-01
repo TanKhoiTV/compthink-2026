@@ -79,7 +79,7 @@ import {
 	getOpponentPlayerIds,
 	addDiscardedResourceBonus,
 } from "./state.ts";
-import { isConnected } from "./online/socketClient.ts";
+import { isConnected, loadAuthSession } from "./online/socketClient.ts";
 import "./online/lobbyClient.ts"; // Side-effect: binds lobby globals
 import type { PlayerId } from "./shared/client-types.ts";
 import type { TravelCard } from "./shared/types.ts";
@@ -1385,6 +1385,10 @@ import {
 };
 
 // ── Start the app — render dashboard ───────────────────────────────────────
+
+// Load saved auth session (JWT + user info) from localStorage so the
+// dashboard and lobby can show the logged-in user's name.
+loadAuthSession();
 
 transitionToScreen("dashboard");
 
