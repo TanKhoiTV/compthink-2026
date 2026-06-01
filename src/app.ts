@@ -344,6 +344,7 @@ function startSinglePlayerGame() {
  * Game loop is driven by localRoom.ts's bot timers and state machine.
  */
 function startDailyDraft() {
+	console.warn("[app] startDailyDraft is deprecated — called unexpectedly");
 	const deck = getDeck();
 	const shuffled = shuffleCards(deck);
 	const pool = shuffled.slice(0, DRAFT_POOL_SIZE);
@@ -518,6 +519,7 @@ function placeBotCardsAfterPlayerMove(sourceCard: TravelCard) {
  * The simulation scoring path (runSystemSimulation) still references this indirectly.
  */
 function endCurrentDay() {
+	console.warn("[app] endCurrentDay is deprecated — called unexpectedly");
 	if (getGamePhase() !== "placement") return;
 
 	stopTurnTimer();
@@ -676,6 +678,7 @@ function applyDailyScoreOnce() {
  * The localRoom.ts version uses the same pattern but is driven by the Room FSM.
  */
 function startDraftTimer() {
+	console.warn("[app] startDraftTimer is deprecated — called unexpectedly");
 	stopDraftTimer();
 
 	if (getGamePhase() !== "draft") return;
@@ -732,6 +735,7 @@ function stopTurnTimer() {
  * @deprecated Legacy turn/placement timer. Superseded by localRoom.ts startPlacementTimer().
  */
 function startTurnTimer() {
+	console.warn("[app] startTurnTimer is deprecated — called unexpectedly");
 	stopTurnTimer();
 
 	if (getGamePhase() !== "placement") return;
@@ -757,6 +761,7 @@ function startTurnTimer() {
  * @deprecated Legacy day/phase sequencer. Superseded by Room FSM.
  */
 function startNextDayOrPhase() {
+	console.warn("[app] startNextDayOrPhase is deprecated — called unexpectedly");
 	// Guard: only advance from simulation or placement; prevents stale
 	// timeouts from a previous replay from advancing the game out of order.
 	const phase = getGamePhase();

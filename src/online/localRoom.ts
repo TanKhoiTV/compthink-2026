@@ -122,11 +122,6 @@ export function initLocalGame(
 }
 
 /**
- * Re-apply the latest snapshot to client state and re-render.
- * Useful when the DOM wasn't ready during initial snapshot application
- * (e.g., hash bypass test mode).
- */
-/**
  * Clean up any running local game.
  */
 export function cleanupLocalGame(): void {
