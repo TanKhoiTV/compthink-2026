@@ -1,10 +1,10 @@
 export const STARTING_COIN = 3;
 export const STARTING_STAMINA = 2;
 export const HAND_SIZE = 5;
-export const TURN_DURATION_SECONDS = 15;
+export const TURN_DURATION_SECONDS = 180;
 export const PHASE_DAYS = 5;
 export const PLAYER_COUNT = 4;
-export const DRAFT_PICK_SECONDS = 10;
+export const DRAFT_PICK_SECONDS = 180;
 
 export const days = [1, 2, 3, 4, 5];
 export const rows = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
