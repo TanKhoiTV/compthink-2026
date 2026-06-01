@@ -1,4 +1,4 @@
-name: Deploy Server (Deno Deploy)
+name: Deploy Server (Fly.io)
 
 on:
   push:
@@ -15,10 +15,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    permissions:
-      id-token: write # Required for Deno Deploy auth
-      contents: read
-
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
@@ -32,9 +28,9 @@ jobs:
         run: deno task test
         working-directory: server
 
-      - name: Deploy to Deno Deploy
-        run: deno deploy --org "${{ vars.DENO_DEPLOY_ORG }}" --app "${{ vars.DENO_DEPLOY_APP }}" --prod
+      - name: Deploy to Fly.io
+        uses: superfly/flyctl-actions/deploy@v1
+        with:
+          args: "--remote-only"
         env:
-          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
-          CORS_ORIGIN: ${{ vars.CORS_ORIGIN || 'https://tankhoitv.github.io' }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET || '' }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

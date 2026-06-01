@@ -237,7 +237,9 @@ function beginDraftingPhase(room: Room): void {
 	let cursor = 0;
 
 	room.players.forEach((player, _index) => {
-		player.hand = shuffled.slice(cursor, cursor + HAND_SIZE).map((c) => c.card_id);
+		player.hand = shuffled
+			.slice(cursor, cursor + HAND_SIZE)
+			.map((c) => c.card_id);
 		cursor += HAND_SIZE;
 		player.chosen = [];
 		player.ready = false;

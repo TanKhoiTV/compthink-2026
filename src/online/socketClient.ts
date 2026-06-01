@@ -25,10 +25,10 @@ const isProduction =
 		window.location.hostname.includes("github.io"));
 
 let serverBaseUrl = isProduction
-	? "https://trekkopoly.compthink-2026.deno.net"
+	? (localStorage.getItem("trekkopoly_server_url") ?? "https://khoinguyentran-trekkopoly-server.hf.space")
 	: "http://localhost:8080";
 let wsBaseUrl = isProduction
-	? "wss://trekkopoly.compthink-2026.deno.net"
+	? serverBaseUrl.replace(/^http/, "ws")
 	: "ws://localhost:8080";
 
 // ── Auth state ────────────────────────────────────────────────────────────
