@@ -126,26 +126,6 @@ export function initLocalGame(
  * Useful when the DOM wasn't ready during initial snapshot application
  * (e.g., hash bypass test mode).
  */
-export function refreshLocalSnapshot(): void {
-	if (localRoom && localPlayerId) {
-		applySnapshotToState(
-			exportSnapshot(localRoom, localPlayerId),
-			localCards,
-			localPlayerId,
-		);
-		rerenderGameShell();
-		// Force-start the draft timer if DOM is now ready, timer not running,
-		// and we're still in the draft phase
-		if (
-			draftTimerId === null &&
-			document.querySelector(".hand-card") &&
-			exportSnapshot(localRoom, localPlayerId).phase === "draft"
-		) {
-			startDraftTimer();
-		}
-	}
-}
-
 /**
  * Clean up any running local game.
  */

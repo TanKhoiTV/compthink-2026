@@ -339,6 +339,10 @@ function startSinglePlayerGame() {
  * Deal DRAFT_POOL_SIZE (7) cards from the deck into the draft pool.
  * Set phase to "draft", render the game screen.
  */
+/**
+ * @deprecated Legacy game loop entry point. Unreachable from Room FSM.
+ * Game loop is driven by localRoom.ts's bot timers and state machine.
+ */
 function startDailyDraft() {
 	const deck = getDeck();
 	const shuffled = shuffleCards(deck);
@@ -509,6 +513,10 @@ function placeBotCardsAfterPlayerMove(sourceCard: TravelCard) {
  * End the current day: score base VP from the day's board cells,
  * advance to next day (or finish).
  */
+/**
+ * @deprecated Legacy day-advance function. Superseded by `confirmDay` in Room FSM.
+ * The simulation scoring path (runSystemSimulation) still references this indirectly.
+ */
 function endCurrentDay() {
 	if (getGamePhase() !== "placement") return;
 
@@ -663,6 +671,10 @@ function applyDailyScoreOnce() {
 
 // ── Draft timer ───────────────────────────────────────────────────────────
 
+/**
+ * @deprecated Legacy draft timer. Superseded by localRoom.ts startDraftTimer().
+ * The localRoom.ts version uses the same pattern but is driven by the Room FSM.
+ */
 function startDraftTimer() {
 	stopDraftTimer();
 
@@ -716,6 +728,9 @@ function stopTurnTimer() {
 	}
 }
 
+/**
+ * @deprecated Legacy turn/placement timer. Superseded by localRoom.ts startPlacementTimer().
+ */
 function startTurnTimer() {
 	stopTurnTimer();
 
@@ -738,6 +753,9 @@ function startTurnTimer() {
 	}, TIMER_TICK_INTERVAL_MS);
 }
 
+/**
+ * @deprecated Legacy day/phase sequencer. Superseded by Room FSM.
+ */
 function startNextDayOrPhase() {
 	// Guard: only advance from simulation or placement; prevents stale
 	// timeouts from a previous replay from advancing the game out of order.
@@ -1402,36 +1420,7 @@ loadAuthSession();
 if (window.location.hash === "#test-game") {
 	startBotGame("p1", "Nhà Lữ Hành", 3);
 	transitionToScreen("game");
-
-	// After DOM renders, start draft countdown
-	window.setTimeout(() => {
-		let secondsLeft = DRAFT_PICK_SECONDS;
-		setDraftPickSecondsLeft(secondsLeft);
-		const strong: HTMLElement | null = document.querySelector(
-			".score-breakdown__timer strong",
-		);
-		if (!strong) return;
-		strong.textContent = secondsLeft + "s";
-
-		const timerId = window.setInterval(() => {
-			secondsLeft--;
-			setDraftPickSecondsLeft(secondsLeft);
-			strong.textContent = secondsLeft + "s";
-
-			// Danger pulse when time is low
-			const timerEl = strong.closest(".score-breakdown__timer");
-			if (timerEl) {
-				timerEl.classList.toggle(
-					"score-breakdown__timer--danger",
-					secondsLeft <= 3,
-				);
-			}
-
-			if (secondsLeft <= 0) {
-				clearInterval(timerId);
-			}
-		}, 1000);
-	}, 500);
+	// Timer is handled by localRoom.ts:applySnapshotAndRender()
 } else {
 	transitionToScreen("dashboard");
 }
