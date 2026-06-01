@@ -28,6 +28,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: add-trekpology
+
+      - name: Patch old client socket URL → old server on HF
+        run: |
+          # Override the localhost URL to the old-stack HF Space
+          OLD_URL='"http://localhost:3001"'
+          NEW_URL='"https://khoinguyentran-trekkopoly-old-server.hf.space"'
+          sed -i "s|$OLD_URL|$NEW_URL|g" TREKPOLOGY/build/online/socketClient.js
+          grep -n 'io("' TREKPOLOGY/build/online/socketClient.js
 
       - name: Prepare deployment directory
         run: |
