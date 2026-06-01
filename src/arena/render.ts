@@ -33,6 +33,7 @@ import {
 	getIsPassingDraftCards,
 	getDeck,
 	getLocalCoinDebt,
+	getLocalPlayerReady,
 	currentPlayerId,
 	getDiscardedResourceCoinBonus,
 	getDiscardedResourceStaminaBonus,
@@ -750,6 +751,16 @@ export function renderResourceOrbs(): string {
 // ── End Day button ──────────────────────────────────────────────────────────
 
 function renderEndDayButton(): string {
+	const ready = getLocalPlayerReady();
+	if (ready) {
+		return `
+    <div class="end-day-bar">
+      <button class="end-day-btn end-day-btn--awaiting" disabled>
+        ⏳ Đang chờ người chơi khác...
+      </button>
+    </div>
+  `;
+	}
 	return `
     <div class="end-day-bar">
       <button class="end-day-btn" onclick="event.stopPropagation(); window['endCurrentDay']()">

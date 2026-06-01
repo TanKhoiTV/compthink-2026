@@ -133,13 +133,13 @@ function renderOnlineGameArenaShell(
           </div>
           ${
 						phase === "placement" || phase === "scoring"
-							? renderBoardGrid(
+							? `<section class="board-grid">${renderBoardGrid(
 									boardCellsToSlots(myPlayer.board, cards()),
 									snapshot.day - 1,
 									false,
 									false,
 									phase === "placement" ? getOnlineSelectedCardId() : null,
-								)
+								)}</section>`
 							: ""
 					}
         </div>

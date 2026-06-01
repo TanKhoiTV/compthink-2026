@@ -490,4 +490,16 @@ export function addDiscardedResourceBonus(coin: number, stamina: number) {
 	discardedResourceStaminaBonus += stamina;
 }
 
+// ── Player ready flag (for end-day button state) ─────────────────────────────
+
+let localPlayerReady = false;
+
+export function setLocalPlayerReady(v: boolean): void {
+	localPlayerReady = v;
+}
+
+export function getLocalPlayerReady(): boolean {
+	return localPlayerReady;
+}
+
 export { currentPlayerId, playerIds };

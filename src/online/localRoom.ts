@@ -43,6 +43,7 @@ import {
 	setIsPassingDraftCards,
 	getPlayerHand,
 	setRemainingTurnSeconds,
+	setLocalPlayerReady,
 } from "../state.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
@@ -277,14 +278,16 @@ function applySnapshotAndRender(): void {
 		stopDraftTimer();
 	}
 
-	// Update the placement timer
+	// Update the placement timer and ready-state flag
 	if (snapshot.phase === "placement") {
 		const myPlayer = snapshot.players.find((p) => p.playerId === localPlayerId);
+		setLocalPlayerReady(myPlayer?.ready ?? false);
 		if (myPlayer && !myPlayer.ready) {
 			setRemainingTurnSeconds(TURN_DURATION_SECONDS);
 			startPlacementTimer();
 		}
 	} else {
+		setLocalPlayerReady(false);
 		stopPlacementTimer();
 	}
 
