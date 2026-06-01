@@ -27,14 +27,18 @@ import {
 import { createBotPlayer, scheduleBotTurns } from "../../server/bot.ts";
 import type { TravelCard, TimeSlot } from "../shared/types.ts";
 import { applySnapshotToState } from "./snapshotAdapter.ts";
-import { rerenderGameShell } from "../router.ts";
+import { rerenderGameShell, updateTimerDom } from "../router.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import {
 	setIsInitialDealInProgress,
 	setIsPassingDraftCards,
+	getPlayerHand,
+	setDraftPickSecondsLeft,
+	setRemainingTurnSeconds,
 } from "../state.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
+import { DRAFT_PICK_SECONDS, TURN_DURATION_SECONDS } from "../shared/constants.ts";
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -42,6 +46,7 @@ let localRoom: Room | null = null;
 let localPlayerId: string | null = null;
 let localCards: TravelCard[] = [];
 let botTimerIds: number[] = [];
+let draftTimerId: number | null = null;
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -120,8 +125,16 @@ export function cleanupLocalGame(): void {
 		clearTimeout(id);
 	}
 	botTimerIds = [];
+	clearDraftTimer();
 	localRoom = null;
 	localPlayerId = null;
+}
+
+function clearDraftTimer(): void {
+	if (draftTimerId !== null) {
+		clearInterval(draftTimerId);
+		draftTimerId = null;
+	}
 }
 
 /**
@@ -146,6 +159,8 @@ export function getLocalPlayerId(): string | null {
 export function localDraftCard(cardId: string, mode: "store" | "rest"): void {
 	if (!localRoom || !localPlayerId) return;
 	try {
+		// Clear the draft timer — player is making a choice
+		clearDraftTimer();
 		draftCard(localRoom, localPlayerId, cardId, mode);
 		applySnapshotAndRender();
 		scheduleBots();
@@ -234,6 +249,9 @@ function applySnapshotAndRender(): void {
 					"is-dealing",
 					"deal-active",
 				);
+
+				// Start draft pick timer after deal animation completes
+				startDraftTimer();
 			}, DEAL_ANIMATION_MS);
 		}
 
@@ -242,9 +260,59 @@ function applySnapshotAndRender(): void {
 			// Play pass animation.
 			setIsPassingDraftCards(true);
 		}
+	} else {
+		// Not in draft — clear the draft timer
+		clearDraftTimer();
+	}
+
+	// Update the placement timer
+	if (snapshot.phase === "placement") {
+		const myPlayer = snapshot.players.find(
+			(p) => p.playerId === localPlayerId,
+		);
+		if (myPlayer && !myPlayer.ready) {
+			setRemainingTurnSeconds(TURN_DURATION_SECONDS);
+		}
 	}
 
 	rerenderGameShell();
+}
+
+/**
+ * Start a countdown timer for the current draft round.
+ * When time expires, auto-pick the first card in hand.
+ */
+function startDraftTimer(): void {
+	clearDraftTimer();
+
+	const hand = getPlayerHand();
+	if (hand.length === 0) return;
+
+	let secondsLeft = DRAFT_PICK_SECONDS;
+	setDraftPickSecondsLeft(secondsLeft);
+
+	draftTimerId = window.setInterval(() => {
+		secondsLeft--;
+		setDraftPickSecondsLeft(secondsLeft);
+		updateTimerDom();
+
+		if (secondsLeft <= 0) {
+			clearDraftTimer();
+
+			// Auto-pick the first card in hand
+			const firstCard = getPlayerHand()[0];
+			if (firstCard && localRoom && localPlayerId) {
+				try {
+					draftCard(localRoom, localPlayerId, firstCard.id, "store");
+					applySnapshotAndRender();
+					scheduleBots();
+				} catch (err: unknown) {
+					const msg = err instanceof Error ? err.message : String(err);
+					console.warn("[localRoom] auto-draft failed:", msg);
+				}
+			}
+		}
+	}, 1000);
 }
 
 /**
