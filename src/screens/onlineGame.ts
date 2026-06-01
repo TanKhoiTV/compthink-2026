@@ -26,6 +26,51 @@ import {
 	TIME_SLOTS,
 	SLOT_NAMES,
 } from "../shared/board.ts";
+import { playGameSound } from "../audio/gameAudio.ts";
+import {
+	getIsInitialDealInProgress,
+	setIsInitialDealInProgress,
+	setIsPassingDraftCards,
+	getDraftTimerId,
+	setDraftTimerId,
+	getPlacementTimerId,
+	setPlacementTimerId,
+	setRemainingTurnSeconds,
+	setDraftPickSecondsLeft,
+} from "../state.ts";
+import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
+import {
+	DRAFT_PICK_SECONDS,
+	TURN_DURATION_SECONDS,
+} from "../shared/constants.ts";
+import { TIMER_TICK_INTERVAL_MS } from "../shared/animations.ts";
+
+// ── Local timer DOM update (avoids circular dependency with router.ts) ──────
+
+function updateTimerDom(): void {
+	const timerEl = document.querySelector(".score-breakdown__timer");
+	if (!timerEl) return;
+	const strongEl = timerEl.querySelector("strong");
+	if (!strongEl) return;
+
+	import("../state.ts").then((s) => {
+		const phase = s.getGamePhase();
+		if (phase === "draft") {
+			const secs = s.getDraftPickSecondsLeft();
+			strongEl.textContent = `${secs}s`;
+			timerEl.classList.toggle("score-breakdown__timer--danger", secs <= 3);
+		} else if (phase === "placement") {
+			const secs = s.getRemainingTurnSeconds();
+			const m = Math.floor(Math.max(0, secs) / 60);
+			const safeSec = Math.max(0, secs) % 60;
+			strongEl.textContent = `${m}:${safeSec < 10 ? "0" : ""}${safeSec}`;
+			timerEl.classList.toggle("score-breakdown__timer--danger", secs <= 10);
+		}
+	});
+}
+
+// Animation state tracking for online mode
+let wasHandEmpty = true;
 
 // ── Main entry ──────────────────────────────────────────────────────────────
 
@@ -326,7 +371,7 @@ function renderOnlinePlacementContent(
 						const isSelected = selectedId === card.card_id;
 						return `
             <div class="online-placement-card" data-online-select="${card.card_id}">
-              <div class="placement-card ${isSelected ? "placement-card--selected" : ""}" data-hand-card-id="${card.card_id}">
+              <div class="placement-card ${isSelected ? "placement-card--selected" : ""}" data-hand-card-id="${card.card_id}" draggable="true">
                 ${renderHandCard(card, idx, isSelected ? card.card_id : null)}
               </div>
               <button class="online-placement-card__place" data-online-place="${card.card_id}">📌 Đặt</button>
@@ -357,6 +402,26 @@ function renderOnlinePlacementContent(
     `
 				: ""
 		}
+
+    {/* Discard zone */}
+    <section
+      class="deck-pile-panel"
+      data-discard-drop-zone="true"
+      title="Kéo thả lá bài trên tay vào đây để discard và nhận lại Xu/Thể lực bằng chi phí của lá."
+    >
+      <div class="deck-pile-panel__visual">
+        <div class="deck-card-stack">
+          <div class="deck-card-stack__card deck-card-stack__card--back-3"></div>
+          <div class="deck-card-stack__card deck-card-stack__card--back-2"></div>
+          <div class="deck-card-stack__card deck-card-stack__card--back-1"></div>
+          <div class="deck-card-stack__card deck-card-stack__card--front">
+            <span>CÒN</span>
+            <strong>${getCurrentCards()?.length}</strong>
+            <em>lá</em>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <div class="online-placement-actions">
       <button class="btn btn--primary" id="online-confirm-day-btn">✅ Kết thúc ngày ${currentDay}</button>
@@ -527,6 +592,20 @@ export function initOnlineGameGlobals() {
 		});
 	});
 
+	// Placement: drag start for discard
+	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
+		el.addEventListener("dragstart", (e) => {
+			const cardId = el.getAttribute("data-hand-card-id");
+			if (cardId) {
+				const dragEvent = e as DragEvent;
+				if (dragEvent.dataTransfer) {
+					dragEvent.dataTransfer.setData("text/plain", cardId);
+					dragEvent.dataTransfer.effectAllowed = "move";
+				}
+			}
+		});
+	});
+
 	// Placement: place button
 	document.querySelectorAll("[data-online-place]").forEach((btn) => {
 		btn.addEventListener("click", (e) => {
@@ -589,6 +668,194 @@ export function initOnlineGameGlobals() {
 			}
 		});
 	});
+
+	// Discard zone - handle drop events
+	document.querySelectorAll("[data-discard-drop-zone='true']").forEach((zone) => {
+		zone.addEventListener("dragover", (e) => {
+			e.preventDefault(); // Allow drop
+			const canDiscard = () => {
+				const phase = getCurrentGameSnapshot()?.phase;
+				return phase === "placement" && !getIsInitialDealInProgress();
+			};
+			if (canDiscard()) {
+				zone.classList.add("deck-pile-panel--discard-hover");
+			}
+		});
+		
+		zone.addEventListener("dragleave", () => {
+			zone.classList.remove("deck-pile-panel--discard-hover");
+		});
+		
+		zone.addEventListener("drop", (e) => {
+			e.preventDefault();
+			zone.classList.remove("deck-pile-panel--discard-hover");
+			
+			// Get the card ID from the data-transfer
+			const dragEvent = e as DragEvent;
+			const cardId = dragEvent.dataTransfer?.getData("text/plain");
+			if (cardId) {
+				handleOnlineDiscardCard(cardId);
+			}
+		});
+	});
+
+	// Animation updates - call after each render to check for animation triggers
+	updateOnlineGameAnimations();
+}
+
+/**
+ * Update animation state based on current game state.
+ * This should be called after each render to check for animation triggers.
+ */
+function updateOnlineGameAnimations(): void {
+	const snapshot = getCurrentGameSnapshot();
+	if (!snapshot) return;
+
+	const handEl = document.querySelector(".player-hand--draft");
+	const hadHandCards = wasHandEmpty === false; // Previous state
+	const hasHandCards = handEl?.querySelector(".hand-card") !== null;
+
+	if (snapshot.phase === "draft") {
+		if (hasHandCards && !hadHandCards) {
+			// Pass complete — new cards just arrived. Play deal animation.
+			playGameSound("deal");
+			setIsPassingDraftCards(false);
+			setIsInitialDealInProgress(true);
+
+			const hand = document.querySelector(".player-hand--draft");
+			hand?.classList.add("deal-active");
+
+			window.setTimeout(() => {
+				setIsInitialDealInProgress(false);
+				const hand = document.querySelector(".player-hand");
+				hand?.classList.remove(
+					"player-hand--dealing",
+					"is-dealing",
+					"deal-active",
+				);
+
+				// Start draft pick timer after deal animation completes
+				startOnlineDraftTimer();
+			}, DEAL_ANIMATION_MS);
+		}
+
+		if (!hasHandCards && hadHandCards) {
+			// Hand just got emptied — player picked, remaining cards passed back.
+			// Play pass animation.
+			setIsPassingDraftCards(true);
+		}
+
+		// Fallback: cards are in the DOM but no timer running (e.g., DOM wasn't
+		// ready during the first call, or refresh after transitionToScreen).
+		if (hasHandCards) {
+			const timerId = getDraftTimerId();
+			if (timerId === null) {
+				startOnlineDraftTimer();
+			}
+		}
+	} else {
+		// Not in draft — clear the draft timer
+		stopOnlineDraftTimer();
+	}
+
+	// Update placement timer
+	if (snapshot.phase === "placement") {
+		const myPlayer = snapshot.players.find(
+			(p) => p.playerId === getCurrentPlayerId(),
+		);
+		if (myPlayer && !myPlayer.ready) {
+			setRemainingTurnSeconds(TURN_DURATION_SECONDS);
+			startOnlinePlacementTimer();
+		}
+	} else {
+		stopOnlinePlacementTimer();
+	}
+
+	// Update hand empty state for next comparison
+	wasHandEmpty = !hasHandCards;
+}
+
+// Draft timer functions for online mode
+function startOnlineDraftTimer(): void {
+	stopOnlineDraftTimer();
+
+	const hand =
+		getCurrentCards()?.filter(
+			(c) =>
+				getCurrentGameSnapshot()
+					?.players.find((p) => p.playerId === getCurrentPlayerId())
+					?.hand.includes(c.card_id) ?? [],
+		) ?? [];
+
+	if (hand.length === 0) return;
+
+	// Guard: only start the timer if we're still in the draft phase
+	const snapshot = getCurrentGameSnapshot();
+	if (!snapshot || snapshot.phase !== "draft") return;
+
+	let secondsLeft = DRAFT_PICK_SECONDS;
+	setDraftPickSecondsLeft(secondsLeft);
+
+	const timerId = window.setInterval(() => {
+		secondsLeft--;
+		setDraftPickSecondsLeft(secondsLeft);
+		updateTimerDom();
+
+		if (secondsLeft <= 0) {
+			stopOnlineDraftTimer();
+
+			// Auto-pick the first card in hand
+			const firstCard = hand[0];
+			if (firstCard) {
+				// Re-check phase — the game may have transitioned since the timer started
+				const currentSnapshot = getCurrentGameSnapshot();
+				if (!currentSnapshot || currentSnapshot.phase !== "draft") return;
+				handleOnlineDraftCard(firstCard.card_id, "store");
+			}
+		}
+	}, TIMER_TICK_INTERVAL_MS);
+
+	setDraftTimerId(timerId);
+}
+
+function stopOnlineDraftTimer(): void {
+	const id = getDraftTimerId();
+	if (id !== null) {
+		clearInterval(id);
+		setDraftTimerId(null);
+	}
+}
+
+// Placement timer functions for online mode
+function startOnlinePlacementTimer(): void {
+	stopOnlinePlacementTimer();
+
+	let secondsLeft = TURN_DURATION_SECONDS;
+	setRemainingTurnSeconds(secondsLeft);
+
+	const timerId = window.setInterval(() => {
+		secondsLeft--;
+		setRemainingTurnSeconds(secondsLeft);
+		updateTimerDom();
+
+		if (secondsLeft <= 0) {
+			stopOnlinePlacementTimer();
+
+			if (getCurrentGameSnapshot()) {
+				handleOnlineConfirmDay();
+			}
+		}
+	}, TIMER_TICK_INTERVAL_MS);
+
+	setPlacementTimerId(timerId);
+}
+
+function stopOnlinePlacementTimer(): void {
+	const id = getPlacementTimerId();
+	if (id !== null) {
+		clearInterval(id);
+		setPlacementTimerId(null);
+	}
 }
 
 function rerenderOnlineGame(): void {
@@ -658,5 +925,19 @@ async function handleOnlineConfirmDay(): Promise<void> {
 	} catch (err: unknown) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.warn("[onlineGame] confirmDay failed:", msg);
+	}
+}
+
+// Discard card from hand to deck (rest action)
+async function handleOnlineDiscardCard(cardId: string): Promise<void> {
+	const snapshot = getCurrentGameSnapshot();
+	if (!snapshot) return;
+
+	try {
+		await rpcCall("draftCard", { cardId, mode: "rest" });
+		_selectedOnlineCardId = null;
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.warn("[onlineGame] discardCard failed:", msg);
 	}
 }

@@ -448,6 +448,18 @@ export function setSimulationAdvanceTimeoutId(id: number | null) {
 	simulationAdvanceTimeoutId = id;
 }
 
+// ── Timer state ───────────────────────────────────────────────────────────
+
+let placementTimerId: number | null = null;
+
+export function getPlacementTimerId(): number | null {
+	return placementTimerId;
+}
+
+export function setPlacementTimerId(id: number | null) {
+	placementTimerId = id;
+}
+
 // ── Discard resource bonus (refunded from discarded hand cards) ────────────
 
 let discardedResourceCoinBonus = 0;
