@@ -27,7 +27,6 @@ import {
 } from "../shared/board.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import {
-	getIsInitialDealInProgress,
 	setIsInitialDealInProgress,
 	setIsPassingDraftCards,
 	getDraftTimerId,
@@ -311,7 +310,7 @@ function renderOnlineDraftContent(
 
 function renderOnlineDraftCard(card: TravelCard, _index: number): string {
 	return `
-    <div class="daily-draft-card daily-draft-card--${_index + 1}" data-draft-card-id="${card.card_id}" data-online-draft-pick="${card.card_id}">
+    <div class="daily-draft-card daily-draft-card--${_index + 1}" data-draft-card-id="${card.card_id}">
       ${renderHandCard(card, _index, null)}
     </div>
   `;
@@ -369,8 +368,8 @@ function renderOnlinePlacementContent(
 					.map((card, idx) => {
 						const isSelected = selectedId === card.card_id;
 						return `
-            <div class="online-placement-card" data-online-select="${card.card_id}">
-              <div class="placement-card ${isSelected ? "placement-card--selected" : ""}" data-hand-card-id="${card.card_id}" draggable="true">
+            <div class="online-placement-card">
+              <div class="placement-card ${isSelected ? "placement-card--selected" : ""}" data-hand-card-id="${card.card_id}" onpointerdown="event.stopPropagation(); startHandPointerDrag(event, '${card.card_id}')">
                 ${renderHandCard(card, idx, isSelected ? card.card_id : null)}
               </div>
               <button class="online-placement-card__place" data-online-place="${card.card_id}">📌 Đặt</button>
@@ -500,7 +499,9 @@ function renderOnlineBoardGrid(
 						return `
             <div
               class="board-cell${cell ? " board-cell--occupied board-cell--clickable" : " board-cell--empty"}${canPlace ? " board-cell--placeable" : ""}${!isCurrentDay ? " board-cell--not-current-day" : ""}"
-              data-online-board="${rowIdx},${colIdx}"
+              data-board-cell="true"
+              data-row-index="${rowIdx}"
+              data-col-index="${colIdx}"
               title="${cell ? escapeHtml(cell.name) : isCurrentDay ? (canPlace ? "Thả thẻ vào ô này" : "") : "Không phải ngày hiện tại"}"
             >
               ${cell ? renderBoardMiniCard(cell) : `<span class="empty-plus">+</span>`}
@@ -569,39 +570,25 @@ export function initOnlineGameGlobals() {
 	}
 
 	// Draft: click card to pick (store) — Sushi Go style, like offline mode
-	document.querySelectorAll("[data-online-draft-pick]").forEach((el) => {
+	document.querySelectorAll("[data-draft-card-id]").forEach((el) => {
 		el.addEventListener("click", (e) => {
 			e.stopPropagation();
 			const cardId = (e.currentTarget as HTMLElement).getAttribute(
-				"data-online-draft-pick",
+				"data-draft-card-id",
 			);
 			if (cardId) handleOnlineDraftCard(cardId, "store");
 		});
 	});
 
 	// Placement: select card from hand
-	document.querySelectorAll("[data-online-select]").forEach((el) => {
+	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
 		el.addEventListener("click", (e) => {
 			const cardId = (e.currentTarget as HTMLElement).getAttribute(
-				"data-online-select",
+				"data-hand-card-id",
 			);
 			if (!cardId) return;
 			_selectedOnlineCardId = cardId;
 			rerenderOnlineGame();
-		});
-	});
-
-	// Placement: drag start for discard
-	document.querySelectorAll("[data-hand-card-id]").forEach((el) => {
-		el.addEventListener("dragstart", (e) => {
-			const cardId = el.getAttribute("data-hand-card-id");
-			if (cardId) {
-				const dragEvent = e as DragEvent;
-				if (dragEvent.dataTransfer) {
-					dragEvent.dataTransfer.setData("text/plain", cardId);
-					dragEvent.dataTransfer.effectAllowed = "move";
-				}
-			}
 		});
 	});
 
@@ -617,13 +604,11 @@ export function initOnlineGameGlobals() {
 	});
 
 	// Placement: board cell click (place or select cell)
-	document.querySelectorAll("[data-online-board]").forEach((el) => {
+	document.querySelectorAll("[data-board-cell]").forEach((el) => {
 		el.addEventListener("click", (e) => {
-			const coords = (e.currentTarget as HTMLElement).getAttribute(
-				"data-online-board",
-			);
-			if (!coords || !_selectedOnlineCardId) return;
-			const [rowStr] = coords.split(",");
+			const cellEl = e.currentTarget as HTMLElement;
+			const rowStr = cellEl.getAttribute("data-row-index");
+			if (!rowStr || !_selectedOnlineCardId) return;
 			const row = Number(rowStr);
 			if (!Number.isInteger(row)) return;
 			handleOnlinePlaceCardOnBoard(_selectedOnlineCardId, row);
@@ -645,37 +630,11 @@ export function initOnlineGameGlobals() {
 		});
 	});
 
-	// Discard zone - handle drop events
-	document
-		.querySelectorAll("[data-discard-drop-zone='true']")
-		.forEach((zone) => {
-			zone.addEventListener("dragover", (e) => {
-				e.preventDefault(); // Allow drop
-				const canDiscard = () => {
-					const phase = getCurrentGameSnapshot()?.phase;
-					return phase === "placement" && !getIsInitialDealInProgress();
-				};
-				if (canDiscard()) {
-					zone.classList.add("deck-pile-panel--discard-hover");
-				}
-			});
-
-			zone.addEventListener("dragleave", () => {
-				zone.classList.remove("deck-pile-panel--discard-hover");
-			});
-
-			zone.addEventListener("drop", (e) => {
-				e.preventDefault();
-				zone.classList.remove("deck-pile-panel--discard-hover");
-
-				// Get the card ID from the data-transfer
-				const dragEvent = e as DragEvent;
-				const cardId = dragEvent.dataTransfer?.getData("text/plain");
-				if (cardId) {
-					handleOnlineDiscardCard(cardId);
-				}
-			});
-		});
+	// Register global discard handler so the unified pointer drag system
+	// (handleHandPointerUp in app.ts) routes discard via online RPC.
+	(globalThis as any).handleDiscardCard = (cardId: string) => {
+		if (cardId) handleOnlineDiscardCard(cardId);
+	};
 
 	// Animation updates - call after each render to check for animation triggers
 	updateOnlineGameAnimations();
