@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages (TREKPOLOGY — old codebase)
 
 on:
   push:
@@ -28,34 +28,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build client bundle
-        run: npm run build
 
       - name: Prepare deployment directory
         run: |
-          mkdir -p _site/build _site/assets
-          # Root files
-          cp index.html _site/
-          cp sw.js _site/
-          cp manifest.json _site/
-          # Build output
-          cp build/client.js _site/build/
-          cp build/client.css _site/build/
-          cp build/client.js.map _site/build/ 2>/dev/null || true
-          # Assets (strip public/ prefix — SW expects /assets/...)
-          cp -r public/assets/* _site/assets/
+          mkdir -p _site
+          cp -r TREKPOLOGY/* _site/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
