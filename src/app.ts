@@ -1381,7 +1381,14 @@ import {
 // dashboard and lobby can show the logged-in user's name.
 loadAuthSession();
 
-transitionToScreen("dashboard");
+// URL hash test mode: skip dashboard, jump directly into a single-player game
+// with bots. Uses the same Room FSM as online multiplayer.
+if (window.location.hash === "#test-game") {
+	startBotGame("p1", "Nhà Lữ Hành", 3);
+	transitionToScreen("game");
+} else {
+	transitionToScreen("dashboard");
+}
 
 // ── Version watermark ────────────────────────────────────────────────────
 // Always visible bottom-right so testers can report which version they see.
