@@ -23,20 +23,30 @@ import {
 	setAccumulatedVP,
 	setOpponentPlayers,
 	setCurrentPlayerName,
+	setDiscardedResourceCoinBonus,
+	setDiscardedResourceStaminaBonus,
+	setLocalCoinDebt,
+	setSelectedHandCardId,
+	setDraftSelectedCardId,
+	setDraftPickSecondsLeft,
+	setRemainingTurnSeconds,
+	setIsInitialDealInProgress,
+	setIsPassingDraftCards,
+	setIsSimulationMode,
+	setPhaseNumber,
 } from "../state.ts";
 import { boardCellsToSlots } from "../shared/board.ts";
 import type { RoomSnapshot, TravelCard } from "../shared/types.ts";
 
 /**
- * Convert a single player's state from snapshot into the local state getters.
- * Call this before renderMainArena() so the arena renders identically for
- * singleplayer and multiplayer.
+ * Sync ALL local state fields from a server/local RoomSnapshot.
+ * Single point of truth — prevents the 9-field gap by setting EVERY field.
  *
  * @param snapshot - RoomSnapshot from server/localRoom
  * @param cards - Full card catalogue (for resolving card IDs to TravelCard objects)
  * @param myPlayerId - The local player's ID (null for non-player view)
  */
-export function applySnapshotToState(
+export function syncAllStateFromSnapshot(
 	snapshot: RoomSnapshot,
 	cards: TravelCard[],
 	myPlayerId: string | null,
@@ -55,6 +65,7 @@ export function applySnapshotToState(
 
 	// ── Phase mapping ────────────────────────────────────────────────────────
 	setGamePhase(phaseToLocal(snapshot.phase));
+	setIsSimulationMode(snapshot.phase === "scoring");
 
 	// ── Day (0-based for local state) ─────────────────────────────────────────
 	setCurrentDayIndex(snapshot.day - 1);
@@ -64,7 +75,6 @@ export function applySnapshotToState(
 	setBoardSlots(slots);
 
 	// ── Hand cards ───────────────────────────────────────────────────────────
-	// Populate both hand and chosen from the snapshot
 	const handCards = myPlayer.hand
 		.map((cardId) => cards.find((c) => c.card_id === cardId))
 		.filter((c): c is TravelCard => c !== undefined);
@@ -73,8 +83,7 @@ export function applySnapshotToState(
 		.filter((c): c is TravelCard => c !== undefined);
 	setPlayerChosenCards(chosenCards);
 
-	// playerHand is used by renderPlayerHandSection(): show hand in draft,
-	// chosen cards in placement
+	// playerHand: show hand in draft, chosen in placement
 	if (snapshot.phase === "placement") {
 		setPlayerHand(chosenCards);
 	} else {
@@ -82,9 +91,6 @@ export function applySnapshotToState(
 	}
 
 	// ── Draft pool ────────────────────────────────────────────────────────────
-	// In snapshot, the player's hand IS the draft pool (the set of cards to
-	// pick from in this round). Since snapshot hides other players' hands,
-	// the local player only sees their own hand.
 	if (snapshot.phase === "draft") {
 		setDraftPool(handCards);
 		setDraftRound(snapshot.pickIndex + 1); // 0-based → 1-based
@@ -95,20 +101,39 @@ export function applySnapshotToState(
 	// ── Deck (from full card catalogue for display) ───────────────────────────
 	setDeck(cards);
 
-	// ── VP ───────────────────────────────────────────────────────────────────
+	// ── Scoring state ─────────────────────────────────────────────────────────
 	setAccumulatedVP(myPlayer.resources.vp);
 
 	// ── Opponent players (for sidebar display) ────────────────────────────────
 	const opponents = snapshot.players.filter((p) => p.playerId !== myPlayerId);
 	setOpponentPlayers(opponents);
 
-	// ── Player name ──────────────────────────────────────────────────────────
+	// ── Player identity ──────────────────────────────────────────────────────
 	setCurrentPlayerName(myPlayer.name);
 
-	// ── Timer values (preserved — localRoom manages the countdown) ──────────
-	// Timer is set by the localRoom's startDraftTimer()/startPlacementTimer().
-	// We do NOT overwrite here because the true remaining time is tracked
-	// by the interval timer, not the snapshot.
+	// ══════════════════════════════════════════════════════════════════════════
+	// MISSING FIELDS (9) — these were lost in the split sync approach
+	// ══════════════════════════════════════════════════════════════════════════
+
+	// ── Timer defaults ────────────────────────────────────────────────────────
+	// Set a default so renderers don't see NaN/null. The countdown is managed
+	// by localRoom.ts startDraftTimer()/startPlacementTimer() which overwrites.
+	setDraftPickSecondsLeft(30);
+	setRemainingTurnSeconds(120);
+	setPhaseNumber(snapshot.day); // 1-based day number
+
+	// ── Resource bonuses (clear for online; Room accounts for discards) ──────
+	setDiscardedResourceCoinBonus(0);
+	setDiscardedResourceStaminaBonus(0);
+	setLocalCoinDebt(myPlayer.resources.debtToken);
+
+	// ── Selection state (reset per render — animation controller sets them) ──
+	setSelectedHandCardId(null);
+	setDraftSelectedCardId(null);
+
+	// ── Animation flags (reset per render) ────────────────────────────────────
+	setIsInitialDealInProgress(false);
+	setIsPassingDraftCards(false);
 }
 
 /**

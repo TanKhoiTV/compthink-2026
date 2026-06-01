@@ -27,7 +27,7 @@ import {
 } from "../../server/game.ts";
 import { createBotPlayer, scheduleBotTurns } from "../../server/bot.ts";
 import type { TravelCard, TimeSlot } from "../shared/types.ts";
-import { applySnapshotToState } from "./snapshotAdapter.ts";
+import { syncAllStateFromSnapshot } from "./snapshotAdapter.ts";
 import { rerenderGameShell, updateTimerDom } from "../router.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import {
@@ -236,7 +236,7 @@ function applySnapshotAndRender(): void {
 	if (!localRoom || !localPlayerId) return;
 
 	const snapshot = exportSnapshot(localRoom, localPlayerId);
-	applySnapshotToState(snapshot, localCards, localPlayerId);
+	syncAllStateFromSnapshot(snapshot, localCards, localPlayerId);
 
 	// ── Draft animation triggers ───────────────────────────────────────────
 	// Track previous hand size to detect pass (hand shrinks) vs deal (new cards)
