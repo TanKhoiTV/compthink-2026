@@ -23,12 +23,9 @@ import {
 	setAccumulatedVP,
 	setOpponentPlayers,
 	setCurrentPlayerName,
-	setRemainingTurnSeconds,
-	setDraftPickSecondsLeft,
 } from "../state.ts";
 import { boardCellsToSlots } from "../shared/board.ts";
 import type { RoomSnapshot, TravelCard } from "../shared/types.ts";
-import type { PlayerState } from "../shared/types.ts";
 
 /**
  * Convert a single player's state from snapshot into the local state getters.
@@ -102,9 +99,10 @@ export function applySnapshotToState(
 	// ── Player name ──────────────────────────────────────────────────────────
 	setCurrentPlayerName(myPlayer.name);
 
-	// ── Timer (default values; real timer comes from server) ──────────────────
-	setRemainingTurnSeconds(60);
-	setDraftPickSecondsLeft(10);
+	// ── Timer values (preserved — localRoom manages the countdown) ──────────
+	// Timer is set by the localRoom's startDraftTimer()/startPlacementTimer().
+	// We do NOT overwrite here because the true remaining time is tracked
+	// by the interval timer, not the snapshot.
 }
 
 /**

@@ -121,6 +121,26 @@ export function initLocalGame(
 }
 
 /**
+ * Re-apply the latest snapshot to client state and re-render.
+ * Useful when the DOM wasn't ready during initial snapshot application
+ * (e.g., hash bypass test mode).
+ */
+export function refreshLocalSnapshot(): void {
+	if (localRoom && localPlayerId) {
+		applySnapshotToState(
+			exportSnapshot(localRoom, localPlayerId),
+			localCards,
+			localPlayerId,
+		);
+		rerenderGameShell();
+		// Force-start the draft timer if DOM is now ready and timer not running
+		if (draftTimerId === null && document.querySelector(".hand-card")) {
+			startDraftTimer();
+		}
+	}
+}
+
+/**
  * Clean up any running local game.
  */
 export function cleanupLocalGame(): void {
@@ -265,6 +285,12 @@ function applySnapshotAndRender(): void {
 			// Hand just got emptied — player picked, remaining cards passed back.
 			// Play pass animation.
 			setIsPassingDraftCards(true);
+		}
+
+		// Fallback: cards are in the DOM but no timer running (e.g., DOM wasn't
+		// ready during the first call, or refresh after transitionToScreen).
+		if (hasHandCards && draftTimerId === null) {
+			startDraftTimer();
 		}
 	} else {
 		// Not in draft — clear the draft timer

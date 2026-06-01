@@ -1386,6 +1386,36 @@ loadAuthSession();
 if (window.location.hash === "#test-game") {
 	startBotGame("p1", "Nhà Lữ Hành", 3);
 	transitionToScreen("game");
+
+	// After DOM renders, start draft countdown
+	window.setTimeout(() => {
+		let secondsLeft = DRAFT_PICK_SECONDS;
+		setDraftPickSecondsLeft(secondsLeft);
+		const strong: HTMLElement | null = document.querySelector(
+			".score-breakdown__timer strong",
+		);
+		if (!strong) return;
+		strong.textContent = secondsLeft + "s";
+
+		const timerId = window.setInterval(() => {
+			secondsLeft--;
+			setDraftPickSecondsLeft(secondsLeft);
+			strong.textContent = secondsLeft + "s";
+
+			// Danger pulse when time is low
+			const timerEl = strong.closest(".score-breakdown__timer");
+			if (timerEl) {
+				timerEl.classList.toggle(
+					"score-breakdown__timer--danger",
+					secondsLeft <= 3,
+				);
+			}
+
+			if (secondsLeft <= 0) {
+				clearInterval(timerId);
+			}
+		}, 1000);
+	}, 500);
 } else {
 	transitionToScreen("dashboard");
 }

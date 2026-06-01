@@ -28,7 +28,7 @@ let playerHand: TravelCard[] = [];
 
 let draftPool: TravelCard[] = []; // 7 cards shown for current pick round
 let draftSelectedCardId: string | null = null;
-let draftPickSecondsLeft = 10;
+let draftPickSecondsLeft = 180;
 let draftTimerId: number | null = null;
 let draftRound = 1;
 
@@ -115,7 +115,7 @@ let debtModalTimerId: number | null = null;
 
 // ── Timer state ──────────────────────────────────────────────────────────────
 
-let remainingTurnSeconds = 15;
+let remainingTurnSeconds = 180;
 let localCoinDebt = 0;
 
 // ── Drag state ───────────────────────────────────────────────────────────────
