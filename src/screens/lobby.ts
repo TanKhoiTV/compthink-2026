@@ -117,6 +117,9 @@ export function renderOnlineLobbyRoomScreen(
 
 	const safeRoomId = escapeHtml(roomId);
 	const safeSelfName = escapeHtml(selfPlayerName);
+	// First connected/joined player is the host
+	const host = players.find(p => p.isConnected || p.hasJoined);
+	const hostName = host ? escapeHtml(host.name) : "P1";
 
 	const playersHtml = players
 		.map((player) => {
@@ -141,7 +144,7 @@ export function renderOnlineLobbyRoomScreen(
 
 			return `
         <div class="online-lobby-player ${slotClass} ${isSelf ? "is-self" : ""}">
-          <div class="online-lobby-player__slot">${safePid.slice(0, 8).toUpperCase()}</div>
+          <div class="online-lobby-player__slot">${safePid.slice(0, 8).toUpperCase()}<span class="online-lobby-player__slot-label">ID</span></div>
           <div class="online-lobby-player__info">
             <strong>${safeDisplayName}</strong>
             <span>${player.isConnected ? (player.isReady ? "Sẵn sàng" : "Chưa sẵn sàng") : player.hasJoined ? "Đã offline • giữ slot" : "Trống"}</span>
@@ -191,7 +194,7 @@ export function renderOnlineLobbyRoomScreen(
         </div>
 
         <div class="online-lobby-card__hint">
-          Host là P1. Tất cả người chơi đang trong phòng cần bấm Sẵn sàng trước khi bắt đầu.
+          Host là ${hostName}. Tất cả người chơi đang trong phòng cần bấm Sẵn sàng trước khi bắt đầu.
         </div>
       </section>
     </main>
