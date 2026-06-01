@@ -85,7 +85,10 @@ function handleListRooms(): Response {
 		players: r.players.length,
 		maxPlayers: r.maxPlayers,
 	}));
-	return json(list);
+	return new Response(JSON.stringify(list), {
+		status: 200,
+		headers: { "Content-Type": "application/json" },
+	});
 }
 
 async function handleCreateRoom(req: Request): Promise<Response> {
@@ -94,13 +97,16 @@ async function handleCreateRoom(req: Request): Promise<Response> {
 	try {
 		body = await req.json();
 	} catch {
-		return errorResponse(400, "Invalid JSON body");
+		return new Response(
+			JSON.stringify({ error: "Invalid JSON body" }),
+			{ status: 400, headers: { "Content-Type": "application/json" } },
+		);
 	}
 
 	if (!Array.isArray(body.cards) || body.cards.length === 0) {
-		return errorResponse(
-			400,
-			"body.cards must be a non-empty array of TravelCard",
+		return new Response(
+			JSON.stringify({ error: "body.cards must be a non-empty array of TravelCard" }),
+			{ status: 400, headers: { "Content-Type": "application/json" } },
 		);
 	}
 
@@ -116,7 +122,10 @@ async function handleCreateRoom(req: Request): Promise<Response> {
 	rooms.set(roomId, room);
 
 	console.log(`[server] Room ${roomId} created (${body.cards.length} cards).`);
-	return json({ roomId }, 201);
+	return new Response(
+		JSON.stringify({ roomId }),
+		{ status: 201, headers: { "Content-Type": "application/json" } },
+	);
 }
 
 // ─── WebSocket handler ────────────────────────────────────────────────────────
@@ -145,12 +154,18 @@ async function handleWebSocket(req: Request): Promise<Response> {
 	}
 
 	if (!roomId) {
-		return errorResponse(400, "Missing roomId query parameter");
+		return new Response(
+			JSON.stringify({ error: "Missing roomId query parameter" }),
+			{ status: 400, headers: { "Content-Type": "application/json" } },
+		);
 	}
 
 	const room = rooms.get(roomId);
 	if (!room) {
-		return errorResponse(404, `Room ${roomId} not found`);
+		return new Response(
+			JSON.stringify({ error: `Room ${roomId} not found` }),
+			{ status: 404, headers: { "Content-Type": "application/json" } },
+		);
 	}
 
 	// Upgrade the HTTP request to a WebSocket connection
@@ -163,7 +178,10 @@ async function handleWebSocket(req: Request): Promise<Response> {
 		({ socket, response } = Deno.upgradeWebSocket(req));
 	} catch (err: unknown) {
 		const msg = err instanceof Error ? err.message : String(err);
-		return errorResponse(400, `WebSocket upgrade failed: ${msg}`);
+		return new Response(
+			JSON.stringify({ error: `WebSocket upgrade failed: ${msg}` }),
+			{ status: 400, headers: { "Content-Type": "application/json" } },
+		);
 	}
 
 	const session = createPlayerSession(playerId, name, socket, authUser);
