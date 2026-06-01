@@ -14,4 +14,5 @@ RUN mkdir -p /app/server/data
 EXPOSE 8080
 
 # Run the server with all needed permissions
-CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "--no-check", "server/server.ts"]
+# --no-lock: ignore deno.lock version mismatch (lockfile v5 vs older image)
+CMD ["deno", "run", "--no-lock", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "--no-check", "server/server.ts"]
