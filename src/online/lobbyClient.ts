@@ -102,12 +102,20 @@ export function initLobbyGlobals() {
 // ── Navigation ─────────────────────────────────────────────────────────────
 
 function gotoOnlineLobby() {
+	// Close any open dashboard modals before leaving
+	document.querySelectorAll(".hub-modal--open").forEach((m) =>
+		m.classList.remove("hub-modal--open"),
+	);
 	import("../router.ts").then(({ transitionToScreen }) => {
 		transitionToScreen("lobby");
 	});
 }
 
 function gotoDashboard() {
+	// Close any open modals before leaving
+	document.querySelectorAll(".hub-modal--open").forEach((m) =>
+		m.classList.remove("hub-modal--open"),
+	);
 	disconnectFromRoom();
 	currentRoomId = null;
 	currentPlayerId = null;
@@ -376,10 +384,10 @@ function handleDisconnect() {
 	currentPlayerName = null;
 	currentLobbySnapshot = null;
 
-	// If on lobby screen, re-render to show entry
+	// If on lobby screen (entry or room), re-render to show entry
 	if (
-		window.location.pathname.includes("lobby") ||
-		document.querySelector(".online-lobby-screen")
+		document.querySelector(".online-lobby-screen") ||
+		document.querySelector(".online-entry-screen")
 	) {
 		gotoOnlineLobby();
 	}
