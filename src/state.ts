@@ -55,12 +55,29 @@ export function setCurrentPlayerBoard(nextBoard: BoardSlots) {
 	playerBoards[currentPlayerId] = nextBoard;
 }
 
+/** Direct setter used by snapshotAdapter to replace board for any player. */
+export function setBoardSlots(slots: BoardSlots) {
+	playerBoards[currentPlayerId] = slots;
+}
+
 export function getBoardSlots(): BoardSlots {
 	return getCurrentPlayerBoard();
 }
 
 export function getOpponentPlayerIds(): PlayerId[] {
 	return playerIds.filter((id) => id !== currentPlayerId);
+}
+
+// ── Opponent display state (from snapshot) ─────────────────────────────────--
+
+let opponentPlayers: import("./shared/types.ts").PlayerState[] = [];
+
+export function setOpponentPlayers(players: import("./shared/types.ts").PlayerState[]) {
+	opponentPlayers = players;
+}
+
+export function getOpponentPlayers(): import("./shared/types.ts").PlayerState[] {
+	return opponentPlayers;
 }
 
 // ── Phase state ──────────────────────────────────────────────────────────────
@@ -148,6 +165,27 @@ export function getPlayerHand(): TravelCard[] {
 
 export function setPlayerHand(hand: TravelCard[]) {
 	playerHand = hand;
+}
+
+// ── Chosen cards & player name (for snapshot-based rendering) ───────────────--
+
+let playerChosenCards: TravelCard[] = [];
+let currentPlayerName = "";
+
+export function getPlayerChosenCards(): TravelCard[] {
+	return playerChosenCards;
+}
+
+export function setPlayerChosenCards(cards: TravelCard[]) {
+	playerChosenCards = cards;
+}
+
+export function getCurrentPlayerName(): string {
+	return currentPlayerName;
+}
+
+export function setCurrentPlayerName(name: string) {
+	currentPlayerName = name;
 }
 
 export function getCurrentDayIndex(): number {
