@@ -503,6 +503,7 @@ function completeOnlineDraftPoolPassAndDeal() {
   draftHandPendingCardId = null;
   draftPoolFlyReturnCardId = null;
   isPassingDraftCards = false;
+  resetDraftPoolCollapseState();
   isInitialDealInProgress = true;
 
   const roomState = onlineClientState.roomState;
@@ -540,6 +541,7 @@ function beginOnlineDraftPoolPass(
 
   draftSelectedCardId = null;
   draftPoolFlyReturnCardId = null;
+  resetDraftPoolCollapseState();
 
   shouldActivateOnlineDealAnimation = false;
   shouldActivateOnlinePassAnimation = true;
@@ -1015,6 +1017,7 @@ function applyOnlineRoomStateToLocal() {
     */
     if (enteredDraft) {
       clearOnlineDraftAnimationTimer();
+      resetDraftPoolCollapseState();
       draftHandPendingCardId = null;
       draftPoolFlyReturnCardId = null;
       onlineDraftPassSnapshotPool = null;
@@ -1273,6 +1276,10 @@ let draftSelectedCardId: string | null = null;
 let draftPickSecondsLeft = DRAFT_PICK_SECONDS;
 let draftTimerId: number | null = null;
 let isPassingDraftCards = false;
+let isDraftPoolCollapsed = false;
+let isDraftPoolCollapseAnimating = false;
+let draftPoolCollapseAnimMode: "collapse" | "expand" | null = null;
+let draftPoolCollapseTimerId: number | null = null;
 let draftPassDisplayPool: TravelCardData[] | null = null;
 let draftRound = 1;
 let lastDraftPickResults: DraftPickResult[] = [];
@@ -2810,9 +2817,216 @@ function updateDraftConfirmButtonVisualOnly() {
     !!(draftHandPendingCardId || draftSelectedCardId) &&
     !isDraftPickFlying &&
     !isPassingDraftCards &&
-    !isDraftDealVisualActive();
+    !isDraftDealVisualActive() &&
+    !isDraftPoolCollapseAnimating;
 
   button.disabled = !canConfirm;
+}
+
+function resetDraftPoolCollapseState() {
+  if (draftPoolCollapseTimerId !== null) {
+    window.clearTimeout(draftPoolCollapseTimerId);
+    draftPoolCollapseTimerId = null;
+  }
+
+  isDraftPoolCollapsed = false;
+  isDraftPoolCollapseAnimating = false;
+  draftPoolCollapseAnimMode = null;
+}
+
+function isDraftPoolToggleBlocked(): boolean {
+  return (
+    isDraftPoolCollapseAnimating ||
+    isDraftPickFlying ||
+    isPassingDraftCards ||
+    isOnlineFinalDraftReturnAnimating
+  );
+}
+
+function renderDraftPoolCollapseButton(): string {
+  if (!isDraftPhase || !shouldShowDraftPickPool()) return "";
+  if (isPassingDraftCards || isOnlineFinalDraftReturnAnimating) return "";
+
+  const label = isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
+  const disabled = isDraftPoolToggleBlocked();
+
+  return `
+    <button
+      type="button"
+      class="deck-pile-panel__pool-toggle"
+      onclick="event.stopPropagation(); toggleDraftPoolCollapse()"
+      ${disabled ? "disabled" : ""}
+      title="${isDraftPoolCollapsed ? "Hiện lại pool chọn bài" : "Thu gọn pool để xem bàn cờ"}"
+    >
+      ${label}
+    </button>
+  `;
+}
+
+function updateDraftPoolToggleVisualOnly() {
+  const button = document.querySelector(
+    ".deck-pile-panel__pool-toggle"
+  ) as HTMLButtonElement | null;
+  if (!button) return;
+
+  button.textContent = isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
+  button.disabled = isDraftPoolToggleBlocked();
+  button.title = isDraftPoolCollapsed
+    ? "Hiện lại pool chọn bài"
+    : "Thu gọn pool để xem bàn cờ";
+}
+
+function getDraftCenterPickOverlayElement(): HTMLElement | null {
+  return document.querySelector(
+    ".draft-center-overlay:not(.draft-center-overlay--returning)"
+  ) as HTMLElement | null;
+}
+
+function activateDraftCenterPoolDeckFlyAnimation(
+  mode: "collapse" | "expand"
+): boolean {
+  const overlayElement = getDraftCenterPickOverlayElement();
+  const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+
+  if (!overlayElement || !deckStackElement) return false;
+
+  const poolCards = Array.from(
+    overlayElement.querySelectorAll(
+      ".draft-center-card-wrapper:not(.draft-center-card-wrapper--flown-to-hand)"
+    )
+  ) as HTMLElement[];
+
+  if (poolCards.length === 0) return false;
+
+  overlayElement.classList.remove(
+    "draft-center-overlay--collapsed",
+    "draft-center-overlay--collapsing",
+    "draft-center-overlay--expanding",
+    "pass-active"
+  );
+
+  const overlayRect = overlayElement.getBoundingClientRect();
+  const deckRect = deckStackElement.getBoundingClientRect();
+
+  const gatherCenterX = overlayRect.left + overlayRect.width * 0.5;
+  const gatherCenterY = overlayRect.top + overlayRect.height * 0.38;
+  const deckInsertX = deckRect.left + deckRect.width * 0.34;
+  const deckInsertY = deckRect.top + deckRect.height * 0.54;
+
+  applyDraftReturnGatherVars(
+    poolCards,
+    gatherCenterX,
+    gatherCenterY,
+    deckInsertX,
+    deckInsertY
+  );
+
+  deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+  overlayElement.classList.add(
+    mode === "collapse"
+      ? "draft-center-overlay--collapsing"
+      : "draft-center-overlay--expanding",
+    "pass-active"
+  );
+
+  return true;
+}
+
+function finishDraftPoolCollapseAnimation() {
+  draftPoolCollapseTimerId = null;
+  isDraftPoolCollapseAnimating = false;
+  draftPoolCollapseAnimMode = null;
+  isDraftPoolCollapsed = true;
+
+  const overlayElement = getDraftCenterPickOverlayElement();
+  overlayElement?.classList.remove(
+    "draft-center-overlay--collapsing",
+    "pass-active"
+  );
+  overlayElement?.classList.add("draft-center-overlay--collapsed");
+
+  document.querySelector(".deck-pile-panel")?.classList.remove("deck-receiving");
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+}
+
+function finishDraftPoolExpandAnimation() {
+  draftPoolCollapseTimerId = null;
+  isDraftPoolCollapseAnimating = false;
+  draftPoolCollapseAnimMode = null;
+  isDraftPoolCollapsed = false;
+
+  const overlayElement = getDraftCenterPickOverlayElement();
+  overlayElement?.classList.remove(
+    "draft-center-overlay--expanding",
+    "draft-center-overlay--collapsed",
+    "pass-active"
+  );
+
+  document.querySelector(".deck-pile-panel")?.classList.remove("deck-receiving");
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+}
+
+function collapseDraftPoolVisual() {
+  if (isDraftPoolToggleBlocked() || isDraftPoolCollapsed) return;
+
+  isDraftPoolCollapseAnimating = true;
+  draftPoolCollapseAnimMode = "collapse";
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+  playGameSound("returnDeck");
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      if (!activateDraftCenterPoolDeckFlyAnimation("collapse")) {
+        finishDraftPoolCollapseAnimation();
+      }
+    });
+  });
+
+  draftPoolCollapseTimerId = window.setTimeout(() => {
+    finishDraftPoolCollapseAnimation();
+  }, DRAFT_POOL_COLLAPSE_MS);
+}
+
+function expandDraftPoolVisual() {
+  if (isDraftPoolToggleBlocked() || !isDraftPoolCollapsed) return;
+
+  isDraftPoolCollapsed = false;
+  isDraftPoolCollapseAnimating = true;
+  draftPoolCollapseAnimMode = "expand";
+
+  const overlayElement = getDraftCenterPickOverlayElement();
+  overlayElement?.classList.remove("draft-center-overlay--collapsed");
+
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+  playGameSound("cardSelect");
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      if (!activateDraftCenterPoolDeckFlyAnimation("expand")) {
+        finishDraftPoolExpandAnimation();
+      }
+    });
+  });
+
+  draftPoolCollapseTimerId = window.setTimeout(() => {
+    finishDraftPoolExpandAnimation();
+  }, DRAFT_POOL_COLLAPSE_MS);
+}
+
+function toggleDraftPoolCollapse() {
+  if (!isDraftPhase || !shouldShowDraftPickPool() || isDraftPoolToggleBlocked()) {
+    return;
+  }
+
+  if (isDraftPoolCollapsed) {
+    expandDraftPoolVisual();
+  } else {
+    collapseDraftPoolVisual();
+  }
 }
 
 function shouldShowDraftLeftoverReturn(): boolean {
@@ -2853,6 +3067,18 @@ function getDraftTimerDisplayLabel(): string {
   return `${draftPickSecondsLeft}s`;
 }
 
+function updateDraftTimerDisplayVisualOnly() {
+  const meta = document.querySelector(".player-hand__meta");
+  if (!meta || !isDraftPhase) return;
+
+  meta.textContent = isDraftPickTimerFrozen()
+    ? "Đang chia bài..."
+    : `Còn ${getDraftTimerDisplayLabel()} • ${
+        isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"
+      }`;
+  meta.classList.toggle("player-hand__meta--danger", isDraftTimerDanger());
+}
+
 function isDraftTimerDanger(): boolean {
   return !isDraftPickTimerFrozen() && draftPickSecondsLeft <= 3;
 }
@@ -2879,7 +3105,11 @@ function renderDraftCenterOverlay() {
       const index = startIndex + idx;
       const globalSlot = startIndex + idx + 1;
       const isFlownToHand = shouldHideDraftPoolSlot(card.id);
-      const pickButton = isPassingDraftCards
+      const poolPickDisabled =
+        isPassingDraftCards ||
+        isDraftPoolCollapsed ||
+        isDraftPoolCollapseAnimating;
+      const pickButton = poolPickDisabled
         ? ""
         : `
           <button class="draft-center-btn" data-draft-card-id="${card.id}">
@@ -2898,8 +3128,21 @@ function renderDraftCenterOverlay() {
     }).join("");
   };
 
+  const overlayModifierClass = [
+    isPassingDraftCards && !isOnlineFinalDraftReturnAnimating
+      ? "draft-center-overlay--passing"
+      : "",
+    isDraftPoolCollapsed && !isDraftPoolCollapseAnimating
+      ? "draft-center-overlay--collapsed"
+      : "",
+    draftPoolCollapseAnimMode === "collapse" ? "draft-center-overlay--collapsing" : "",
+    draftPoolCollapseAnimMode === "expand" ? "draft-center-overlay--expanding" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return `
-    <div class="draft-center-overlay ${isPassingDraftCards && !isOnlineFinalDraftReturnAnimating ? "draft-center-overlay--passing" : ""}">
+    <div class="draft-center-overlay ${overlayModifierClass}">
       <div class="draft-center-container">
         <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(topRow, 0)}</div>
         <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(bottomRow, 4)}</div>
@@ -3346,6 +3589,11 @@ function startDraftTimer() {
       return;
     }
 
+    if (isDraftPoolCollapseAnimating) {
+      updateDraftTimerDisplayVisualOnly();
+      return;
+    }
+
       rerenderArena();
   }, 1000);
 }
@@ -3366,6 +3614,7 @@ function initializeDailyDraftPhase() {
   lastOnlinePickedDraftCount = 0;
   draftPickSecondsLeft = DRAFT_PICK_SECONDS;
   isPassingDraftCards = false;
+  resetDraftPoolCollapseState();
   draftPassDisplayPool = null;
   draftRound = 1;
   lastDraftPickResults = [];
@@ -4013,13 +4262,20 @@ async function handleDraftPickSelectionChange(
   } finally {
     isDraftPickFlying = false;
     updateDraftConfirmButtonVisualOnly();
+    updateDraftPoolToggleVisualOnly();
   }
 }
 
 function selectDraftCard(cardId: string) {
   if (!isDraftPhase) return;
 
-  if (isDraftPickFlying || isPassingDraftCards || isDraftDealVisualActive()) {
+  if (
+    isDraftPickFlying ||
+    isPassingDraftCards ||
+    isDraftDealVisualActive() ||
+    isDraftPoolCollapsed ||
+    isDraftPoolCollapseAnimating
+  ) {
     return;
   }
 
@@ -4379,6 +4635,8 @@ function activateDraftCenterReturnAnimation() {
 function finishDraftDealWithoutFullRerender() {
   isInitialDealInProgress = false;
   dailyDealTimerId = null;
+  clearDraftCenterDealAnimation();
+  draftDealVisualEndsAt = 0;
 
   const handElement = document.querySelector(".player-hand");
   handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
@@ -4396,11 +4654,14 @@ function finishDraftDealWithoutFullRerender() {
   }
 
   startDraftTimer();
+  updateDraftPoolToggleVisualOnly();
 }
 
 function finishOnlineDraftDealVisualOnly() {
   isInitialDealInProgress = false;
   onlineDraftAnimationTimerId = null;
+  clearDraftCenterDealAnimation();
+  draftDealVisualEndsAt = 0;
 
   const handElement = document.querySelector(".player-hand");
   handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
@@ -4419,6 +4680,7 @@ function finishOnlineDraftDealVisualOnly() {
 
   updateDraftSelectedVisualOnly();
   updateDraftConfirmButtonVisualOnly();
+  updateDraftPoolToggleVisualOnly();
 }
 
 function playOnlinePlanningHandDealAfterDraft() {
@@ -4467,6 +4729,7 @@ function playDraftDealAnimationAndStartTimer() {
   stopDraftTimer();
   clearDailyDealTimer();
 
+  resetDraftPoolCollapseState();
   isInitialDealInProgress = true;
   draftSelectedCardId = null;
   rerenderArena();
@@ -5412,11 +5675,7 @@ function renderPlayerEffectTokens() {
   }
 
   if (!effectTokens.length) {
-    return `
-      <div class="player-effect-dock player-effect-dock--empty">
-        <div class="player-effect-dock__placeholder">✨ No active effects</div>
-      </div>
-    `;
+    return "";
   }
 
   return `
@@ -5434,7 +5693,8 @@ function renderDeckPilePanel() {
     !!(draftHandPendingCardId || draftSelectedCardId) &&
     !isDraftPickFlying &&
     !isPassingDraftCards &&
-    !isDraftDealVisualActive();
+    !isDraftDealVisualActive() &&
+    !isDraftPoolCollapseAnimating;
   const draftConfirmButton = isDraftPhase
     ? `
       <button
@@ -5448,13 +5708,25 @@ function renderDeckPilePanel() {
     `
     : "";
 
+  const effectTokensHtml = renderPlayerEffectTokens();
+  const poolToggleButton = renderDraftPoolCollapseButton();
+  const showDeckHeader = isDraftPhase || effectTokensHtml.length > 0;
+  const deckPanelHeader = showDeckHeader
+    ? `
+      <div class="deck-pile-panel__header">
+        <div class="deck-pile-panel__header-left">${poolToggleButton}${effectTokensHtml}</div>
+        <div class="deck-pile-panel__header-right">${draftConfirmButton}</div>
+      </div>
+    `
+    : "";
+
   return `
     <section
-      class="deck-pile-panel"
+      class="deck-pile-panel${isDraftPhase ? " deck-pile-panel--draft" : ""}"
       data-discard-drop-zone="true"
       title="Kéo thả lá bài trên tay vào đây để discard và nhận lại Xu/Thể lực bằng chi phí của lá."
     >
-      ${renderPlayerEffectTokens()}
+      ${deckPanelHeader}
 
       <div class="deck-pile-panel__visual">
         <div class="deck-card-stack">
@@ -5491,8 +5763,6 @@ function renderDeckPilePanel() {
           </div>
         </div>
       </div>
-
-      ${draftConfirmButton}
 
       <div class="deck-pile-panel__info">
         <div>
@@ -6315,6 +6585,8 @@ function clearBoardDragHoverClass() {
 
 (window as any).confirmDraftPick = confirmDraftPick;
 (globalThis as any).confirmDraftPick = confirmDraftPick;
+(window as any).toggleDraftPoolCollapse = toggleDraftPoolCollapse;
+(globalThis as any).toggleDraftPoolCollapse = toggleDraftPoolCollapse;
 
 (window as any).startHoldHandCard = (id: string) => {
   if (isPassingDraftCards || isInitialDealInProgress) return;
@@ -7311,6 +7583,7 @@ let draftPoolFlyReturnCardId: string | null = null;
 let lastOnlinePickedDraftCount = 0;
 const DRAFT_PICK_FLY_MS = 750;
 const DRAFT_PASS_ANIMATION_MS = 1500;
+const DRAFT_POOL_COLLAPSE_MS = 1350;
 const DRAFT_HAND_PICK_SCALE = 0.84;
 let shouldActivateOnlineDealAnimation = false;
 let shouldActivateOnlinePassAnimation = false;
@@ -7464,15 +7737,13 @@ function updateOnlineTimerOnly() {
   if (!state || !timerElement || !timerValueElement) return;
 
   if (state.phase === "draft") {
-    const hold = state.draftTimerHold ?? 0;
-    const frozen =
-      isDraftCenterDealing ||
-      isInitialDealInProgress ||
-      isPassingDraftCards ||
-      hold > 0 ||
-      Date.now() < draftDealVisualEndsAt;
-    timerValueElement.textContent = frozen ? "Chia bài" : `${state.timer}s`;
-    timerElement.classList.toggle("score-breakdown__timer--danger", !frozen && state.timer <= 3);
+    timerValueElement.textContent = getDraftTimerDisplayLabel();
+    timerElement.classList.toggle(
+      "score-breakdown__timer--danger",
+      !isDraftPickTimerFrozen() && draftPickSecondsLeft <= 3
+    );
+    updateDraftTimerDisplayVisualOnly();
+    updateDraftPoolToggleVisualOnly();
     return;
   }
 
@@ -7513,12 +7784,23 @@ function renderAfterOnlineStateChange() {
       isOnlineInterRoundPoolPassActive() &&
       document.querySelector(".draft-center-overlay--passing.pass-active");
 
+    const poolCollapseVisualRunning =
+      isDraftPoolCollapseAnimating &&
+      document.querySelector(
+        ".draft-center-overlay--collapsing.pass-active, .draft-center-overlay--expanding.pass-active"
+      );
+
     if (!isCinematicTransitioning) {
       if (shouldDeferRerenderForActiveDeal) {
         updateDraftSelectedVisualOnly();
         updateOnlineTimerOnly();
-      } else if (passVisualRunning && !shouldActivateOnlinePassAnimation && !shouldActivateOnlineDealAnimation) {
+      } else if (
+        (passVisualRunning || poolCollapseVisualRunning) &&
+        !shouldActivateOnlinePassAnimation &&
+        !shouldActivateOnlineDealAnimation
+      ) {
         updateOnlineTimerOnly();
+        updateDraftPoolToggleVisualOnly();
       } else {
         rerenderGameShell();
       }

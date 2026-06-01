@@ -10247,34 +10247,50 @@ body,
 /* =========================
    EFFECT DOCK
    ========================= */
-.player-effect-dock {
-  min-height: 82px;
+.deck-pile-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+.deck-pile-panel--draft .deck-pile-panel__header {
+  min-height: 38px;
+}
+.deck-pile-panel__header-left {
+  flex: 1 1 50%;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.deck-pile-panel__header-right {
+  flex: 0 0 50%;
+  max-width: 50%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+.player-effect-dock {
+  min-height: 0;
+  width: auto;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 2px 0;
+  padding: 0;
   box-sizing: border-box;
 }
 .player-effect-dock--empty {
-  justify-content: center;
+  display: none;
 }
 .player-effect-dock__placeholder {
-  width: 100%;
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 18px;
-  border: 2px solid #C89B3C;
-  background: rgba(244, 241, 230, 0.95);
-  color: #2D2D2D;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  display: none;
 }
 /* =========================
    WAX SEAL TOKEN
@@ -10680,21 +10696,52 @@ body,
   text-align: left !important;
 }
 .deck-pile-panel__draft-confirm {
-  margin-top: 10px;
+  margin-top: 0;
   width: 100%;
-  padding: 10px 12px;
+  max-width: 100%;
+  padding: 5px 8px;
   font-family: 'Cinzel', serif;
   font-weight: 700;
-  font-size: 0.85rem;
-  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
   text-transform: uppercase;
   color: #fff5d1;
   background: linear-gradient(180deg, #d4af37 0%, #aa7c11 100%);
   border: 1px solid #f9f1e2;
   border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
 }
 .deck-pile-panel__draft-confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.deck-pile-panel__pool-toggle {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 4px 10px;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: #fff5d1;
+  background: rgba(8, 12, 22, 0.72);
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.deck-pile-panel__pool-toggle:hover:not(:disabled) {
+  background: rgba(18, 24, 38, 0.88);
+  border-color: rgba(249, 241, 226, 0.75);
+  transform: translateY(-1px);
+}
+.deck-pile-panel__pool-toggle:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -10745,10 +10792,22 @@ body,
 }
 .player-effect-dock {
   overflow: visible !important;
-  justify-content: center;
+  justify-content: flex-start !important;
+}
+.deck-pile-panel__header {
+  width: 100% !important;
+}
+.deck-pile-panel__header-right {
+  flex: 0 0 50% !important;
+  max-width: 50% !important;
+  justify-content: flex-end !important;
+}
+.deck-pile-panel__header-left {
+  flex: 1 1 50% !important;
+  justify-content: flex-start !important;
 }
 .player-effect-dock:not(.player-effect-dock--empty) {
-  justify-content: flex-start;
+  justify-content: flex-start !important;
 }
 .player-effect-seal {
   width: 72px;
@@ -12074,6 +12133,64 @@ body,
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
+}
+.draft-center-overlay--collapsed:not(.draft-center-overlay--expanding) {
+  visibility: hidden;
+  pointer-events: none;
+}
+.draft-center-overlay--collapsed:not(.draft-center-overlay--expanding) .draft-center-card-wrapper,
+.draft-center-overlay--collapsed:not(.draft-center-overlay--expanding) .draft-center-wait-banner {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.draft-center-overlay--collapsing.pass-active .draft-center-card-wrapper:not(.draft-center-card-wrapper--flown-to-hand),
+.draft-center-overlay--expanding.pass-active .draft-center-card-wrapper:not(.draft-center-card-wrapper--flown-to-hand) {
+  pointer-events: none !important;
+  will-change: transform, opacity;
+}
+.draft-center-overlay--collapsing.pass-active .draft-center-card-wrapper:not(.draft-center-card-wrapper--flown-to-hand) {
+  animation: draftCenterPoolReturnFadeV2 1.35s cubic-bezier(0.18, 0.82, 0.24, 1) forwards;
+}
+.draft-center-overlay--expanding.pass-active .draft-center-card-wrapper:not(.draft-center-card-wrapper--flown-to-hand) {
+  animation: draftCenterPoolExpandFromDeckV2 1.35s cubic-bezier(0.18, 0.82, 0.24, 1) forwards;
+}
+.draft-center-overlay--collapsing .draft-center-card-wrapper--flown-to-hand,
+.draft-center-overlay--expanding .draft-center-card-wrapper--flown-to-hand {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes draftCenterPoolExpandFromDeckV2 {
+  0%,
+  8% {
+    opacity: 0;
+    transform: scale(0.28) translate3d(var(--deck-in-x, 620px), var(--deck-in-y, -120px), 0) rotate(var(--deck-r, 16deg));
+  }
+  18% {
+    opacity: 0.06;
+    transform: scale(0.34) translate3d(var(--deck-in-x, 620px), calc(var(--deck-in-y, -120px) - 16px), 0) rotate(var(--deck-r, 16deg));
+  }
+  32% {
+    opacity: 0.22;
+    transform: scale(0.46) translate3d(var(--arc2-x, 420px), calc(var(--arc2-y, -180px) - 58px), 0) rotate(18deg);
+  }
+  48% {
+    opacity: 0.55;
+    transform: scale(0.58) translate3d(var(--arc1-x, 280px), calc(var(--arc1-y, -140px) - 42px), 0) rotate(8deg);
+  }
+  66% {
+    opacity: 1;
+    transform: scale(0.82) translate3d(calc(var(--gather-x, 0px) * 0.72), calc(var(--gather-y, -28px) * 0.78), 0) rotate(0deg);
+  }
+  78% {
+    opacity: 1;
+    transform: scale(0.86) translate3d(calc(var(--gather-x, 0px) * 0.72), calc(var(--gather-y, -28px) * 0.78), 0) rotate(calc(var(--gather-r, 0deg) * 0.14));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(0.9) translate3d(0, 0, 0) rotate(0deg);
+  }
 }
 @keyframes draftCenterPoolReturnFadeV2 {
   0% {

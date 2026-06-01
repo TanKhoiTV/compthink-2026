@@ -3,6 +3,7 @@ import { PLAYER_IDS, shuffleCards } from "./gameEngine.js";
 
 const DRAFT_STARTING_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = 5;
+const DRAFT_PICK_SECONDS = 90;
 const DRAFT_DEAL_HOLD_SECONDS = 9;
 const DRAFT_PASS_AND_DEAL_HOLD_SECONDS = 10;
 
@@ -32,7 +33,7 @@ function returnCardsToDeck(state: RoomState, cards: ServerTravelCardData[]) {
 export function startDraftForCurrentDay(state: RoomState) {
   state.phase = "draft";
   state.draftRound = 1;
-  state.timer = 10;
+  state.timer = DRAFT_PICK_SECONDS;
   state.draftTimerHold = DRAFT_DEAL_HOLD_SECONDS;
 
   const activePlayerIds = getActiveDraftPlayerIds(state);
@@ -176,7 +177,7 @@ export function finishDraftRound(state: RoomState) {
   }
 
   state.draftRound += 1;
-  state.timer = 10;
+  state.timer = DRAFT_PICK_SECONDS;
   state.draftTimerHold = DRAFT_PASS_AND_DEAL_HOLD_SECONDS;
   logDraftDebug(state, "finishDraftRound");
 }
