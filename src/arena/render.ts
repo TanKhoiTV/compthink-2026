@@ -70,6 +70,33 @@ export const HAND_CITY_MEDIUM = 28;
 export const DAYS = [1, 2, 3, 4, 5];
 export const ROWS = ["Sáng", "Trưa", "Chiều", "Tối", "Khuya"];
 
+/**
+ * Shared board grid renderer — used by both SP (renderMainArena) and
+ * online (renderOnlineGameArenaShell) modes.
+ *
+ * @param boardSlots - The current board state (TravelCard|null[][]) 
+ * @param currentDayIndex - 0-based current day index
+ * @param isDraft - true during draft phase
+ * @param isSimulation - true during simulation phase
+ * @param selectedCardId - currently selected card in hand, or null
+ */
+export function renderBoardGrid(
+	boardSlots: BoardSlots,
+	currentDayIndex: number,
+	isDraft: boolean,
+	isSimulation: boolean,
+	selectedCardId: string | null,
+): string {
+	return ROWS.map(
+		(row, rowIndex) => `
+              <div class="time-label">${row}</div>
+              ${DAYS.map((_, colIndex) =>
+				renderBoardCell(boardSlots, rowIndex, colIndex, currentDayIndex, isDraft, isSimulation, selectedCardId),
+			).join("")}
+            `,
+	).join("");
+}
+
 // ── Helpers ported from Trekkopoly src/data/cardMapper.ts ────────────────────
 
 function getTextFitClass(
@@ -155,12 +182,7 @@ export function renderMainArena(): string {
           </div>
 
           <section class="board-grid">
-            ${ROWS.map(
-							(row, rowIndex) => `
-              <div class="time-label">${row}</div>
-              ${DAYS.map((_, colIndex) => renderBoardCell(boardSlots, rowIndex, colIndex, currentDayIndex, isDraft, isSimulation)).join("")}
-            `,
-						).join("")}
+            ${renderBoardGrid(boardSlots, currentDayIndex, isDraft, isSimulation, getSelectedHandCardId())}
           </section>
         </div>
 
@@ -188,10 +210,10 @@ function renderBoardCell(
 	currentDayIndex: number,
 	isDraft: boolean,
 	isSimulation: boolean,
+	selectedId: string | null,
 ): string {
 	const card = boardSlots[rowIndex]?.[colIndex] ?? null;
 	const isCurrentDayColumn = colIndex === currentDayIndex;
-	const selectedId = getSelectedHandCardId();
 	const isPlaceable =
 		!isDraft &&
 		!isSimulation &&
@@ -701,14 +723,18 @@ export function renderResourceOrbs(): string {
         </div>
         <div class="resource-orb__label">Thể lực</div>
       </div>
-      ${debt > 0 ? `
+      ${
+				debt > 0
+					? `
       <div class="resource-orb resource-orb--debt">
         <div class="resource-orb__frame">
           <div class="resource-orb__icon">💸</div>
           <div class="resource-orb__value">${debt}</div>
         </div>
         <div class="resource-orb__label">Nợ</div>
-      </div>` : ""}
+      </div>`
+					: ""
+			}
     </div>
   `;
 }

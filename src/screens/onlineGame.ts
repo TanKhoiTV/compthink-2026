@@ -17,13 +17,12 @@ import {
 	sendPayDebt,
 } from "../online/lobbyClient.ts";
 import { rpcCall } from "../online/socketClient.ts";
-import { renderHandCard, renderBoardMiniCard } from "../arena/render.ts";
+import { renderHandCard, renderBoardGrid } from "../arena/render.ts";
 import type { RoomSnapshot, TravelCard, PlayerState } from "../shared/types.ts";
 import {
 	boardCellsToSlots,
 	DAYS,
 	TIME_SLOTS,
-	SLOT_NAMES,
 } from "../shared/board.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
 import {
@@ -161,7 +160,13 @@ function renderOnlineGameArenaShell(
 								`<div class="day-pill ${index === snapshot.day - 1 ? "day-pill--current" : ""} ${index < snapshot.day - 1 ? "day-pill--done" : ""}">NGÀY ${day}</div>`,
 						).join("")}
           </div>
-          ${phase === "placement" || phase === "scoring" ? renderOnlineBoardGrid(snapshot, myPlayer, cards()) : ""}
+          ${phase === "placement" || phase === "scoring" ? renderBoardGrid(
+					boardCellsToSlots(myPlayer.board, cards()),
+					snapshot.day - 1,
+					false,
+					false,
+					phase === "placement" ? getOnlineSelectedCardId() : null,
+				) : ""}
         </div>
 
         <div class="online-content-area">
@@ -472,48 +477,6 @@ function renderOnlineScoringContent(
   `;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// BOARD GRID (simplified, no drag-drop) — shared for placement + scoring
-
-function renderOnlineBoardGrid(
-	snapshot: RoomSnapshot,
-	myPlayer: PlayerState,
-	allCards: TravelCard[],
-): string {
-	const boardSlots = boardCellsToSlots(myPlayer.board, allCards);
-	const isPlacement = snapshot.phase === "placement";
-	const currentDay = snapshot.day;
-	const selectedId = isPlacement ? getOnlineSelectedCardId() : null;
-
-	return `
-    <section class="board-grid">
-      ${TIME_SLOTS.map(
-				(slot, rowIdx) =>
-					`<div class="time-label">${SLOT_NAMES[slot] ?? slot}</div>
-				` +
-					DAYS.map((_day, colIdx) => {
-						const cell = boardSlots[rowIdx]?.[colIdx] ?? null;
-						const isCurrentDay = colIdx === currentDay - 1;
-						const canPlace =
-							isPlacement && isCurrentDay && selectedId !== null && !cell;
-
-						return `
-            <div
-              class="board-cell${cell ? " board-cell--occupied board-cell--clickable" : " board-cell--empty"}${canPlace ? " board-cell--placeable" : ""}${!isCurrentDay ? " board-cell--not-current-day" : ""}"
-              data-board-cell="true"
-              data-row-index="${rowIdx}"
-              data-col-index="${colIdx}"
-              title="${cell ? escapeHtml(cell.name) : isCurrentDay ? (canPlace ? "Thả thẻ vào ô này" : "") : "Không phải ngày hiện tại"}"
-            >
-              ${cell ? renderBoardMiniCard(cell) : `<span class="empty-plus">+</span>`}
-            </div>
-          `;
-					}).join(""),
-			).join("")}
-    </section>
-  `;
-}
-
 // ── Opponent panel ─────────────────────────────────────────────────────────
 
 function renderOnlineOpponentPanel(opponents: PlayerState[]): string {
@@ -654,7 +617,11 @@ export function initOnlineGameGlobals() {
 
 	// Register global board placement handler (called by handleHandPointerUp
 	// in app.ts when a card is dragged to a board cell).
-	(globalThis as any).handlePlaceCardOnBoard = (cardId: string, row: number, _col: number) => {
+	(globalThis as any).handlePlaceCardOnBoard = (
+		cardId: string,
+		row: number,
+		_col: number,
+	) => {
 		handleOnlinePlaceCardOnBoard(cardId, row);
 	};
 
@@ -724,7 +691,6 @@ function updateOnlineGameAnimations(): void {
 	} else {
 		stopOnlinePlacementTimer();
 	}
-
 }
 
 // Draft timer functions for online mode
