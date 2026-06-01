@@ -24,8 +24,9 @@ import {
 	STARTING_RESOURCES,
 	MAX_STAMINA,
 } from "../src/shared/rules.ts";
+import { shuffleCards } from "../src/shared/deck.ts";
 import { calculateScore, boardToTimeline } from "../src/shared/score.ts";
-import { drawDailyHand, simulateRandomEvent } from "../src/shared/dice.ts";
+import { simulateRandomEvent } from "../src/shared/dice.ts";
 import type {
 	BoardCell,
 	GamePhase,
@@ -229,14 +230,21 @@ function beginDraftingPhase(room: Room): void {
 	room.pickIndex = 0;
 	const { day } = room;
 
-	room.players.forEach((player, index) => {
-		// Deal 5 cards from the seeded hand generator
-		player.hand = drawDailyHand(room.cards, day, index, 7);
+	// Shuffle the full card catalogue once, then deal from it sequentially.
+	// This ensures each card is dealt at most once per day across all players.
+	const shuffled = shuffleCards(room.cards);
+	const HAND_SIZE = 7;
+	let cursor = 0;
+
+	room.players.forEach((player, _index) => {
+		player.hand = shuffled.slice(cursor, cursor + HAND_SIZE).map((c) => c.card_id);
+		cursor += HAND_SIZE;
 		player.chosen = [];
 		player.ready = false;
 		player.draftChoice = undefined;
 	});
 
+	// Remaining cards after dealing are discarded back (not tracked further)
 	room.log.push(`Day ${day}: Drafting phase started. Hands dealt.`);
 
 	room.broadcast(room);
