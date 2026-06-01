@@ -21,6 +21,7 @@ import {
 	draftCard,
 	placeCard,
 	confirmDay,
+	discardChosenCard,
 	exportSnapshot,
 	type Room,
 } from "../../server/game.ts";
@@ -133,8 +134,13 @@ export function refreshLocalSnapshot(): void {
 			localPlayerId,
 		);
 		rerenderGameShell();
-		// Force-start the draft timer if DOM is now ready and timer not running
-		if (draftTimerId === null && document.querySelector(".hand-card")) {
+		// Force-start the draft timer if DOM is now ready, timer not running,
+		// and we're still in the draft phase
+		if (
+			draftTimerId === null &&
+			document.querySelector(".hand-card") &&
+			exportSnapshot(localRoom, localPlayerId).phase === "draft"
+		) {
 			startDraftTimer();
 		}
 	}
@@ -208,6 +214,17 @@ export function localPlaceCard(
 	} catch (err: unknown) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.warn("[localRoom] placeCard failed:", msg);
+	}
+}
+
+export function localDiscardCard(cardId: string): void {
+	if (!localRoom || !localPlayerId) return;
+	try {
+		discardChosenCard(localRoom, localPlayerId, cardId);
+		applySnapshotAndRender();
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.warn("[localRoom] discardChosenCard failed:", msg);
 	}
 }
 
@@ -321,6 +338,10 @@ function startDraftTimer(): void {
 	const hand = getPlayerHand();
 	if (hand.length === 0) return;
 
+	// Guard: only start the timer if we're still in the draft phase
+	if (!localRoom || !localPlayerId) return;
+	if (exportSnapshot(localRoom, localPlayerId).phase !== "draft") return;
+
 	let secondsLeft = DRAFT_PICK_SECONDS;
 	setDraftPickSecondsLeft(secondsLeft);
 
@@ -335,6 +356,8 @@ function startDraftTimer(): void {
 			// Auto-pick the first card in hand
 			const firstCard = getPlayerHand()[0];
 			if (firstCard && localRoom && localPlayerId) {
+				// Re-check phase — the game may have transitioned since the timer started
+				if (exportSnapshot(localRoom, localPlayerId).phase !== "draft") return;
 				try {
 					draftCard(localRoom, localPlayerId, firstCard.id, "store");
 					applySnapshotAndRender();

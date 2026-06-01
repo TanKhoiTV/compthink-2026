@@ -510,7 +510,7 @@ export function renderFocusedCard(card: TravelCard): string {
     <div class="focused-card-overlay">
       <div class="focused-card ${rarityClass}">
         <button id="focused-card-close" class="focused-card__close">&times;</button>
-        <img src="${card.image}" alt="${card.name}" class="focused-card__image" />
+        <img src="${card.image}" alt="${card.name}" class="focused-card__image" onerror="this.style.display='none'" />
         <div class="focused-card__details">
           <h2>${card.name}</h2>
           <p>${card.description ?? ""}</p>

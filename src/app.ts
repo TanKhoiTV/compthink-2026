@@ -996,8 +996,14 @@ function handleHandPointerUp(event: PointerEvent) {
 		setTimeout(() => setSuppressNextClick(false), 0);
 
 		// Check discard zone first
+		// Use global discard handler (for Room-based game) or local fallback
 		if (discardTarget && canDiscardHandCard()) {
-			discardHandCardToDeck(cardId);
+			const globalDiscard = (globalThis as any).handleDiscardCard;
+			if (typeof globalDiscard === "function") {
+				globalDiscard(cardId);
+			} else {
+				discardHandCardToDeck(cardId);
+			}
 			return;
 		}
 

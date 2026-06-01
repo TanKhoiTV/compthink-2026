@@ -12,18 +12,19 @@
  */
 
 import {
-	addPlayer,
-	removePlayer,
-	startGame,
-	draftCard,
-	placeCard,
-	skipSlot,
-	confirmDay,
-	toggleReady,
-	payDebt,
-	returnBoardCard,
-	exportSnapshot,
-	type Room,
+addPlayer,
+removePlayer,
+startGame,
+draftCard,
+placeCard,
+skipSlot,
+confirmDay,
+toggleReady,
+payDebt,
+returnBoardCard,
+discardChosenCard,
+exportSnapshot,
+type Room,
 } from "./game.ts";
 import type { GridPosition } from "../src/shared/types.ts";
 
@@ -311,6 +312,17 @@ export function dispatch(session: PlayerSession, rawMessage: string): void {
 				sendResult(session, id, {
 					ok: true,
 					cardId: result.cardId,
+					snapshot: exportSnapshot(session.room!, session.playerId),
+				});
+				break;
+			}
+
+			case "discardChosenCard": {
+				requireRoom(session);
+				const { cardId } = params as { cardId: string };
+				discardChosenCard(session.room!, session.playerId, cardId);
+				sendResult(session, id, {
+					ok: true,
 					snapshot: exportSnapshot(session.room!, session.playerId),
 				});
 				break;

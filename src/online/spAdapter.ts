@@ -19,8 +19,7 @@ import {
 	localDraftCard,
 	localPlaceCard,
 	localConfirmDay,
-	getLocalRoom,
-	getLocalPlayerId,
+	localDiscardCard,
 } from "./localRoom.ts";
 import {
 	setSelectedHandCardId,
@@ -117,6 +116,13 @@ export function initSPGlobals(): void {
 		}
 	};
 
+	// ── Discard chosen card during placement (drag to discard zone) ─────────
+	(globalThis as any).handleDiscardCard = (cardId: string) => {
+		const phase = getGamePhase();
+		if (phase !== "placement") return;
+		localDiscardCard(cardId);
+	};
+
 	// ── End day: confirm all placements are done ──────────────────────────────
 	(globalThis as any).endCurrentDay = () => {
 		// Check that the player has no unplaced chosen cards
@@ -167,6 +173,7 @@ export function teardownSPGlobals(): void {
 	delete (globalThis as any).startHoldHandCard;
 	delete (globalThis as any).cancelHoldHandCard;
 	delete (globalThis as any).closeFocusedCard;
+	delete (globalThis as any).handleDiscardCard;
 
 	console.log("[spAdapter] Global action handlers unbound.");
 }

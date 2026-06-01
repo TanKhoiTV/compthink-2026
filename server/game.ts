@@ -491,6 +491,33 @@ export function placeCard(
 }
 
 /**
+ * Discard a chosen card during placement for rest resources.
+ * Removes the card from the player's chosen list and grants the
+ * rest bonus (+1 coin, +1 stamina, capped at MAX_STAMINA).
+ */
+export function discardChosenCard(
+	room: Room,
+	playerId: string,
+	cardId: string,
+): void {
+	assertPhase(room, "placement", "discardChosenCard");
+	const player = getPlayer(room, playerId);
+	const card = room.cards.find((c) => c.card_id === cardId);
+	if (!card) throw new Error(`Card ${cardId} not found`);
+	if (!player.chosen.includes(cardId)) {
+		throw new Error(`Card ${cardId} is not in your chosen cards`);
+	}
+
+	player.chosen = player.chosen.filter((id) => id !== cardId);
+	player.resources = gainRestResources(player.resources);
+
+	room.log.push(
+		`${player.name} discarded "${card.name}" for rest resources during placement.`,
+	);
+	room.broadcast(room);
+}
+
+/**
  * Skip a time slot (mark as rest/travel buffer).
  * This breaks the distance-penalty chain on adjacent slots.
  */
