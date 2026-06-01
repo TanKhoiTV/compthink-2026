@@ -465,18 +465,22 @@ export function setPlacementTimerId(id: number | null) {
 let discardedResourceCoinBonus = 0;
 let discardedResourceStaminaBonus = 0;
 
+/** @deprecated Set automatically by syncAllStateFromSnapshot(). */
 export function getDiscardedResourceCoinBonus(): number {
 	return discardedResourceCoinBonus;
 }
 
+/** @deprecated Use syncAllStateFromSnapshot() in snapshotAdapter.ts instead. */
 export function setDiscardedResourceCoinBonus(v: number) {
 	discardedResourceCoinBonus = v;
 }
 
+/** @deprecated Set automatically by syncAllStateFromSnapshot(). */
 export function getDiscardedResourceStaminaBonus(): number {
 	return discardedResourceStaminaBonus;
 }
 
+/** @deprecated Use syncAllStateFromSnapshot() in snapshotAdapter.ts instead. */
 export function setDiscardedResourceStaminaBonus(v: number) {
 	discardedResourceStaminaBonus = v;
 }

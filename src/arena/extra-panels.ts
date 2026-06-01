@@ -60,28 +60,6 @@ export function renderScoreBreakdownPanel(
 
 /* ── Resource Orbs ──────────────────────────────────────────────────────── */
 
-export function renderResourceOrbs(
-	xu: number,
-	stamina: number,
-	debtToken: number,
-	vp: number,
-): string {
-	return `
-    <section class="resource-orbs">
-      <div class="resource-orbs__orb resource-orbs__orb--xu" title="Tiền Việt (Xu)">
-        <span>${xu}</span>
-      </div>
-      <div class="resource-orbs__orb resource-orbs__orb--stamina" title="Thể lực (Stamina)">
-        <span>${stamina}</span>
-      </div>
-      ${debtToken > 0 ? `<div class="resource-orbs__orb resource-orbs__orb--debt" title="Nợ">${debtToken}</div>` : ""}
-      <div class="resource-orbs__orb resource-orbs__orb--vp" title="Điểm VP">
-        <span>${vp}</span>
-      </div>
-    </section>
-  `;
-}
-
 /* ── Final Ranking Panel ────────────────────────────────────────────────── */
 
 export function renderFinalRankingPanel(

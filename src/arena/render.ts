@@ -547,7 +547,7 @@ function renderMusicToggle(): string {
   `;
 }
 
-function renderDeckCardStack(): string {
+export function renderDeckCardStack(): string {
 	const deck = getDeck();
 	const remaining = deck.length;
 
@@ -578,7 +578,7 @@ function renderDeckCardStack(): string {
   `;
 }
 
-function renderScoreBreakdownPanel(): string {
+export function renderScoreBreakdownPanel(): string {
 	const board = getBoardSlots();
 	const dayIndex = getCurrentDayIndex();
 
@@ -673,7 +673,7 @@ function renderScoreBreakdownPanel(): string {
 
 // ── Resource orbs ───────────────────────────────────────────────────────────
 
-function renderResourceOrbs(): string {
+export function renderResourceOrbs(): string {
 	const board = getBoardSlots();
 	const totals = calculateBoardTotals(board);
 	const remaining = getRemainingResources({
@@ -687,18 +687,28 @@ function renderResourceOrbs(): string {
 
 	return `
     <div class="resource-orbs">
-      <div class="orb orb--coin">
-        <span class="orb__icon">C</span>
-        <span class="orb__value">${remaining.coin}</span>
+      <div class="resource-orb resource-orb--coin">
+        <div class="resource-orb__frame">
+          <div class="resource-orb__icon">🪙</div>
+          <div class="resource-orb__value">${remaining.coin}</div>
+        </div>
+        <div class="resource-orb__label">Xu</div>
       </div>
-      <div class="orb orb--stamina">
-        <span class="orb__icon">S</span>
-        <span class="orb__value">${remaining.stamina}</span>
+      <div class="resource-orb resource-orb--stamina">
+        <div class="resource-orb__frame">
+          <div class="resource-orb__icon resource-orb__icon--stamina">⚡</div>
+          <div class="resource-orb__value">${remaining.stamina}</div>
+        </div>
+        <div class="resource-orb__label">Thể lực</div>
       </div>
-      <div class="orb orb--debt">
-        <span class="orb__icon">D</span>
-        <span class="orb__value">${debt}</span>
-      </div>
+      ${debt > 0 ? `
+      <div class="resource-orb resource-orb--debt">
+        <div class="resource-orb__frame">
+          <div class="resource-orb__icon">💸</div>
+          <div class="resource-orb__value">${debt}</div>
+        </div>
+        <div class="resource-orb__label">Nợ</div>
+      </div>` : ""}
     </div>
   `;
 }
@@ -717,7 +727,7 @@ function renderEndDayButton(): string {
 
 // ── Game Over screen ─────────────────────────────────────────────────────────
 
-function renderGameOverScreen(): string {
+export function renderGameOverScreen(): string {
 	const breakdownTotal = getAccumulatedVP();
 	const board = getBoardSlots();
 	const totals = calculateBoardTotals(board);
@@ -808,7 +818,7 @@ function renderGameOverScreen(): string {
 
 // ── Turn timer ──────────────────────────────────────────────────────────────
 
-function renderTurnTimer(): string {
+export function renderTurnTimer(): string {
 	return `
     <div class="turn-timer">
       <span>${getRemainingTurnSeconds()}s</span>
@@ -874,7 +884,7 @@ function getSimEventTitle(
 	return "";
 }
 
-function renderSimulationResultPanel(): string {
+export function renderSimulationResultPanel(): string {
 	const result = getSimulationResult();
 	if (!result) return "";
 
@@ -1004,7 +1014,7 @@ function renderSimulationResultPanel(): string {
 
 // ── Opponent strip (single-player with bots) ─────────────────────────────────
 
-function renderOpponentStrip(
+export function renderOpponentStrip(
 	opponents: Array<{
 		name: string;
 		playerId: string;
