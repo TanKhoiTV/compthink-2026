@@ -24,17 +24,12 @@ import {
 	exportSnapshot,
 	type Room,
 } from "../../server/game.ts";
-import {
-	createBotPlayer,
-	scheduleBotTurns,
-} from "../../server/bot.ts";
+import { createBotPlayer, scheduleBotTurns } from "../../server/bot.ts";
 import type { TravelCard, TimeSlot } from "../shared/types.ts";
 import { applySnapshotToState } from "./snapshotAdapter.ts";
 import { rerenderGameShell } from "../router.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
-import {
-	setIsInitialDealInProgress,
-} from "../state.ts";
+import { setIsInitialDealInProgress } from "../state.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
 
 // ─── State ──────────────────────────────────────────────────────────────────
@@ -156,7 +151,11 @@ export function localDraftCard(cardId: string, mode: "store" | "rest"): void {
 	}
 }
 
-export function localPlaceCard(cardId: string, day: number, slot: TimeSlot): void {
+export function localPlaceCard(
+	cardId: string,
+	day: number,
+	slot: TimeSlot,
+): void {
 	if (!localRoom || !localPlayerId) return;
 	try {
 		placeCard(localRoom, localPlayerId, cardId, { day, slot });
@@ -204,7 +203,9 @@ function applySnapshotAndRender(): void {
 
 	// Update local state with draft animation triggers
 	if (snapshot.phase === "draft") {
-		const isFirstPick = !document.querySelector(".player-hand--draft .hand-card");
+		const isFirstPick = !document.querySelector(
+			".player-hand--draft .hand-card",
+		);
 		if (isFirstPick) {
 			playGameSound("deal");
 			setIsInitialDealInProgress(true);
@@ -239,9 +240,12 @@ function scheduleBots(): void {
 	// scheduleBotTurns returns setTimeout IDs; we chain a final
 	// applySnapshotAndRender after the longest bot delay
 	if (timers.length > 0) {
-		const finalTimer = setTimeout(() => {
-			applySnapshotAndRender();
-		}, 600 + timers.length * 100);
+		const finalTimer = setTimeout(
+			() => {
+				applySnapshotAndRender();
+			},
+			600 + timers.length * 100,
+		);
 		botTimerIds.push(finalTimer as unknown as number);
 	}
 }

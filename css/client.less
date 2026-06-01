@@ -325,6 +325,58 @@ body {
   color: #9b7b5c;
 }
 
+/* ── Opponent strip (bot opponents below arena) ─────────────────── */
+
+.opponent-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px var(--side-margin);
+  margin: 4px auto 0;
+  max-width: calc(var(--main-width) + 2 * var(--side-margin));
+  box-sizing: border-box;
+}
+
+.opponent-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 252, 244, 0.75);
+  border: 1px solid rgba(155, 123, 92, 0.25);
+  border-radius: 20px;
+  padding: 4px 12px 4px 10px;
+  font-size: 12px;
+  cursor: help;
+  transition: background 0.15s;
+}
+
+.opponent-chip:hover {
+  background: rgba(255, 252, 244, 0.95);
+  border-color: rgba(155, 123, 92, 0.45);
+}
+
+.opponent-chip__name {
+  font-weight: 600;
+  color: #5a4a3a;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opponent-chip__vp {
+  font-weight: 800;
+  color: #b8860b;
+  font-size: 14px;
+}
+
+.opponent-chip__icon {
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0.5;
+}
+
 /* =========================================
    3. BOARD GRID
    ========================================= */

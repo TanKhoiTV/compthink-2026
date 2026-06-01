@@ -1,7 +1,7 @@
 # Trekkopoly — Remaining Work
 
-**Last updated:** 2026-05-31  
-**Current version:** v0.17.0  
+**Last updated:** 2026-06-01  
+**Current version:** v0.19.0  
 **Deployed at:** https://tankhoitv.github.io/compthink-2026/  
 **Server:** https://trekkopoly.compthink-2026.deno.net
 
@@ -127,9 +127,13 @@ Wire `socketClient.ts` into the game screens:
 - Client: `sendPayDebt()` / `sendReturnBoardCard()` in lobbyClient.ts
 - UI: debt payment section + ↩️ return button on placed cells
 
-### [ ] Auth-attached player identity
-- Old system linked WebSocket sessions to authenticated user (via JWT from /auth/login)
-- Currently use anonymous `crypto.randomUUID()` — fine for now but auth would tie identity to account
+### [x] Auth-attached player identity
+- Server: `PlayerSession` gains optional `AuthUser`; `createPlayerSession()` accepts optional user param
+- Server: `handleWebSocket()` reads `?token=` query param, validates via `verifyAuthToken()`, overrides name with auth user's display name
+- Client: `AuthClientState` persists JWT + user info to localStorage, `loadAuthSession()` at startup
+- Client: `connectToRoom()` appends `&token=JWT` query param when logged in
+- Client: Login/register handlers use `saveAuthSession()`, logout uses `clearAuthSession()`
+- Lobby entry falls back to `getAuthDisplayName()` if no active session
 
 ### [ ] CORS / preflight for Deno Deploy ↔ GitHub Pages
 - Server URL: `https://trekkopoly-3ecx8dx2y5kj.compthink-2026.deno.net`
@@ -141,13 +145,13 @@ Wire `socketClient.ts` into the game screens:
 
 ## Tier 3 — Game Logic Polish
 
-### [ ] Bot/AI opponent placement
-Single-player opponent boards with 3 AI bots (p2-p4):
-- Code exists in old TREKPOLOGY (first commit, original design)
-- Helps solo-play feel alive with opponent cards shown as side panels
-- **BLOCKED**: needs bot draft picks (our draft only serves p1), timer-based placement, side-panel rendering
-- Dead code in `board-interaction.ts` has partial impl (writes to `playerBoards[playerId]` correctly) but never called
-- Flagged as migration gap — defer until draft system supports bot players and side-panel UI is implemented
+### [x] Bot/AI opponent engine
+- `server/bot.ts` — Bot auto-play module: createBotPlayer, runBotTurn (draft/place/confirm), scheduleBotTurns
+- `src/online/localRoom.ts` — Wraps server Room for in-process use with N bots (default 3)
+- `src/online/snapshotAdapter.ts` — Converts RoomSnapshot → state.ts for rendering
+- `src/online/spAdapter.ts` — Routes global action handlers (selectHandCard etc.) to server game functions
+- Singleplayer now uses the same Room FSM as multiplayer, with 3 bot opponents
+- **Not yet**: side-panel showing opponent cards/status — stored in snapshotAdapter data, just needs rendering in the single-player arena
 
 ### [ ] Pass-card animation — verify all 5 draft rounds
 - Draft flow: pick → stop timer → pass animation (940ms) → rotate pool → deal animation (1320ms) → next round
