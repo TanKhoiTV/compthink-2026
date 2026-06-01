@@ -97,15 +97,17 @@ async function handleCreateRoom(req: Request): Promise<Response> {
 	try {
 		body = await req.json();
 	} catch {
-		return new Response(
-			JSON.stringify({ error: "Invalid JSON body" }),
-			{ status: 400, headers: { "Content-Type": "application/json" } },
-		);
+		return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+			status: 400,
+			headers: { "Content-Type": "application/json" },
+		});
 	}
 
 	if (!Array.isArray(body.cards) || body.cards.length === 0) {
 		return new Response(
-			JSON.stringify({ error: "body.cards must be a non-empty array of TravelCard" }),
+			JSON.stringify({
+				error: "body.cards must be a non-empty array of TravelCard",
+			}),
 			{ status: 400, headers: { "Content-Type": "application/json" } },
 		);
 	}
@@ -122,10 +124,10 @@ async function handleCreateRoom(req: Request): Promise<Response> {
 	rooms.set(roomId, room);
 
 	console.log(`[server] Room ${roomId} created (${body.cards.length} cards).`);
-	return new Response(
-		JSON.stringify({ roomId }),
-		{ status: 201, headers: { "Content-Type": "application/json" } },
-	);
+	return new Response(JSON.stringify({ roomId }), {
+		status: 201,
+		headers: { "Content-Type": "application/json" },
+	});
 }
 
 // ─── WebSocket handler ────────────────────────────────────────────────────────
@@ -162,10 +164,10 @@ async function handleWebSocket(req: Request): Promise<Response> {
 
 	const room = rooms.get(roomId);
 	if (!room) {
-		return new Response(
-			JSON.stringify({ error: `Room ${roomId} not found` }),
-			{ status: 404, headers: { "Content-Type": "application/json" } },
-		);
+		return new Response(JSON.stringify({ error: `Room ${roomId} not found` }), {
+			status: 404,
+			headers: { "Content-Type": "application/json" },
+		});
 	}
 
 	// Upgrade the HTTP request to a WebSocket connection
@@ -308,11 +310,15 @@ async function router(req: Request): Promise<Response> {
 		if (pathname === "/api/auth/me" && method === "GET") {
 			const authHeader = req.headers.get("Authorization") || "";
 			const token = authHeader.startsWith("Bearer ")
-			? authHeader.slice(7)
-			: null;
+				? authHeader.slice(7)
+				: null;
 			const user = await verifyAuthToken(token);
 			if (!user) {
-				return jsonRes({ error: "Chưa đăng nhập hoặc token hết hạn." }, origin, 401);
+				return jsonRes(
+					{ error: "Chưa đăng nhập hoặc token hết hạn." },
+					origin,
+					401,
+				);
 			}
 			return jsonRes({ user }, origin);
 		}
@@ -358,7 +364,7 @@ function corsHeaders(origin: string): Record<string, string> {
 		"Access-Control-Allow-Origin": origin,
 		"Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
 		"Access-Control-Allow-Headers": "Content-Type, Authorization",
-		"Vary": "Origin",
+		Vary: "Origin",
 	};
 }
 
