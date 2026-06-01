@@ -12,19 +12,19 @@
  */
 
 import {
-addPlayer,
-removePlayer,
-startGame,
-draftCard,
-placeCard,
-skipSlot,
-confirmDay,
-toggleReady,
-payDebt,
-returnBoardCard,
-discardChosenCard,
-exportSnapshot,
-type Room,
+	addPlayer,
+	removePlayer,
+	startGame,
+	draftCard,
+	placeCard,
+	skipSlot,
+	confirmDay,
+	toggleReady,
+	payDebt,
+	returnBoardCard,
+	discardChosenCard,
+	exportSnapshot,
+	type Room,
 } from "./game.ts";
 import type { GridPosition } from "../src/shared/types.ts";
 
