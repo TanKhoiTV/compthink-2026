@@ -36,6 +36,8 @@ import {
 	currentPlayerId,
 	getDiscardedResourceCoinBonus,
 	getDiscardedResourceStaminaBonus,
+	getOpponentPlayers,
+	getCurrentPlayerName,
 } from "../state.ts";
 import type { GamePhase } from "../state.ts";
 import {
@@ -122,6 +124,8 @@ export function renderMainArena(): string {
 	const phase = getGamePhase();
 	const isDraft = phase === "draft";
 	const isSimulation = phase === "simulation" || getIsSimulationMode();
+	const opponents = getOpponentPlayers();
+	const myName = getCurrentPlayerName() || currentPlayerId.toUpperCase();
 	const focusedCard = getShowFocusedPopup()
 		? (getHandCardById(getFocusedHandCardId()) ?? getFocusedBoardCard())
 		: null;
@@ -132,7 +136,7 @@ export function renderMainArena(): string {
         <div class="arena__title-block">
           <div class="blue-line"></div>
           <div>
-            <h1>${currentPlayerId.toUpperCase()}</h1>
+            <h1>${escapeHtml(myName)}</h1>
           </div>
         </div>
         ${renderScoreBreakdownPanel()}
@@ -165,6 +169,8 @@ export function renderMainArena(): string {
         ${shouldShowPlayerHand(phase) ? renderPlayerHandSection() : ""}
         ${shouldShowSimulationPanel(phase) ? renderSimulationResultPanel() : ""}
       </div>
+
+      ${opponents.length > 0 ? renderOpponentStrip(opponents) : ""}
 
       ${renderDeckCardStack()}
       ${focusedCard ? renderFocusedCard(focusedCard) : ""}
@@ -393,7 +399,8 @@ export function renderHandCard(
 		: "hand-card--common";
 	const fanClass = `hand-card--fan-${index + 1}`;
 	const shortName =
-		(card as { shortName?: string }).shortName?.trim() || getShortName(card.name);
+		(card as { shortName?: string }).shortName?.trim() ||
+		getShortName(card.name);
 	const shortCity =
 		(card as { shortCity?: string }).shortCity?.trim() ||
 		getShortCity(card.city || "");
@@ -993,4 +1000,37 @@ function renderSimulationResultPanel(): string {
       </div>
     </section>
   `;
+}
+
+// ── Opponent strip (single-player with bots) ─────────────────────────────────
+
+function renderOpponentStrip(
+	opponents: Array<{ name: string; playerId: string; resources: { vp: number }; ready: boolean; hand: string[]; chosen: string[]; board: unknown[] }>,
+): string {
+	return `
+    <div class="opponent-strip">
+      ${opponents
+				.map(
+					(p) => `
+        <div class="opponent-chip" title="${escapeHtml(p.name)} — ${p.resources.vp} VP, ${p.hand.length} lá trên tay, ${p.chosen.length} lá đã chọn, ${p.board.length} lá đã đặt">
+          <span class="opponent-chip__name">${escapeHtml(p.name)}</span>
+          <span class="opponent-chip__vp">${p.resources.vp}</span>
+          <span class="opponent-chip__icon">🏆</span>
+        </div>
+      `,
+				)
+				.join("")}
+    </div>
+  `;
+}
+
+// ── Escaping ─────────────────────────────────────────────────────────────────
+
+function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
 }

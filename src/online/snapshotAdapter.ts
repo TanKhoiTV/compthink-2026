@@ -134,8 +134,13 @@ const PHASE_MAP: Record<string, string> = {
  * Server uses "scoring" which includes both simulation and scoring;
  * local state calls this phase "simulation".
  */
-function phaseToLocal(phase: string): "draft" | "placement" | "simulation" | "finished" {
-	return (PHASE_MAP[phase] as "draft" | "placement" | "simulation" | "finished") || "draft";
+function phaseToLocal(
+	phase: string,
+): "draft" | "placement" | "simulation" | "finished" {
+	return (
+		(PHASE_MAP[phase] as "draft" | "placement" | "simulation" | "finished") ||
+		"draft"
+	);
 }
 
 /**

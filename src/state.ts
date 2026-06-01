@@ -72,7 +72,9 @@ export function getOpponentPlayerIds(): PlayerId[] {
 
 let opponentPlayers: import("./shared/types.ts").PlayerState[] = [];
 
-export function setOpponentPlayers(players: import("./shared/types.ts").PlayerState[]) {
+export function setOpponentPlayers(
+	players: import("./shared/types.ts").PlayerState[],
+) {
 	opponentPlayers = players;
 }
 
