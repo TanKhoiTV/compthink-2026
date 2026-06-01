@@ -636,6 +636,27 @@ export function initOnlineGameGlobals() {
 		if (cardId) handleOnlineDiscardCard(cardId);
 	};
 
+	// Register global card selection handler (called by capture-phase click
+	// handler in router.ts for both draft cards and hand cards).
+	(globalThis as any).selectHandCard = (cardId: string) => {
+		_selectedOnlineCardId = cardId;
+		rerenderOnlineGame();
+	};
+
+	// Register global board cell click handler (called by capture-phase
+	// click handler in router.ts). Places the selected card on board.
+	(globalThis as any).handleBoardCellClick = (row: number, _col: number) => {
+		if (_selectedOnlineCardId) {
+			handleOnlinePlaceCardOnBoard(_selectedOnlineCardId, row);
+		}
+	};
+
+	// Register global board placement handler (called by handleHandPointerUp
+	// in app.ts when a card is dragged to a board cell).
+	(globalThis as any).handlePlaceCardOnBoard = (cardId: string, row: number, _col: number) => {
+		handleOnlinePlaceCardOnBoard(cardId, row);
+	};
+
 	// Animation updates - call after each render to check for animation triggers
 	updateOnlineGameAnimations();
 }

@@ -1030,6 +1030,7 @@ function handleHandPointerUp(event: PointerEvent) {
 			return;
 		}
 
+		// Board placement: use global handler (for Room-based game) or local fallback
 		if (
 			dropCell &&
 			Number.isInteger(rowIndex) &&
@@ -1037,7 +1038,12 @@ function handleHandPointerUp(event: PointerEvent) {
 			colIndex === currentDay &&
 			getBoardSlots()[rowIndex]?.[colIndex] === null
 		) {
-			placeHandCardOnBoard(cardId, rowIndex, colIndex);
+			const globalPlaceCard = (globalThis as any).handlePlaceCardOnBoard;
+			if (typeof globalPlaceCard === "function") {
+				globalPlaceCard(cardId, rowIndex, colIndex);
+			} else {
+				placeHandCardOnBoard(cardId, rowIndex, colIndex);
+			}
 			return;
 		}
 
