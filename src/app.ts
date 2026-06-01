@@ -83,8 +83,8 @@ import { isConnected, loadAuthSession } from "./online/socketClient.ts";
 import "./online/lobbyClient.ts"; // Side-effect: binds lobby globals
 import type { PlayerId } from "./shared/client-types.ts";
 import type { TravelCard } from "./shared/types.ts";
-import { createInitialDeck, shuffleCards } from "./shared/deck.ts";
-import { allCards } from "./shared/data/cards.all.ts";
+import { shuffleCards } from "./shared/deck.ts";
+import { startBotGame } from "./online/spAdapter.ts";
 import {
 	HAND_SIZE,
 	STARTING_COIN,
@@ -326,17 +326,8 @@ function startSinglePlayerGame() {
 	if (singlePlayerStarted) return;
 	singlePlayerStarted = true;
 
-	const fullDeck = createInitialDeck({
-		cards: allCards,
-		fallbackCards: [],
-		handSize: HAND_SIZE,
-	});
-
-	setDeck(shuffleCards(fullDeck));
-	setPlayerHand([]);
-	setCurrentDayIndex(0);
-
-	startDailyDraft();
+	// Use the unified Room+bot game engine instead of the old app.ts loop
+	startBotGame("p1", "Nhà Lữ Hành", 3);
 }
 
 // Expose globally so dashboard.ts's gotoMapSelection can call it
