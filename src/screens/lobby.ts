@@ -80,8 +80,8 @@ export function renderOnlineEntryScreen(
         </div>
 
         ${
-						savedSession
-							? `
+					savedSession
+						? `
               <div class="online-entry-card__resume">
                 <div>
                   <strong>Phiên cũ</strong>
@@ -91,7 +91,7 @@ export function renderOnlineEntryScreen(
                 <button class="online-entry-card__ghost" onclick="event.stopPropagation(); window.clearSavedRoomFromLobby()">Xóa lưu</button>
               </div>
             `
-							: ""
+						: ""
 				}
       </section>
     </main>
@@ -116,7 +116,6 @@ export function renderOnlineLobbyRoomScreen(
 	if (phase !== "lobby") return "";
 
 	const safeRoomId = escapeHtml(roomId);
-	const safePlayerId = escapeHtml(playerId);
 	const safeSelfName = escapeHtml(selfPlayerName);
 
 	const playersHtml = players
@@ -124,9 +123,8 @@ export function renderOnlineLobbyRoomScreen(
 			const isSelf = player.id === playerId;
 			const safePid = escapeHtml(player.id);
 			const safePName = escapeHtml(player.name);
-			const safeDisplayName = player.isConnected || player.hasJoined
-				? safePName
-				: "Đang chờ...";
+			const safeDisplayName =
+				player.isConnected || player.hasJoined ? safePName : "Đang chờ...";
 
 			const slotClass = player.isConnected
 				? "is-connected"
@@ -143,7 +141,7 @@ export function renderOnlineLobbyRoomScreen(
 
 			return `
         <div class="online-lobby-player ${slotClass} ${isSelf ? "is-self" : ""}">
-          <div class="online-lobby-player__slot">${safePid.toUpperCase()}</div>
+          <div class="online-lobby-player__slot">${safePid.slice(0, 8).toUpperCase()}</div>
           <div class="online-lobby-player__info">
             <strong>${safeDisplayName}</strong>
             <span>${player.isConnected ? (player.isReady ? "Sẵn sàng" : "Chưa sẵn sàng") : player.hasJoined ? "Đã offline • giữ slot" : "Trống"}</span>
@@ -161,7 +159,7 @@ export function renderOnlineLobbyRoomScreen(
           <div>
             <span>ONLINE ROOM</span>
             <h1>${safeRoomId}</h1>
-            <p>Bạn là ${safePlayerId.toUpperCase()} • ${safeSelfName}</p>
+            <p>Bạn là ${safeSelfName}</p>
           </div>
 
           <div class="online-lobby-card__header-actions">
