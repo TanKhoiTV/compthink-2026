@@ -312,7 +312,7 @@ function renderOnlineDraftContent(
           <span class="hand-badge">DRAFT</span>
           <h2>Chọn thẻ ngày ${snapshot.day} • Vòng ${pickRound}/5</h2>
         </div>
-        <div class="player-hand__meta">Chọn Lưu (giữ) hoặc Nghỉ (bỏ)</div>
+        <div class="player-hand__meta">Bấm 1 lá để chọn, hết giờ mới chuyển</div>
       </div>
       <div class="player-hand__cards">
         ${handCards
@@ -324,15 +324,11 @@ function renderOnlineDraftContent(
 }
 
 function renderOnlineDraftCard(card: TravelCard, _index: number): string {
-	// rarityClass and fanClass are applied inside renderHandCard
-
+	// Use data-draft-card-id for hold-to-preview (shared with router.ts handlers)
+	// data-online-draft-pick for click-to-store (Sushi Go style)
 	return `
-    <div class="daily-draft-card daily-draft-card--${_index + 1}" data-online-draft-card-id="${card.card_id}">
+    <div class="daily-draft-card daily-draft-card--${_index + 1}" data-draft-card-id="${card.card_id}" data-online-draft-pick="${card.card_id}">
       ${renderHandCard(card, _index, null)}
-      <div class="online-draft-card__actions" style="text-align:center;margin-top:4px;">
-        <button class="online-draft-btn online-draft-btn--store" data-online-store="${card.card_id}" style="font-size:0.7rem;padding:2px 6px;">📥 Lưu</button>
-        <button class="online-draft-btn online-draft-btn--rest" data-online-rest="${card.card_id}" style="font-size:0.7rem;padding:2px 6px;">💤 Nghỉ</button>
-      </div>
     </div>
   `;
 }
@@ -555,23 +551,14 @@ function escapeHtml(text: string): string {
 // ── Global action handlers (bound on render) ────────────────────────────────
 
 export function initOnlineGameGlobals() {
-	// Draft: store card
-	document.querySelectorAll("[data-online-store]").forEach((btn) => {
-		btn.addEventListener("click", (e) => {
+	// Draft: click card to pick (store) — Sushi Go style, like offline mode
+	document.querySelectorAll("[data-online-draft-pick]").forEach((el) => {
+		el.addEventListener("click", (e) => {
+			e.stopPropagation();
 			const cardId = (e.currentTarget as HTMLElement).getAttribute(
-				"data-online-store",
+				"data-online-draft-pick",
 			);
 			if (cardId) handleOnlineDraftCard(cardId, "store");
-		});
-	});
-
-	// Draft: rest card
-	document.querySelectorAll("[data-online-rest]").forEach((btn) => {
-		btn.addEventListener("click", (e) => {
-			const cardId = (e.currentTarget as HTMLElement).getAttribute(
-				"data-online-rest",
-			);
-			if (cardId) handleOnlineDraftCard(cardId, "rest");
 		});
 	});
 

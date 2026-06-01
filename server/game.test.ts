@@ -448,8 +448,9 @@ Deno.test("full game flow — lobby → draft → placement → scoring → fini
 		confirmDay(room, "p1");
 		confirmDay(room, "p2");
 
-		// After 1 day with maxDays=1, should finish the game
-		assertEquals(room.phase, "finished");
+		// After all confirm, phase should be "scoring" (results broadcast first,
+		// then 3s later the game advances to finished via setTimeout)
+		assertEquals(room.phase, "scoring");
 		assertEquals(room.day, 1);
 	}
 

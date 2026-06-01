@@ -581,16 +581,23 @@ function runSimulationAndScoring(room: Room): void {
 		player.storage = [];
 	});
 
-	// Advance day or finish
-	if (day >= room.maxDays) {
-		finishGame(room);
-	} else {
-		room.day += 1;
-		doTransition(room, "draft", `Starting day ${room.day}`);
-		beginDraftingPhase(room);
-	}
-
+	// 1. Broadcast scoring results FIRST so clients see the score table
 	room.broadcast(room);
+
+	// 2. After a pause, advance to next day (or finish)
+	setTimeout(() => {
+		// Guard: room might have been cleaned up
+		if (room.phase !== "scoring") return;
+
+		if (day >= room.maxDays) {
+			finishGame(room);
+		} else {
+			room.day += 1;
+			doTransition(room, "draft", `Starting day ${room.day}`);
+			beginDraftingPhase(room);
+		}
+		room.broadcast(room);
+	}, 3000);
 }
 
 // ─── Finish ───────────────────────────────────────────────────────────────────

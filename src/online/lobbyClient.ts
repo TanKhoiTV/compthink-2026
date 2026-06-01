@@ -191,6 +191,9 @@ async function joinRoomFromLobby() {
 		setOnRoomSnapshot(handleRoomSnapshot);
 		setOnDisconnect(handleDisconnect);
 
+		// Load the same card catalogue as the host so card IDs can be resolved
+		currentCards = getCardsByPhasePool("SAIGON");
+
 		const playerId = crypto.randomUUID();
 		// Set identity before connect so snapshot handler has it ready
 		currentPlayerId = playerId;
@@ -221,6 +224,9 @@ async function reconnectSavedRoomFromLobby() {
 		// Register callbacks BEFORE connecting so initial snapshot isn't lost
 		setOnRoomSnapshot(handleRoomSnapshot);
 		setOnDisconnect(handleDisconnect);
+
+		// Reconnect: also reload card catalogue
+		currentCards = getCardsByPhasePool("SAIGON");
 
 		// Reconnect uses saved identity — set before connect so snapshot
 		// handler has currentPlayerId/currentPlayerName ready
