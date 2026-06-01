@@ -28,7 +28,13 @@ import {
 	getCurrentDayIndex,
 	setFocusedHandCardId,
 	getPlayerChosenCards,
+	getDraftPool,
+	setIsPassingDraftCards,
+	setDraftSelectedCardId,
 } from "../state.ts";
+import { rerenderGameShell } from "../router.ts";
+import { PASS_ANIMATION_MS, DEAL_ANIMATION_MS } from "../shared/animations.ts";
+import { playGameSound } from "../audio/gameAudio.ts";
 import { TIME_SLOTS } from "../shared/board.ts";
 import type { TravelCard, TimeSlot } from "../shared/types.ts";
 
@@ -68,12 +74,57 @@ export function initSPGlobals(): void {
 	globalsBound = true;
 
 	// ── Draft: select a card from the pool ───────────────────────────────────
+	let _draftPicking = false;
 	(globalThis as any).selectHandCard = (cardId: string) => {
 		const phase = getGamePhase();
 
 		if (phase === "draft") {
-			// In draft mode, picking a card = drafting it (store = keep)
-			localDraftCard(cardId, "store");
+			// Guard: ignore clicks during animation
+			if (_draftPicking) return;
+			_draftPicking = true;
+
+			const pool = getDraftPool();
+			const card = pool.find((c) => c.id === cardId);
+			if (!card) {
+				_draftPicking = false;
+				return;
+			}
+
+			// 1. Show pass animation immediately
+			setDraftSelectedCardId(cardId);
+			setIsPassingDraftCards(true);
+			playGameSound("returnDeck");
+			rerenderGameShell();
+
+			// 2. After animation completes, process the pick
+			window.setTimeout(() => {
+				setIsPassingDraftCards(false);
+				setDraftSelectedCardId(null);
+				localDraftCard(cardId, "store");
+
+				// 3. If still in draft, play deal animation for the new round
+				if (getGamePhase() === "draft") {
+					const hand = document.querySelector(".player-hand--draft");
+					if (hand) {
+						hand.classList.add("player-hand--dealing", "is-dealing");
+						window.requestAnimationFrame(() => {
+							window.requestAnimationFrame(() => {
+								hand.classList.add("deal-active");
+							});
+						});
+						window.setTimeout(() => {
+							hand.classList.remove(
+								"player-hand--dealing",
+								"is-dealing",
+								"deal-active",
+							);
+						}, DEAL_ANIMATION_MS);
+					}
+				}
+
+				_draftPicking = false;
+			}, PASS_ANIMATION_MS);
+
 			return;
 		}
 
