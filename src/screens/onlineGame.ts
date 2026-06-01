@@ -15,7 +15,6 @@ import {
 	getCurrentCards,
 	getCurrentPlayerId,
 	sendPayDebt,
-	sendReturnBoardCard,
 } from "../online/lobbyClient.ts";
 import { rpcCall } from "../online/socketClient.ts";
 import { renderHandCard, renderBoardMiniCard } from "../arena/render.ts";
@@ -639,65 +638,44 @@ export function initOnlineGameGlobals() {
 		});
 	}
 
-	// Pay debt buttons
+	// Pay debt buttons — pays 10xu to reduce debt counter
 	document.querySelectorAll("[data-online-pay-debt]").forEach((btn) => {
-		btn.addEventListener("click", (e) => {
-			const day = Number(
-				(e.currentTarget as HTMLElement).getAttribute("data-card-day"),
-			);
-			const slot = (e.currentTarget as HTMLElement).getAttribute(
-				"data-card-slot",
-			);
-			if (day && slot) {
-				(sendPayDebt as (day: number, slot: string) => void)(day, slot);
-			}
-		});
-	});
-
-	// Return board card buttons
-	document.querySelectorAll("[data-online-return-card]").forEach((btn) => {
-		btn.addEventListener("click", (e) => {
-			const day = Number(
-				(e.currentTarget as HTMLElement).getAttribute("data-card-day"),
-			);
-			const slot = (e.currentTarget as HTMLElement).getAttribute(
-				"data-card-slot",
-			);
-			if (day && slot) {
-				(sendReturnBoardCard as (day: number, slot: string) => void)(day, slot);
-			}
+		btn.addEventListener("click", () => {
+			sendPayDebt(10);
 		});
 	});
 
 	// Discard zone - handle drop events
-	document.querySelectorAll("[data-discard-drop-zone='true']").forEach((zone) => {
-		zone.addEventListener("dragover", (e) => {
-			e.preventDefault(); // Allow drop
-			const canDiscard = () => {
-				const phase = getCurrentGameSnapshot()?.phase;
-				return phase === "placement" && !getIsInitialDealInProgress();
-			};
-			if (canDiscard()) {
-				zone.classList.add("deck-pile-panel--discard-hover");
-			}
+	document
+		.querySelectorAll("[data-discard-drop-zone='true']")
+		.forEach((zone) => {
+			zone.addEventListener("dragover", (e) => {
+				e.preventDefault(); // Allow drop
+				const canDiscard = () => {
+					const phase = getCurrentGameSnapshot()?.phase;
+					return phase === "placement" && !getIsInitialDealInProgress();
+				};
+				if (canDiscard()) {
+					zone.classList.add("deck-pile-panel--discard-hover");
+				}
+			});
+
+			zone.addEventListener("dragleave", () => {
+				zone.classList.remove("deck-pile-panel--discard-hover");
+			});
+
+			zone.addEventListener("drop", (e) => {
+				e.preventDefault();
+				zone.classList.remove("deck-pile-panel--discard-hover");
+
+				// Get the card ID from the data-transfer
+				const dragEvent = e as DragEvent;
+				const cardId = dragEvent.dataTransfer?.getData("text/plain");
+				if (cardId) {
+					handleOnlineDiscardCard(cardId);
+				}
+			});
 		});
-		
-		zone.addEventListener("dragleave", () => {
-			zone.classList.remove("deck-pile-panel--discard-hover");
-		});
-		
-		zone.addEventListener("drop", (e) => {
-			e.preventDefault();
-			zone.classList.remove("deck-pile-panel--discard-hover");
-			
-			// Get the card ID from the data-transfer
-			const dragEvent = e as DragEvent;
-			const cardId = dragEvent.dataTransfer?.getData("text/plain");
-			if (cardId) {
-				handleOnlineDiscardCard(cardId);
-			}
-		});
-	});
 
 	// Animation updates - call after each render to check for animation triggers
 	updateOnlineGameAnimations();
@@ -883,11 +861,43 @@ async function handleOnlinePlaceCard(cardId: string): Promise<void> {
 	const snapshot = getCurrentGameSnapshot();
 	if (!snapshot) return;
 
+	// Find the first available slot in the current day
+	let slotName: string | undefined = undefined;
+	const myPlayer = snapshot.players.find(
+		(p) => p.playerId === getCurrentPlayerId(),
+	);
+	if (myPlayer) {
+		const boardSlots = boardCellsToSlots(
+			myPlayer.board,
+			getCurrentCards() ?? [],
+		);
+		const currentDayIndex = snapshot.day - 1; // Convert to 0-based index
+
+		// Check each slot in the current day for availability
+		for (let rowIndex = 0; rowIndex < TIME_SLOTS.length; rowIndex++) {
+			const slot = TIME_SLOTS[rowIndex];
+			const cell = boardSlots[rowIndex]?.[currentDayIndex];
+			if (cell === null) {
+				// Found an empty slot
+				slotName = slot;
+				break;
+			}
+		}
+	}
+
+	if (!slotName) {
+		// No available slots - fall back to morning as before (but warn)
+		console.warn(
+			"[onlineGame] No available slots in current day, falling back to morning",
+		);
+		slotName = "morning";
+	}
+
 	try {
 		await rpcCall("placeCard", {
 			cardId,
 			day: snapshot.day,
-			slot: "morning",
+			slot: slotName,
 		});
 		_selectedOnlineCardId = null;
 	} catch (err: unknown) {
@@ -934,7 +944,7 @@ async function handleOnlineDiscardCard(cardId: string): Promise<void> {
 	if (!snapshot) return;
 
 	try {
-		await rpcCall("draftCard", { cardId, mode: "rest" });
+		await rpcCall("discardChosenCard", { cardId });
 		_selectedOnlineCardId = null;
 	} catch (err: unknown) {
 		const msg = err instanceof Error ? err.message : String(err);
