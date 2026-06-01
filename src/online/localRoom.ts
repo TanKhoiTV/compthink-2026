@@ -29,8 +29,12 @@ import type { TravelCard, TimeSlot } from "../shared/types.ts";
 import { applySnapshotToState } from "./snapshotAdapter.ts";
 import { rerenderGameShell } from "../router.ts";
 import { playGameSound } from "../audio/gameAudio.ts";
-import { setIsInitialDealInProgress } from "../state.ts";
+import {
+	setIsInitialDealInProgress,
+	setIsPassingDraftCards,
+} from "../state.ts";
 import { getCardsByPhasePool } from "../shared/data/cards.all.ts";
+import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -201,17 +205,42 @@ function applySnapshotAndRender(): void {
 	const snapshot = exportSnapshot(localRoom, localPlayerId);
 	applySnapshotToState(snapshot, localCards, localPlayerId);
 
-	// Update local state with draft animation triggers
+	// ── Draft animation triggers ───────────────────────────────────────────
+	// Track previous hand size to detect pass (hand shrinks) vs deal (new cards)
+	const handEl = document.querySelector(".player-hand--draft");
+	const hadHandCards = handEl?.querySelector(".hand-card");
+
 	if (snapshot.phase === "draft") {
-		const isFirstPick = !document.querySelector(
-			".player-hand--draft .hand-card",
-		);
-		if (isFirstPick) {
+		const hasHandCards = handEl?.querySelector(".hand-card");
+
+		if (hasHandCards && !hadHandCards) {
+			// Pass complete — new cards just arrived. Play deal animation.
 			playGameSound("deal");
+			setIsPassingDraftCards(false);
 			setIsInitialDealInProgress(true);
-			setTimeout(() => {
+
+			window.requestAnimationFrame(() => {
+				window.requestAnimationFrame(() => {
+					const hand = document.querySelector(".player-hand--draft");
+					hand?.classList.add("deal-active");
+				});
+			});
+
+			window.setTimeout(() => {
 				setIsInitialDealInProgress(false);
-			}, 500);
+				const hand = document.querySelector(".player-hand");
+				hand?.classList.remove(
+					"player-hand--dealing",
+					"is-dealing",
+					"deal-active",
+				);
+			}, DEAL_ANIMATION_MS);
+		}
+
+		if (!hasHandCards && hadHandCards) {
+			// Hand just got emptied — player picked, remaining cards passed back.
+			// Play pass animation.
+			setIsPassingDraftCards(true);
 		}
 	}
 

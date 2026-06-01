@@ -1005,7 +1005,15 @@ function renderSimulationResultPanel(): string {
 // ── Opponent strip (single-player with bots) ─────────────────────────────────
 
 function renderOpponentStrip(
-	opponents: Array<{ name: string; playerId: string; resources: { vp: number }; ready: boolean; hand: string[]; chosen: string[]; board: unknown[] }>,
+	opponents: Array<{
+		name: string;
+		playerId: string;
+		resources: { vp: number };
+		ready: boolean;
+		hand: string[];
+		chosen: string[];
+		board: unknown[];
+	}>,
 ): string {
 	return `
     <div class="opponent-strip">
