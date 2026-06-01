@@ -750,7 +750,7 @@ function startNextDayOrPhase() {
 	// Apply coin debt penalty before advancing
 	const debt = getLocalCoinDebt();
 	if (debt > 0) {
-		setAccumulatedVP(getAccumulatedVP() - debt * 10);
+		setAccumulatedVP(Math.max(0, getAccumulatedVP() - debt * 10));
 		setLocalCoinDebt(0);
 	}
 
@@ -1171,6 +1171,16 @@ function handleHandPointerCancel() {
 	clearHoldCardTimer();
 
 	const id = window.setTimeout(() => {
+		// Don't show overlay if a drag is already in progress
+		const dragState = getHandPointerDragState();
+		if (dragState) {
+			const { isDragging } = dragState;
+			if (isDragging) return;
+			// If dragging has started, skip the overlay so the popup doesn't
+			// the user is likely about to start a drag — skip the overlay.
+			// We can't measure current pointer from here, so just check isDragging.
+		}
+
 		setFocusedHandCardId(cardId);
 		setFocusedBoardCard(null);
 		setSuppressNextClick(true);

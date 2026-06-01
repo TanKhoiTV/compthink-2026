@@ -20,7 +20,12 @@ import {
 import { rpcCall } from "../online/socketClient.ts";
 import { renderHandCard, renderBoardMiniCard } from "../arena/render.ts";
 import type { RoomSnapshot, TravelCard, PlayerState } from "../shared/types.ts";
-import { boardCellsToSlots, DAYS, TIME_SLOTS, SLOT_NAMES } from "../shared/board.ts";
+import {
+	boardCellsToSlots,
+	DAYS,
+	TIME_SLOTS,
+	SLOT_NAMES,
+} from "../shared/board.ts";
 
 // ── Main entry ──────────────────────────────────────────────────────────────
 
@@ -418,16 +423,17 @@ function renderOnlineBoardGrid(
 
 	return `
     <section class="board-grid">
-      ${TIME_SLOTS.map((slot, rowIdx) =>
-				`<div class="time-label">${SLOT_NAMES[slot] ?? slot}</div>
+      ${TIME_SLOTS.map(
+				(slot, rowIdx) =>
+					`<div class="time-label">${SLOT_NAMES[slot] ?? slot}</div>
 				` +
-				DAYS.map((_day, colIdx) => {
-					const cell = boardSlots[rowIdx]?.[colIdx] ?? null;
-					const isCurrentDay = colIdx === currentDay - 1;
-					const canPlace =
-						isPlacement && isCurrentDay && selectedId !== null && !cell;
+					DAYS.map((_day, colIdx) => {
+						const cell = boardSlots[rowIdx]?.[colIdx] ?? null;
+						const isCurrentDay = colIdx === currentDay - 1;
+						const canPlace =
+							isPlacement && isCurrentDay && selectedId !== null && !cell;
 
-					return `
+						return `
             <div
               class="board-cell${cell ? " board-cell--occupied board-cell--clickable" : " board-cell--empty"}${canPlace ? " board-cell--placeable" : ""}${!isCurrentDay ? " board-cell--not-current-day" : ""}"
               data-online-board="${rowIdx},${colIdx}"
@@ -436,7 +442,7 @@ function renderOnlineBoardGrid(
               ${cell ? renderBoardMiniCard(cell) : `<span class="empty-plus">+</span>`}
             </div>
           `;
-				}).join(""),
+					}).join(""),
 			).join("")}
     </section>
   `;
