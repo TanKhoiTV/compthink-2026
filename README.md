@@ -44,17 +44,19 @@ docs/
 ├── adr/                  # Architecture Decision Records
 ├── poc/                  # Proof-of-concept docs
 │   └── ui-docs/          # UX/UI specifications
+├── ARCHITECTURE.md       # Architecture notes (dual game loop, animations, key decisions)
 ├── game-logic-design.md  # Game mechanics & rules (source of truth)
 ├── architecture.html     # System architecture diagram
 └── meetings/notes/       # Sprint notes and discussions
 ```
 
 Start with:
-1. [`docs/game-logic-design.md`](docs/game-logic-design.md) — game rules, card system, scoring, campaign structure
-2. [`docs/team-scoping-plan.html`](docs/team-scoping-plan.html) — top-down view of domains and deliverables
-3. [`docs/architecture.html`](docs/architecture.html) — system diagram with module descriptions
-4. [`docs/adr/001-frontend-client.md`](docs/adr/001-frontend-client.md) — frontend architecture decision
-5. [`docs/adr/002-backend.md`](docs/adr/002-backend.md) — backend architecture decision
+1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — architecture notes: dual game loop, animation system, online/single-player split, key decisions (this file)
+2. [`docs/game-logic-design.md`](docs/game-logic-design.md) — game rules, card system, scoring, campaign structure
+3. [`docs/team-scoping-plan.html`](docs/team-scoping-plan.html) — top-down view of domains and deliverables
+4. [`docs/architecture.html`](docs/architecture.html) — system diagram with module descriptions
+5. [`docs/adr/001-frontend-client.md`](docs/adr/001-frontend-client.md) — frontend architecture decision
+6. [`docs/adr/002-backend.md`](docs/adr/002-backend.md) — backend architecture decision
 
 ## License
 
