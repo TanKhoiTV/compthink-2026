@@ -1,9 +1,10 @@
 import type { PlayerId, RoomState, ServerTravelCardData } from "./types.js";
-import { PLAYER_IDS, shuffleCards } from "./gameEngine.js";
+import { PLAYER_IDS, createServerDeck, shuffleCards } from "./gameEngine.js";
 
 const DRAFT_STARTING_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = 5;
 const DRAFT_PICK_SECONDS = 90;
+export { DRAFT_PICK_SECONDS };
 const DRAFT_CENTER_DEAL_CARD_MS = 900;
 const DRAFT_CENTER_DEAL_GAP_MS = 150;
 const DRAFT_CENTER_DEAL_STEP_MS = DRAFT_CENTER_DEAL_CARD_MS + DRAFT_CENTER_DEAL_GAP_MS;
@@ -33,7 +34,60 @@ function getActiveDraftPlayerIds(state: RoomState): PlayerId[] {
   return connectedPlayerIds.length > 0 ? connectedPlayerIds : ["p1"];
 }
 
+function collectCardIdsOnBoards(state: RoomState): Set<string> {
+  const ids = new Set<string>();
+
+  for (const playerId of PLAYER_IDS) {
+    for (const row of state.players[playerId].board) {
+      for (const cell of row) {
+        if (cell?.type === "card" && cell.cardId) {
+          ids.add(cell.cardId);
+        }
+      }
+    }
+  }
+
+  return ids;
+}
+
+function collectInFlightDraftCardIds(state: RoomState): Set<string> {
+  const ids = new Set<string>();
+
+  for (const playerId of PLAYER_IDS) {
+    const player = state.players[playerId];
+
+    for (const card of [...player.draftPool, ...player.pickedDraftCards, ...player.hand]) {
+      ids.add(card.id);
+    }
+  }
+
+  return ids;
+}
+
+function rebuildDeckFromAvailableCards(state: RoomState) {
+  if (state.deck.length >= DRAFT_STARTING_POOL_SIZE) return;
+
+  const usedOnBoards = collectCardIdsOnBoards(state);
+  const inFlight = collectInFlightDraftCardIds(state);
+  const deckIds = new Set(state.deck.map((card) => card.id));
+
+  const available = createServerDeck().filter((card) => {
+    return !usedOnBoards.has(card.id) && !inFlight.has(card.id) && !deckIds.has(card.id);
+  });
+
+  if (available.length > 0) {
+    state.deck = shuffleCards([...state.deck, ...available]);
+    return;
+  }
+
+  if (state.deck.length > 0) return;
+
+  const emergency = createServerDeck().filter((card) => !inFlight.has(card.id));
+  state.deck = shuffleCards(emergency.length > 0 ? emergency : createServerDeck());
+}
+
 function drawRandomCardsFromDeck(state: RoomState, count: number): ServerTravelCardData[] {
+  rebuildDeckFromAvailableCards(state);
   state.deck = shuffleCards(state.deck);
 
   const cards = state.deck.slice(0, Math.min(count, state.deck.length));
@@ -79,7 +133,6 @@ export function startDraftForCurrentDay(state: RoomState) {
     );
   });
 
-  logDraftDebug(state, "startDraftForCurrentDay");
 }
 
 export function selectDraftCard(
@@ -174,6 +227,25 @@ export function finishDraftRound(state: RoomState) {
 
   if (activePlayerIds.length > 1) {
     rotateDraftPoolsClockwise(state, activePlayerIds);
+
+    if (activePlayerIds.every((playerId) => state.players[playerId].draftPool.length === 0)) {
+      for (const playerId of activePlayerIds) {
+        const needed = DRAFT_PICK_TARGET - state.players[playerId].pickedDraftCards.length;
+        const nextPoolSize = Math.min(
+          DRAFT_STARTING_POOL_SIZE,
+          Math.max(needed, DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1)
+        );
+
+        state.players[playerId].draftPool = drawRandomCardsFromDeck(state, nextPoolSize);
+        state.players[playerId].selectedDraftCardId = null;
+        state.players[playerId].draftPickConfirmed = false;
+      }
+
+      if (activePlayerIds.every((playerId) => state.players[playerId].draftPool.length === 0)) {
+        finishDraftAndStartPlanning(state);
+        return;
+      }
+    }
   } else {
     /*
       Online 1 người: không giữ pool cũ.
@@ -190,6 +262,12 @@ export function finishDraftRound(state: RoomState) {
     );
 
     onlyPlayer.draftPool = drawRandomCardsFromDeck(state, nextPoolSize);
+
+    if (onlyPlayer.draftPool.length === 0) {
+      finishDraftAndStartPlanning(state);
+      return;
+    }
+
     onlyPlayer.selectedDraftCardId = null;
     onlyPlayer.draftPickConfirmed = false;
   }
@@ -200,7 +278,6 @@ export function finishDraftRound(state: RoomState) {
     maxDraftPoolSize(state, activePlayerIds),
     activePlayerIds.length > 1,
   );
-  logDraftDebug(state, "finishDraftRound");
 }
 
 function resetSinglePlayerDraftPool(state: RoomState, playerId: PlayerId) {
@@ -250,37 +327,4 @@ function finishDraftAndStartPlanning(state: RoomState) {
   }
 
   returnCardsToDeck(state, leftoverDraftCards);
-}
-
-function getPrimaryTag(card: ServerTravelCardData) {
-  if (card.id.startsWith("SG_FOOD")) return "FOOD";
-  if (card.id.startsWith("SG_CULT")) return "CULTURE";
-  if (card.id.startsWith("SG_ACT")) return "ACTION";
-  if (card.id.startsWith("SG_UTIL")) return "UTILITY";
-
-  return card.tags?.[0] ?? card.tag?.toUpperCase?.() ?? "UNKNOWN";
-}
-
-function getTagCounts(cards: ServerTravelCardData[]) {
-  return cards.reduce((acc, card) => {
-    const tag = getPrimaryTag(card);
-    acc[tag] = (acc[tag] ?? 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-}
-
-function logDraftDebug(state: RoomState, source: string) {
-  const activePlayerIds = getActiveDraftPlayerIds(state);
-
-  console.log(`[SERVER DRAFT] ${source}`);
-  console.log("[SERVER DRAFT] deck counts:", getTagCounts(state.deck));
-
-  for (const playerId of activePlayerIds) {
-    const player = state.players[playerId];
-    console.log(
-      `[SERVER DRAFT] ${playerId} pool counts:`,
-      getTagCounts(player.draftPool),
-      player.draftPool.map((card) => card.id)
-    );
-  }
 }

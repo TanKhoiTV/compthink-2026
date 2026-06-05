@@ -1,5 +1,5 @@
 import type { PlayerId, RoomState } from "./types.js";
-import { finishDraftRound, startDraftForCurrentDay } from "./draftEngine.js";
+import { finishDraftRound, startDraftForCurrentDay, DRAFT_PICK_SECONDS } from "./draftEngine.js";
 import { PLAYER_IDS, createEmptyBoard, createServerDeck } from "./gameEngine.js";
 
 export const SIMULATION_SECONDS = 6;
@@ -274,6 +274,12 @@ export function tickRoom(state: RoomState) {
 
   if (state.phase === "draft") {
     finishDraftRound(state);
+
+    if (state.phase === "draft" && state.timer <= 0) {
+      state.timer = DRAFT_PICK_SECONDS;
+      state.draftTimerHold = Math.max(state.draftTimerHold ?? 0, 1);
+    }
+
     return;
   }
 
