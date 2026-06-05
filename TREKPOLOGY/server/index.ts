@@ -6,9 +6,10 @@ import type {
   RoomState,
   ServerToClientEvents,
 } from "./types.js";
-import { finishDraftRound, selectDraftCard } from "./draftEngine.js";
+import { confirmDraftPick, selectDraftCard } from "./draftEngine.js";
 import { getPlayerViewState } from "./gameEngine.js";
 import {
+  confirmPlanning,
   createRoom,
   discardCardFromPlayerHand,
   joinRoom,
@@ -33,6 +34,26 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 const rooms = new Map<string, RoomState>();
 const socketPlayerIds = new Map<string, PlayerId>();
 const socketRoomIds = new Map<string, string>();
+
+function bindSocketPlayer(
+  socket: { id: string; join: (room: string) => void },
+  payload: { roomId: string; playerId: PlayerId },
+  state: RoomState
+): PlayerId | null {
+  const mappedPlayerId = socketPlayerIds.get(socket.id);
+  const playerId = mappedPlayerId ?? payload.playerId;
+  const player = state.players[playerId];
+
+  if (!player?.isConnected) {
+    return null;
+  }
+
+  socketPlayerIds.set(socket.id, playerId);
+  socketRoomIds.set(socket.id, payload.roomId);
+  socket.join(payload.roomId);
+
+  return playerId;
+}
 
 function emitRoomState(roomId: string) {
   const state = rooms.get(roomId);
@@ -207,12 +228,22 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const everyoneSelected = Object.values(state.players).every((player) => {
-      return player.draftPool.length === 0 || player.selectedDraftCardId !== null;
-    });
+    emitRoomState(payload.roomId);
+  });
 
-    if (everyoneSelected) {
-      finishDraftRound(state);
+  socket.on("draft:confirmPick", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const error = confirmDraftPick(state, payload);
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
     }
 
     emitRoomState(payload.roomId);
@@ -290,6 +321,31 @@ io.on("connection", (socket) => {
     emitRoomState(payload.roomId);
   });
 
+  socket.on("planning:confirm", (payload) => {
+    const state = rooms.get(payload.roomId);
+
+    if (!state) {
+      socket.emit("game:error", { message: "Không tìm thấy phòng." });
+      return;
+    }
+
+    const playerId = bindSocketPlayer(socket, payload, state);
+
+    if (!playerId) {
+      socket.emit("game:error", { message: "Người chơi chưa kết nối hoặc không hợp lệ." });
+      return;
+    }
+
+    const error = confirmPlanning(state, { playerId });
+
+    if (error) {
+      socket.emit("game:error", { message: error });
+      return;
+    }
+
+    emitRoomState(payload.roomId);
+  });
+
   socket.on("disconnect", () => {
     const playerId = socketPlayerIds.get(socket.id);
     const roomId = socketRoomIds.get(socket.id);
@@ -298,6 +354,7 @@ io.on("connection", (socket) => {
     if (playerId && state) {
       state.players[playerId].isConnected = false;
       state.players[playerId].isReady = false;
+      state.players[playerId].planningConfirmed = false;
       emitRoomState(roomId!);
     }
 

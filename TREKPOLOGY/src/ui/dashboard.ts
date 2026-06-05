@@ -1,8 +1,25 @@
 import { authClientState } from "../online/socketClient.js";
 
-export const HERO_VIDEO_SRC = "/assets/videos/one-minute-in-vietnam.mp4";
+export const HERO_VIDEO_SRC = "./assets/videos/one-minute-in-vietnam.mp4";
+
+const HUB_HERO_MUTED_KEY = "trek.hubHeroMuted";
+let globalHeroVideo: HTMLVideoElement | null = null;
+
+export function cleanupDashboardHub() {
+  if (globalHeroVideo) {
+    try {
+      globalHeroVideo.pause();
+      globalHeroVideo.muted = true;
+      globalHeroVideo.removeAttribute('src');
+      globalHeroVideo.load();
+    } catch {}
+    globalHeroVideo = null;
+  }
+}
 
 export function initDashboardHub() {
+  cleanupDashboardHub();
+
   const media = document.getElementById("hub-hero-media") as HTMLElement | null;
   const video = document.getElementById("hub-hero-video") as HTMLVideoElement | null;
   const hitarea = document.getElementById("hub-hero-video-hitarea") as HTMLButtonElement | null;
@@ -10,6 +27,7 @@ export function initDashboardHub() {
   const volumeSlider = document.getElementById("hub-hero-video-volume") as HTMLInputElement | null;
 
   if (!media || !video || !hitarea || !muteButton || !volumeSlider) return;
+  globalHeroVideo = video;
 
   video.playsInline = true;
   video.volume = parseFloat(volumeSlider.value) || 0.85;
@@ -33,7 +51,8 @@ export function initDashboardHub() {
   };
 
   const tryAutoplay = async () => {
-    video.muted = false;
+    let userMutedState = localStorage.getItem(HUB_HERO_MUTED_KEY) === "true";
+    video.muted = userMutedState;
 
     try {
       await video.play();
@@ -62,6 +81,8 @@ export function initDashboardHub() {
     } else {
       video.muted = true;
     }
+    
+    localStorage.setItem(HUB_HERO_MUTED_KEY, String(video.muted));
 
     if (!video.paused) {
       void video.play();

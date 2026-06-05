@@ -2766,6 +2766,9 @@ export function createServerDeck(): ServerCardWithEffect[] {
 }
 
 
+const STARTING_COIN = 30;
+const STARTING_STAMINA = 15;
+
 export function createEmptyPlayer(
   id: PlayerId,
   name: string,
@@ -2776,8 +2779,8 @@ export function createEmptyPlayer(
     name,
     hasJoined: isConnected,
     score: 0,
-    coin: 3,
-    stamina: 2,
+    coin: STARTING_COIN,
+    stamina: STARTING_STAMINA,
     usedSlots: 0,
     coinDebt: 0,
     isConnected,
@@ -2787,6 +2790,7 @@ export function createEmptyPlayer(
     pickedDraftCards: [],
     hand: [],
     selectedDraftCardId: null,
+    planningConfirmed: false,
   };
 }
 
@@ -2811,6 +2815,7 @@ function stripPrivatePlayerState(player: RoomState["players"][PlayerId]) {
     isConnected: player.isConnected,
     isReady: player.isReady,
     hasJoined: player.hasJoined,
+    planningConfirmed: player.planningConfirmed === true,
     board: player.board,
   };
 }

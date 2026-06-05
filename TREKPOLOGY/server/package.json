@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx index.ts"
+    "dev": "tsx index.ts",
+    "start": "tsx index.ts"
   },
   "dependencies": {
     "socket.io": "^4.8.1",

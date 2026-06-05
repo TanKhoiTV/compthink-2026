@@ -1,5 +1,5 @@
 import { renderMapSelectionScreen } from "./ui/mapSelection.js";
-import { initDashboardHub, renderDashboard } from "./ui/dashboard.js";
+import { cleanupDashboardHub, initDashboardHub, renderDashboard } from "./ui/dashboard.js";
 import {
   authClientState,
   createOnlineRoom,
@@ -14,6 +14,8 @@ import {
   reconnectOnlineRoom,
   registerAccount,
   selectOnlineDraftCard,
+  confirmOnlineDraftPick,
+  confirmOnlinePlanning,
   sendDiscardCard,
   sendPayDebt,
   sendPlaceCard,
@@ -26,6 +28,9 @@ import { phase1Cards } from "./data/cards.phase1.js";
 import { mapGameCardToTravelCard } from "./data/cardMapper.js";
 import {
   DRAFT_PICK_SECONDS,
+  DRAFT_CENTER_DEAL_STEP_MS,
+  DRAFT_PASS_ANIMATION_MS,
+  getDraftCenterDealDurationMs,
   HAND_SIZE,
   PHASE_DAYS,
   PLAYER_COUNT,
@@ -88,7 +93,7 @@ const DRAFT_PICK_TARGET = HAND_SIZE;
 
 
 import {
-  type GameSoundName,
+  GameSoundName,
   playGameSound,
   setupGameAudioDelegation,
   playCardThump,
@@ -375,7 +380,42 @@ function getOnlineSelfDraftPool(): TravelCardData[] | null {
 function getOnlineDraftDisplayPool(): TravelCardData[] | null {
   if (!isOnlineRoomActive()) return null;
 
-  return onlineDraftDisplayPool ?? getOnlineSelfDraftPool();
+  const serverPool = getOnlineSelfDraftPool();
+
+  /*
+    Fix online draft bị mất bài ở tab khác:
+    server vẫn có state.self.draftPool nhưng client đôi khi đang giữ
+    onlineDraftDisplayPool rỗng/null do animation/pass state. Khi đó UI không render bài,
+    dù hết giờ server vẫn auto-pick được. Luôn fallback về serverPool nếu có bài.
+  */
+  if (isPassingDraftCards && !isOnlineFinalDraftReturnAnimating) {
+    const passPool = onlineDraftPassSnapshotPool ?? onlineDraftDisplayPool;
+
+    if (passPool && passPool.length > 0) {
+      return passPool;
+    }
+
+    return passPool ?? serverPool;
+  }
+
+  if (
+    (isInitialDealInProgress || isDraftCenterDealing) &&
+    onlineDraftDisplayPool &&
+    onlineDraftDisplayPool.length > 0
+  ) {
+    return onlineDraftDisplayPool;
+  }
+
+  if (onlineDraftDisplayPool && onlineDraftDisplayPool.length > 0) {
+    return onlineDraftDisplayPool;
+  }
+
+  if (serverPool && serverPool.length > 0) {
+    onlineDraftDisplayPool = [...serverPool];
+    return onlineDraftDisplayPool;
+  }
+
+  return onlineDraftDisplayPool ?? serverPool;
 }
 
 function getDraftPoolSignature(cards: TravelCardData[] | null | undefined) {
@@ -389,6 +429,176 @@ function setOnlineDraftDisplayPoolFromServer() {
   onlineDraftPendingPool = null;
 }
 
+function recoverOnlineDraftDisplayAfterTabVisible(reason = "visible-sync") {
+  if (!isOnlineRoomActive()) return false;
+
+  const state = onlineClientState.roomState;
+  if (!state || state.phase !== "draft") return false;
+
+  const serverPool = getOnlineSelfDraftPool();
+  if (!serverPool || serverPool.length === 0) return false;
+
+  const visiblePool =
+    onlineDraftDisplayPool ??
+    onlineDraftPassSnapshotPool ??
+    onlineDraftPendingPool;
+
+  const hasVisibleCards = !!visiblePool && visiblePool.length > 0;
+  const animationExpired = draftDealVisualEndsAt > 0 && Date.now() > draftDealVisualEndsAt + 180;
+  const visualDealStillRunning =
+    isInitialDealInProgress ||
+    isDraftCenterDealing ||
+    isPassingDraftCards ||
+    Date.now() < draftDealVisualEndsAt;
+  const staleAnimation = animationExpired && visualDealStillRunning;
+
+  /*
+    Khi tab bị background, browser pause timer/animation.
+    Nếu focus lại mà server đang có pool thật, ưu tiên hiện bài ngay,
+    không chạy animation chia bài muộn ở tab đó nữa.
+  */
+  if (hasVisibleCards && !staleAnimation && !visualDealStillRunning) return false;
+
+  clearOnlineDraftAnimationTimer();
+  clearDraftCenterDealAnimation();
+
+  onlineDraftDisplayPool = [...serverPool];
+  onlineDraftPassSnapshotPool = null;
+  onlineDraftPendingPool = null;
+  draftHandPendingCardId = null;
+  draftPoolFlyReturnCardId = null;
+
+  isPassingDraftCards = false;
+  isInitialDealInProgress = false;
+  shouldActivateOnlineDealAnimation = false;
+  shouldActivateOnlinePassAnimation = false;
+  draftDealVisualEndsAt = 0;
+
+  draftSelectedCardId = state.self.selectedDraftCardId ?? null;
+  lastOnlineRenderSignature = "";
+
+  console.debug(`[DRAFT SYNC] recovered draft pool after tab visible: ${reason}`, {
+    poolSize: serverPool.length,
+    timer: state.timer,
+    round: state.draftRound,
+  });
+
+  return true;
+}
+
+function syncOnlineDraftDisplayAfterTabVisible() {
+  if (document.visibilityState !== "visible") return;
+
+  if (recoverOnlineDraftDisplayAfterTabVisible("visibility/focus")) {
+    rerenderGameShell();
+  }
+}
+
+function isOnlineInterRoundPoolPassActive(): boolean {
+  return isPassingDraftCards && !isOnlineFinalDraftReturnAnimating;
+}
+
+function getDraftCenterDealCardCount(): number {
+  if (isOnlineRoomActive()) {
+    const pool =
+      onlineDraftDisplayPool ??
+      onlineDraftPendingPool ??
+      getOnlineSelfDraftPool() ??
+      [];
+    return Math.max(1, pool.length);
+  }
+
+  const renderPool = getDraftCenterRenderPool();
+  if (renderPool.length > 0) return renderPool.length;
+
+  const localPool = getCurrentDraftPlayer()?.pool ?? [];
+  return Math.max(1, localPool.length);
+}
+
+function getDraftCenterDealDurationForCurrentPool(): number {
+  return getDraftCenterDealDurationMs(getDraftCenterDealCardCount());
+}
+
+function completeOnlineDraftPoolPassAndDeal() {
+  onlineDraftAnimationTimerId = null;
+
+  if (!onlineDraftPendingPool?.length) {
+    if (onlinePassCompleteRetryCount < 40) {
+      onlinePassCompleteRetryCount += 1;
+      onlineDraftAnimationTimerId = window.setTimeout(
+        completeOnlineDraftPoolPassAndDeal,
+        100,
+      );
+      return;
+    }
+    setOnlineDraftDisplayPoolFromServer();
+  } else {
+    onlinePassCompleteRetryCount = 0;
+    onlineDraftDisplayPool = [...onlineDraftPendingPool];
+    onlineDraftPendingPool = null;
+  }
+
+  onlineDraftPassSnapshotPool = null;
+  draftHandPendingCardId = null;
+  draftPoolFlyReturnCardId = null;
+  isPassingDraftCards = false;
+  resetDraftPoolCollapseState();
+  isInitialDealInProgress = true;
+
+  const roomState = onlineClientState.roomState;
+  draftSelectedCardId = roomState?.self.selectedDraftCardId ?? null;
+
+  const dealMs = getDraftCenterDealDurationMs(
+    Math.max(1, onlineDraftDisplayPool?.length ?? 0),
+  );
+  isDraftCenterDealing = true;
+  draftDealVisualEndsAt = Date.now() + dealMs;
+
+  lastOnlineRenderSignature = "";
+  rerenderGameShell();
+  startDraftCenterDealAnimation(dealMs);
+
+  onlineDraftAnimationTimerId = window.setTimeout(() => {
+    finishOnlineDraftDealVisualOnly();
+  }, dealMs);
+}
+
+function beginOnlineDraftPoolPass(
+  snapshotPool: TravelCardData[],
+  nextServerPool: TravelCardData[] | null
+) {
+  if (isOnlineFinalDraftReturnAnimating || !isDraftPhase) return;
+  if (snapshotPool.length === 0) return;
+
+  if (isPassingDraftCards) {
+    if (nextServerPool?.length) {
+      onlineDraftPendingPool = [...nextServerPool];
+    }
+    return;
+  }
+
+  clearOnlineDraftAnimationTimer();
+
+  onlinePassCompleteRetryCount = 0;
+  onlineDraftPassSnapshotPool = [...snapshotPool];
+  if (nextServerPool?.length) {
+    onlineDraftPendingPool = [...nextServerPool];
+  }
+
+  draftSelectedCardId = null;
+  draftPoolFlyReturnCardId = null;
+  resetDraftPoolCollapseState();
+
+  shouldActivateOnlineDealAnimation = false;
+  shouldActivateOnlinePassAnimation = true;
+  isInitialDealInProgress = false;
+  isPassingDraftCards = true;
+
+  onlineDraftAnimationTimerId = window.setTimeout(() => {
+    completeOnlineDraftPoolPassAndDeal();
+  }, DRAFT_PASS_ANIMATION_MS);
+}
+
 
 function getOnlineSelfHand(): TravelCardData[] | null {
   return (getOnlineSelfState()?.hand as TravelCardData[] | undefined) ?? null;
@@ -400,6 +610,24 @@ function getOnlineSelectedDraftCardId() {
 
 function getDraftVisualSelectedCardId() {
   return getOnlineSelectedDraftCardId() ?? draftSelectedCardId;
+}
+
+function getDraftPoolHighlightedCardId(): string | null {
+  // Pool không hiển thị trạng thái "đã chọn" — lá pending nằm trên tay, slot pool bị ẩn.
+  return null;
+}
+
+function shouldShowDraftWaitBanner(): boolean {
+  if (!isDraftPhase || isDraftDealVisualActive() || isPassingDraftCards) return false;
+  if (!draftHandPendingCardId) return false;
+
+  if (!isOnlineRoomActive()) return false;
+
+  const connectedCount = playerIds.filter((playerId) => {
+    return onlineClientState.roomState?.players[playerId]?.isConnected;
+  }).length;
+
+  return connectedCount > 1;
 }
 
 function getOnlinePlayer(playerId?: PlayerId) {
@@ -790,6 +1018,8 @@ function applyOnlineRoomStateToLocal() {
 
   if (!state) return;
 
+  syncSelfPlanningConfirmLockFromServer();
+
   phaseNumber = state.phaseNumber ?? phaseNumber;
   currentDayIndex = Math.max(0, Math.min(PHASE_DAYS - 1, state.dayIndex));
 
@@ -817,15 +1047,13 @@ function applyOnlineRoomStateToLocal() {
 
   const serverDraftPool = (state.self.draftPool as TravelCardData[] | undefined) ?? [];
   const onlinePoolSignature = getDraftPoolSignature(serverDraftPool);
-  const displayPoolSignature = getDraftPoolSignature(onlineDraftDisplayPool);
-  const hasDisplayPool = onlineDraftDisplayPool !== null;
+  const hasDisplayPool = onlineDraftDisplayPool !== null && onlineDraftDisplayPool.length > 0;
 
   if (isOnlineRoomActive()) {
     const enteredDraft = state.phase === "draft" && lastOnlineAnimationPhase !== "draft";
-    const serverPoolChanged =
-      state.phase === "draft" &&
-      lastOnlineAnimationPhase === "draft" &&
-      onlinePoolSignature !== lastOnlineAnimationPoolSignature;
+    const pickedDraftCount = state.self.pickedDraftCards?.length ?? 0;
+    const pickedIncreased = pickedDraftCount > lastOnlinePickedDraftCount;
+    const draftRoundAdvanced = state.draftRound > lastOnlineAnimationDraftRound;
 
     /*
       Online draft tách 3 việc:
@@ -837,53 +1065,72 @@ function applyOnlineRoomStateToLocal() {
     */
     if (enteredDraft) {
       clearOnlineDraftAnimationTimer();
+      resetDraftPoolCollapseState();
+      draftHandPendingCardId = null;
+      draftPoolFlyReturnCardId = null;
+      onlineDraftPassSnapshotPool = null;
 
       setOnlineDraftDisplayPoolFromServer();
 
-      shouldActivateOnlineDealAnimation = true;
+      /*
+        Nếu tab đang ở background hoặc mình quay lại khi lượt draft đã chạy vài giây,
+        KHÔNG chạy lại animation chia bài từ đầu. Nếu chạy lại, tab đó sẽ kẹt
+        "Đang chia bài..." và không render pool chọn bài, dù server vẫn có bài.
+      */
+      const shouldSkipOnlineDealAnimation =
+        document.visibilityState !== "visible" ||
+        state.timer < DRAFT_PICK_SECONDS - 1;
+
+      shouldActivateOnlineDealAnimation = !shouldSkipOnlineDealAnimation;
       shouldActivateOnlinePassAnimation = false;
-      isInitialDealInProgress = true;
+      isInitialDealInProgress = !shouldSkipOnlineDealAnimation;
       isPassingDraftCards = false;
       hasPlayedOnlinePlanningDealAfterDraft = false;
 
-      playGameSound("deal");
-
-      onlineDraftAnimationTimerId = window.setTimeout(() => {
-        finishOnlineDraftDealVisualOnly();
-      }, 1320);
-    } else if (serverPoolChanged && hasDisplayPool && displayPoolSignature !== onlinePoolSignature) {
-      clearOnlineDraftAnimationTimer();
-
-      onlineDraftPendingPool = [...serverDraftPool];
-
-      shouldActivateOnlineDealAnimation = false;
-      shouldActivateOnlinePassAnimation = true;
-      isInitialDealInProgress = false;
-      isPassingDraftCards = true;
-
-      onlineDraftAnimationTimerId = window.setTimeout(() => {
-        if (onlineDraftPendingPool) {
-          onlineDraftDisplayPool = [...onlineDraftPendingPool];
-          onlineDraftPendingPool = null;
-        }
-
-        /*
-          Sau khi trả/chuyền bài vào deck xong, render pool mới dưới dạng dealing
-          để các lượt 2/3/4/5 cũng có animation chia bài giống lượt 1.
-        */
-        isPassingDraftCards = false;
-        isInitialDealInProgress = true;
-        shouldActivateOnlineDealAnimation = true;
+      if (shouldSkipOnlineDealAnimation) {
+        isDraftCenterDealing = false;
+        draftDealVisualEndsAt = 0;
         onlineDraftAnimationTimerId = null;
-        draftSelectedCardId = state.self.selectedDraftCardId;
-
-        rerenderGameShell();
-        activateDraftDealAnimation();
-
+      } else {
+        const dealMs = getDraftCenterDealDurationMs(
+          Math.max(1, serverDraftPool.length),
+        );
         onlineDraftAnimationTimerId = window.setTimeout(() => {
           finishOnlineDraftDealVisualOnly();
-        }, 1320);
-      }, 1500);
+        }, dealMs);
+      }
+    } else if (
+      state.phase === "draft" &&
+      lastOnlineAnimationPhase === "draft" &&
+      (pickedIncreased || draftRoundAdvanced)
+    ) {
+      if (isPassingDraftCards && !isOnlineFinalDraftReturnAnimating) {
+        if (serverDraftPool.length > 0) {
+          onlineDraftPendingPool = [...serverDraftPool];
+        }
+
+        if (pickedIncreased && !isDraftPickFlying) {
+          draftHandPendingCardId = null;
+          draftPoolFlyReturnCardId = null;
+        }
+      } else if (!isOnlineFinalDraftReturnAnimating) {
+        const snapshot =
+          onlineDraftDisplayPool ??
+          onlineDraftPassSnapshotPool ??
+          (serverDraftPool.length > 0 ? [...serverDraftPool] : null);
+
+        if (snapshot?.length) {
+          beginOnlineDraftPoolPass(snapshot, serverDraftPool);
+        } else if (!hasDisplayPool) {
+          setOnlineDraftDisplayPoolFromServer();
+        }
+      }
+    } else if (
+      state.phase === "draft" &&
+      serverDraftPool.length > 0 &&
+      (!onlineDraftDisplayPool || onlineDraftDisplayPool.length === 0)
+    ) {
+      setOnlineDraftDisplayPoolFromServer();
     } else if (state.phase === "draft" && !hasDisplayPool) {
       setOnlineDraftDisplayPoolFromServer();
     }
@@ -932,6 +1179,7 @@ function applyOnlineRoomStateToLocal() {
       clearOnlineDraftAnimationTimer();
 
       onlineDraftDisplayPool = null;
+      onlineDraftPassSnapshotPool = null;
       onlineDraftPendingPool = null;
       shouldActivateOnlineDealAnimation = false;
       shouldActivateOnlinePassAnimation = false;
@@ -939,6 +1187,12 @@ function applyOnlineRoomStateToLocal() {
       isPassingDraftCards = false;
     }
 
+    if (pickedDraftCount > lastOnlinePickedDraftCount && !isDraftPickFlying && !isPassingDraftCards) {
+      draftHandPendingCardId = null;
+      draftPoolFlyReturnCardId = null;
+    }
+
+    lastOnlinePickedDraftCount = pickedDraftCount;
     lastOnlineAnimationPhase = state.phase;
     lastOnlineAnimationDraftRound = state.draftRound;
     lastOnlineAnimationPoolSignature = onlinePoolSignature;
@@ -962,12 +1216,30 @@ function applyOnlineRoomStateToLocal() {
     if (onlineHand) {
       playerHand = [...onlineHand];
     }
+
+    updatePlanningConfirmButtonVisualOnly();
   }
 
   if (state.phase === "draft") {
     playerHand = [];
-    draftSelectedCardId = state.self.selectedDraftCardId;
-    updateDraftSelectedVisualOnly();
+
+    if (!isDraftPickFlying) {
+      draftSelectedCardId = state.self.selectedDraftCardId;
+
+      if (
+        state.self.selectedDraftCardId &&
+        !draftHandPendingCardId &&
+        !isDraftDealVisualActive()
+      ) {
+        draftHandPendingCardId = state.self.selectedDraftCardId;
+      }
+    }
+
+    if (!isDraftDealVisualActive() && !isDraftPickFlying) {
+      updateDraftHandVisualOnly();
+      updateDraftPoolFlownVisualOnly();
+      updateDraftSelectedVisualOnly();
+    }
   }
 
   if (state.phase === "simulation" || state.phase === "result") {
@@ -1057,6 +1329,11 @@ let draftSelectedCardId: string | null = null;
 let draftPickSecondsLeft = DRAFT_PICK_SECONDS;
 let draftTimerId: number | null = null;
 let isPassingDraftCards = false;
+let isDraftPoolCollapsed = false;
+let isDraftPoolCollapseAnimating = false;
+let draftPoolCollapseAnimMode: "collapse" | "expand" | null = null;
+let draftPoolCollapseTimerId: number | null = null;
+let draftPassDisplayPool: TravelCardData[] | null = null;
 let draftRound = 1;
 let lastDraftPickResults: DraftPickResult[] = [];
 let playerBoards: Record<PlayerId, BoardSlots> = createEmptyPlayerBoards();
@@ -1072,6 +1349,14 @@ let selectedHandCardId: string | null = null;
 let draggedHandCardId: string | null = null;
 let handPointerDragState: HandPointerDragState | null = null;
 let lastPlacedBoardPosition: BoardPosition | null = null;
+let lastUtilityEffectFlash: {
+  rowIndex: number;
+  colIndex: number;
+  type: "coin" | "stamina" | "vp";
+  value: number;
+  id: number;
+} | null = null;
+let resourceOrbFlashType: "coin" | "stamina" | "vp" | null = null;
 let focusedHandCardId: string | null = null;
 let focusedBoardCard: TravelCardData | null = null;
 let focusedBoardPosition: BoardPosition | null = null;
@@ -1085,7 +1370,7 @@ let simulationReplayIndex = 0;
 let simulationReplayTimerId: number | null = null;
 let isReplayComplete = false;
 let isMidGameRankingOpen = false;
-const hasPlayedDealAnimation = true;
+let hasPlayedDealAnimation = true;
 let didMoveHandPointerDrag = false;
 let lastPointerDownCardId: string | null = null;
 
@@ -1795,6 +2080,203 @@ function getCardBonusBadge(card: TravelCardData) {
   return "";
 }
 
+
+function stripCardText(value: string) {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getUtilityPlacementEffect(card: TravelCardData) {
+  const effect = card.onPlayEffect;
+  const tags = getCardTagKeys(card);
+  const isUtilityCard =
+    tags.includes("UTILITY") ||
+    String(card.tag || "").toLowerCase() === "utility" ||
+    stripCardText(card.tagLabel || "").toLowerCase().includes("tiện ích");
+
+  const fullText = stripCardText(
+    [
+      card.name,
+      card.shortName || "",
+      card.description || "",
+      card.bonusText || "",
+      card.tagLabel || "",
+    ].join(" ")
+  ).toLowerCase();
+
+  const explicitValue = Number(effect?.effect_value ?? 0);
+  const numberMatch = fullText.match(/(?:\+|nhận|hoi|hồi|cộng|thêm)\s*(\d+)/i);
+  const inferredValue = numberMatch ? Number(numberMatch[1]) : 1;
+  const value = explicitValue > 0 ? explicitValue : inferredValue;
+
+  if (effect?.has_effect) {
+    if (effect.effect_type === "RECOVER_XU") {
+      return {
+        type: "coin" as const,
+        value,
+        label: `+${value} Xu`,
+        icon: "🪙",
+      };
+    }
+
+    if (effect.effect_type === "RECOVER_LA") {
+      return {
+        type: "stamina" as const,
+        value,
+        label: `+${value} Thể lực`,
+        icon: "⚡",
+      };
+    }
+
+    if (effect.effect_type === "GAIN_VP") {
+      return {
+        type: "vp" as const,
+        value,
+        label: `+${value} VP`,
+        icon: "★",
+      };
+    }
+  }
+
+  /*
+    Fallback cho data utility nếu mapper/server chưa truyền onPlayEffect.
+    Đọc mô tả/bonus để vẫn hiện đúng hiệu ứng.
+  */
+  if (!isUtilityCard) return null;
+
+  if (
+    fullText.includes("xu") ||
+    fullText.includes("tiền") ||
+    fullText.includes("coin") ||
+    fullText.includes("gold")
+  ) {
+    return {
+      type: "coin" as const,
+      value,
+      label: `+${value} Xu`,
+      icon: "🪙",
+    };
+  }
+
+  if (
+    fullText.includes("thể lực") ||
+    fullText.includes("the luc") ||
+    fullText.includes("năng lượng") ||
+    fullText.includes("nang luong") ||
+    fullText.includes("stamina") ||
+    fullText.includes("nl")
+  ) {
+    return {
+      type: "stamina" as const,
+      value,
+      label: `+${value} Thể lực`,
+      icon: "⚡",
+    };
+  }
+
+  if (fullText.includes("vp") || fullText.includes("điểm") || fullText.includes("diem")) {
+    return {
+      type: "vp" as const,
+      value,
+      label: `+${value} VP`,
+      icon: "★",
+    };
+  }
+
+  return {
+    type: "vp" as const,
+    value,
+    label: `+${value} VP`,
+    icon: "★",
+  };
+}
+
+function triggerUtilityEffectFlash(params: {
+  rowIndex: number;
+  colIndex: number;
+  type: "coin" | "stamina" | "vp";
+  value: number;
+}) {
+  const flashId = Date.now();
+
+  lastUtilityEffectFlash = {
+    ...params,
+    id: flashId,
+  };
+  resourceOrbFlashType = params.type;
+
+  window.setTimeout(() => {
+    if (lastUtilityEffectFlash?.id === flashId) {
+      lastUtilityEffectFlash = null;
+    }
+
+    if (resourceOrbFlashType === params.type) {
+      resourceOrbFlashType = null;
+    }
+
+    rerenderArena();
+  }, 1050);
+}
+
+function applyUtilityPlacementEffect(card: TravelCardData, rowIndex: number, colIndex: number) {
+  const effect = getUtilityPlacementEffect(card);
+
+  if (!effect) return false;
+
+  if (effect.type === "coin") {
+    eventResourceModifier = {
+      ...eventResourceModifier,
+      coin: eventResourceModifier.coin + effect.value,
+    };
+    playGameSound("eventPromo");
+  } else if (effect.type === "stamina") {
+    eventResourceModifier = {
+      ...eventResourceModifier,
+      stamina: eventResourceModifier.stamina + effect.value,
+    };
+    playGameSound("eventPromo");
+  } else if (effect.type === "vp") {
+    accumulatedVP += effect.value;
+    playGameSound("eventPromo");
+  }
+
+  triggerUtilityEffectFlash({
+    rowIndex,
+    colIndex,
+    type: effect.type,
+    value: effect.value,
+  });
+
+  return true;
+}
+
+function renderUtilityEffectFlash(rowIndex: number, colIndex: number) {
+  if (
+    !lastUtilityEffectFlash ||
+    lastUtilityEffectFlash.rowIndex !== rowIndex ||
+    lastUtilityEffectFlash.colIndex !== colIndex
+  ) {
+    return "";
+  }
+
+  const { type, value } = lastUtilityEffectFlash;
+  const icon = type === "coin" ? "🪙" : type === "stamina" ? "⚡" : "★";
+  const label = type === "coin" ? `+${value} Xu` : type === "stamina" ? `+${value} Thể lực` : `+${value} VP`;
+
+  return `
+    <div class="utility-effect-pop utility-effect-pop--${type}" aria-hidden="true">
+      <div class="utility-effect-pop__burst"></div>
+      <div class="utility-effect-pop__icon">${icon}</div>
+      <div class="utility-effect-pop__label">${label}</div>
+      <div class="utility-effect-pop__spark utility-effect-pop__spark--1"></div>
+      <div class="utility-effect-pop__spark utility-effect-pop__spark--2"></div>
+      <div class="utility-effect-pop__spark utility-effect-pop__spark--3"></div>
+    </div>
+  `;
+}
+
 function renderBoardMiniCard(card: TravelCardData, replayStep?: SimulationReplayStep | null) {
   const displayName = getBoardDisplayName(card);
   const displayCity = getBoardDisplayCity(card);
@@ -1887,8 +2369,11 @@ function renderBoardMiniCard(card: TravelCardData, replayStep?: SimulationReplay
   `;
 }
 
-function renderHandCard(card: TravelCardData, index: number) {
-  const isDraftSelected = isDraftPhase && card.id === getDraftVisualSelectedCardId();
+function renderHandCard(card: TravelCardData, index: number, disableFan: boolean = false) {
+  const isDraftSelected =
+    isDraftPhase &&
+    !disableFan &&
+    card.id === draftHandPendingCardId;
   const isPlanningSelected = !isDraftPhase && card.id === selectedHandCardId;
   const isSelected = isDraftSelected || isPlanningSelected;
   const affordability = getCardAffordability(card);
@@ -1899,7 +2384,7 @@ function renderHandCard(card: TravelCardData, index: number) {
 
   return `
     <article
-      class="hand-card hand-card--${card.rarity} hand-card--fan-${index + 1} ${isPlanningSelected ? "hand-card--selected" : ""} ${isDraftSelected ? "hand-card--draft-selected" : ""} ${unaffordableClass}"
+      class="hand-card hand-card--${card.rarity} ${disableFan ? "" : `hand-card--fan-${index + 1}`} ${isPlanningSelected ? "hand-card--selected" : ""} ${isDraftSelected ? "hand-card--draft-selected" : ""} ${unaffordableClass}"
       data-hand-card-id="${card.id}"
       style="${isSelected ? "box-shadow: 0 0 0 4px rgba(255,255,255,.95), 0 0 0 8px rgba(139,92,246,.82), 0 18px 34px rgba(75,47,25,.28);" : ""}"
       title="${affordabilityMessage}"
@@ -2069,18 +2554,708 @@ function renderDraftHandTopMeta() {
   `;
 }
 
-function renderDraftHandCards() {
-  const onlinePool = isOnlineRoomActive() ? getOnlineDraftDisplayPool() : null;
-  const activePlayer = getCurrentDraftPlayer();
-  const activePool = onlinePool ?? activePlayer?.pool ?? [];
+function getPickedDraftCount(): number {
+  if (isOnlineRoomActive()) {
+    return (getOnlineSelfState()?.pickedDraftCards?.length ?? 0);
+  }
+  return getCurrentDraftPlayer()?.picked?.length ?? 0;
+}
 
-  if (activePool.length === 0) {
-    return `<div class="draft-hand-empty">Đang chuẩn bị bài...</div>`;
+function getConfirmedPickedDraftCards(): TravelCardData[] {
+  if (isOnlineRoomActive()) {
+    return (getOnlineSelfState()?.pickedDraftCards as TravelCardData[] | undefined) ?? [];
+  }
+  return getCurrentDraftPlayer()?.picked ?? [];
+}
+
+function findCardInDraftPool(cardId: string): TravelCardData | null {
+  const pool = isOnlineRoomActive()
+    ? (getOnlineDraftDisplayPool() ?? [])
+    : (getCurrentDraftPlayer()?.pool ?? []);
+  return pool.find((card) => card.id === cardId) ?? null;
+}
+
+function getDraftHandDisplayCards(): TravelCardData[] {
+  const confirmed = getConfirmedPickedDraftCards();
+  const pendingId = draftHandPendingCardId;
+
+  if (!pendingId || confirmed.some((card) => card.id === pendingId)) {
+    return confirmed;
   }
 
-  return activePool
-    .map((card, index) => renderDailyDraftCard(card, index))
+  const pendingCard = findCardInDraftPool(pendingId);
+  return pendingCard ? [...confirmed, pendingCard] : confirmed;
+}
+
+function getDraftHandDisplayCount(): number {
+  return getDraftHandDisplayCards().length;
+}
+
+const DRAFT_PICKED_FAN_LAYOUT: Record<number, Array<{ rotate: number; ty: number }>> = {
+  1: [{ rotate: 0, ty: -6 }],
+  2: [
+    { rotate: -16, ty: -4 },
+    { rotate: 16, ty: -4 },
+  ],
+  3: [
+    { rotate: -18, ty: -5 },
+    { rotate: 0, ty: -10 },
+    { rotate: 18, ty: -5 },
+  ],
+  4: [
+    { rotate: -20, ty: -3 },
+    { rotate: -8, ty: -8 },
+    { rotate: 8, ty: -8 },
+    { rotate: 20, ty: -3 },
+  ],
+  5: [
+    { rotate: -18, ty: -2 },
+    { rotate: -9, ty: -7 },
+    { rotate: 0, ty: -11 },
+    { rotate: 9, ty: -7 },
+    { rotate: 18, ty: -2 },
+  ],
+};
+
+function readDraftHandCardMetrics() {
+  const root = document.documentElement;
+  const handCardW = parseFloat(getComputedStyle(root).getPropertyValue("--hand-card-w")) || 158;
+  const handCardH = parseFloat(getComputedStyle(root).getPropertyValue("--hand-card-h")) || 218;
+  const cardW = handCardW * 0.84;
+  const cardH = handCardH * 0.84;
+  const stepX = handCardW * 0.46;
+
+  return { handCardW, handCardH, cardW, cardH, stepX };
+}
+
+function getDraftFanSlotLayout(count: number, slotIndex: number) {
+  return DRAFT_PICKED_FAN_LAYOUT[count]?.[slotIndex - 1] ?? { rotate: 0, ty: 0 };
+}
+
+function computeDraftHandSlotRect(count: number, slotIndex: number): DOMRect | null {
+  const cardsEl = document.querySelector(".player-hand__cards--draft") as HTMLElement | null;
+  if (!cardsEl || count < 1 || slotIndex < 1 || slotIndex > count) return null;
+
+  const layout = getDraftFanSlotLayout(count, slotIndex);
+  const { cardW, cardH, stepX } = readDraftHandCardMetrics();
+  const containerRect = cardsEl.getBoundingClientRect();
+  const totalWidth = cardW + (count - 1) * stepX;
+  const firstLeft = containerRect.left + (containerRect.width - totalWidth) / 2;
+  const slotLeft = firstLeft + (slotIndex - 1) * stepX;
+  const slotTop = containerRect.bottom - cardH - 4 + layout.ty;
+
+  return new DOMRect(slotLeft, slotTop, cardW, cardH);
+}
+
+function parseDraftHandSlotMeta(cardEl: HTMLElement): { count: number; slotIndex: number } | null {
+  const slotMatch = cardEl.className.match(/hand-card--picked-slot-(\d)/);
+  const parent = cardEl.closest("[class*='picked-count-']") as HTMLElement | null;
+  const countMatch = parent?.className.match(/picked-count-(\d)/);
+
+  if (!slotMatch || !countMatch) return null;
+
+  return {
+    count: parseInt(countMatch[1], 10),
+    slotIndex: parseInt(slotMatch[1], 10),
+  };
+}
+
+function getDraftHandFlyTargetForPending(): { rect: DOMRect; rotate: number } | null {
+  const count = getDraftHandDisplayCount();
+  const slotIndex = count;
+  const rect = computeDraftHandSlotRect(count, slotIndex);
+
+  if (!rect) return null;
+
+  return {
+    rect,
+    rotate: getDraftFanSlotLayout(count, slotIndex).rotate,
+  };
+}
+
+function getDraftHandFlySourceFromElement(cardEl: HTMLElement): { rect: DOMRect; rotate: number } | null {
+  const meta = parseDraftHandSlotMeta(cardEl);
+  if (!meta) return null;
+
+  const rect = computeDraftHandSlotRect(meta.count, meta.slotIndex);
+  if (!rect) return null;
+
+  return {
+    rect,
+    rotate: getDraftFanSlotLayout(meta.count, meta.slotIndex).rotate,
+  };
+}
+
+function getDraftCenterCardWrapper(cardId: string): HTMLElement | null {
+  const card = document.querySelector(
+    `.draft-center-card[data-draft-card-id="${cardId}"]`
+  );
+  return (card?.closest(".draft-center-card-wrapper") as HTMLElement | null) ?? null;
+}
+
+function getDraftPendingHandSlotRect(): DOMRect | null {
+  const slot =
+    document.querySelector(
+      ".hand-card--picked-pending:not(.hand-card--picked-pending-hidden)"
+    ) ??
+    document.querySelector(".hand-card--picked-pending-hidden") ??
+    document.querySelector(".hand-card--picked-pending");
+  const rect = slot?.getBoundingClientRect() ?? null;
+
+  if (!rect || rect.width <= 0 || rect.height <= 0) {
+    return null;
+  }
+
+  return rect;
+}
+
+function getDraftHandFallbackSlotRect(): DOMRect | null {
+  const cardsEl = document.querySelector(".player-hand__cards--draft") as HTMLElement | null;
+  if (!cardsEl) return null;
+
+  const handRect = cardsEl.getBoundingClientRect();
+  const cardWidth = cardsEl.clientWidth > 0 ? cardsEl.clientWidth * 0.12 : 132;
+  const cardHeight = cardWidth * 1.38;
+
+  return new DOMRect(
+    handRect.left + handRect.width / 2 - cardWidth / 2,
+    handRect.bottom - cardHeight - 8,
+    cardWidth,
+    cardHeight
+  );
+}
+
+async function measureDraftPendingHandSlotRect(): Promise<DOMRect | null> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) {
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+      });
+    }
+
+    updateDraftHandVisualOnly({ hiddenPendingMeasure: true });
+
+    const cardsEl = document.querySelector(".player-hand__cards--draft") as HTMLElement | null;
+    if (cardsEl) {
+      void cardsEl.offsetHeight;
+    }
+
+    const target = getDraftHandFlyTargetForPending();
+    if (target) return target.rect;
+
+    const rect = getDraftPendingHandSlotRect();
+    if (rect) return rect;
+  }
+
+  return getDraftHandFallbackSlotRect();
+}
+
+function revertDraftPickFlyToHand(cardId: string) {
+  draftHandPendingCardId = null;
+
+  if (draftSelectedCardId === cardId) {
+    draftSelectedCardId = null;
+  }
+
+  getDraftCenterCardWrapper(cardId)?.classList.remove("draft-center-card-wrapper--flown-to-hand");
+  updateDraftPoolFlownVisualOnly();
+  updateDraftHandVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+}
+
+function renderPickedDraftCard(
+  card: TravelCardData,
+  index: number,
+  options?: { isPending?: boolean; hiddenForMeasure?: boolean }
+) {
+  const pendingClass = options?.isPending ? " hand-card--picked-pending" : "";
+  const hiddenClass = options?.hiddenForMeasure ? " hand-card--picked-pending-hidden" : "";
+
+  return `
+    <article
+      class="hand-card hand-card--${card.rarity} hand-card--picked-draft hand-card--picked-slot-${index + 1}${pendingClass}${hiddenClass}"
+      data-draft-hand-card-id="${card.id}"
+    >
+      <div class="hand-card__header">
+        <div class="hand-card__title-block">
+          <h3 class="${getHandTitleClass(card.name)}">${card.name}</h3>
+          <div class="${getHandCityClass(card.city)}">📍 ${card.city}</div>
+        </div>
+
+        <div class="hand-card__vp">${card.vp}</div>
+      </div>
+
+      <div class="hand-card__image" style="background-image: url('${card.image}'), url('${images.food}')">
+        <div class="hand-card__icons">
+          <span>${card.icon}</span>
+          <span>★</span>
+        </div>
+      </div>
+
+      <div class="hand-card__content">
+        <div class="hand-card__meta-row">
+          <span class="hand-card__rarity">${card.rarityLabel}</span>
+          <span class="hand-card__tag">${card.tagLabel}</span>
+        </div>
+
+        <p>${card.description}</p>
+
+        <div class="hand-card__bonus">
+          ${card.bonusText}
+        </div>
+      </div>
+
+      <div class="hand-card__footer">
+        <div>
+          <span>GOLD</span>
+          <strong>${card.coin}</strong>
+        </div>
+
+        <div>
+          <span>STAMINA</span>
+          <strong>${card.stamina}</strong>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderPickedDraftCards(options?: { hiddenPendingMeasure?: boolean }) {
+  const confirmedIds = new Set(getConfirmedPickedDraftCards().map((card) => card.id));
+
+  return getDraftHandDisplayCards()
+    .map((card, index) =>
+      renderPickedDraftCard(card, index, {
+        isPending: card.id === draftHandPendingCardId && !confirmedIds.has(card.id),
+        hiddenForMeasure: options?.hiddenPendingMeasure && card.id === draftHandPendingCardId,
+      })
+    )
     .join("");
+}
+
+function shouldShowDraftPickPool(): boolean {
+  if (!isDraftPhase) return false;
+  if (isOnlineFinalDraftReturnAnimating) return false;
+  if (isOnlineInterRoundPoolPassActive()) {
+    const passPool = onlineDraftPassSnapshotPool ?? onlineDraftDisplayPool;
+    if (passPool?.length) return true;
+  }
+  if (isPassingDraftCards && draftPassDisplayPool?.length) return true;
+  if (getPickedDraftCount() >= DRAFT_PICK_TARGET) return false;
+  return true;
+}
+
+function getDraftCenterRenderPool(): TravelCardData[] {
+  if (isOnlineRoomActive()) {
+    if (isOnlineInterRoundPoolPassActive()) {
+      return onlineDraftPassSnapshotPool ?? onlineDraftDisplayPool ?? [];
+    }
+    return getOnlineDraftDisplayPool() ?? [];
+  }
+
+  if (isPassingDraftCards && draftPassDisplayPool) {
+    return draftPassDisplayPool;
+  }
+
+  return getCurrentDraftPlayer()?.pool ?? [];
+}
+
+function updateDraftConfirmButtonVisualOnly() {
+  if (!isDraftPhase) return;
+
+  const button = document.querySelector(
+    ".deck-pile-panel__draft-confirm"
+  ) as HTMLButtonElement | null;
+  if (!button) return;
+
+  const canConfirm =
+    !!(draftHandPendingCardId || draftSelectedCardId) &&
+    !isDraftPickFlying &&
+    !isPassingDraftCards &&
+    !isDraftDealVisualActive() &&
+    !isDraftPoolCollapseAnimating;
+
+  button.disabled = !canConfirm;
+}
+
+function updatePlanningConfirmButtonVisualOnly() {
+  if (!isOnlinePlanningPhase()) return;
+
+  const button = document.querySelector(
+    ".deck-pile-panel__planning-confirm"
+  ) as HTMLButtonElement | null;
+  if (!button) return;
+
+  const confirmed = isSelfPlanningConfirmed();
+  button.disabled = confirmed;
+  button.textContent = confirmed ? "Đã xác nhận" : "Xác nhận";
+
+  const statusElement = document.querySelector(
+    ".deck-pile-panel__planning-status"
+  ) as HTMLElement | null;
+
+  if (statusElement) {
+    statusElement.textContent = getPlanningConfirmStatusLabel();
+  }
+}
+
+function resetDraftPoolCollapseState() {
+  if (draftPoolCollapseTimerId !== null) {
+    window.clearTimeout(draftPoolCollapseTimerId);
+    draftPoolCollapseTimerId = null;
+  }
+
+  isDraftPoolCollapsed = false;
+  isDraftPoolCollapseAnimating = false;
+  draftPoolCollapseAnimMode = null;
+}
+
+function isDraftPoolToggleBlocked(): boolean {
+  return (
+    isDraftPoolCollapseAnimating ||
+    isDraftPickFlying ||
+    isPassingDraftCards ||
+    isOnlineFinalDraftReturnAnimating
+  );
+}
+
+function renderDraftPoolCollapseButton(): string {
+  if (!isDraftPhase || !shouldShowDraftPickPool()) return "";
+  if (isPassingDraftCards || isOnlineFinalDraftReturnAnimating) return "";
+
+  const label = isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
+  const disabled = isDraftPoolToggleBlocked();
+
+  return `
+    <button
+      type="button"
+      class="deck-pile-panel__pool-toggle"
+      onclick="event.stopPropagation(); toggleDraftPoolCollapse()"
+      ${disabled ? "disabled" : ""}
+      title="${isDraftPoolCollapsed ? "Hiện lại pool chọn bài" : "Thu gọn pool để xem bàn cờ"}"
+    >
+      ${label}
+    </button>
+  `;
+}
+
+function updateDraftPoolToggleVisualOnly() {
+  const button = document.querySelector(
+    ".deck-pile-panel__pool-toggle"
+  ) as HTMLButtonElement | null;
+  if (!button) return;
+
+  button.textContent = isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
+  button.disabled = isDraftPoolToggleBlocked();
+  button.title = isDraftPoolCollapsed
+    ? "Hiện lại pool chọn bài"
+    : "Thu gọn pool để xem bàn cờ";
+}
+
+function getDraftCenterPickOverlayElement(): HTMLElement | null {
+  return document.querySelector(
+    ".draft-center-overlay:not(.draft-center-overlay--returning)"
+  ) as HTMLElement | null;
+}
+
+function activateDraftCenterPoolDeckFlyAnimation(
+  mode: "collapse" | "expand"
+): boolean {
+  const overlayElement = getDraftCenterPickOverlayElement();
+  const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+
+  if (!overlayElement || !deckStackElement) return false;
+
+  const poolCards = Array.from(
+    overlayElement.querySelectorAll(
+      ".draft-center-card-wrapper:not(.draft-center-card-wrapper--flown-to-hand)"
+    )
+  ) as HTMLElement[];
+
+  if (poolCards.length === 0) return false;
+
+  overlayElement.classList.remove(
+    "draft-center-overlay--collapsed",
+    "draft-center-overlay--collapsing",
+    "draft-center-overlay--expanding",
+    "pass-active"
+  );
+
+  const overlayRect = overlayElement.getBoundingClientRect();
+  const deckRect = deckStackElement.getBoundingClientRect();
+
+  const gatherCenterX = overlayRect.left + overlayRect.width * 0.5;
+  const gatherCenterY = overlayRect.top + overlayRect.height * 0.38;
+  const deckInsertX = deckRect.left + deckRect.width * 0.34;
+  const deckInsertY = deckRect.top + deckRect.height * 0.54;
+
+  applyDraftReturnGatherVars(
+    poolCards,
+    gatherCenterX,
+    gatherCenterY,
+    deckInsertX,
+    deckInsertY
+  );
+
+  deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+  overlayElement.classList.add(
+    mode === "collapse"
+      ? "draft-center-overlay--collapsing"
+      : "draft-center-overlay--expanding",
+    "pass-active"
+  );
+
+  return true;
+}
+
+function finishDraftPoolCollapseAnimation() {
+  draftPoolCollapseTimerId = null;
+  isDraftPoolCollapseAnimating = false;
+  draftPoolCollapseAnimMode = null;
+  isDraftPoolCollapsed = true;
+
+  const overlayElement = getDraftCenterPickOverlayElement();
+  overlayElement?.classList.remove(
+    "draft-center-overlay--collapsing",
+    "pass-active"
+  );
+  overlayElement?.classList.add("draft-center-overlay--collapsed");
+
+  document.querySelector(".deck-pile-panel")?.classList.remove("deck-receiving");
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+}
+
+function finishDraftPoolExpandAnimation() {
+  draftPoolCollapseTimerId = null;
+  isDraftPoolCollapseAnimating = false;
+  draftPoolCollapseAnimMode = null;
+  isDraftPoolCollapsed = false;
+
+  const overlayElement = getDraftCenterPickOverlayElement();
+  overlayElement?.classList.remove(
+    "draft-center-overlay--expanding",
+    "draft-center-overlay--collapsed",
+    "pass-active"
+  );
+
+  document.querySelector(".deck-pile-panel")?.classList.remove("deck-receiving");
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+}
+
+function collapseDraftPoolVisual() {
+  if (isDraftPoolToggleBlocked() || isDraftPoolCollapsed) return;
+
+  isDraftPoolCollapseAnimating = true;
+  draftPoolCollapseAnimMode = "collapse";
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+  playGameSound("returnDeck");
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      if (!activateDraftCenterPoolDeckFlyAnimation("collapse")) {
+        finishDraftPoolCollapseAnimation();
+      }
+    });
+  });
+
+  draftPoolCollapseTimerId = window.setTimeout(() => {
+    finishDraftPoolCollapseAnimation();
+  }, DRAFT_POOL_COLLAPSE_MS);
+}
+
+function expandDraftPoolVisual() {
+  if (isDraftPoolToggleBlocked() || !isDraftPoolCollapsed) return;
+
+  isDraftPoolCollapsed = false;
+  isDraftPoolCollapseAnimating = true;
+  draftPoolCollapseAnimMode = "expand";
+
+  const overlayElement = getDraftCenterPickOverlayElement();
+  overlayElement?.classList.remove("draft-center-overlay--collapsed");
+
+  updateDraftPoolToggleVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+  playGameSound("cardSelect");
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      if (!activateDraftCenterPoolDeckFlyAnimation("expand")) {
+        finishDraftPoolExpandAnimation();
+      }
+    });
+  });
+
+  draftPoolCollapseTimerId = window.setTimeout(() => {
+    finishDraftPoolExpandAnimation();
+  }, DRAFT_POOL_COLLAPSE_MS);
+}
+
+function toggleDraftPoolCollapse() {
+  if (!isDraftPhase || !shouldShowDraftPickPool() || isDraftPoolToggleBlocked()) {
+    return;
+  }
+
+  if (isDraftPoolCollapsed) {
+    expandDraftPoolVisual();
+  } else {
+    collapseDraftPoolVisual();
+  }
+}
+
+function shouldShowDraftLeftoverReturn(): boolean {
+  return isOnlineFinalDraftReturnAnimating && isPassingDraftCards;
+}
+
+function getDraftLeftoverReturnCards(): TravelCardData[] {
+  const pool = getOnlineDraftDisplayPool() ?? [];
+  const pickedIds = new Set(
+    (getOnlineSelfState()?.pickedDraftCards ?? []).map((card) => card.id)
+  );
+  return pool.filter((card) => !pickedIds.has(card.id));
+}
+
+function isDraftPickTimerFrozen(): boolean {
+  const hold = onlineClientState.roomState?.draftTimerHold ?? 0;
+
+  if (isOnlineRoomActive()) {
+    const serverPool = getOnlineSelfDraftPool();
+    const animationExpired = draftDealVisualEndsAt > 0 && Date.now() > draftDealVisualEndsAt + 180;
+
+    if (serverPool?.length && animationExpired) {
+      return hold > 0;
+    }
+  }
+
+  return (
+    isDraftCenterDealing ||
+    isInitialDealInProgress ||
+    isPassingDraftCards ||
+    hold > 0 ||
+    Date.now() < draftDealVisualEndsAt
+  );
+}
+
+function getDraftTimerDisplayLabel(): string {
+  if (isDraftPickTimerFrozen()) return "Chia bài";
+  return `${draftPickSecondsLeft}s`;
+}
+
+function updateDraftTimerDisplayVisualOnly() {
+  const meta = document.querySelector(".player-hand__meta");
+  if (!meta || !isDraftPhase) return;
+
+  meta.textContent = isDraftPickTimerFrozen()
+    ? "Đang chia bài..."
+    : `Còn ${getDraftTimerDisplayLabel()} • ${
+        isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"
+      }`;
+  meta.classList.toggle("player-hand__meta--danger", isDraftTimerDanger());
+}
+
+function isDraftTimerDanger(): boolean {
+  return !isDraftPickTimerFrozen() && draftPickSecondsLeft <= 3;
+}
+
+function renderDraftCenterOverlay() {
+  if (!isDraftPhase) return "";
+  if (!shouldShowDraftPickPool()) return "";
+
+  const activePool = getDraftCenterRenderPool();
+
+  if (activePool.length === 0) {
+    return `
+      <div class="draft-center-overlay">
+        <p style="color:#fff5d1; font-size:1.2rem;">Đang chuẩn bị bài...</p>
+      </div>
+    `;
+  }
+
+  const topRow = activePool.slice(0, 4);
+  const bottomRow = activePool.slice(4);
+
+  const renderRow = (cards: TravelCardData[], startIndex: number) => {
+    return cards.map((card, idx) => {
+      const index = startIndex + idx;
+      const globalSlot = startIndex + idx + 1;
+      const isFlownToHand = shouldHideDraftPoolSlot(card.id);
+      const poolPickDisabled =
+        isPassingDraftCards ||
+        isDraftPoolCollapsed ||
+        isDraftPoolCollapseAnimating;
+      const pickButton = poolPickDisabled
+        ? ""
+        : `
+          <button class="draft-center-btn" data-draft-card-id="${card.id}">
+            CHỌN
+          </button>
+        `;
+
+      return `
+        <div class="draft-center-card-wrapper draft-center-card-wrapper--slot-${globalSlot} ${isFlownToHand ? "draft-center-card-wrapper--flown-to-hand" : ""}" style="--draft-deal-delay: ${(globalSlot - 1) * DRAFT_CENTER_DEAL_STEP_MS}ms">
+          <div class="draft-center-card" data-draft-card-id="${card.id}">
+            ${renderHandCard(card, index, true)}
+          </div>
+          ${pickButton}
+        </div>
+      `;
+    }).join("");
+  };
+
+  const overlayModifierClass = [
+    isPassingDraftCards && !isOnlineFinalDraftReturnAnimating
+      ? "draft-center-overlay--passing"
+      : "",
+    isDraftCenterDealing || isInitialDealInProgress
+      ? "draft-center-overlay--dealing"
+      : "",
+    isDraftPoolCollapsed && !isDraftPoolCollapseAnimating
+      ? "draft-center-overlay--collapsed"
+      : "",
+    draftPoolCollapseAnimMode === "collapse" ? "draft-center-overlay--collapsing" : "",
+    draftPoolCollapseAnimMode === "expand" ? "draft-center-overlay--expanding" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return `
+    <div class="draft-center-overlay ${overlayModifierClass}">
+      <div class="draft-center-container">
+        <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(topRow, 0)}</div>
+        <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(bottomRow, 4)}</div>
+      </div>
+      ${shouldShowDraftWaitBanner() ? '<div class="draft-center-wait-banner">Đang chờ đối thủ...</div>' : ''}
+    </div>
+  `;
+}
+
+function renderDraftLeftoverReturnOverlay(): string {
+  if (!shouldShowDraftLeftoverReturn()) return "";
+
+  const cards = getDraftLeftoverReturnCards();
+
+  const cardHtml = cards
+    .map((card, index) => {
+      const slot = index + 1;
+      return `
+        <div class="draft-center-card-wrapper draft-center-card-wrapper--return draft-center-card-wrapper--return-${slot}">
+          <div class="draft-center-card">
+            ${renderHandCard(card, index, true)}
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="draft-center-overlay draft-center-overlay--returning">
+      <div class="draft-center-container draft-center-container--return">
+        ${cardHtml}
+      </div>
+    </div>
+  `;
 }
 
 function getDraftPreviewIconsForPlayer(playerId: PlayerId): string[] {
@@ -2424,14 +3599,24 @@ function resetSinglePlayerDraftPool() {
   if (!currentPlayer) return;
 
   /*
-    Chơi 1 người: sau khi chọn 1 lá, 6 lá còn lại quay về deck rồi roll pool mới.
-    Như vậy mỗi lượt pick thật sự là một lượt random mới, không phải chuyền bài ảo với bot.
+    Chơi 1 người đúng yêu cầu:
+    - Lượt 1: random 7 lá.
+    - Pick xong 1 lá: trả 6 lá còn lại về deck.
+    - Lượt 2: random lại 6 lá mới.
+    - Lượt 3: random lại 5 lá mới.
+    - Lượt 4: random lại 4 lá mới.
+    - Lượt 5: random lại 3 lá mới.
+    => Không giữ pool cũ, nhưng số lá giảm dần theo số lá đã pick.
   */
   if (currentPlayer.pool.length > 0) {
     deck = shuffleCards([...deck, ...currentPlayer.pool]);
   }
 
-  const nextPool = drawRandomCardsFromDeck(DRAFT_STARTING_POOL_SIZE);
+  const nextPoolSize = Math.max(
+    DRAFT_STARTING_POOL_SIZE - currentPlayer.picked.length,
+    DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1
+  );
+  const nextPool = drawRandomCardsFromDeck(nextPoolSize);
 
   draftPlayers = draftPlayers.map((player, index) => {
     if (index !== activeIndex) return player;
@@ -2483,6 +3668,11 @@ function startDraftTimer() {
       return;
     }
 
+    if (isDraftPoolCollapseAnimating) {
+      updateDraftTimerDisplayVisualOnly();
+      return;
+    }
+
       rerenderArena();
   }, 1000);
 }
@@ -2498,8 +3688,13 @@ function initializeDailyDraftPhase() {
   draftPlayers = createDailyDraftPlayers();
   preloadDraftImages();
   draftSelectedCardId = null;
+  draftHandPendingCardId = null;
+  draftPoolFlyReturnCardId = null;
+  lastOnlinePickedDraftCount = 0;
   draftPickSecondsLeft = DRAFT_PICK_SECONDS;
   isPassingDraftCards = false;
+  resetDraftPoolCollapseState();
+  draftPassDisplayPool = null;
   draftRound = 1;
   lastDraftPickResults = [];
 
@@ -2604,6 +3799,8 @@ function finishDraftPick(cardId: string | null) {
       pickedCard: chosenCard,
     });
 
+    draftPassDisplayPool = [...currentPlayer.pool];
+
     draftPlayers = draftPlayers.map((player, playerIndex) => {
       if (playerIndex !== activeIndex) return player;
 
@@ -2616,20 +3813,28 @@ function finishDraftPick(cardId: string | null) {
 
     lastDraftPickResults = pickResults;
     draftSelectedCardId = null;
+    draftHandPendingCardId = null;
+    draftPoolFlyReturnCardId = null;
     isPassingDraftCards = true;
 
     stopDraftTimer();
     rerenderArena();
-    activateDraftPassAnimation();
+    activateDraftCenterPoolPassAnimation();
 
     window.setTimeout(() => {
+      draftPassDisplayPool = null;
       const nextCurrentPlayer = getCurrentDraftPlayer();
 
       if (!nextCurrentPlayer || nextCurrentPlayer.picked.length >= DRAFT_PICK_TARGET) {
+        isPassingDraftCards = false;
         completeDailyDraftPhase();
         return;
       }
 
+      /*
+        Chơi 1 người: mỗi lượt random lại pool mới, nhưng size giảm dần.
+        7 lá -> pick -> random 6 lá -> pick -> random 5 lá -> ... -> đủ 5 lá.
+      */
       resetSinglePlayerDraftPool();
       preloadDraftImages();
 
@@ -2639,10 +3844,13 @@ function finishDraftPick(cardId: string | null) {
       lastDraftPickResults = [];
 
       playDraftDealAnimationAndStartTimer();
-    }, 940);
+    }, DRAFT_PASS_ANIMATION_MS);
 
     return;
   }
+
+  const currentPlayerBeforePass = getCurrentDraftPlayer();
+  draftPassDisplayPool = currentPlayerBeforePass ? [...currentPlayerBeforePass.pool] : null;
 
   draftPlayers = draftPlayers.map((player, playerIndex) => {
     if (player.pool.length === 0) return player;
@@ -2668,13 +3876,16 @@ function finishDraftPick(cardId: string | null) {
 
   lastDraftPickResults = pickResults;
   draftSelectedCardId = null;
+  draftHandPendingCardId = null;
+  draftPoolFlyReturnCardId = null;
   isPassingDraftCards = true;
 
   stopDraftTimer();
   rerenderArena();
-  activateDraftPassAnimation();
+  activateDraftCenterPoolPassAnimation();
 
   window.setTimeout(() => {
+    draftPassDisplayPool = null;
     const currentPlayer = getCurrentDraftPlayer();
 
     /*
@@ -2682,6 +3893,7 @@ function finishDraftPick(cardId: string | null) {
       Khi đã đủ 5 lá thì trả 2 lá dư còn lại về deck, không cần draft tới khi pool rỗng.
     */
     if (!currentPlayer || currentPlayer.picked.length >= DRAFT_PICK_TARGET) {
+      isPassingDraftCards = false;
       completeDailyDraftPhase();
       return;
     }
@@ -2695,7 +3907,7 @@ function finishDraftPick(cardId: string | null) {
     lastDraftPickResults = [];
 
     playDraftDealAnimationAndStartTimer();
-  }, 940);
+  }, DRAFT_PASS_ANIMATION_MS);
 }
 
 function autoPickDraftCard() {
@@ -2736,40 +3948,7 @@ function renderDailyDraftCard(card: TravelCardData, index: number) {
 }
 
 function updateDraftSelectedVisualOnly() {
-  const selectedId = getDraftVisualSelectedCardId();
-  const draftCards = Array.from(
-    document.querySelectorAll("[data-draft-card-id]")
-  ) as HTMLElement[];
-
-  draftCards.forEach((element) => {
-    const isSelected = element.dataset.draftCardId === selectedId;
-    const innerCard = element.querySelector(".hand-card") as HTMLElement | null;
-
-    element.classList.toggle("daily-draft-card--selected", isSelected);
-    innerCard?.classList.toggle("hand-card--draft-selected", isSelected);
-
-    /*
-      Chỉ set layer trực tiếp. Không set inline transform nữa để không đè animation deal/pass.
-      CSS sẽ lo hiệu ứng nổi/glow khi selected.
-    */
-    if (isSelected) {
-      element.style.setProperty("z-index", "99999", "important");
-      element.style.setProperty("isolation", "isolate", "important");
-    } else {
-      element.style.removeProperty("z-index");
-      element.style.removeProperty("isolation");
-    }
-
-    if (innerCard) {
-      if (isSelected) {
-        innerCard.style.setProperty("z-index", "99999", "important");
-        innerCard.style.setProperty("position", "relative", "important");
-      } else {
-        innerCard.style.removeProperty("z-index");
-        innerCard.style.removeProperty("position");
-      }
-    }
-  });
+  updateDraftPoolFlownVisualOnly();
 
   const selectedCard = getDraftSelectedCard();
   const titleElement = document.querySelector(".draft-hand-meta__info strong");
@@ -2787,20 +3966,397 @@ function updateDraftSelectedVisualOnly() {
       ? "Đã chọn. Bấm lại lá đó để hủy chọn."
       : "Bấm để chọn, giữ 0.5s để xem lớn.";
   }
+
+  const waitBanner = document.querySelector(".draft-center-wait-banner") as HTMLElement | null;
+  if (waitBanner) {
+    waitBanner.style.display = shouldShowDraftWaitBanner() ? "" : "none";
+  }
+
+  updateDraftConfirmButtonVisualOnly();
+}
+
+function removeDraftPickFlyLayer() {
+  document.querySelectorAll(".draft-pick-fly-layer").forEach((element) => element.remove());
+}
+
+function ensureDraftPickFlyLayer(): HTMLElement {
+  let layer = document.querySelector(".draft-pick-fly-layer") as HTMLElement | null;
+
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.className = "draft-pick-fly-layer";
+    document.body.appendChild(layer);
+  }
+
+  return layer;
+}
+
+function clampDraftPickFlyScale(scale: number): number {
+  return Math.max(0.85, Math.min(1.2, scale));
+}
+
+function computeDraftPickFlyScaleEnd(fromRect: DOMRect, toRect: DOMRect): number {
+  if (fromRect.width <= 0) return 1;
+  return clampDraftPickFlyScale(toRect.width / fromRect.width);
+}
+
+function shouldHideDraftPoolSlot(cardId: string): boolean {
+  if (isDraftDealVisualActive()) {
+    return cardId === draftHandPendingCardId || cardId === draftPoolFlyReturnCardId;
+  }
+
+  if (cardId === draftHandPendingCardId || cardId === draftPoolFlyReturnCardId) {
+    return true;
+  }
+
+  /*
+    Online draft giữ display pool cũ trong lúc pass animation.
+    Lá vừa pick đã nằm trên tay nhưng vẫn còn trong display pool → ẩn slot
+    cho tới khi pool mới được apply sau animation.
+  */
+  if (isPassingDraftCards || isOnlineFinalDraftReturnAnimating) {
+    return getConfirmedPickedDraftCards().some((card) => card.id === cardId);
+  }
+
+  return false;
+}
+
+function animateDraftPickFly(
+  fromRect: DOMRect,
+  toRect: DOMRect,
+  sourceInnerHtml: string,
+  scaleEnd: number,
+  options?: {
+    scaleStart?: number;
+    direction?: "to-hand" | "to-pool";
+    rotateStart?: number;
+    rotateEnd?: number;
+    flyWidth?: number;
+    flyHeight?: number;
+  }
+): Promise<void> {
+  const layer = ensureDraftPickFlyLayer();
+  const { cardW, cardH } = readDraftHandCardMetrics();
+  const flyWidth = options?.flyWidth ?? cardW;
+  const flyHeight = options?.flyHeight ?? cardH;
+  const fromCx = fromRect.left + fromRect.width / 2;
+  const fromCy = fromRect.top + fromRect.height / 2;
+  const toCx = toRect.left + toRect.width / 2;
+  const toCy = toRect.top + toRect.height / 2;
+  const scaleStart = options?.scaleStart ?? 1;
+  const rotateStart = options?.rotateStart ?? 0;
+  const rotateEnd = options?.rotateEnd ?? 0;
+
+  const fly = document.createElement("div");
+  fly.className = "draft-pick-fly-card";
+  if (options?.direction === "to-pool") {
+    fly.classList.add("draft-pick-fly-card--to-pool");
+  }
+  fly.style.left = `${fromCx - flyWidth / 2}px`;
+  fly.style.top = `${fromCy - flyHeight / 2}px`;
+  fly.style.width = `${flyWidth}px`;
+  fly.style.height = `${flyHeight}px`;
+  fly.style.setProperty("--fly-dx", `${toCx - fromCx}px`);
+  fly.style.setProperty("--fly-dy", `${toCy - fromCy}px`);
+  fly.style.setProperty("--fly-scale-start", String(scaleStart));
+  fly.style.setProperty("--fly-scale-end", String(scaleEnd));
+  fly.style.setProperty("--fly-rotate-start", `${rotateStart}deg`);
+  fly.style.setProperty("--fly-rotate-end", `${rotateEnd}deg`);
+  fly.innerHTML = sourceInnerHtml;
+
+  layer.appendChild(fly);
+  void fly.offsetHeight;
+  fly.classList.add("draft-pick-fly-card--animating");
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+
+      fly.remove();
+
+      if (layer.childElementCount === 0) {
+        layer.remove();
+      }
+
+      resolve();
+    };
+
+    fly.addEventListener("animationend", finish, { once: true });
+    window.setTimeout(finish, DRAFT_PICK_FLY_MS + 100);
+  });
+}
+
+async function playDraftPickFlyToHand(cardId: string) {
+  const card = findCardInDraftPool(cardId);
+  if (!card) {
+    revertDraftPickFlyToHand(cardId);
+    return;
+  }
+
+  const wrapper = getDraftCenterCardWrapper(cardId);
+  const poolCard = wrapper?.querySelector(".hand-card") as HTMLElement | null;
+  const fromRect = poolCard?.getBoundingClientRect();
+  const sourceHtml = poolCard?.outerHTML;
+
+  if (!fromRect || !sourceHtml || !poolCard || !wrapper || fromRect.width <= 0 || fromRect.height <= 0) {
+    revertDraftPickFlyToHand(cardId);
+    return;
+  }
+
+  draftHandPendingCardId = cardId;
+  wrapper.classList.add("draft-center-card-wrapper--flown-to-hand");
+  updateDraftPoolFlownVisualOnly();
+  updateDraftHandVisualOnly({ hiddenPendingMeasure: true });
+
+  await new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+  });
+
+  const toTarget = getDraftHandFlyTargetForPending();
+
+  if (!toTarget) {
+    revertDraftPickFlyToHand(cardId);
+    return;
+  }
+
+  const poolScaleStart = clampDraftPickFlyScale(fromRect.width / readDraftHandCardMetrics().cardW);
+
+  await animateDraftPickFly(fromRect, toTarget.rect, sourceHtml, DRAFT_HAND_PICK_SCALE, {
+    direction: "to-hand",
+    scaleStart: poolScaleStart,
+    rotateStart: 0,
+    rotateEnd: toTarget.rotate,
+    flyWidth: readDraftHandCardMetrics().cardW,
+    flyHeight: readDraftHandCardMetrics().cardH,
+  });
+  updateDraftHandVisualOnly();
+}
+
+async function playDraftPickFlyToPool(cardId: string) {
+  const handCard = document.querySelector(
+    `[data-draft-hand-card-id="${cardId}"]`
+  ) as HTMLElement | null;
+  const sourceInnerHtml = handCard?.outerHTML;
+  const handFlySource = handCard ? getDraftHandFlySourceFromElement(handCard) : null;
+  const fromRect = handFlySource?.rect ?? handCard?.getBoundingClientRect();
+
+  if (!fromRect || !sourceInnerHtml || !handCard || fromRect.width <= 0 || fromRect.height <= 0) {
+    return;
+  }
+
+  handCard.classList.add("hand-card--picked-pending-hidden");
+
+  draftPoolFlyReturnCardId = cardId;
+  updateDraftPoolFlownVisualOnly();
+
+  const wrapper = getDraftCenterCardWrapper(cardId);
+  const poolCard = wrapper?.querySelector(".hand-card") as HTMLElement | null;
+  const poolTargetRect = poolCard?.getBoundingClientRect() ?? wrapper?.getBoundingClientRect();
+
+  if (!poolTargetRect) {
+    draftHandPendingCardId = null;
+    draftPoolFlyReturnCardId = null;
+    updateDraftHandVisualOnly();
+    updateDraftPoolFlownVisualOnly();
+    return;
+  }
+
+  const { cardW, cardH } = readDraftHandCardMetrics();
+  const poolScaleEnd = clampDraftPickFlyScale(poolTargetRect.width / cardW);
+
+  try {
+    await animateDraftPickFly(fromRect, poolTargetRect, sourceInnerHtml, poolScaleEnd, {
+      direction: "to-pool",
+      scaleStart: DRAFT_HAND_PICK_SCALE,
+      rotateStart: handFlySource?.rotate ?? 0,
+      rotateEnd: 0,
+      flyWidth: cardW,
+      flyHeight: cardH,
+    });
+  } finally {
+    draftHandPendingCardId = null;
+    draftPoolFlyReturnCardId = null;
+    updateDraftHandVisualOnly();
+    updateDraftPoolFlownVisualOnly();
+  }
+}
+
+async function playDraftPickSwap(fromCardId: string, toCardId: string) {
+  const fromHandEl = document.querySelector(
+    `[data-draft-hand-card-id="${fromCardId}"]`
+  ) as HTMLElement | null;
+  const fromHandFlySource = fromHandEl ? getDraftHandFlySourceFromElement(fromHandEl) : null;
+  const fromRect = fromHandFlySource?.rect ?? fromHandEl?.getBoundingClientRect();
+  const fromHtml = fromHandEl?.outerHTML;
+
+  const toPoolWrapper = getDraftCenterCardWrapper(toCardId);
+  const toPoolCard = toPoolWrapper?.querySelector(".hand-card") as HTMLElement | null;
+  const toPoolRect = toPoolCard?.getBoundingClientRect();
+  const toPoolHtml = toPoolCard?.outerHTML;
+
+  const fromPoolWrapper = getDraftCenterCardWrapper(fromCardId);
+  const fromPoolCard = fromPoolWrapper?.querySelector(".hand-card") as HTMLElement | null;
+  const fromPoolRect = fromPoolCard?.getBoundingClientRect();
+  const fromPoolHtml = fromPoolCard?.outerHTML;
+
+  if (
+    !fromRect ||
+    !fromHtml ||
+    !toPoolRect ||
+    !toPoolHtml ||
+    !fromPoolRect ||
+    !fromPoolHtml ||
+    !fromHandEl ||
+    fromRect.width <= 0 ||
+    toPoolRect.width <= 0 ||
+    fromPoolRect.width <= 0
+  ) {
+    return;
+  }
+
+  fromHandEl.classList.add("hand-card--picked-pending-hidden");
+
+  draftHandPendingCardId = toCardId;
+  draftPoolFlyReturnCardId = fromCardId;
+  updateDraftPoolFlownVisualOnly();
+  updateDraftHandVisualOnly({ hiddenPendingMeasure: true });
+
+  await new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+  });
+
+  const toHandTarget = getDraftHandFlyTargetForPending();
+
+  if (!toHandTarget) {
+    fromHandEl.classList.remove("hand-card--picked-pending-hidden");
+    draftHandPendingCardId = fromCardId;
+    draftPoolFlyReturnCardId = null;
+    updateDraftPoolFlownVisualOnly();
+    updateDraftHandVisualOnly();
+    return;
+  }
+
+  const { cardW, cardH } = readDraftHandCardMetrics();
+  const returnScaleEnd = clampDraftPickFlyScale(fromPoolRect.width / cardW);
+  const poolPickScaleStart = clampDraftPickFlyScale(toPoolRect.width / cardW);
+
+  try {
+    await Promise.all([
+      animateDraftPickFly(fromRect, fromPoolRect, fromHtml, returnScaleEnd, {
+        direction: "to-pool",
+        scaleStart: DRAFT_HAND_PICK_SCALE,
+        rotateStart: fromHandFlySource?.rotate ?? 0,
+        rotateEnd: 0,
+        flyWidth: cardW,
+        flyHeight: cardH,
+      }),
+      animateDraftPickFly(toPoolRect, toHandTarget.rect, toPoolHtml, DRAFT_HAND_PICK_SCALE, {
+        scaleStart: poolPickScaleStart,
+        rotateStart: 0,
+        rotateEnd: toHandTarget.rotate,
+        flyWidth: cardW,
+        flyHeight: cardH,
+      }),
+    ]);
+  } finally {
+    draftPoolFlyReturnCardId = null;
+    updateDraftHandVisualOnly();
+    updateDraftPoolFlownVisualOnly();
+  }
+}
+
+function updateDraftHandVisualOnly(options?: { hiddenPendingMeasure?: boolean }) {
+  const cardsEl = document.querySelector(".player-hand__cards--draft") as HTMLElement | null;
+  if (!cardsEl) return;
+
+  const count = getDraftHandDisplayCount();
+  cardsEl.className = `player-hand__cards player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${count}`;
+  cardsEl.innerHTML = renderPickedDraftCards(options);
+}
+
+function updateDraftPoolFlownVisualOnly() {
+  document.querySelectorAll(".draft-center-card-wrapper").forEach((wrapper) => {
+    const cardEl = wrapper.querySelector(
+      ".draft-center-card[data-draft-card-id]"
+    ) as HTMLElement | null;
+    const cardId = cardEl?.dataset.draftCardId;
+    if (!cardId) return;
+
+    wrapper.classList.remove("draft-center-card-wrapper--selected");
+    wrapper.classList.toggle("draft-center-card-wrapper--flown-to-hand", shouldHideDraftPoolSlot(cardId));
+
+    cardEl.style.removeProperty("z-index");
+    cardEl.style.removeProperty("isolation");
+
+    const innerCard = cardEl.querySelector(".hand-card") as HTMLElement | null;
+    innerCard?.classList.remove("hand-card--draft-selected");
+    innerCard?.style.removeProperty("z-index");
+    innerCard?.style.removeProperty("position");
+
+    const button = wrapper.querySelector(".draft-center-btn") as HTMLButtonElement | null;
+    if (button) {
+      button.textContent = "CHỌN";
+      button.classList.remove("daily-draft-card--selected");
+      button.style.removeProperty("z-index");
+      button.style.removeProperty("isolation");
+    }
+  });
+}
+
+async function handleDraftPickSelectionChange(
+  prevPending: string | null,
+  nextSelected: string | null,
+  cardId: string
+) {
+  isDraftPickFlying = true;
+
+  let didChangeHand = false;
+
+  try {
+    if (!nextSelected) {
+      if (prevPending) {
+        await playDraftPickFlyToPool(prevPending);
+        didChangeHand = true;
+      }
+    } else if (!prevPending) {
+      await playDraftPickFlyToHand(nextSelected);
+      didChangeHand = draftHandPendingCardId === nextSelected;
+    } else if (prevPending !== nextSelected) {
+      await playDraftPickSwap(prevPending, nextSelected);
+      didChangeHand = draftHandPendingCardId === nextSelected;
+    }
+
+    if (didChangeHand) {
+      updateDraftHandVisualOnly();
+    }
+
+    updateDraftSelectedVisualOnly();
+
+    if (isOnlineRoomActive()) {
+      selectOnlineDraftCard(cardId);
+    }
+  } finally {
+    isDraftPickFlying = false;
+    updateDraftConfirmButtonVisualOnly();
+    updateDraftPoolToggleVisualOnly();
+  }
 }
 
 function selectDraftCard(cardId: string) {
-  if (!isDraftPhase || isPassingDraftCards) return;
+  if (!isDraftPhase) return;
 
-  /*
-    Online dùng cùng cơ chế input cho mọi lượt 5/4/3/2/1:
-    - không bị dealing chặn click
-    - không full rerender hand khi chọn
-    - bấm lại cùng lá thì toggle hủy chọn
-  */
-  // Cho phép chọn bài ngay cả khi animation chia bài chưa gỡ class kịp.
-  // Nếu chặn bằng isInitialDealInProgress, chỉ cần animation bị kẹt là card không bấm được.
-  // if (!isOnlineRoomActive() && isInitialDealInProgress) return;
+  if (
+    isDraftPickFlying ||
+    isPassingDraftCards ||
+    isDraftDealVisualActive() ||
+    isDraftPoolCollapsed ||
+    isDraftPoolCollapseAnimating
+  ) {
+    return;
+  }
 
   if (suppressNextClick) {
     suppressNextClick = false;
@@ -2810,21 +4366,295 @@ function selectDraftCard(cardId: string) {
     }
   }
 
-  const nextSelectedCardId = draftSelectedCardId === cardId ? null : cardId;
+  const prevPending = draftHandPendingCardId;
+  const nextSelected = draftSelectedCardId === cardId ? null : cardId;
 
   playGameSound("cardSelect");
-  draftSelectedCardId = nextSelectedCardId;
+  draftSelectedCardId = nextSelected;
   focusedHandCardId = null;
   focusedBoardCard = null;
   focusedBoardPosition = null;
 
-  if (isOnlineRoomActive()) {
-    selectOnlineDraftCard(cardId);
-    updateDraftSelectedVisualOnly();
+  if (nextSelected && !prevPending) {
+    draftHandPendingCardId = nextSelected;
+    updateDraftPoolFlownVisualOnly();
+    updateDraftHandVisualOnly({ hiddenPendingMeasure: true });
+    updateDraftConfirmButtonVisualOnly();
+  }
+
+  void handleDraftPickSelectionChange(prevPending, nextSelected, cardId);
+}
+
+function confirmDraftPick() {
+  if (!isDraftPhase) return;
+
+  if (
+    isDraftPickFlying ||
+    isPassingDraftCards ||
+    !(draftHandPendingCardId || draftSelectedCardId)
+  ) {
     return;
   }
 
-  rerenderGameShell();
+  const cardId = draftSelectedCardId ?? draftHandPendingCardId;
+
+  if (!cardId) return;
+
+  if (isOnlineRoomActive()) {
+    confirmOnlineDraftPick();
+    return;
+  }
+
+  finishDraftPick(cardId);
+}
+
+function isOnlinePlanningPhase() {
+  return isOnlineRoomActive() && onlineClientState.roomState?.phase === "planning";
+}
+
+function getSelfPlanningConfirmLockSignature() {
+  const playerId = onlineClientState.playerId;
+  const state = onlineClientState.roomState;
+
+  if (!playerId || !state) {
+    return "";
+  }
+
+  const handIds = (state.self.hand ?? []).map((card) => card.id).join(",");
+  const dayIndex = state.dayIndex;
+  const board = state.players[playerId]?.board ?? [];
+  const dayBoard = board
+    .map((row) => row[dayIndex])
+    .map((cell) => cell?.cardId ?? "-")
+    .join(",");
+
+  return `${dayIndex}|${handIds}|${dayBoard}`;
+}
+
+function resetSelfPlanningConfirmLock() {
+  selfPlanningConfirmPending = false;
+  planningConfirmLockSignature = "";
+  planningConfirmRetryCount = 0;
+
+  if (planningConfirmRetryTimerId !== null) {
+    window.clearTimeout(planningConfirmRetryTimerId);
+    planningConfirmRetryTimerId = null;
+  }
+}
+
+function getServerPlanningConfirmProgress() {
+  const state = onlineClientState.roomState;
+
+  if (!state) {
+    return { total: 0, confirmed: 0 };
+  }
+
+  const connectedPlayerIds = playerIds.filter((playerId) => {
+    const player = state.players[playerId];
+
+    return player?.isConnected === true && player?.hasJoined === true;
+  });
+
+  const confirmedCount = connectedPlayerIds.filter((playerId) => {
+    return state.players[playerId]?.planningConfirmed === true;
+  }).length;
+
+  return {
+    total: connectedPlayerIds.length,
+    confirmed: confirmedCount,
+  };
+}
+
+function hasServerAckedPlanningConfirm() {
+  const playerId = onlineClientState.playerId;
+  const state = onlineClientState.roomState;
+
+  if (!playerId || !state) {
+    return false;
+  }
+
+  if (state.phase === "simulation" || state.phase === "result") {
+    return true;
+  }
+
+  return state.players[playerId]?.planningConfirmed === true;
+}
+
+function schedulePlanningConfirmRetry() {
+  if (planningConfirmRetryTimerId !== null) return;
+  if (!selfPlanningConfirmPending || !isOnlinePlanningPhase()) return;
+  if (hasServerAckedPlanningConfirm()) {
+    resetSelfPlanningConfirmLock();
+    return;
+  }
+
+  planningConfirmRetryTimerId = window.setTimeout(() => {
+    planningConfirmRetryTimerId = null;
+
+    if (
+      !selfPlanningConfirmPending ||
+      !isOnlinePlanningPhase() ||
+      hasServerAckedPlanningConfirm()
+    ) {
+      resetSelfPlanningConfirmLock();
+      updatePlanningConfirmButtonVisualOnly();
+      return;
+    }
+
+    planningConfirmRetryCount += 1;
+
+    if (planningConfirmRetryCount > 8) {
+      updatePlanningConfirmButtonVisualOnly();
+      return;
+    }
+
+    try {
+      confirmOnlinePlanning();
+    } catch {
+      resetSelfPlanningConfirmLock();
+      updatePlanningConfirmButtonVisualOnly();
+      return;
+    }
+
+    schedulePlanningConfirmRetry();
+  }, 2000);
+}
+
+function syncSelfPlanningConfirmLockFromServer() {
+  const state = onlineClientState.roomState;
+  const playerId = onlineClientState.playerId;
+
+  if (!state || !playerId) {
+    resetSelfPlanningConfirmLock();
+    return;
+  }
+
+  if (state.phase !== "planning") {
+    resetSelfPlanningConfirmLock();
+    lastOnlinePlanningDayIndex = null;
+    return;
+  }
+
+  if (
+    lastOnlinePlanningDayIndex !== null &&
+    lastOnlinePlanningDayIndex !== state.dayIndex
+  ) {
+    resetSelfPlanningConfirmLock();
+  }
+
+  lastOnlinePlanningDayIndex = state.dayIndex;
+
+  if (state.players[playerId]?.planningConfirmed === true) {
+    resetSelfPlanningConfirmLock();
+    return;
+  }
+
+  if (selfPlanningConfirmPending) {
+    schedulePlanningConfirmRetry();
+  }
+
+  if (
+    selfPlanningConfirmPending &&
+    planningConfirmLockSignature !== getSelfPlanningConfirmLockSignature()
+  ) {
+    resetSelfPlanningConfirmLock();
+  }
+}
+
+function isSelfPlanningConfirmed() {
+  const playerId = onlineClientState.playerId;
+  const state = onlineClientState.roomState;
+
+  if (!playerId || !state?.players[playerId]) {
+    return false;
+  }
+
+  if (state.players[playerId].planningConfirmed === true) {
+    return true;
+  }
+
+  return (
+    selfPlanningConfirmPending &&
+    planningConfirmLockSignature !== "" &&
+    planningConfirmLockSignature === getSelfPlanningConfirmLockSignature()
+  );
+}
+
+function getPlanningConfirmStatusLabel() {
+  const state = onlineClientState.roomState;
+  const serverProgress = getServerPlanningConfirmProgress();
+
+  if (state?.phase === "simulation") {
+    return "Đang quét...";
+  }
+
+  if (serverProgress.total <= 0) {
+    return "";
+  }
+
+  const selfServerConfirmed =
+    state?.players[onlineClientState.playerId ?? "p1"]?.planningConfirmed === true;
+
+  if (isSelfPlanningConfirmed() && !selfServerConfirmed) {
+    if (planningConfirmRetryCount > 8) {
+      if (serverProgress.total <= 1) {
+        return "Không kết nối server • chạy: cd TREKPOLOGY/server && npm start";
+      }
+
+      return "Không nhận phản hồi server • thử reload trang";
+    }
+
+    if (serverProgress.total <= 1) {
+      return "Đã xác nhận • đang chạy lịch trình...";
+    }
+
+    if (serverProgress.total > 1) {
+      const waitingCount = Math.max(0, serverProgress.total - serverProgress.confirmed - 1);
+
+      return `Đã xác nhận • chờ ${waitingCount} người (${serverProgress.confirmed + 1}/${serverProgress.total})`;
+    }
+
+    return "Đã xác nhận • đang đồng bộ server...";
+  }
+
+  if (serverProgress.confirmed >= serverProgress.total) {
+    return "Đủ người xác nhận • đang quét...";
+  }
+
+  if (isSelfPlanningConfirmed()) {
+    const waitingCount = serverProgress.total - serverProgress.confirmed;
+
+    return `Đã xác nhận • chờ ${waitingCount} người (${serverProgress.confirmed}/${serverProgress.total})`;
+  }
+
+  if (serverProgress.total > 1) {
+    return `Cần tất cả online xác nhận (${serverProgress.confirmed}/${serverProgress.total})`;
+  }
+
+  return "";
+}
+
+function confirmPlanningPick() {
+  if (!isOnlinePlanningPhase()) return;
+  if (isSelfPlanningConfirmed()) return;
+
+  selfPlanningConfirmPending = true;
+  planningConfirmLockSignature = getSelfPlanningConfirmLockSignature();
+  planningConfirmRetryCount = 0;
+
+  try {
+    confirmOnlinePlanning();
+  } catch (error) {
+    resetSelfPlanningConfirmLock();
+
+    const message = error instanceof Error ? error.message : "Không gửi được xác nhận.";
+    alert(message);
+    updatePlanningConfirmButtonVisualOnly();
+    return;
+  }
+
+  updatePlanningConfirmButtonVisualOnly();
+  schedulePlanningConfirmRetry();
 }
 
 
@@ -2911,14 +4741,7 @@ function clearDailyDealTimer() {
 }
 
 function activateDraftDealAnimation() {
-  playGameSound("deal");
-
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      const handElement = document.querySelector(".player-hand--draft.player-hand--dealing");
-      handElement?.classList.add("deal-active");
-    });
-  });
+  startDraftCenterDealAnimation(getDraftCenterDealDurationForCurrentPool());
 }
 
 function ensureOnlineDraftDealAnimationStarted() {
@@ -2929,6 +4752,90 @@ function ensureOnlineDraftDealAnimationStarted() {
   if (!handElement || handElement.classList.contains("deal-active")) return;
 
   handElement.classList.add("deal-active");
+}
+
+function applyDraftReturnGatherVars(
+  cards: HTMLElement[],
+  gatherCenterX: number,
+  gatherCenterY: number,
+  deckInsertX: number,
+  deckInsertY: number
+) {
+  cards.forEach((card, index) => {
+    const cardRect = card.getBoundingClientRect();
+    const cardCenterX = cardRect.left + cardRect.width * 0.5;
+    const cardCenterY = cardRect.top + cardRect.height * 0.5;
+    const stackOffset = index - (cards.length - 1) / 2;
+
+    const gatherX = gatherCenterX - cardCenterX + stackOffset * 5;
+    const gatherY = gatherCenterY - cardCenterY + Math.abs(stackOffset) * 3;
+    const deckX = deckInsertX - cardCenterX + stackOffset * 2;
+    const deckY = deckInsertY - cardCenterY + stackOffset * 2;
+
+    const arc1X = gatherX + (deckX - gatherX) * 0.34;
+    const arc1Y = Math.min(gatherY, deckY) - 150 - Math.abs(stackOffset) * 7;
+    const arc2X = gatherX + (deckX - gatherX) * 0.72;
+    const arc2Y = Math.min(gatherY, deckY) - 185 - Math.abs(stackOffset) * 5;
+
+    card.style.setProperty("--gather-x", `${gatherX}px`);
+    card.style.setProperty("--gather-y", `${gatherY}px`);
+    card.style.setProperty("--gather-r", `${stackOffset * 4}deg`);
+
+    card.style.setProperty("--arc1-x", `${arc1X}px`);
+    card.style.setProperty("--arc1-y", `${arc1Y}px`);
+    card.style.setProperty("--arc2-x", `${arc2X}px`);
+    card.style.setProperty("--arc2-y", `${arc2Y}px`);
+
+    card.style.setProperty("--deck-in-x", `${deckX}px`);
+    card.style.setProperty("--deck-in-y", `${deckY}px`);
+    card.style.setProperty("--deck-r", `${-6 + stackOffset * 3}deg`);
+  });
+}
+
+function activateDraftCenterPoolPassAnimation() {
+  playGameSound("returnDeck");
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const overlayElement =
+        (document.querySelector(
+          ".draft-center-overlay--passing:not(.draft-center-overlay--returning)"
+        ) as HTMLElement | null) ??
+        (document.querySelector(".draft-center-overlay:not(.draft-center-overlay--returning)") as HTMLElement | null);
+      const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+
+      if (!overlayElement || !deckStackElement) return;
+
+      const passingCards = Array.from(
+        overlayElement.querySelectorAll(
+          ".draft-center-card-wrapper:not(.draft-center-card-wrapper--flown-to-hand)"
+        )
+      ) as HTMLElement[];
+
+      if (passingCards.length === 0) return;
+
+      overlayElement.classList.add("draft-center-overlay--passing");
+
+      const overlayRect = overlayElement.getBoundingClientRect();
+      const deckRect = deckStackElement.getBoundingClientRect();
+
+      const gatherCenterX = overlayRect.left + overlayRect.width * 0.5;
+      const gatherCenterY = overlayRect.top + overlayRect.height * 0.38;
+      const deckInsertX = deckRect.left + deckRect.width * 0.34;
+      const deckInsertY = deckRect.top + deckRect.height * 0.54;
+
+      applyDraftReturnGatherVars(
+        passingCards,
+        gatherCenterX,
+        gatherCenterY,
+        deckInsertX,
+        deckInsertY
+      );
+
+      deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+      overlayElement.classList.add("pass-active");
+    });
+  });
 }
 
 function activateDraftPassAnimation() {
@@ -2998,16 +4905,59 @@ function activateDraftPassAnimation() {
   });
 }
 
+function activateDraftCenterReturnAnimation() {
+  playGameSound("returnDeck");
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const overlayElement = document.querySelector(
+        ".draft-center-overlay--returning"
+      ) as HTMLElement | null;
+      const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+
+      if (!overlayElement || !deckStackElement) return;
+
+      const returnCards = Array.from(
+        overlayElement.querySelectorAll(".draft-center-card-wrapper--return")
+      ) as HTMLElement[];
+
+      const overlayRect = overlayElement.getBoundingClientRect();
+      const deckRect = deckStackElement.getBoundingClientRect();
+
+      const gatherCenterX = overlayRect.left + overlayRect.width * 0.5;
+      const gatherCenterY = overlayRect.top + overlayRect.height * 0.38;
+
+      const deckInsertX = deckRect.left + deckRect.width * 0.34;
+      const deckInsertY = deckRect.top + deckRect.height * 0.54;
+
+      applyDraftReturnGatherVars(
+        returnCards,
+        gatherCenterX,
+        gatherCenterY,
+        deckInsertX,
+        deckInsertY
+      );
+
+      deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+      overlayElement.classList.add("pass-active");
+    });
+  });
+}
+
 function finishDraftDealWithoutFullRerender() {
   isInitialDealInProgress = false;
   dailyDealTimerId = null;
+  clearDraftCenterDealAnimation();
+  draftDealVisualEndsAt = 0;
 
   const handElement = document.querySelector(".player-hand");
   handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
 
   const handMeta = handElement?.querySelector(".player-hand__meta");
   if (handMeta) {
-    handMeta.textContent = `Còn ${draftPickSecondsLeft}s • bấm 1 lá để chọn`;
+    handMeta.textContent = isDraftPickTimerFrozen()
+      ? "Đang chia bài..."
+      : `Còn ${getDraftTimerDisplayLabel()} • bấm 1 lá để chọn`;
   }
 
   const draftInfo = handElement?.querySelector(".draft-hand-meta__info em");
@@ -3016,18 +4966,23 @@ function finishDraftDealWithoutFullRerender() {
   }
 
   startDraftTimer();
+  updateDraftPoolToggleVisualOnly();
 }
 
 function finishOnlineDraftDealVisualOnly() {
   isInitialDealInProgress = false;
   onlineDraftAnimationTimerId = null;
+  clearDraftCenterDealAnimation();
+  draftDealVisualEndsAt = 0;
 
   const handElement = document.querySelector(".player-hand");
   handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
 
   const handMeta = handElement?.querySelector(".player-hand__meta");
   if (handMeta) {
-    handMeta.textContent = `Còn ${draftPickSecondsLeft}s • bấm 1 lá để chọn`;
+    handMeta.textContent = isDraftPickTimerFrozen()
+      ? "Đang chia bài..."
+      : `Còn ${getDraftTimerDisplayLabel()} • bấm 1 lá để chọn`;
   }
 
   const draftInfo = handElement?.querySelector(".draft-hand-meta__info em");
@@ -3036,6 +4991,8 @@ function finishOnlineDraftDealVisualOnly() {
   }
 
   updateDraftSelectedVisualOnly();
+  updateDraftConfirmButtonVisualOnly();
+  updateDraftPoolToggleVisualOnly();
 }
 
 function playOnlinePlanningHandDealAfterDraft() {
@@ -3084,18 +5041,20 @@ function playDraftDealAnimationAndStartTimer() {
   stopDraftTimer();
   clearDailyDealTimer();
 
+  resetDraftPoolCollapseState();
   isInitialDealInProgress = true;
   draftSelectedCardId = null;
   rerenderArena();
-  activateDraftDealAnimation();
+  const dealMs = getDraftCenterDealDurationForCurrentPool();
+  startDraftCenterDealAnimation(dealMs);
 
   /*
-    CSS draft deal 7 lá: animation chạy trực tiếp trên 7 wrapper.
+    CSS draft deal: animation chạy trên từng wrapper theo số lá pool hiện tại.
     Không rerender toàn arena ở frame cuối; chỉ gỡ class để tránh snap/jank.
   */
   dailyDealTimerId = window.setTimeout(() => {
     finishDraftDealWithoutFullRerender();
-  }, 1320);
+  }, dealMs);
 }
 
 function finishDailyDealAndStartTimer() {
@@ -3398,11 +5357,11 @@ function renderScoreBreakdownPanel() {
           : isDraftPhase
             ? `
               <div
-                class="score-breakdown__timer ${draftPickSecondsLeft <= 3 ? "score-breakdown__timer--danger" : ""}"
+                class="score-breakdown__timer ${isDraftTimerDanger() ? "score-breakdown__timer--danger" : ""}"
                 title="Thời gian chọn bài trong phase chia bài."
               >
                 <span>DRAFT</span>
-                <strong>${draftPickSecondsLeft}s</strong>
+                <strong>${getDraftTimerDisplayLabel()}</strong>
               </div>
             `
             : `
@@ -3428,7 +5387,7 @@ function renderResourceOrbs() {
 
   return `
     <div class="resource-orbs" aria-label="Tài nguyên hiện tại">
-      <div class="resource-orb resource-orb--coin" title="Xu hiện có">
+      <div class="resource-orb resource-orb--coin ${resourceOrbFlashType === "coin" ? "resource-orb--effect-pulse" : ""}" title="Xu hiện có">
         <div class="resource-orb__frame">
           <div class="resource-orb__icon resource-orb__icon--coin">💰</div>
           <div class="resource-orb__value">${remaining.coin}</div>
@@ -3436,7 +5395,7 @@ function renderResourceOrbs() {
         <div class="resource-orb__label">TIỀN</div>
       </div>
 
-      <div class="resource-orb resource-orb--stamina" title="Thể lực hiện có">
+      <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
         <div class="resource-orb__frame">
           <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
           <div class="resource-orb__value">${remaining.stamina}</div>
@@ -4029,11 +5988,7 @@ function renderPlayerEffectTokens() {
   }
 
   if (!effectTokens.length) {
-    return `
-      <div class="player-effect-dock player-effect-dock--empty">
-        <div class="player-effect-dock__placeholder">Hiệu ứng đang có</div>
-      </div>
-    `;
+    return "";
   }
 
   return `
@@ -4047,14 +6002,66 @@ function renderDeckPilePanel() {
   const deckCount = isOnlineRoomActive() ? 0 : deck.length;
   const handCount =
     (isOnlineRoomActive() ? getOnlineSelfHand() : null)?.length ?? playerHand.length;
+  const canConfirm =
+    !!(draftHandPendingCardId || draftSelectedCardId) &&
+    !isDraftPickFlying &&
+    !isPassingDraftCards &&
+    !isDraftDealVisualActive() &&
+    !isDraftPoolCollapseAnimating;
+  const isOnlinePlanning = isOnlinePlanningPhase();
+  const selfPlanningConfirmed = isSelfPlanningConfirmed();
+  const serverPhase = onlineClientState.roomState?.phase;
+  const showDraftConfirm = isDraftPhase && serverPhase === "draft";
+  const showPlanningConfirm = isOnlinePlanning && serverPhase === "planning";
+  const planningStatusLabel = showPlanningConfirm ? getPlanningConfirmStatusLabel() : "";
+  const planningConfirmButton = showPlanningConfirm
+    ? `
+      <div class="deck-pile-panel__planning-actions">
+        <button
+          type="button"
+          class="deck-pile-panel__planning-confirm"
+          onclick="event.stopPropagation(); confirmPlanningPick()"
+          ${selfPlanningConfirmed ? "disabled" : ""}
+        >
+          ${selfPlanningConfirmed ? "Đã xác nhận" : "Xác nhận"}
+        </button>
+        ${planningStatusLabel ? `<div class="deck-pile-panel__planning-status">${planningStatusLabel}</div>` : ""}
+      </div>
+    `
+    : "";
+  const draftConfirmButton = showDraftConfirm
+    ? `
+      <button
+        type="button"
+        class="deck-pile-panel__draft-confirm"
+        onclick="event.stopPropagation(); confirmDraftPick()"
+        ${canConfirm ? "" : "disabled"}
+      >
+        Kết thúc lượt
+      </button>
+    `
+    : "";
+  const phaseConfirmButton = draftConfirmButton || planningConfirmButton;
+
+  const effectTokensHtml = renderPlayerEffectTokens();
+  const poolToggleButton = renderDraftPoolCollapseButton();
+  const showDeckHeader = showDraftConfirm || showPlanningConfirm || effectTokensHtml.length > 0;
+  const deckPanelHeader = showDeckHeader
+    ? `
+      <div class="deck-pile-panel__header">
+        <div class="deck-pile-panel__header-left">${poolToggleButton}${effectTokensHtml}</div>
+        <div class="deck-pile-panel__header-right">${phaseConfirmButton}</div>
+      </div>
+    `
+    : "";
 
   return `
     <section
-      class="deck-pile-panel"
+      class="deck-pile-panel${isDraftPhase ? " deck-pile-panel--draft" : ""}"
       data-discard-drop-zone="true"
       title="Kéo thả lá bài trên tay vào đây để discard và nhận lại Xu/Thể lực bằng chi phí của lá."
     >
-      ${renderPlayerEffectTokens()}
+      ${deckPanelHeader}
 
       <div class="deck-pile-panel__visual">
         <div class="deck-card-stack">
@@ -4124,6 +6131,7 @@ function renderMainArena() {
         ${renderScoreBreakdownPanel()}
       </div>
 
+
       ${renderResourceOrbs()}
 
       <div class="arena__main">
@@ -4155,6 +6163,7 @@ function renderMainArena() {
                             title="${isCurrentDayColumn ? (isPlaceable ? "Thả lá đang kéo vào ô ngày hiện tại" : "Chỉ xếp bài cho ngày hiện tại") : "Không phải ngày hiện tại"}"
                           >
                             <span class="empty-plus">+</span>
+                            ${renderUtilityEffectFlash(rowIndex, colIndex)}
                           </div>
                         `;
                       }
@@ -4169,6 +6178,7 @@ function renderMainArena() {
                           title="Ô đã có bài - bấm để xem lớn"
                         >
                           ${renderBoardMiniCard(card, getReplayStepForBoardCell(rowIndex, colIndex))}
+                            ${renderUtilityEffectFlash(rowIndex, colIndex)}
                         </div>
                       `;
                     })
@@ -4177,6 +6187,7 @@ function renderMainArena() {
               })
               .join("")}
           </section>
+          ${renderDraftCenterOverlay()}${renderDraftLeftoverReturnOverlay()}
         </div>
 
         ${isOnlineGameOver() ? renderFinalRankingPanel() : isDraftPhase ? "" : renderSimulationResultPanel()}
@@ -4186,7 +6197,7 @@ function renderMainArena() {
             ? ""
             : `
               <section
-          class="player-hand ${isInitialDealInProgress ? "player-hand--dealing is-dealing" : ""} ${isDraftPhase ? "player-hand--draft" : ""}"
+          class="player-hand ${isDraftPhase ? "player-hand--draft" : ""} ${!isDraftPhase && isInitialDealInProgress ? "player-hand--dealing is-dealing" : ""}"
           onclick="${isDraftPhase ? "" : "clearSelectedHandCard()"}"
         >
           <div class="player-hand__top">
@@ -4201,11 +6212,11 @@ function renderMainArena() {
               </h2>
             </div>
 
-            <div class="player-hand__meta ${isDraftPhase && draftPickSecondsLeft <= 3 ? "player-hand__meta--danger" : ""}">
+            <div class="player-hand__meta ${isDraftPhase && isDraftTimerDanger() ? "player-hand__meta--danger" : ""}">
               ${
                 isDraftPhase
-                  ? isInitialDealInProgress
-                    ? "Đang phát bài..."
+                  ? isDraftPickTimerFrozen()
+                    ? "Đang chia bài..."
                     : `Còn ${draftPickSecondsLeft}s • ${isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"}`
                   : isInitialDealInProgress
                     ? "Đang chia bài..."
@@ -4216,8 +6227,8 @@ function renderMainArena() {
 
           ${isDraftPhase ? renderDraftHandTopMeta() : ""}
 
-          <div class="player-hand__cards ${isDraftPhase && isPassingDraftCards ? "is-passing" : ""}">
-            ${isDraftPhase ? renderDraftHandCards() : playerHand.map((card, index) => renderHandCard(card, index)).join("")}
+          <div class="player-hand__cards ${isDraftPhase ? `player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${getDraftHandDisplayCount()}` : ""}">
+            ${isDraftPhase ? renderPickedDraftCards() : playerHand.map((card, index) => renderHandCard(card, index)).join("")}
           </div>
         </section>
             `
@@ -4236,11 +6247,47 @@ function clearHoldTimer() {
   }
 }
 
+let lastAnimatedCoin = -1;
+let lastAnimatedStamina = -1;
+
+function spawnFloatingText(selector: string, delta: number, type: 'coin' | 'stamina') {
+  const container = document.querySelector(selector);
+  if (!container) return;
+  const textNode = document.createElement('div');
+  textNode.className = `floating-text floating-text--${type}`;
+  textNode.textContent = `${delta > 0 ? '+' : ''}${delta}`;
+  container.appendChild(textNode);
+  container.classList.remove('resource-pulse');
+  void container.clientWidth; // force reflow
+  container.classList.add('resource-pulse');
+  setTimeout(() => textNode.remove(), 1200);
+}
+
 function rerenderArena() {
   const arena = document.querySelector(".arena");
   if (!arena) return;
 
   arena.outerHTML = renderMainArena();
+
+  if (isDraftDealVisualActive()) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        restartDraftCenterDealVisuals();
+      });
+    });
+  }
+
+  requestAnimationFrame(() => {
+    const remaining = getRemainingResources();
+    if (lastAnimatedCoin !== -1 && remaining.coin !== lastAnimatedCoin) {
+      spawnFloatingText('.resource-orb--coin .resource-orb__frame', remaining.coin - lastAnimatedCoin, 'coin');
+    }
+    if (lastAnimatedStamina !== -1 && remaining.stamina !== lastAnimatedStamina) {
+      spawnFloatingText('.resource-orb--stamina .resource-orb__frame', remaining.stamina - lastAnimatedStamina, 'stamina');
+    }
+    lastAnimatedCoin = remaining.coin;
+    lastAnimatedStamina = remaining.stamina;
+  });
 }
 
 function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number) {
@@ -4255,6 +6302,17 @@ function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number
 
   if (isOnlineRoomActive()) {
     playGameSound("cardPlace");
+
+    const onlineUtilityEffect = getUtilityPlacementEffect(selectedCard);
+
+    if (onlineUtilityEffect) {
+      triggerUtilityEffectFlash({
+        rowIndex,
+        colIndex,
+        type: onlineUtilityEffect.type,
+        value: onlineUtilityEffect.value,
+      });
+    }
 
     sendPlaceCard({
       cardId: selectedCard.id,
@@ -4275,6 +6333,10 @@ function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number
     focusedBoardPosition = null;
     suppressNextClick = false;
 
+    if (onlineUtilityEffect) {
+      rerenderArena();
+    }
+
     return;
   }
 
@@ -4285,15 +6347,20 @@ function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number
   playGameSound("cardPlace");
 
   playerHand.splice(handIndex, 1);
-  getBoardSlots()[rowIndex][colIndex] = selectedCard;
 
-  addLocalDebtOrExhaustToken({
-    rowIndex,
-    colIndex,
-    card: selectedCard,
-    coinDebt,
-    staminaDebt,
-  });
+  const didApplyUtilityEffect = applyUtilityPlacementEffect(selectedCard, rowIndex, colIndex);
+
+  if (!didApplyUtilityEffect) {
+    getBoardSlots()[rowIndex][colIndex] = selectedCard;
+
+    addLocalDebtOrExhaustToken({
+      rowIndex,
+      colIndex,
+      card: selectedCard,
+      coinDebt,
+      staminaDebt,
+    });
+  }
 
   sendPlaceCard({
     cardId: selectedCard.id,
@@ -4556,6 +6623,9 @@ function clearCustomHandDragVisuals() {
   handPointerDragState?.clone?.remove();
   handPointerDragState = null;
   draggedHandCardId = null;
+  
+  // Valid Slot Highlight Remove
+  document.querySelectorAll('.board-cell--placeable').forEach(el => el.classList.remove('board-cell--placeable'));
 }
 
 function handleHandPointerMove(event: PointerEvent) {
@@ -4823,6 +6893,15 @@ function clearBoardDragHoverClass() {
   document.addEventListener("pointermove", handleHandPointerMove);
   document.addEventListener("pointerup", handleHandPointerUp);
   document.addEventListener("pointercancel", handleHandPointerCancel);
+
+  // Valid Slot Highlight
+  document.querySelectorAll('.board-cell').forEach((el) => {
+    const r = parseInt(el.getAttribute('data-row-index') || '-1');
+    const c = parseInt(el.getAttribute('data-col-index') || '-1');
+    if (r >= 0 && c >= 0 && canPlaceOnBoardCell(r, c)) {
+      el.classList.add('board-cell--placeable');
+    }
+  });
 };
 
 (window as any).openDebtTokenModal = () => {
@@ -4839,10 +6918,12 @@ function clearBoardDragHoverClass() {
 
 (window as any).selectDraftCard = selectDraftCard;
 
-(window as any).confirmDraftPick = () => {
-  // Draft phase: click card = select only.
-  // Cards are passed only when the 10s timer reaches 0.
-};
+(window as any).confirmDraftPick = confirmDraftPick;
+(globalThis as any).confirmDraftPick = confirmDraftPick;
+(window as any).confirmPlanningPick = confirmPlanningPick;
+(globalThis as any).confirmPlanningPick = confirmPlanningPick;
+(window as any).toggleDraftPoolCollapse = toggleDraftPoolCollapse;
+(globalThis as any).toggleDraftPoolCollapse = toggleDraftPoolCollapse;
 
 (window as any).startHoldHandCard = (id: string) => {
   if (isPassingDraftCards || isInitialDealInProgress) return;
@@ -5117,7 +7198,7 @@ function renderMidGameRankingModal() {
    - Menu phòng có nút bật/tắt + thanh âm lượng.
    ========================================= */
 
-const IN_GAME_BACKGROUND_MUSIC_SRC = "/assets/audio/music/in-game-background.mp3";
+const IN_GAME_BACKGROUND_MUSIC_SRC = "assets/sounds/in-game-background.mp3";
 const IN_GAME_MUSIC_MUTED_KEY = "travelDeck.inGameMusicMuted";
 const IN_GAME_MUSIC_VOLUME_KEY = "travelDeck.inGameMusicVolume";
 const DEFAULT_IN_GAME_MUSIC_VOLUME = 0.5;
@@ -5167,6 +7248,7 @@ function stopOutsideBackgroundMedia() {
     Tắt hẳn audio/video nền ngoài màn chơi, đặc biệt là video hero ở dashboard.
     Không đụng tới audio nền riêng trong game.
   */
+  cleanupDashboardHub();
   document.querySelectorAll("audio, video").forEach((media) => {
     if (media === inGameBackgroundMusic) return;
 
@@ -5388,21 +7470,25 @@ function transitionToScreen(newScreen: AppScreen) {
   });
 }
 
+let isTransitioning = false;
+
 (window as any).gotoMapSelection = () => {
+  if (isTransitioning) return;
   if (!authClientState.user) {
     (window as any).focusHubAuthPanel();
     setAuthStatus("Đăng nhập hoặc đăng ký để bắt đầu hành trình.");
     return;
   }
+  isTransitioning = true;
 
   // 1. Create overlay video — plays from beginning (smoke effect)
   const vid = document.createElement("video");
-  vid.src = "/assets/videos/chuyencanh.mp4";
+  vid.src = "./assets/chuyencanh.mp4";
   vid.muted = true;
   vid.playsInline = true;
   vid.style.cssText = [
     "position:fixed", "inset:0", "width:100%", "height:100%",
-    "object-fit:cover", "z-index:9999", "pointer-events:none",
+    "object-fit:cover", "z-index:9999", "pointer-events:auto",
     "opacity:0", "transition:opacity 0.4s ease"
   ].join(";");
   document.body.appendChild(vid);
@@ -5418,6 +7504,7 @@ function transitionToScreen(newScreen: AppScreen) {
     // 2. When smoke covers screen (~3.5s), swap to map selection
     if (!transitioned && vid.currentTime >= 3.5) {
       transitioned = true;
+      isTransitioning = false;
       bgSmokeVideo = vid;
 
       // Remove from body — rerenderGameShell will re-insert it into the screen
@@ -5595,6 +7682,14 @@ function triggerCinematicLobbyToGameTransition() {
   console.log("TRIGGERING CINEMATIC TRANSITION!");
   isCinematicTransitioning = true;
   
+  const blocker = document.createElement("div");
+  blocker.id = "cinematic-blocker";
+  blocker.style.cssText = "position:fixed;inset:0;z-index:99999999;cursor:wait;";
+  blocker.addEventListener("mousedown", (e) => { e.preventDefault(); e.stopPropagation(); });
+  blocker.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+  blocker.addEventListener("touchstart", (e) => { e.preventDefault(); e.stopPropagation(); }, {passive: false});
+  document.body.appendChild(blocker);
+  
   const lobbyCard = document.querySelector(".online-lobby-card");
   if (lobbyCard) lobbyCard.classList.add("is-exiting");
 
@@ -5610,6 +7705,7 @@ function triggerCinematicLobbyToGameTransition() {
 
   setTimeout(() => {
     video.style.display = "block";
+    video.style.pointerEvents = "none";
     video.currentTime = 0;
     
     // Play with sound, fallback to muted if autoplay blocked
@@ -5621,6 +7717,13 @@ function triggerCinematicLobbyToGameTransition() {
         });
     });
 
+    video.onpause = () => {
+      if (isCinematicTransitioning) {
+          console.warn("Video paused unexpectedly, resuming...");
+          video.play().catch(err => console.error(err));
+      }
+    };
+
     const finishTransition = () => {
       if (!isCinematicTransitioning) return;
       isCinematicTransitioning = false;
@@ -5629,6 +7732,9 @@ function triggerCinematicLobbyToGameTransition() {
       overlay.style.opacity = "1";
       video.style.display = "none";
       video.ontimeupdate = null; // cleanup
+      
+      const b = document.getElementById("cinematic-blocker");
+      if (b) b.remove();
       
       rerenderGameShell();
       
@@ -5749,10 +7855,28 @@ function renderGameShell() {
 }
 
 (window as any).rerenderGameShell = rerenderGameShell;
+function applyLobbyBackground() {
+  const isLobbyScreen =
+    !isOnlineRoomActive() ||
+    onlineClientState.roomState?.phase === "lobby";
+
+  if (isLobbyScreen) {
+    // Set background directly on #app — inline style beats CSS !important
+    app.style.setProperty("background",
+      "url('./assets/backgrounds/lobby-background.jpg') center/cover no-repeat #0c0b11",
+      "important"
+    );
+  } else {
+    // Remove inline override, let CSS handle game background
+    app.style.removeProperty("background");
+  }
+}
+
 function rerenderGameShell() {
   stopOutsideBackgroundMedia();
 
   app.innerHTML = renderGameShell();
+  applyLobbyBackground();
   setupSaigonCollageHover();
   syncInGameBackgroundMusic();
   initDashboardHub();
@@ -5764,21 +7888,129 @@ function rerenderGameShell() {
       screen.insertBefore(bgSmokeVideo, screen.firstChild);
     }
   }
+
+  if (isDraftDealVisualActive()) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        restartDraftCenterDealVisuals();
+      });
+    });
+  }
 }
 
 let lastOnlineRenderSignature = "";
 let lastOnlineAnimationPhase: string | null = null;
+let selfPlanningConfirmPending = false;
+let planningConfirmLockSignature = "";
+let lastOnlinePlanningDayIndex: number | null = null;
+let planningConfirmRetryTimerId: number | null = null;
+let planningConfirmRetryCount = 0;
 let lastOnlineAnimationDraftRound = 0;
 let lastOnlineAnimationPoolSignature = "";
 let onlineDraftAnimationTimerId: number | null = null;
 let hasStartedOnlineSimulationReplay = false;
 let onlineDraftDisplayPool: TravelCardData[] | null = null;
+let onlineDraftPassSnapshotPool: TravelCardData[] | null = null;
 let onlineDraftPendingPool: TravelCardData[] | null = null;
+let onlinePassCompleteRetryCount = 0;
+
+let isDraftCenterDealing = false;
+let draftDealVisualEndsAt = 0;
+let isDraftPickFlying = false;
+let draftHandPendingCardId: string | null = null;
+let draftPoolFlyReturnCardId: string | null = null;
+let lastOnlinePickedDraftCount = 0;
+const DRAFT_PICK_FLY_MS = 750;
+const DRAFT_POOL_COLLAPSE_MS = 1350;
+const DRAFT_HAND_PICK_SCALE = 0.84;
 let shouldActivateOnlineDealAnimation = false;
 let shouldActivateOnlinePassAnimation = false;
 let isOnlineFinalDraftReturnAnimating = false;
 let onlineFinalDraftReturnTimerId: number | null = null;
 let hasPlayedOnlinePlanningDealAfterDraft = false;
+let draftCenterDealEndTimerId: number | null = null;
+let draftCenterDealGeneration = 0;
+
+function isDraftDealVisualActive(): boolean {
+  return (
+    isDraftCenterDealing ||
+    isInitialDealInProgress ||
+    Date.now() < draftDealVisualEndsAt
+  );
+}
+
+function restartDraftCenterDealVisuals(): boolean {
+  const overlay = document.querySelector(".draft-center-overlay") as HTMLElement | null;
+  if (!overlay) return false;
+
+  overlay.classList.remove("draft-center-overlay--dealing");
+
+  const wrappers = overlay.querySelectorAll(".draft-center-card-wrapper");
+  wrappers.forEach((node) => {
+    const wrapper = node as HTMLElement;
+    wrapper.classList.remove("draft-center-card-wrapper--flown-to-hand");
+    wrapper.style.animation = "none";
+  });
+
+  void overlay.offsetWidth;
+
+  wrappers.forEach((node) => {
+    (node as HTMLElement).style.removeProperty("animation");
+  });
+
+  overlay.classList.add("draft-center-overlay--dealing");
+  return true;
+}
+
+function clearDraftCenterDealAnimation() {
+  draftCenterDealGeneration += 1;
+
+  if (draftCenterDealEndTimerId !== null) {
+    window.clearTimeout(draftCenterDealEndTimerId);
+    draftCenterDealEndTimerId = null;
+  }
+
+  isDraftCenterDealing = false;
+  document.querySelector(".draft-center-overlay")?.classList.remove("draft-center-overlay--dealing");
+}
+
+function getDraftCenterPoolSignature(): string {
+  const pool = isOnlineRoomActive()
+    ? (getOnlineDraftDisplayPool() ?? getOnlineSelfDraftPool() ?? [])
+    : (getCurrentDraftPlayer()?.pool ?? []);
+  return pool.map((c) => c.id).join(",");
+}
+
+function startDraftCenterDealAnimation(
+  durationMs = getDraftCenterDealDurationForCurrentPool(),
+) {
+  if (draftCenterDealEndTimerId !== null) {
+    window.clearTimeout(draftCenterDealEndTimerId);
+    draftCenterDealEndTimerId = null;
+  }
+
+  const generation = ++draftCenterDealGeneration;
+  isDraftCenterDealing = true;
+  draftDealVisualEndsAt = Date.now() + durationMs;
+  playGameSound("deal");
+
+  const activate = () => {
+    if (generation !== draftCenterDealGeneration) return;
+    restartDraftCenterDealVisuals();
+  };
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(activate);
+  });
+
+  draftCenterDealEndTimerId = window.setTimeout(() => {
+    if (generation !== draftCenterDealGeneration) return;
+
+    draftCenterDealEndTimerId = null;
+    isDraftCenterDealing = false;
+    document.querySelector(".draft-center-overlay")?.classList.remove("draft-center-overlay--dealing");
+  }, durationMs);
+}
 
 function clearOnlineDraftAnimationTimer() {
   if (onlineDraftAnimationTimerId !== null) {
@@ -5790,6 +8022,8 @@ function clearOnlineDraftAnimationTimer() {
     window.clearTimeout(onlineFinalDraftReturnTimerId);
     onlineFinalDraftReturnTimerId = null;
   }
+
+  clearDraftCenterDealAnimation();
 }
 
 function getOnlineRenderSignature() {
@@ -5818,6 +8052,7 @@ function getOnlineRenderSignature() {
         player.usedSlots,
         player.isConnected ? "1" : "0",
         player.isReady ? "1" : "0",
+        player.planningConfirmed ? "1" : "0",
         boardSignature,
       ].join("~");
     })
@@ -5828,6 +8063,7 @@ function getOnlineRenderSignature() {
     state.phaseNumber ?? 1,
     state.dayIndex,
     state.draftRound,
+    state.timer,
     self.draftPool.map((card) => card.id).join(","),
     self.pickedDraftCards.map((card) => card.id).join(","),
     self.hand.map((card) => card.id).join(","),
@@ -5843,14 +8079,20 @@ function updateOnlineTimerOnly() {
   if (!state || !timerElement || !timerValueElement) return;
 
   if (state.phase === "draft") {
-    timerValueElement.textContent = `${state.timer}s`;
-    timerElement.classList.toggle("score-breakdown__timer--danger", state.timer <= 3);
+    timerValueElement.textContent = getDraftTimerDisplayLabel();
+    timerElement.classList.toggle(
+      "score-breakdown__timer--danger",
+      !isDraftPickTimerFrozen() && draftPickSecondsLeft <= 3
+    );
+    updateDraftTimerDisplayVisualOnly();
+    updateDraftPoolToggleVisualOnly();
     return;
   }
 
   if (state.phase === "planning") {
     timerValueElement.textContent = formatTurnTimer(state.timer);
     timerElement.classList.toggle("score-breakdown__timer--danger", state.timer <= 10);
+    updatePlanningConfirmButtonVisualOnly();
     return;
   }
 
@@ -5875,23 +8117,60 @@ function renderAfterOnlineStateChange() {
     }
     
     lastOnlinePhase = currentPhase;
-    
+
+    const shouldDeferRerenderForActiveDeal =
+      (isDraftDealVisualActive() || isDraftPickFlying) &&
+      !shouldActivateOnlineDealAnimation &&
+      !shouldActivateOnlinePassAnimation;
+
+    const shouldDeferRerenderForDraftTransition =
+      (isPassingDraftCards ||
+        isInitialDealInProgress ||
+        isDraftCenterDealing) &&
+      !shouldActivateOnlinePassAnimation &&
+      !shouldActivateOnlineDealAnimation;
+
+    const passVisualRunning =
+      isOnlineInterRoundPoolPassActive() &&
+      document.querySelector(".draft-center-overlay--passing.pass-active");
+
+    const poolCollapseVisualRunning =
+      isDraftPoolCollapseAnimating &&
+      document.querySelector(
+        ".draft-center-overlay--collapsing.pass-active, .draft-center-overlay--expanding.pass-active"
+      );
+
     if (!isCinematicTransitioning) {
+      if (shouldDeferRerenderForActiveDeal || shouldDeferRerenderForDraftTransition) {
+        updateDraftSelectedVisualOnly();
+        updateDraftHandVisualOnly();
+        updateDraftPoolFlownVisualOnly();
+        updateOnlineTimerOnly();
+        updateDraftConfirmButtonVisualOnly();
+      } else if (
+        (passVisualRunning || poolCollapseVisualRunning) &&
+        !shouldActivateOnlinePassAnimation &&
+        !shouldActivateOnlineDealAnimation
+      ) {
+        updateOnlineTimerOnly();
+        updateDraftPoolToggleVisualOnly();
+      } else {
         rerenderGameShell();
+      }
     }
 
     if (shouldActivateOnlineDealAnimation) {
       shouldActivateOnlineDealAnimation = false;
-      activateDraftDealAnimation();
-
-      window.setTimeout(() => {
-        ensureOnlineDraftDealAnimationStarted();
-      }, 80);
+      startDraftCenterDealAnimation(getDraftCenterDealDurationForCurrentPool());
     }
 
     if (shouldActivateOnlinePassAnimation) {
       shouldActivateOnlinePassAnimation = false;
-      activateDraftPassAnimation();
+      if (isOnlineFinalDraftReturnAnimating) {
+        activateDraftCenterReturnAnimation();
+      } else {
+        activateDraftCenterPoolPassAnimation();
+      }
     }
 
     return;
@@ -6054,10 +8333,16 @@ setupAuthFormDelegation();
 setupGameAudioDelegation();
 setupInGameMusicDelegation();
 
-initOnlineClient(() => {
-  applyOnlineRoomStateToLocal();
-  renderAfterOnlineStateChange();
-});
+initOnlineClient(
+  () => {
+    applyOnlineRoomStateToLocal();
+    renderAfterOnlineStateChange();
+  },
+  () => {
+    resetSelfPlanningConfirmLock();
+    updatePlanningConfirmButtonVisualOnly();
+  }
+);
 
 (window as any).createOnlineRoom = (playerName = "An") => {
   createOnlineRoom(playerName);
@@ -6422,5 +8707,10 @@ function setupAuthFormDelegation() {
 (globalThis as any).playGameSound = playGameSound;
 (globalThis as any).debugOnlineBoards = (window as any).debugOnlineBoards;
 (globalThis as any).selectDraftCard = (window as any).selectDraftCard;
+
+
+document.addEventListener("visibilitychange", syncOnlineDraftDisplayAfterTabVisible);
+window.addEventListener("focus", syncOnlineDraftDisplayAfterTabVisible);
+
 
 rerenderGameShell();
