@@ -6,8 +6,23 @@ import {
   shuffleCards,
 } from "./gameEngine.js";
 import { startDraftForCurrentDay } from "./draftEngine.js";
+import { advancePlanningToSimulation } from "./timerEngine.js";
 
 const PLAYER_IDS: PlayerId[] = ["p1", "p2", "p3", "p4"];
+
+function getActiveConnectedPlayerIds(state: RoomState): PlayerId[] {
+  const connectedPlayerIds = PLAYER_IDS.filter((playerId) => {
+    const player = state.players[playerId];
+
+    return player.isConnected && player.hasJoined;
+  });
+
+  return connectedPlayerIds.length > 0 ? connectedPlayerIds : ["p1"];
+}
+
+function clearPlayerPlanningConfirmed(player: RoomState["players"][PlayerId]) {
+  player.planningConfirmed = false;
+}
 
 
 type ServerCardEffect = {
@@ -184,6 +199,7 @@ export function createRoom(firstPlayerName: string): {
     dayIndex: 0,
     draftRound: 0,
     timer: 0,
+    draftTimerHold: 0,
     deck: shuffleCards(createServerDeck()),
     players: {
       p1: createEmptyPlayer("p1", firstPlayerName || "An", true),
@@ -354,6 +370,8 @@ export function placeCardOnPlayerBoard(
   if (state.phase !== "planning") return "Chưa tới phase xếp bài.";
   if (payload.colIndex !== state.dayIndex) return "Chỉ được xếp bài vào ngày hiện tại.";
 
+  clearPlayerPlanningConfirmed(player);
+
   const cell = player.board[payload.rowIndex]?.[payload.colIndex];
 
   if (cell === undefined) return "Ô không hợp lệ.";
@@ -442,6 +460,8 @@ export function discardCardFromPlayerHand(
   if (!player) return "Không tìm thấy người chơi.";
   if (state.phase !== "planning") return "Chỉ được discard trong phase xếp bài.";
 
+  clearPlayerPlanningConfirmed(player);
+
   const handIndex = player.hand.findIndex((card) => card.id === payload.cardId);
   const card = handIndex >= 0 ? player.hand[handIndex] : null;
 
@@ -476,6 +496,8 @@ export function payDebtTokenOnBoard(
   if (!player) return "Không tìm thấy người chơi.";
   if (state.phase !== "planning") return "Chỉ được trả nợ trong phase xếp bài.";
 
+  clearPlayerPlanningConfirmed(player);
+
   const debtAmount = player.coinDebt ?? 0;
 
   if (debtAmount <= 0) {
@@ -508,6 +530,8 @@ export function returnBoardCardToPlayerHand(
   if (!player) return "Không tìm thấy người chơi.";
   if (state.phase !== "planning") return "Chỉ được rút bài trong phase xếp bài.";
   if (payload.colIndex !== state.dayIndex) return "Chỉ được rút bài của ngày hiện tại.";
+
+  clearPlayerPlanningConfirmed(player);
 
   const cell = player.board[payload.rowIndex]?.[payload.colIndex];
 
@@ -558,6 +582,35 @@ export function returnBoardCardToPlayerHand(
   player.coin += cell.coin ?? 0;
   player.stamina += cell.stamina ?? 0;
   player.usedSlots = Math.max(0, player.usedSlots - 1);
+
+  return null;
+}
+
+export function confirmPlanning(
+  state: RoomState,
+  payload: {
+    playerId: PlayerId;
+  }
+): string | null {
+  if (state.phase !== "planning") {
+    return "Chưa tới phase xếp bài.";
+  }
+
+  const player = state.players[payload.playerId];
+
+  if (!player) return "Không tìm thấy người chơi.";
+  if (!player.isConnected) return "Người chơi chưa kết nối.";
+
+  player.planningConfirmed = true;
+
+  const activePlayerIds = getActiveConnectedPlayerIds(state);
+  const allConfirmed = activePlayerIds.every((playerId) => {
+    return state.players[playerId].planningConfirmed === true;
+  });
+
+  if (allConfirmed) {
+    advancePlanningToSimulation(state);
+  }
 
   return null;
 }

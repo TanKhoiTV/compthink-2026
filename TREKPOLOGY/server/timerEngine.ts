@@ -2,7 +2,7 @@ import type { PlayerId, RoomState } from "./types.js";
 import { finishDraftRound, startDraftForCurrentDay } from "./draftEngine.js";
 import { PLAYER_IDS, createEmptyBoard, createServerDeck } from "./gameEngine.js";
 
-const SIMULATION_SECONDS = 6;
+export const SIMULATION_SECONDS = 6;
 const RESULT_SECONDS = 3;
 const GAMEOVER_SECONDS = 10;
 const MAX_DAY_INDEX = 4;
@@ -231,6 +231,17 @@ function startNextDayOrFinish(state: RoomState) {
   startDraftForCurrentDay(state);
 }
 
+export function advancePlanningToSimulation(state: RoomState) {
+  if (state.phase !== "planning") return;
+
+  state.phase = "simulation";
+  state.timer = SIMULATION_SECONDS;
+
+  for (const playerId of PLAYER_IDS) {
+    state.players[playerId].planningConfirmed = false;
+  }
+}
+
 export function tickRoom(state: RoomState) {
   if (
     state.phase !== "draft" &&
@@ -240,6 +251,11 @@ export function tickRoom(state: RoomState) {
     state.phase !== "gameover" &&
     state.phase !== "cinematic"
   ) {
+    return;
+  }
+
+  if (state.phase === "draft" && (state.draftTimerHold ?? 0) > 0) {
+    state.draftTimerHold -= 1;
     return;
   }
 
@@ -262,8 +278,7 @@ export function tickRoom(state: RoomState) {
   }
 
   if (state.phase === "planning") {
-    state.phase = "simulation";
-    state.timer = SIMULATION_SECONDS;
+    advancePlanningToSimulation(state);
     return;
   }
 

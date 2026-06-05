@@ -48,6 +48,7 @@ export type PlayerPublicState = {
   isConnected: boolean;
   isReady: boolean;
   hasJoined: boolean;
+  planningConfirmed?: boolean;
   board: PublicBoardCell[][];
 };
 
@@ -58,6 +59,7 @@ export type OnlineRoomState = {
   dayIndex: number;
   draftRound: number;
   timer: number;
+  draftTimerHold: number;
   selfPlayerId: PlayerId;
   players: Record<PlayerId, PlayerPublicState>;
   self: {
@@ -248,7 +250,10 @@ export function clearSavedOnlineSession() {
 
 
 
-export function initOnlineClient(onStateChange: () => void) {
+export function initOnlineClient(
+  onStateChange: () => void,
+  onGameError?: (message: string) => void
+) {
   const savedUser = loadSavedAuthUser();
 
   authClientState.user = savedUser;
@@ -258,7 +263,7 @@ export function initOnlineClient(onStateChange: () => void) {
   socket.on("connect", () => {
     const savedSession = getSavedOnlineSession();
 
-    if (!savedSession || onlineClientState.roomState) return;
+    if (!savedSession) return;
 
     socket.emit("room:reconnect", savedSession);
   });
@@ -283,6 +288,7 @@ export function initOnlineClient(onStateChange: () => void) {
   });
 
   socket.on("game:error", (payload: { message: string }) => {
+    onGameError?.(payload.message);
     alert(payload.message);
   });
 
@@ -375,6 +381,42 @@ export function selectOnlineDraftCard(cardId: string) {
     roomId: onlineClientState.roomId,
     playerId: onlineClientState.playerId,
     cardId,
+  });
+}
+
+export function confirmOnlineDraftPick() {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("draft:confirmPick", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+  });
+}
+
+export function isOnlineSocketConnected() {
+  return Boolean(socket.connected);
+}
+
+export function confirmOnlinePlanning() {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    throw new Error("Chưa vào phòng online.");
+  }
+
+  if (!socket.connected) {
+    throw new Error("Mất kết nối server. Hãy chạy server port 3001 rồi reload trang.");
+  }
+
+  const savedSession = getSavedOnlineSession();
+
+  if (savedSession) {
+    reconnectOnlineRoom(savedSession.roomId, savedSession.playerId, savedSession.playerName);
+  }
+
+  socket.emit("planning:confirm", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
   });
 }
 

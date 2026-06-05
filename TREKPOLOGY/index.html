@@ -3,23 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Trekkopoly - Lữ Khách Bàn Cờ</title>
-  
+  <title>TREKPOLOGY - Lữ Khách Bàn Cờ</title>
   <link rel="icon" href="data:,">
-  
   <meta name="theme-color" content="#4e3325">
-  <link rel="manifest" href="./manifest.json">
-
   <link rel="stylesheet" href="./build/client.css">
 </head>
 <body>
-  <div id="app"></div>
-  
-  <video id="cinematic-transition-video" src="/assets/videos/chuyencanh2.mp4" playsinline preload="auto" style="display: none;"></video>
+  <div id="lobby-bg" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    background-image: url('./assets/backgrounds/lobby-background.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  "></div>
+  <div id="app" style="position: relative; z-index: 1;"></div>
+  <video id="cinematic-transition-video" src="./assets/chuyencanh2.mp4" playsinline preload="auto" style="display: none;"></video>
   <div id="white-flash-overlay" style="display: none;"></div>
-  
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-  
   <script type="module" src="./build/app.js"></script>
 </body>
 </html>
