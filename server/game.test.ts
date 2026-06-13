@@ -20,7 +20,7 @@ import {
 	exportSnapshot,
 	type Room,
 } from "./game.ts";
-import type { TravelCard } from "../src/shared/types.ts";
+import type { GamePhase, Tag, TravelCard } from "../src/shared/types.ts";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,23 +40,30 @@ function makeRoom(cards: TravelCard[] = EMPTY_CARDS, maxPlayers = 2): Room {
 }
 
 function makeCard(i: number): TravelCard {
-	const tags = ["FOOD", "CULTURE", "ACTION", "UTILITY"];
+	const tags: Tag[] = ["FOOD", "CULTURE", "ACTION", "UTILITY"];
 	const cities = ["Saigon", "Hanoi", "Danang", "Hue"];
 	const city = cities[i % cities.length];
+	const cardId = `TEST_${String(i).padStart(3, "0")}`;
+	const vp = (i % 10) + 1;
+	const coin = (i % 5) + 1;
 	return {
-		card_id: `TEST_${String(i).padStart(3, "0")}`,
+		id: cardId,
+		card_id: cardId,
 		name: `Test Card ${i}`,
 		city,
 		coordinates: {
 			lat: 10.8 + i * 0.1,
 			lng: 106.7 + i * 0.05,
 		},
-		vp: (i % 10) + 1,
-		coin: (i % 5) + 1,
+		vp,
+		victory_point: vp,
+		coin,
+		cost: coin,
+		on_play_effect: "",
 		stamina: (i % 3) + 1,
-		rarity: (i % 3 === 0 ? "rare" : i % 3 === 1 ? "common" : "epic") as
+		rarity: (i % 3 === 0 ? "uncommon" : i % 3 === 1 ? "common" : "epic") as
 			| "common"
-			| "rare"
+			| "uncommon"
 			| "epic",
 		tag: tags[i % tags.length],
 		tags: [tags[i % tags.length]],
@@ -276,7 +283,7 @@ Deno.test("placeCard — requires card in chosen", () => {
 	if (room.phase !== "placement") {
 		// Draft the remaining rounds manually
 		for (let r = 0; r < 4; r++) {
-			if (room.phase === "placement") break;
+			if ((room.phase as GamePhase) === "placement") break;
 			room.players.forEach((p) => {
 				if (!p.ready && p.hand.length > 0) {
 					draftCard(room, p.playerId, p.hand[0], "store");
@@ -295,6 +302,71 @@ Deno.test("placeCard — requires card in chosen", () => {
 		}
 	} else {
 		console.log("  ⚠️  Not in placement phase (draft timing)");
+	}
+});
+
+function draftToPlacement(room: Room): void {
+	for (let r = 0; r < 5; r++) {
+		if (room.phase !== "draft") break;
+		room.players.forEach((p) => {
+			if (!p.ready && p.hand.length > 0) {
+				draftCard(room, p.playerId, p.hand[0], "store");
+			}
+		});
+	}
+}
+
+Deno.test("placeCard — rejects placing on an already-occupied cell", () => {
+	const cards = makeCards();
+	const room = makeRoom(cards, 2);
+	addPlayer(room, "p1", "Alice");
+	addPlayer(room, "p2", "Bob");
+	toggleReady(room, "p1");
+	toggleReady(room, "p2");
+	startGame(room, "p1");
+
+	draftToPlacement(room);
+
+	const chosen = room.players[0].chosen;
+	if (room.phase === "placement" && chosen.length >= 2) {
+		placeCard(room, "p1", chosen[0], { day: 1, slot: "morning" });
+		assertThrows(
+			() => placeCard(room, "p1", chosen[1], { day: 1, slot: "morning" }),
+			Error,
+			"already has",
+		);
+	} else {
+		console.log("  ⚠️  Not enough chosen cards (draft timing)");
+	}
+});
+
+Deno.test("placeCard — rejects placing on a locked cell", () => {
+	const cards = makeCards();
+	const room = makeRoom(cards, 2);
+	addPlayer(room, "p1", "Alice");
+	addPlayer(room, "p2", "Bob");
+	toggleReady(room, "p1");
+	toggleReady(room, "p2");
+	startGame(room, "p1");
+
+	draftToPlacement(room);
+
+	const chosen = room.players[0].chosen;
+	if (room.phase === "placement" && chosen.length > 0) {
+		// Manually mark a cell as locked, as if from a stamina-exhaustion debt.
+		room.players[0].board = room.players[0].board.map((cell) =>
+			cell.day === 1 && cell.slot === "morning"
+				? { ...cell, locked: true, lockedReason: "Kiệt sức", sourceCardName: "Test Card" }
+				: cell,
+		);
+
+		assertThrows(
+			() => placeCard(room, "p1", chosen[0], { day: 1, slot: "morning" }),
+			Error,
+			"locked",
+		);
+	} else {
+		console.log("  ⚠️  No chosen cards to place (draft timing)");
 	}
 });
 

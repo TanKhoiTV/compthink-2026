@@ -20,6 +20,7 @@ import {
 	payDraftCost,
 	gainRestResources,
 	applyOnPlayEffects,
+	applyFinalDebtPenalty,
 	passHandsClockwise,
 	STARTING_RESOURCES,
 	MAX_STAMINA,
@@ -119,14 +120,25 @@ export function createRoom(
 // ─── Player management ────────────────────────────────────────────────────────
 
 export function addPlayer(room: Room, playerId: string, name: string): void {
+	// Reconnect: a player who previously disconnected can rejoin an
+	// in-progress room and resume with their existing board/hand/resources.
+	const existing = room.players.find((p) => p.playerId === playerId);
+	if (existing) {
+		if (existing.connected) {
+			throw new Error("Player already in room.");
+		}
+		existing.connected = true;
+		existing.name = name;
+		room.log.push(`${name} reconnected to room ${room.roomId}.`);
+		room.broadcast(room);
+		return;
+	}
+
 	if (room.phase !== "lobby") {
 		throw new Error("Cannot join after game has started.");
 	}
 	if (room.players.length >= room.maxPlayers) {
 		throw new Error("Room is full.");
-	}
-	if (room.players.some((p) => p.playerId === playerId)) {
-		throw new Error("Player already in room.");
 	}
 
 	const player: PlayerState = {
@@ -138,15 +150,30 @@ export function addPlayer(room: Room, playerId: string, name: string): void {
 		storage: [],
 		resources: { ...STARTING_RESOURCES },
 		ready: false,
+		connected: true,
 	};
 
 	room.players.push(player);
 	room.log.push(`${name} joined room ${room.roomId}.`);
 }
 
+/**
+ * Handle a player disconnect. In the lobby, the seat is freed immediately.
+ * Once the game has started, the player's state (board/hand/resources) is
+ * kept so they can reconnect via `addPlayer` and resume.
+ */
 export function removePlayer(room: Room, playerId: string): void {
-	room.players = room.players.filter((p) => p.playerId !== playerId);
-	room.log.push(`Player ${playerId} left room ${room.roomId}.`);
+	if (room.phase === "lobby") {
+		room.players = room.players.filter((p) => p.playerId !== playerId);
+		room.log.push(`Player ${playerId} left room ${room.roomId}.`);
+		return;
+	}
+
+	const player = room.players.find((p) => p.playerId === playerId);
+	if (!player) return;
+
+	player.connected = false;
+	room.log.push(`${player.name} disconnected from room ${room.roomId}.`);
 }
 
 // ─── FSM transition guard ─────────────────────────────────────────────────────
@@ -226,17 +253,42 @@ export function startGame(room: Room, callerPlayerId?: string): void {
 
 // ─── Phase: DRAFT ─────────────────────────────────────────────────────────────
 
+/**
+ * Card IDs that are no longer eligible to be dealt: cards already placed on
+ * any player's board, or still sitting in a player's chosen/storage piles.
+ */
+function collectUsedCardIds(room: Room): Set<string> {
+	const used = new Set<string>();
+
+	for (const player of room.players) {
+		for (const cell of player.board) {
+			if (cell.card_id) used.add(cell.card_id);
+		}
+		for (const cardId of player.chosen) used.add(cardId);
+		for (const cardId of player.storage) used.add(cardId);
+	}
+
+	return used;
+}
+
 function beginDraftingPhase(room: Room): void {
 	room.pickIndex = 0;
 	const { day } = room;
-
-	// Shuffle the full card catalogue once, then deal from it sequentially.
-	// This ensures each card is dealt at most once per day across all players.
-	const shuffled = shuffleCards(room.cards);
 	const HAND_SIZE = 7;
+	const required = room.players.length * HAND_SIZE;
+
+	// Deal from cards that haven't been placed/held yet, so the same card
+	// can't be dealt twice across the multi-day game. If the unused pool
+	// can't fill every hand (e.g. a large room nearing catalogue exhaustion),
+	// fall back to the full catalogue so the draft can still proceed.
+	const usedCardIds = collectUsedCardIds(room);
+	const unusedCards = room.cards.filter((c) => !usedCardIds.has(c.card_id));
+	const pool = unusedCards.length >= required ? unusedCards : room.cards;
+
+	const shuffled = shuffleCards(pool);
 	let cursor = 0;
 
-	room.players.forEach((player, _index) => {
+	room.players.forEach((player) => {
 		player.hand = shuffled
 			.slice(cursor, cursor + HAND_SIZE)
 			.map((c) => c.card_id);
@@ -246,11 +298,12 @@ function beginDraftingPhase(room: Room): void {
 		player.draftChoice = undefined;
 	});
 
-	// Remaining cards after dealing are discarded back (not tracked further)
 	room.log.push(`Day ${day}: Drafting phase started. Hands dealt.`);
 
 	room.broadcast(room);
 }
+
+type PayDebtResult = { paid: number; remainingDebt: number };
 
 /**
  * Pay down debt using available xu.
@@ -291,6 +344,8 @@ export function payDebt(
 	return { paid: payableAmount, remainingDebt: player.resources.debtToken };
 }
 
+type ReturnCardResult = { cardId: string };
+
 /**
  * Return a placed card from the board back to the player's chosen cards.
  * Only allowed for cards on the current day.
@@ -317,23 +372,16 @@ export function returnBoardCard(
 
 	const cell = player.board[cellIndex];
 
-	// Don't allow returning debt/lock tokens
-	if (cell.type === "debt" || cell.type === "lock" || cell.locked) {
-		throw new Error("Không thể rút token nợ/khóa về tay.");
+	// Don't allow returning a locked (stamina-debt) slot
+	if (cell.locked) {
+		throw new Error("Không thể rút token khóa về tay.");
 	}
 
 	const cardId = cell.card_id!;
 
 	// Remove card from board
 	player.board = player.board.map((c, i) =>
-		i === cellIndex
-			? {
-					...c,
-					card_id: undefined,
-					cardName: undefined,
-					type: "empty" as const,
-				}
-			: c,
+		i === cellIndex ? { ...c, card_id: undefined } : c,
 	);
 
 	// Return to chosen so it can be re-placed
@@ -392,7 +440,10 @@ export function draftCard(
 			] as const;
 			const randomSlot = slots[Math.floor(Math.random() * slots.length)];
 			const lockTarget: GridPosition = { day: nextDay, slot: randomSlot };
-			player.board = lockBoardSlot(player.board, lockTarget);
+			player.board = lockBoardSlot(player.board, lockTarget, {
+				lockedReason: "Kiệt sức",
+				sourceCardName: card.name,
+			});
 			room.log.push(
 				`${player.name} is exhausted — ${randomSlot} slot of day ${nextDay} locked.`,
 			);
@@ -474,11 +525,29 @@ export function placeCard(
 		throw new Error(`Can only place cards on day ${day}.`);
 	}
 
+	const cell = player.board.find(
+		(c) => c.day === position.day && c.slot === position.slot,
+	);
+	if (!cell) {
+		throw new Error(`Invalid board position: day ${position.day} ${position.slot}.`);
+	}
+	if (cell.card_id) {
+		throw new Error("This time slot already has a destination card.");
+	}
+	if (cell.locked) {
+		throw new Error(
+			`This slot is locked${cell.sourceCardName ? ` (exhausted by "${cell.sourceCardName}")` : ""}.`,
+		);
+	}
+
+	// Capture the IGNORE_DISTANCE_NEXT buff before applyOnPlayEffects consumes it.
+	const ignoreDistancePenalty = player.resources.ignoreDistancePenaltyNext ?? false;
+
 	// Apply on-play effects (VP, stamina bonuses from REST/UTILITY/TRANSIT tags)
 	player.resources = applyOnPlayEffects(player.resources, card);
 
 	// Mutate the board
-	player.board = placeCardOnBoard(player.board, cardId, position);
+	player.board = placeCardOnBoard(player.board, cardId, position, { ignoreDistancePenalty });
 
 	// Move card from chosen/storage to placed (remove from chosen)
 	player.chosen = player.chosen.filter((id) => id !== cardId);
@@ -632,6 +701,17 @@ function runSimulationAndScoring(room: Room): void {
 function finishGame(room: Room): void {
 	room.log.push("All days complete. Building final timelines…");
 
+	// Apply a one-time penalty for any unpaid debt at game end
+	room.players.forEach((player) => {
+		const { resources, penalty } = applyFinalDebtPenalty(player.resources);
+		if (penalty > 0) {
+			player.resources = resources;
+			room.log.push(
+				`${player.name} ended the game with unpaid debt — -${penalty} VP penalty.`,
+			);
+		}
+	});
+
 	// Build itinerary timeline for each player
 	room.players.forEach((player) => {
 		const tl = boardToTimeline(player.board, room.cards);
@@ -669,6 +749,7 @@ export function exportSnapshot(room: Room, viewerId?: string): RoomSnapshot {
 			storage: p.storage,
 			resources: p.resources,
 			ready: p.ready,
+			connected: p.connected,
 			draftChoice: p.draftChoice,
 			hand: viewerId && p.playerId === viewerId ? p.hand : [],
 		})),
@@ -692,6 +773,12 @@ function getCard(room: Room, cardId: string): TravelCard {
 	return c;
 }
 
+/**
+ * True when every connected player is ready. Disconnected players don't
+ * block phase advancement — their existing state is preserved in case
+ * they reconnect.
+ */
 function allPlayersReady(room: Room): boolean {
-	return room.players.length > 0 && room.players.every((p) => p.ready);
+	const connected = room.players.filter((p) => p.connected);
+	return connected.length > 0 && connected.every((p) => p.ready);
 }
