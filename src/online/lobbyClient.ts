@@ -331,11 +331,18 @@ function handleRoomSnapshot(snapshot: RoomSnapshot) {
 	} else {
 		// Game has started (draft/placement/scoring/finished) —
 		// store snapshot and switch to game screen
+		const wasInLobby = currentLobbySnapshot !== null;
 		currentLobbySnapshot = null;
 		currentGameSnapshot = snapshot;
-		import("../router.ts").then(({ transitionToScreen }) => {
-			transitionToScreen("game");
-		});
+		import("../router.ts").then(
+			({ transitionToScreen, triggerCinematicLobbyToGameTransition }) => {
+				if (wasInLobby) {
+					triggerCinematicLobbyToGameTransition();
+				} else {
+					transitionToScreen("game", false);
+				}
+			},
+		);
 	}
 }
 

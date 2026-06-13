@@ -55,9 +55,122 @@ export function getDisplayPlayerName(): string {
 
 // ── Screen transition ───────────────────────────────────────────────────────
 
-export function transitionToScreen(screen: AppScreen) {
+export function transitionToScreen(screen: AppScreen, skipMusicSync?: boolean) {
 	currentAppScreen = screen;
 	rerenderGameShell();
+	// Stop/start in-game BGM based on the new screen (avoids overlapping
+	// with the dashboard hero video's audio track).
+	if (!skipMusicSync) {
+		(globalThis as any).__syncInGameBgm?.();
+	}
+}
+
+// ── Lobby background setter ─────────────────────────────────────────────────
+
+/**
+ * Sets the travel-desk lobby background directly on #app (inline !important
+ * beats any CSS) while on the entry/lobby screen; removes it everywhere else
+ * so the in-game arena background takes over.
+ */
+function applyLobbyBackground() {
+	const app = document.getElementById("app");
+	if (!app) return;
+
+	if (currentAppScreen === "lobby") {
+		app.style.setProperty(
+			"background",
+			"url('assets/images/backgrounds/lobby-bg.jpg') center/cover no-repeat #0c0b11",
+			"important",
+		);
+	} else {
+		app.style.removeProperty("background");
+	}
+}
+
+// ── Cinematic lobby -> game transition ───────────────────────────────────────
+// Plays a fullscreen video over the lobby card when the host starts an online
+// room, then swaps to the game screen with a zoom-in reveal.
+
+let isCinematicTransitioning = false;
+
+export function triggerCinematicLobbyToGameTransition() {
+	if (isCinematicTransitioning) return;
+	isCinematicTransitioning = true;
+
+	const blocker = document.createElement("div");
+	blocker.id = "cinematic-blocker";
+	blocker.style.cssText = "position:fixed;inset:0;z-index:99999999;cursor:wait;";
+	const swallow = (e: Event) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+	blocker.addEventListener("mousedown", swallow);
+	blocker.addEventListener("click", swallow);
+	blocker.addEventListener("touchstart", swallow, { passive: false });
+	document.body.appendChild(blocker);
+
+	document.querySelector(".online-lobby-card")?.classList.add("is-exiting");
+
+	const video = document.getElementById(
+		"cinematic-transition-video",
+	) as HTMLVideoElement | null;
+	const overlay = document.getElementById("white-flash-overlay");
+
+	if (!video || !overlay) {
+		isCinematicTransitioning = false;
+		blocker.remove();
+		transitionToScreen("game");
+		return;
+	}
+
+	setTimeout(() => {
+		video.style.display = "block";
+		video.currentTime = 0;
+		video.play().catch(() => {
+			video.muted = true;
+			void video.play();
+		});
+
+		const finish = () => {
+			if (!isCinematicTransitioning) return;
+			isCinematicTransitioning = false;
+
+			overlay.style.display = "block";
+			overlay.style.opacity = "1";
+			video.style.display = "none";
+			video.ontimeupdate = null;
+			video.onended = null;
+
+			blocker.remove();
+
+			// Transition to game but skip music sync to avoid starting during overlay fadeout
+			transitionToScreen("game", true);
+
+			const gameShell = document.querySelector(".game-shell");
+			gameShell?.classList.add("is-zooming-in");
+
+			setTimeout(() => {
+				overlay.style.opacity = "0";
+				setTimeout(() => {
+					overlay.style.display = "none";
+					gameShell?.classList.remove("is-zooming-in");
+					// Start in-game music after overlay fadeout completes
+					(globalThis as any).__syncInGameBgm?.();
+				}, 1500);
+			}, 50);
+		};
+
+		video.onended = finish;
+		video.ontimeupdate = () => {
+			if (video.duration && video.currentTime >= video.duration - 0.2) {
+				finish();
+			}
+		};
+
+		setTimeout(() => {
+			if (isCinematicTransitioning) finish();
+		}, 20000);
+	}, 400);
 }
 
 // ── Shell render ────────────────────────────────────────────────────────────
@@ -150,6 +263,7 @@ export function rerenderGameShell() {
 		app.appendChild(doc.body.firstChild);
 	}
 	reattachCardClickDelegation();
+	applyLobbyBackground();
 
 	// Post-render: init screen-specific globals & effects
 	if (currentAppScreen === "dashboard") {
