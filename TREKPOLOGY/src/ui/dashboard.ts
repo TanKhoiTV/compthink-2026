@@ -1,4 +1,5 @@
 import { authClientState } from "../online/socketClient.js";
+import { HOME_HELP_STEPS, renderHelpBubble } from "./HelpBubble.js";
 
 export const HERO_VIDEO_SRC = "./assets/videos/one-minute-in-vietnam.mp4";
 
@@ -318,6 +319,13 @@ export function renderDashboard(isLoading = false) {
 
   return `
     <div class="dashboard-hub ${isLoading ? "dashboard-hub--loading" : ""}">
+      ${renderHelpBubble({
+        id: "homepage-help",
+        title: "Hướng dẫn nhanh",
+        bubbleLabel: "Hướng dẫn",
+        steps: HOME_HELP_STEPS,
+        placement: "home",
+      })}
 
       <!-- Modal: Hướng Dẫn Chơi -->
       <div class="hub-modal" id="modal-rules" onclick="if(event.target===this)this.classList.remove('hub-modal--open')">

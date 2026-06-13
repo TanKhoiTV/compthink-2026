@@ -1,5 +1,6 @@
 import { renderMapSelectionScreen } from "./ui/mapSelection.js";
 import { cleanupDashboardHub, initDashboardHub, renderDashboard } from "./ui/dashboard.js";
+import { GAME_HELP_STEPS, initHelpBubbleDelegation, renderHelpBubble } from "./ui/HelpBubble.js";
 import {
   authClientState,
   createOnlineRoom,
@@ -5395,12 +5396,21 @@ function renderResourceOrbs() {
         <div class="resource-orb__label">TIỀN</div>
       </div>
 
-      <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
-        <div class="resource-orb__frame">
-          <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
-          <div class="resource-orb__value">${remaining.stamina}</div>
+      <div class="resource-orb-cluster resource-orb-cluster--stamina">
+        ${renderHelpBubble({
+          id: "gameplay-help",
+          title: "Cách chơi",
+          bubbleLabel: "Cách chơi",
+          steps: GAME_HELP_STEPS,
+          placement: "game",
+        })}
+        <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
+          <div class="resource-orb__frame">
+            <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
+            <div class="resource-orb__value">${remaining.stamina}</div>
+          </div>
+          <div class="resource-orb__label">THỂ LỰC</div>
         </div>
-        <div class="resource-orb__label">THỂ LỰC</div>
       </div>
     </div>
   `;
@@ -8332,6 +8342,7 @@ setupCardClickDelegation();
 setupAuthFormDelegation();
 setupGameAudioDelegation();
 setupInGameMusicDelegation();
+initHelpBubbleDelegation();
 
 initOnlineClient(
   () => {
