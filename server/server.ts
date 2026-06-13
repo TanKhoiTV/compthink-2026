@@ -21,6 +21,7 @@ import {
 	exportSnapshot,
 	type Room,
 } from "./game.ts";
+import { runBotTurn } from "./bot.ts";
 import {
 	createPlayerSession,
 	dispatch,
@@ -228,10 +229,16 @@ async function handleWebSocket(req: Request): Promise<Response> {
 			makeBroadcaster(roomId)(room);
 		}
 
-		// Clean up empty lobby rooms
-		if (room.players.length === 0 && room.phase === "lobby") {
+		// Clean up rooms nobody can come back to: empty lobbies, or
+		// in-progress games where every player has disconnected.
+		const allDisconnected =
+			room.players.length > 0 && room.players.every((p) => !p.connected);
+		if (
+			(room.players.length === 0 && room.phase === "lobby") ||
+			(room.phase !== "finished" && allDisconnected)
+		) {
 			rooms.delete(roomId);
-			console.log(`[server] Room ${roomId} removed (empty).`);
+			console.log(`[server] Room ${roomId} removed (abandoned).`);
 		}
 	};
 
@@ -392,6 +399,40 @@ function jsonRes(data: unknown, origin: string, status = 200): Response {
 function errorRes(status: number, message: string, origin: string): Response {
 	return jsonRes({ error: message }, origin, status);
 }
+
+// ─── Disconnected-player autoplay tick ────────────────────────────────────────
+
+/**
+ * Every tick, any disconnected human player in an active room has their
+ * current turn (draft pick or placement) played for them via the bot
+ * engine. This keeps their hand/board in sync with the room so the game
+ * doesn't stall waiting on someone who may never come back — and lets
+ * them resume cleanly if they do reconnect.
+ */
+const DISCONNECTED_AUTOPLAY_INTERVAL_MS = 5000;
+
+function runDisconnectedPlayerTurns(): void {
+	for (const room of rooms.values()) {
+		if (room.phase !== "draft" && room.phase !== "placement") continue;
+
+		let acted = false;
+		for (const player of room.players) {
+			if (player.connected) continue;
+			try {
+				if (runBotTurn(room, player.playerId)) acted = true;
+			} catch (err: unknown) {
+				const message = err instanceof Error ? err.message : String(err);
+				console.warn(
+					`[autoplay] ${player.name} turn failed in room ${room.roomId}: ${message}`,
+				);
+			}
+		}
+
+		if (acted) makeBroadcaster(room.roomId)(room);
+	}
+}
+
+setInterval(runDisconnectedPlayerTurns, DISCONNECTED_AUTOPLAY_INTERVAL_MS);
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 

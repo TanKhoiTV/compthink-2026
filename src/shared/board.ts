@@ -138,8 +138,38 @@ export function cellId(position: GridPosition) {
 }
 
 /**
+ * Build a synthetic "locked" board token card for a cell that has no
+ * placeable card but is locked out (e.g. from a stamina-exhaustion debt).
+ * Rendered by renderBoardMiniCard's boardTokenType === "lock" branch.
+ */
+function createLockTokenCard(cell: BoardCell): TravelCard {
+	const id = `lock_token_${cell.day}_${cell.slot}`;
+	return {
+		id,
+		card_id: id,
+		name: "Bị khóa",
+		tags: [],
+		tag: "UTILITY",
+		coin: 0,
+		cost: 0,
+		stamina: 0,
+		vp: 0,
+		victory_point: 0,
+		on_play_effect: "",
+		image: "",
+		city: "",
+		coordinates: { lat: 0, lng: 0 },
+		is_virtual: true,
+		boardTokenType: "lock",
+		lockedReason: cell.lockedReason,
+		sourceCardName: cell.sourceCardName,
+	};
+}
+
+/**
  * Convert a server-side BoardCell[] into client-side BoardSlots.
  * Resolves card_id → TravelCard via the provided card catalogue.
+ * Locked-but-empty cells get a synthetic "lock" token card.
  */
 export function boardCellsToSlots(
 	cells: BoardCell[],
@@ -156,6 +186,8 @@ export function boardCellsToSlots(
 		if (cell.card_id) {
 			const card = byId.get(cell.card_id);
 			if (card) slots[rowIdx][colIdx] = card;
+		} else if (cell.locked) {
+			slots[rowIdx][colIdx] = createLockTokenCard(cell);
 		}
 	}
 
@@ -287,10 +319,15 @@ export function placeCardOnBoardCells(
 	board: BoardCell[],
 	cardId: string,
 	position: GridPosition,
+	options?: { ignoreDistancePenalty?: boolean },
 ): BoardCell[] {
 	return board.map((cell) =>
 		cell.day === position.day && cell.slot === position.slot
-			? { ...cell, card_id: cardId }
+			? {
+					...cell,
+					card_id: cardId,
+					ignoreDistancePenalty: options?.ignoreDistancePenalty ?? false,
+				}
 			: cell,
 	);
 }
@@ -309,10 +346,16 @@ export function skipBoardSlotCells(
 export function lockBoardSlotCells(
 	board: BoardCell[],
 	position: GridPosition,
+	provenance?: { lockedReason?: string; sourceCardName?: string },
 ): BoardCell[] {
 	return board.map((cell) =>
 		cell.day === position.day && cell.slot === position.slot
-			? { ...cell, locked: true }
+			? {
+					...cell,
+					locked: true,
+					lockedReason: provenance?.lockedReason,
+					sourceCardName: provenance?.sourceCardName,
+				}
 			: cell,
 	);
 }
@@ -346,7 +389,7 @@ export function validateDistanceCells(board: BoardCell[], cards: TravelCard[]) {
 				current.coordinates.lng,
 			);
 			totalKm += distance;
-			if (distance > DISTANCE_LIMIT_KM) {
+			if (distance > DISTANCE_LIMIT_KM && !cell.ignoreDistancePenalty) {
 				penalty += 2;
 				warnings.push(
 					`${previous.name} -> ${current.name}: ${distance.toFixed(1)}km exceeds ${DISTANCE_LIMIT_KM}km.`,

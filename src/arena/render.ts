@@ -276,8 +276,11 @@ export function renderBoardMiniCard(card: TravelCard): string {
 	};
 
 	if (token.boardTokenType === "lock") {
+		const reason = token.sourceCardName
+			? `Ô này bị khóa vì đã vay thể lực ở "${token.sourceCardName}".`
+			: "Ô bị khóa vì kiệt sức";
 		return `
-      <article class="board-mini board-mini--token board-mini--lock" title="Ô bị khóa vì kiệt sức">
+      <article class="board-mini board-mini--token board-mini--lock" title="${reason}">
         <div class="board-mini-token__icon">🔒</div>
         <strong>Bị khóa kiệt sức</strong>
       </article>

@@ -86,6 +86,12 @@ export type BoardCell = GridPosition & {
 	card_id?: string;
 	skipped?: boolean;
 	locked?: boolean;
+	/** Why this cell was locked, e.g. "Kiệt sức" (exhaustion). */
+	lockedReason?: string;
+	/** Name of the card whose stamina cost triggered the lock. */
+	sourceCardName?: string;
+	/** Set when this card was placed under an IGNORE_DISTANCE_NEXT buff. */
+	ignoreDistancePenalty?: boolean;
 };
 
 export type PlayerResources = {
@@ -93,6 +99,12 @@ export type PlayerResources = {
 	stamina: number;
 	debtToken: number;
 	vp: number;
+	/** Set by a DOUBLE_VP_NEXT card; doubles the next placed card's base VP. */
+	doubleVpNext?: boolean;
+	/** Set by an IGNORE_DISTANCE_NEXT card; exempts the next placed card from distance penalty. */
+	ignoreDistancePenaltyNext?: boolean;
+	/** Set by a DISCOUNT_XU_NEXT card; reduces the next drafted card's xu cost. */
+	discountXuNext?: number;
 };
 
 export type PlayerState = {
@@ -108,6 +120,7 @@ export type PlayerState = {
 	};
 	resources: PlayerResources;
 	ready: boolean;
+	connected: boolean;
 };
 
 export type RoomSnapshot = {

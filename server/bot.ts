@@ -62,6 +62,7 @@ export function createBotPlayer(
 		storage: [],
 		resources: { ...STARTING_RESOURCES },
 		ready: false,
+		connected: true,
 	};
 }
 

@@ -145,6 +145,14 @@ export function getBonusText(card: BonusTextCard): string {
 				return `Khi đặt xuống: hồi ${effect.effect_value} xu`;
 			case "GAIN_VP":
 				return `Khi đặt xuống: +${effect.effect_value} VP`;
+			case "DEDUCT_LA":
+				return `Khi đặt xuống: tốn thêm ${effect.effect_value} thể lực`;
+			case "DOUBLE_VP_NEXT":
+				return `Khi đặt xuống: x2 VP cho lá tiếp theo`;
+			case "IGNORE_DISTANCE_NEXT":
+				return `Khi đặt xuống: lá tiếp theo không bị phạt khoảng cách`;
+			case "DISCOUNT_XU_NEXT":
+				return `Khi đặt xuống: giảm ${effect.effect_value} xu cho lá tiếp theo`;
 		}
 	}
 
