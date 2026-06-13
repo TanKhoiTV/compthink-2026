@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "start": "deno run --allow-net server.ts",
-    "dev": "deno run --allow-net --watch server.ts",
+    "start": "deno run --allow-net --allow-env server.ts",
+    "dev": "deno run --allow-net --allow-env --watch server.ts",
     "test": "deno test --allow-read --allow-write --allow-env --allow-net server/*.test.ts",
     "lint": "deno lint"
   },
