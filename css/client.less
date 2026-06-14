@@ -7503,7 +7503,7 @@ body {
   left: 18px;
   right: 18px;
   bottom: 14px;
-  z-index: 55;
+  z-index: 120;
   pointer-events: none;
   display: flex;
   justify-content: space-between;
@@ -7640,6 +7640,349 @@ body {
 
 .resource-orb--stamina .resource-orb__icon {
   font-size: clamp(38px, 3.6vw, 54px);
+}
+
+.resource-orb-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+/* Reusable onboarding help bubble */
+.help-bubble-shell {
+  pointer-events: auto;
+}
+
+.help-bubble-shell--home {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 200000;
+}
+
+.help-bubble-shell--game {
+  position: relative;
+  z-index: 70;
+  flex: 0 0 auto;
+  margin-right: 2px;
+}
+
+.help-bubble {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #7a5635;
+  border-radius: 999px;
+  color: #4e3325;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.82), transparent 28%),
+    linear-gradient(180deg, #fff3cf, #d9a95e);
+  box-shadow:
+    0 14px 30px rgba(60, 36, 18, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -3px 0 rgba(92, 61, 33, 0.18);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+  animation: helpBubblePulse 2.8s ease-in-out infinite;
+}
+
+.help-bubble:hover {
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.04);
+  box-shadow:
+    0 18px 38px rgba(60, 36, 18, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -3px 0 rgba(92, 61, 33, 0.2);
+}
+
+.help-bubble:focus-visible {
+  outline: 3px solid rgba(245, 158, 11, 0.42);
+  outline-offset: 4px;
+}
+
+.help-bubble__icon {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.help-bubble__tooltip {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+  min-width: max-content;
+  padding: 6px 10px;
+  border: 1px solid rgba(122, 86, 53, 0.58);
+  border-radius: 999px;
+  color: #4e3325;
+  background: rgba(255, 248, 236, 0.96);
+  box-shadow: 0 8px 18px rgba(60, 36, 18, 0.16);
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.help-bubble:hover .help-bubble__tooltip,
+.help-bubble:focus-visible .help-bubble__tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.help-modal-backdrop[hidden] {
+  display: none;
+}
+
+.help-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255, 243, 207, 0.18), transparent 34%),
+    rgba(34, 20, 10, 0.56);
+  backdrop-filter: blur(6px);
+}
+
+.help-modal {
+  position: relative;
+  width: min(500px, calc(100vw - 32px));
+  max-height: min(82vh, 680px);
+  overflow: auto;
+  border: 2px solid rgba(122, 86, 53, 0.62);
+  border-radius: 26px;
+  color: #4e3325;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.82), transparent 42%),
+    linear-gradient(180deg, #fff8ec, #f0e2cc);
+  box-shadow:
+    0 32px 90px rgba(34, 20, 9, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  padding: 28px;
+}
+
+.help-modal:focus {
+  outline: none;
+}
+
+.help-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(122, 86, 53, 0.2);
+  border-radius: 999px;
+  color: #4e3325;
+  background: #ede5d8;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 1000;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.help-modal__close:hover {
+  background: #d5c6ad;
+  transform: scale(1.04);
+}
+
+.help-modal__eyebrow {
+  color: #9a7c57;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.help-modal__title {
+  margin: 8px 44px 18px 0;
+  color: #3e2e22;
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.05;
+  font-weight: 1000;
+}
+
+.help-modal__step {
+  min-height: 154px;
+  border: 1px solid rgba(198, 173, 143, 0.62);
+  border-radius: 20px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+}
+
+.help-modal__step h3 {
+  margin: 0 0 10px;
+  color: #4e3325;
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 1000;
+}
+
+.help-modal__step p {
+  margin: 0;
+  color: #624a36;
+  font-size: 15px;
+  line-height: 1.68;
+  font-weight: 650;
+}
+
+.help-modal__dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.help-modal__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(122, 86, 53, 0.24);
+  transition:
+    width 160ms ease,
+    background 160ms ease;
+}
+
+.help-modal__dot.is-active {
+  width: 22px;
+  background: #9a7c57;
+}
+
+.help-modal__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.help-modal__button {
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 0 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 1000;
+  transition:
+    transform 140ms ease,
+    filter 140ms ease,
+    opacity 140ms ease;
+}
+
+.help-modal__button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.help-modal__button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.help-modal__button--ghost {
+  border: 1px solid rgba(122, 86, 53, 0.28);
+  color: #5a4430;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.help-modal__button--primary {
+  margin-left: auto;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(180deg, #b89167, #9a7c57);
+  box-shadow:
+    0 10px 22px rgba(80, 55, 25, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.14);
+}
+
+@keyframes helpBubblePulse {
+  0%,
+  100% {
+    box-shadow:
+      0 14px 30px rgba(60, 36, 18, 0.28),
+      0 0 0 0 rgba(217, 169, 94, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -3px 0 rgba(92, 61, 33, 0.18);
+  }
+
+  50% {
+    box-shadow:
+      0 14px 30px rgba(60, 36, 18, 0.28),
+      0 0 0 8px rgba(217, 169, 94, 0),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -3px 0 rgba(92, 61, 33, 0.18);
+  }
+}
+
+@media (max-width: 720px) {
+  .help-bubble-shell--home {
+    right: 18px;
+    bottom: 18px;
+  }
+
+  .help-bubble {
+    width: 46px;
+    height: 46px;
+  }
+
+  .help-bubble__icon {
+    font-size: 22px;
+  }
+
+  .help-bubble__tooltip {
+    display: none;
+  }
+
+  .resource-orb-cluster {
+    gap: 6px;
+  }
+
+  .help-modal {
+    width: calc(100vw - 28px);
+    border-radius: 22px;
+    padding: 22px 18px;
+  }
+
+  .help-modal__step {
+    min-height: 172px;
+    padding: 16px;
+  }
+
+  .help-modal__actions {
+    gap: 8px;
+  }
+
+  .help-modal__button {
+    flex: 1;
+    padding: 0 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .help-bubble {
+    animation: none;
+  }
+
+  .help-bubble,
+  .help-bubble__tooltip,
+  .help-modal__button,
+  .help-modal__dot {
+    transition: none;
+  }
 }
 
 @media (max-width: 1280px) {
@@ -9203,7 +9546,7 @@ body {
   Mobile portrait không ép scale game board.
 */
 @media (orientation: portrait), (max-width: 1024px) {
-  #app::before {
+  #app:has(.game-shell)::before {
     content: "Vui lòng dùng màn hình ngang / laptop để chơi game.";
     position: fixed;
     inset: 0;
