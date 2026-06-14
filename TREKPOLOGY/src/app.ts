@@ -1,6 +1,7 @@
 import { renderMapSelectionScreen } from "./ui/mapSelection.js";
 import { cleanupDashboardHub, initDashboardHub, renderDashboard } from "./ui/dashboard.js";
 import { GAME_HELP_STEPS, initHelpBubbleDelegation, renderHelpBubble } from "./ui/HelpBubble.js";
+import { initOnboardingModalDelegation, renderOnboardingModal, syncOnboardingAutoOpen } from "./ui/OnboardingModal.js";
 import {
   authClientState,
   createOnlineRoom,
@@ -7816,32 +7817,36 @@ function setupSaigonCollageHover() {
   }
 }
 
+function renderWithGlobalOverlays(content: string) {
+  return `${content}${renderOnboardingModal()}`;
+}
+
 function renderGameShell() {
   if (!authClientState.isReady) {
-    return renderDashboard(true);
+    return renderWithGlobalOverlays(renderDashboard(true));
   }
 
   if (!isOnlineRoomActive()) {
     if (!authClientState.user || currentAppScreen === "dashboard") {
       currentAppScreen = "dashboard";
-      return renderDashboard();
+      return renderWithGlobalOverlays(renderDashboard());
     }
     
     if (currentAppScreen === "map_selection") {
-      return renderMapSelectionScreen();
+      return renderWithGlobalOverlays(renderMapSelectionScreen());
     }
 
-    return renderOnlineEntryScreen();
+    return renderWithGlobalOverlays(renderOnlineEntryScreen());
   }
 
   if (onlineClientState.roomState?.phase === "lobby") {
-    return renderOnlineLobbyRoomScreen();
+    return renderWithGlobalOverlays(renderOnlineLobbyRoomScreen());
   }
 
   const leftPlayers = getLeftSidePlayersToRender();
   const rightPlayers = getRightSidePlayersToRender();
 
-  return `
+  return renderWithGlobalOverlays(`
     <div class="game-shell">
       ${renderSaigonCollageBackground()}
       ${renderOnlineRoomMenu()}
@@ -7861,7 +7866,7 @@ function renderGameShell() {
         ${renderDeckPilePanel()}
       </aside>
     </div>
-  `;
+  `);
 }
 
 (window as any).rerenderGameShell = rerenderGameShell;
@@ -7885,6 +7890,7 @@ function applyLobbyBackground() {
 function rerenderGameShell() {
   stopOutsideBackgroundMedia();
 
+  syncOnboardingAutoOpen(authClientState.isReady);
   app.innerHTML = renderGameShell();
   applyLobbyBackground();
   setupSaigonCollageHover();
@@ -8343,6 +8349,7 @@ setupAuthFormDelegation();
 setupGameAudioDelegation();
 setupInGameMusicDelegation();
 initHelpBubbleDelegation();
+initOnboardingModalDelegation();
 
 initOnlineClient(
   () => {
