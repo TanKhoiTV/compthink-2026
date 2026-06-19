@@ -10,6 +10,7 @@
  */
 
 import { setupGameAudioDelegation, playGameSound } from "./audio/gameAudio.ts";
+import { initHelpBubbleDelegation } from "./components/HelpBubble.ts";
 import type { SimulationReplayStep } from "./shared/scoring.ts";
 import {
 	rerenderGameShell,
@@ -202,6 +203,7 @@ function addStaminaDebtAndLockToken(params: {
 
 // Initialise audio
 setupGameAudioDelegation();
+initHelpBubbleDelegation();
 
 // ── BGM (background music) with volume/mute toggle ──────────────────────────
 

@@ -5,7 +5,15 @@
  * Exports: renderDashboard(), initDashboardHub(), initDashboardGlobals()
  */
 
-import { authClientState, saveAuthSession, clearAuthSession } from "../online/socketClient.ts";
+import {
+	HOME_HELP_STEPS,
+	renderHelpBubble,
+} from "../components/HelpBubble.ts";
+import {
+	authClientState,
+	saveAuthSession,
+	clearAuthSession,
+} from "../online/socketClient.ts";
 
 export const HERO_VIDEO_SRC = "assets/videos/chuyencanh.mp4";
 
@@ -355,6 +363,12 @@ export function renderDashboard(isLoading = false) {
 
 	return `
     <div class="dashboard-hub ${isLoading ? "dashboard-hub--loading" : ""}">
+      ${renderHelpBubble({
+				title: "Hướng dẫn sử dụng Trekpology",
+				steps: HOME_HELP_STEPS,
+				bubbleLabel: "Hướng dẫn",
+				position: "home",
+			})}
 
       <!-- Modal: Hướng Dẫn Chơi -->
       <div class="hub-modal" id="modal-rules" onclick="if(event.target===this)this.classList.remove('hub-modal--open')">

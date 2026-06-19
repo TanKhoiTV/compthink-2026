@@ -4,6 +4,6 @@
  * BUILD_TIME is replaced at build time by the bundler (rollup).
  */
 
-export const VERSION = "0.23.2";
+export const VERSION = "0.24.0";
 export const BUILD_TIME = "__BUILD_TIME_PLACEHOLDER__";
 export const APP_NAME = "Trekkopoly";
