@@ -59,6 +59,10 @@ import {
 import type { SimulationReplayStep } from "../shared/scoring.ts";
 import { calculateScoreBreakdown } from "../shared/scoring.ts";
 import { STARTING_COIN, STARTING_STAMINA } from "../shared/constants.ts";
+import {
+	GAME_HELP_STEPS,
+	renderHelpBubble,
+} from "../components/HelpBubble.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -725,12 +729,20 @@ export function renderResourceOrbs(): string {
         </div>
         <div class="resource-orb__label">Xu</div>
       </div>
-      <div class="resource-orb resource-orb--stamina">
-        <div class="resource-orb__frame">
-          <div class="resource-orb__icon resource-orb__icon--stamina">⚡</div>
-          <div class="resource-orb__value">${remaining.stamina}</div>
+      <div class="resource-orb-cluster resource-orb-cluster--stamina">
+        ${renderHelpBubble({
+					title: "Cách chơi",
+					steps: GAME_HELP_STEPS,
+					bubbleLabel: "Cách chơi",
+					position: "game",
+				})}
+        <div class="resource-orb resource-orb--stamina">
+          <div class="resource-orb__frame">
+            <div class="resource-orb__icon resource-orb__icon--stamina">⚡</div>
+            <div class="resource-orb__value">${remaining.stamina}</div>
+          </div>
+          <div class="resource-orb__label">Thể lực</div>
         </div>
-        <div class="resource-orb__label">Thể lực</div>
       </div>
       ${
 				debt > 0

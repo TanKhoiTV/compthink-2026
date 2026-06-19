@@ -79,12 +79,14 @@ fix(architecture): correct interface IF-2 arrow direction
 ## Workflow
 
 1. Sync your local `main`:
+
    ```bash
    git checkout main
    git pull origin main --rebase
    ```
 
 2. Create a working branch:
+
    ```bash
    git checkout -b <type>/<short-description>
    ```
@@ -92,6 +94,7 @@ fix(architecture): correct interface IF-2 arrow direction
 3. Make your changes. For docs, we prefer **plain Markdown** where possible. Use `.html` only when the content benefits from embedded SVG diagrams or interactive elements.
 
 4. Commit and push:
+
    ```bash
    git add <files>
    git commit -m "<type>(<scope>): <description>"
@@ -106,6 +109,20 @@ fix(architecture): correct interface IF-2 arrow direction
 ### Merge Strategy
 
 Always **squash merge** PRs into `main`. Every merged PR becomes one clean commit. No merge commits or rebase merges for feature branches.
+
+### Branch Cleanup
+
+Delete feature branches after their PR is merged or closed:
+
+```bash
+# Delete remote branch after merge/close
+git push origin --delete <branch-name>
+
+# Prune stale local tracking references
+git fetch origin --prune
+```
+
+Branches left behind after merge clutter the remote and can cause confusion (e.g., being mistaken for active work or accidentally rebased and re-PR'd). Delete them promptly.
 
 ## Working with ADRs
 

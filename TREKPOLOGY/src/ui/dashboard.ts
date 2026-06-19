@@ -318,7 +318,6 @@ export function renderDashboard(isLoading = false) {
 
   return `
     <div class="dashboard-hub ${isLoading ? "dashboard-hub--loading" : ""}">
-
       <!-- Modal: Hướng Dẫn Chơi -->
       <div class="hub-modal" id="modal-rules" onclick="if(event.target===this)this.classList.remove('hub-modal--open')">
         <div class="hub-modal__box">
@@ -363,7 +362,7 @@ export function renderDashboard(isLoading = false) {
       <header class="hub-topbar">
         <div class="hub-topbar__logo">TREKPOLOGY</div>
         <nav class="hub-topbar__nav">
-          <button onclick="document.getElementById('modal-rules').classList.add('hub-modal--open')">Hướng Dẫn Chơi</button>
+          <button type="button" data-onboarding-open>Hướng Dẫn Chơi</button>
           <button onclick="document.getElementById('modal-about').classList.add('hub-modal--open')">Về Chúng Tôi</button>
         </nav>
         ${renderHubTopbarUser(isLoggedIn, displayName)}

@@ -29,6 +29,26 @@ function getMainTag(tags: CardTag[]) {
   return tags[0] ?? "FOOD";
 }
 
+function getCardImagePath(card: GameCardData): string {
+  const cityCode = card.phase_pool?.toLowerCase() ?? "saigon";
+  const mainTag = getMainTag(card.tags);
+
+  // Map main tag to asset subfolder name
+  const tagSubfolder: Record<string, string> = {
+    FOOD: "food",
+    CULTURE: "culture",
+    ACTION: "action",
+    UTILITY: "utility",
+  };
+
+  const subfolder = tagSubfolder[mainTag] ?? "food";
+
+  // Derive filename from card_id: SG_FOOD_001 -> sg_food_001.jpg
+  const fileName = card.card_id.toLowerCase() + ".jpg";
+
+  return `./assets/cards/${cityCode}/${subfolder}/${fileName}`;
+}
+
 function getTagLabel(tag: CardTag) {
   switch (tag) {
     case "FOOD":
@@ -217,7 +237,7 @@ export function mapGameCardToTravelCard(card: GameCardData): TravelCardUIData {
     shortName: getShortName(card.name),
     city,
     shortCity: getShortCity(city),
-    image: card.image_url,
+    image: getCardImagePath(card),
     rarity: getUiRarity(card.rarity),
     rarityLabel: getRarityLabel(card.rarity),
     vp: card.base_vp,

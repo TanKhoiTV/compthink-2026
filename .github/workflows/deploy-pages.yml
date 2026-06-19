@@ -29,7 +29,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: add-trekpology
+          ref: main
+          lfs: true
+
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build TREKPOLOGY frontend
+        run: |
+          npm install
+          npm run build
+        working-directory: TREKPOLOGY
 
       - name: Patch old client socket URL → old server on HF
         run: |

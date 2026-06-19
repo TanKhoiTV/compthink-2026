@@ -1,5 +1,7 @@
 import { renderMapSelectionScreen } from "./ui/mapSelection.js";
 import { cleanupDashboardHub, initDashboardHub, renderDashboard } from "./ui/dashboard.js";
+import { GAME_HELP_STEPS, initHelpBubbleDelegation, renderHelpBubble } from "./ui/HelpBubble.js";
+import { initOnboardingModalDelegation, renderOnboardingModal, syncOnboardingAutoOpen } from "./ui/OnboardingModal.js";
 import {
   authClientState,
   createOnlineRoom,
@@ -5395,12 +5397,21 @@ function renderResourceOrbs() {
         <div class="resource-orb__label">TIỀN</div>
       </div>
 
-      <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
-        <div class="resource-orb__frame">
-          <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
-          <div class="resource-orb__value">${remaining.stamina}</div>
+      <div class="resource-orb-cluster resource-orb-cluster--stamina">
+        ${renderHelpBubble({
+          id: "gameplay-help",
+          title: "Cách chơi",
+          bubbleLabel: "Cách chơi",
+          steps: GAME_HELP_STEPS,
+          placement: "game",
+        })}
+        <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
+          <div class="resource-orb__frame">
+            <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
+            <div class="resource-orb__value">${remaining.stamina}</div>
+          </div>
+          <div class="resource-orb__label">THỂ LỰC</div>
         </div>
-        <div class="resource-orb__label">THỂ LỰC</div>
       </div>
     </div>
   `;
@@ -7806,32 +7817,36 @@ function setupSaigonCollageHover() {
   }
 }
 
+function renderWithGlobalOverlays(content: string) {
+  return `${content}${renderOnboardingModal()}`;
+}
+
 function renderGameShell() {
   if (!authClientState.isReady) {
-    return renderDashboard(true);
+    return renderWithGlobalOverlays(renderDashboard(true));
   }
 
   if (!isOnlineRoomActive()) {
     if (!authClientState.user || currentAppScreen === "dashboard") {
       currentAppScreen = "dashboard";
-      return renderDashboard();
+      return renderWithGlobalOverlays(renderDashboard());
     }
     
     if (currentAppScreen === "map_selection") {
-      return renderMapSelectionScreen();
+      return renderWithGlobalOverlays(renderMapSelectionScreen());
     }
 
-    return renderOnlineEntryScreen();
+    return renderWithGlobalOverlays(renderOnlineEntryScreen());
   }
 
   if (onlineClientState.roomState?.phase === "lobby") {
-    return renderOnlineLobbyRoomScreen();
+    return renderWithGlobalOverlays(renderOnlineLobbyRoomScreen());
   }
 
   const leftPlayers = getLeftSidePlayersToRender();
   const rightPlayers = getRightSidePlayersToRender();
 
-  return `
+  return renderWithGlobalOverlays(`
     <div class="game-shell">
       ${renderSaigonCollageBackground()}
       ${renderOnlineRoomMenu()}
@@ -7851,7 +7866,7 @@ function renderGameShell() {
         ${renderDeckPilePanel()}
       </aside>
     </div>
-  `;
+  `);
 }
 
 (window as any).rerenderGameShell = rerenderGameShell;
@@ -7875,6 +7890,7 @@ function applyLobbyBackground() {
 function rerenderGameShell() {
   stopOutsideBackgroundMedia();
 
+  syncOnboardingAutoOpen(authClientState.isReady);
   app.innerHTML = renderGameShell();
   applyLobbyBackground();
   setupSaigonCollageHover();
@@ -8332,6 +8348,8 @@ setupCardClickDelegation();
 setupAuthFormDelegation();
 setupGameAudioDelegation();
 setupInGameMusicDelegation();
+initHelpBubbleDelegation();
+initOnboardingModalDelegation();
 
 initOnlineClient(
   () => {

@@ -37,6 +37,10 @@ import {
 import { detectHandTransition } from "../services/animation-controller.ts";
 import { DEAL_ANIMATION_MS } from "../shared/animations.ts";
 import { TURN_DURATION_SECONDS } from "../shared/constants.ts";
+import {
+	GAME_HELP_STEPS,
+	renderHelpBubble,
+} from "../components/HelpBubble.ts";
 
 // Timer DOM updates are handled by the shared game-timer.ts module.
 // Animation state tracking is handled by animation-controller.ts
@@ -218,9 +222,17 @@ function renderOnlineResourceOrbs(myPlayer: PlayerState): string {
         <span class="orb__icon">C</span>
         <span class="orb__value">${myPlayer.resources.xu}</span>
       </div>
-      <div class="orb orb--stamina">
-        <span class="orb__icon">S</span>
-        <span class="orb__value">${myPlayer.resources.stamina}</span>
+      <div class="resource-orb-cluster resource-orb-cluster--stamina">
+        ${renderHelpBubble({
+					title: "Cách chơi",
+					steps: GAME_HELP_STEPS,
+					bubbleLabel: "Cách chơi",
+					position: "game",
+				})}
+        <div class="orb orb--stamina">
+          <span class="orb__icon">S</span>
+          <span class="orb__value">${myPlayer.resources.stamina}</span>
+        </div>
       </div>
       <div class="orb orb--debt">
         <span class="orb__icon">D</span>
