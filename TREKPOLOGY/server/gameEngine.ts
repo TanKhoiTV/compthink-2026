@@ -1,4 +1,6 @@
 import type { PlayerId, PublicBoardCell, RoomState, ServerTravelCardData } from "./types.js";
+import { phase1Cards } from "../src/data/cards.phase1.js";
+import { mapGameCardToTravelCard } from "../src/data/cardMapper.js";
 
 
 type ServerCardEffect = {
@@ -34,7 +36,11 @@ export function shuffleCards<T>(cards: T[]): T[] {
   return shuffled;
 }
 
-const REAL_SERVER_CARDS: ServerCardWithEffect[] = [
+/*
+  Snapshot cũ chỉ giữ lại tạm thời để đối chiếu dữ liệu khi migrate.
+  Deck online thực tế bên dưới được tạo từ src/data/cards.phase1.ts.
+*/
+const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
   {
     "id": "SG_FOOD_001",
     "name": "Cà Phê Bệt Nhà Thờ Đức Bà",
@@ -2748,6 +2754,18 @@ const REAL_SERVER_CARDS: ServerCardWithEffect[] = [
   }
 ];
 
+void LEGACY_SERVER_CARDS;
+
+const REAL_SERVER_CARDS: ServerCardWithEffect[] = phase1Cards.map((card) => {
+  const mapped = mapGameCardToTravelCard(card);
+
+  return {
+    ...mapped,
+    tags: [...mapped.tags],
+    onPlayEffect: { ...mapped.onPlayEffect },
+  };
+});
+
 function cloneServerCard(card: ServerCardWithEffect): ServerCardWithEffect {
   return {
     ...card,
@@ -2830,6 +2848,7 @@ export function getPlayerViewState(state: RoomState, playerId: PlayerId) {
     dayIndex: state.dayIndex,
     draftRound: state.draftRound,
     timer: state.timer,
+    draftTimerHold: state.draftTimerHold,
     selfPlayerId: playerId,
     players: getPublicPlayers(state),
     self: {

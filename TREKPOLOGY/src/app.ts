@@ -262,6 +262,30 @@ const fallbackHandCards: TravelCardData[] = [
   },
 ];
 
+const PHASE1_CARD_IMAGE_BY_ID = new Map(
+  phase1Cards.map((card) => [card.card_id, card.image_url] as const)
+);
+
+function getPreferredCardImage(card: TravelCardData) {
+  const phase1Image = PHASE1_CARD_IMAGE_BY_ID.get(card.id);
+
+  if (phase1Image) return phase1Image;
+
+  // The old online server still sends /images/phase1/*.png paths that do not
+  // exist in this repository. Skip them instead of issuing guaranteed 404s.
+  if (card.image && !/(^|\/)images\/phase1\//i.test(card.image)) {
+    return card.image;
+  }
+
+  return images.food;
+}
+
+function getCardBackgroundImage(card: TravelCardData) {
+  const urls = Array.from(new Set([getPreferredCardImage(card), images.food]));
+
+  return urls.map((url) => `url('${url}')`).join(", ");
+}
+
 function normalizeCardImage(card: TravelCardData): TravelCardData {
   if (card.image && card.image.trim().length > 0) {
     return card;
@@ -274,11 +298,18 @@ function normalizeCardImage(card: TravelCardData): TravelCardData {
 }
 
 function preloadCardImages(cards: TravelCardData[]) {
+  const framePaths = new Set<string>();
+
   for (const card of cards) {
-    if (!card.image) continue;
+    framePaths.add(getCardFramePath(card));
 
     const image = new Image();
-    image.src = card.image;
+    image.src = getPreferredCardImage(card);
+  }
+
+  for (const framePath of framePaths) {
+    const frameImage = new Image();
+    frameImage.src = framePath;
   }
 }
 
@@ -949,7 +980,10 @@ function createCardFromPublicBoardCell(cell: {
 }): TravelCardData {
   const knownCard = getKnownOnlineCardById(cell.cardId);
 
-  if (knownCard && !cell.type) {
+  // Online board cells explicitly use type="card". Hydrate those compact
+  // public cells from the canonical phase data so focused previews retain
+  // their description, rarity and secondary tags after leaving the hand.
+  if (knownCard && (cell.type === undefined || cell.type === "card")) {
     return knownCard;
   }
 
@@ -1791,11 +1825,7 @@ function getTextFitClass(
 }
 
 function getHandTitleClass(name: string) {
-  return getTextFitClass(name, "hand-card__name", 16, 23);
-}
-
-function getHandCityClass(city: string) {
-  return getTextFitClass(city, "hand-card__city", 18, 28);
+  return getTextFitClass(name, "framed-card-face__name", 16, 23);
 }
 
 function getBoardTitleClass(name: string) {
@@ -2002,11 +2032,77 @@ function clearLocalGeneratedTokenForReturnedCard(rowIndex: number, colIndex: num
 }
 
 function getFocusedTitleClass(name: string) {
-  return getTextFitClass(name, "focused-card__name", 18, 25);
+  return getTextFitClass(name, "framed-card-face__name", 18, 25);
 }
 
-function getFocusedCityClass(city: string) {
-  return getTextFitClass(city, "focused-card__city", 18, 28);
+const CARD_FRAME_NAME_BY_TAG: Record<string, string> = {
+  action: "action",
+  experience: "action",
+  culture: "culture",
+  food: "food",
+  utility: "utility",
+};
+
+function getCardFrameName(card: TravelCardData) {
+  const primaryTag = (card.tag || card.tags?.[0] || "food").toLowerCase();
+
+  return CARD_FRAME_NAME_BY_TAG[primaryTag] ?? "food";
+}
+
+function getCardFramePath(card: TravelCardData) {
+  return `./assets/cardFrames/${getCardFrameName(card)}.png`;
+}
+
+function getCardEnvironmentTagLabel(card: TravelCardData) {
+  const tags = new Set((card.tags ?? []).map((tag) => tag.toUpperCase()));
+  const labels: string[] = [];
+
+  if (tags.has("INDOOR")) labels.push("Trong nhà");
+  if (tags.has("OUTDOOR")) labels.push("Ngoài trời");
+
+  return labels.join(" / ");
+}
+
+function renderFramedCardFace(card: TravelCardData, mode: "hand" | "focused") {
+  const titleClass = mode === "focused"
+    ? getFocusedTitleClass(card.name)
+    : getHandTitleClass(card.name);
+  const titleMarkup = mode === "focused"
+    ? `<h2 class="${titleClass}"><span>${card.name}</span></h2>`
+    : `<h3 class="${titleClass}"><span>${card.name}</span></h3>`;
+  const frameName = getCardFrameName(card);
+  const environmentTagLabel = getCardEnvironmentTagLabel(card);
+
+  return `
+    <div class="framed-card-face framed-card-face--${mode} framed-card-face--frame-${frameName}">
+      <div
+        class="framed-card-face__photo"
+        style="background-image: ${getCardBackgroundImage(card)}"
+        role="img"
+        aria-label="${card.name}"
+      ></div>
+
+      <img
+        class="framed-card-face__frame"
+        src="${getCardFramePath(card)}"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+      />
+
+      ${titleMarkup}
+      <div class="framed-card-face__vp">${card.vp}</div>
+      ${
+        environmentTagLabel
+          ? `<div class="framed-card-face__pill framed-card-face__pill--environment">${environmentTagLabel}</div>`
+          : ""
+      }
+      <div class="framed-card-face__pill framed-card-face__pill--rarity">${card.rarityLabel}</div>
+      <div class="framed-card-face__cost framed-card-face__cost--coin">${card.coin}</div>
+      <div class="framed-card-face__cost framed-card-face__cost--stamina">${card.stamina}</div>
+      <div class="framed-card-face__description">${card.description}</div>
+    </div>
+  `;
 }
 
 function getHandCardById(id: string | null) {
@@ -2356,7 +2452,7 @@ function renderBoardMiniCard(card: TravelCardData, replayStep?: SimulationReplay
 
       <div
         class="board-mini__image"
-        style="background-image: url('${card.image}'), url('${images.food}')"
+        style="background-image: ${getCardBackgroundImage(card)}"
       ></div>
 
       <div class="board-mini__tag board-mini__tag--${card.tag}">
@@ -2377,7 +2473,6 @@ function renderHandCard(card: TravelCardData, index: number, disableFan: boolean
     !disableFan &&
     card.id === draftHandPendingCardId;
   const isPlanningSelected = !isDraftPhase && card.id === selectedHandCardId;
-  const isSelected = isDraftSelected || isPlanningSelected;
   const affordability = getCardAffordability(card);
   const affordabilityMessage = affordability.canAfford
     ? getCardAffordabilityMessage(card)
@@ -2388,7 +2483,6 @@ function renderHandCard(card: TravelCardData, index: number, disableFan: boolean
     <article
       class="hand-card hand-card--${card.rarity} ${disableFan ? "" : `hand-card--fan-${index + 1}`} ${isPlanningSelected ? "hand-card--selected" : ""} ${isDraftSelected ? "hand-card--draft-selected" : ""} ${unaffordableClass}"
       data-hand-card-id="${card.id}"
-      style="${isSelected ? "box-shadow: 0 0 0 4px rgba(255,255,255,.95), 0 0 0 8px rgba(139,92,246,.82), 0 18px 34px rgba(75,47,25,.28);" : ""}"
       title="${affordabilityMessage}"
       onpointerdown="${isDraftPhase ? `` : `event.stopPropagation(); startHandPointerDrag(event, '${card.id}')`}"
       onclick="${isDraftPhase ? `` : `event.stopPropagation(); window['selectHandCard']('${card.id}')`}"
@@ -2403,54 +2497,12 @@ function renderHandCard(card: TravelCardData, index: number, disableFan: boolean
           : ""
       }
 
-      <div class="hand-card__header">
-        <div class="hand-card__title-block">
-          <h3 class="${getHandTitleClass(card.name)}">${card.name}</h3>
-          <div class="${getHandCityClass(card.city)}">📍 ${card.city}</div>
-        </div>
-
-        <div class="hand-card__vp">${card.vp}</div>
-      </div>
-
-      <div class="hand-card__image" style="background-image: url('${card.image}'), url('${images.food}')">
-        <div class="hand-card__icons">
-          <span>${card.icon}</span>
-          <span>★</span>
-        </div>
-      </div>
-
-      <div class="hand-card__content">
-        <div class="hand-card__meta-row">
-          <span class="hand-card__rarity">${card.rarityLabel}</span>
-          <span class="hand-card__tag">${card.tagLabel}</span>
-        </div>
-
-        <p>${card.description}</p>
-
-        <div class="hand-card__bonus">
-          ${card.bonusText}
-        </div>
-      </div>
-
-      <div class="hand-card__footer">
-        <div>
-          <span>GOLD</span>
-          <strong>${card.coin}</strong>
-        </div>
-
-        <div>
-          <span>STAMINA</span>
-          <strong>${card.stamina}</strong>
-        </div>
-      </div>
+      ${renderFramedCardFace(card, "hand")}
     </article>
   `;
 }
 
 function renderFocusedCard(card: TravelCardData) {
-  const titleClass = getFocusedTitleClass(card.name);
-  const cityClass = getFocusedCityClass(card.city);
-
   return `
     <div class="focused-card-overlay" onclick="closeFocusedHandCard()">
       <div class="focused-card-backdrop-glow"></div>
@@ -2465,46 +2517,7 @@ function renderFocusedCard(card: TravelCardData) {
           title="Đóng"
         >×</button>
 
-        <div class="focused-card__header">
-          <div class="focused-card__title-wrap">
-            <h2 class="${titleClass}">${card.name}</h2>
-            <span class="${cityClass}">📍 ${card.city}</span>
-          </div>
-
-          <div class="focused-card__vp">${card.vp}</div>
-        </div>
-
-        <div class="focused-card__image" style="background-image: url('${card.image}'), url('${images.food}')">
-          <div class="focused-card__icons">
-            <span>${card.icon}</span>
-            <span>★</span>
-          </div>
-        </div>
-
-        <div class="focused-card__body">
-          <div class="focused-card__tags">
-            <span>${card.rarityLabel}</span>
-            <span>${card.tagLabel}</span>
-          </div>
-
-          <p>${card.description}</p>
-
-          <div class="focused-card__bonus">
-            ${card.bonusText}
-          </div>
-        </div>
-
-        <div class="focused-card__footer">
-          <div>
-            <span>GOLD</span>
-            <strong>${card.coin}</strong>
-          </div>
-
-          <div>
-            <span>STAMINA</span>
-            <strong>${card.stamina}</strong>
-          </div>
-        </div>
+        ${renderFramedCardFace(card, "focused")}
 
         ${
           focusedBoardPosition
@@ -2778,46 +2791,7 @@ function renderPickedDraftCard(
       class="hand-card hand-card--${card.rarity} hand-card--picked-draft hand-card--picked-slot-${index + 1}${pendingClass}${hiddenClass}"
       data-draft-hand-card-id="${card.id}"
     >
-      <div class="hand-card__header">
-        <div class="hand-card__title-block">
-          <h3 class="${getHandTitleClass(card.name)}">${card.name}</h3>
-          <div class="${getHandCityClass(card.city)}">📍 ${card.city}</div>
-        </div>
-
-        <div class="hand-card__vp">${card.vp}</div>
-      </div>
-
-      <div class="hand-card__image" style="background-image: url('${card.image}'), url('${images.food}')">
-        <div class="hand-card__icons">
-          <span>${card.icon}</span>
-          <span>★</span>
-        </div>
-      </div>
-
-      <div class="hand-card__content">
-        <div class="hand-card__meta-row">
-          <span class="hand-card__rarity">${card.rarityLabel}</span>
-          <span class="hand-card__tag">${card.tagLabel}</span>
-        </div>
-
-        <p>${card.description}</p>
-
-        <div class="hand-card__bonus">
-          ${card.bonusText}
-        </div>
-      </div>
-
-      <div class="hand-card__footer">
-        <div>
-          <span>GOLD</span>
-          <strong>${card.coin}</strong>
-        </div>
-
-        <div>
-          <span>STAMINA</span>
-          <strong>${card.stamina}</strong>
-        </div>
-      </div>
+      ${renderFramedCardFace(card, "hand")}
     </article>
   `;
 }
@@ -7463,6 +7437,10 @@ export type AppScreen = "dashboard" | "map_selection" | "lobby" | "game";
 export let currentAppScreen: AppScreen = "dashboard";
 
 // Background smoke video reference (shared between gotoMapSelection and rerenderGameShell)
+const MAP_SELECTION_TRANSITION_VIDEO_SRC = new URL(
+  "../assets/chuyencanh.mp4",
+  import.meta.url
+).href;
 let bgSmokeVideo: HTMLVideoElement | null = null;
 
 function transitionToScreen(newScreen: AppScreen) {
@@ -7494,7 +7472,7 @@ let isTransitioning = false;
 
   // 1. Create overlay video — plays from beginning (smoke effect)
   const vid = document.createElement("video");
-  vid.src = "./assets/chuyencanh.mp4";
+  vid.src = MAP_SELECTION_TRANSITION_VIDEO_SRC;
   vid.muted = true;
   vid.playsInline = true;
   vid.style.cssText = [
@@ -7504,44 +7482,75 @@ let isTransitioning = false;
   ].join(";");
   document.body.appendChild(vid);
 
-  // Fade in the video overlay
-  vid.playbackRate = 1.75;
-  void vid.play().catch(() => { vid.muted = true; vid.playbackRate = 1.75; void vid.play(); });
-  requestAnimationFrame(() => { requestAnimationFrame(() => { vid.style.opacity = "1"; }); });
-
   let transitioned = false;
+  let fallbackTimer: number | null = null;
 
-  vid.addEventListener("timeupdate", () => {
-    // 2. When smoke covers screen (~3.5s), swap to map selection
-    if (!transitioned && vid.currentTime >= 3.5) {
-      transitioned = true;
-      isTransitioning = false;
+  const enterMapSelection = (keepVideoAsBackground: boolean) => {
+    if (transitioned) return;
+
+    transitioned = true;
+    isTransitioning = false;
+
+    if (fallbackTimer !== null) {
+      window.clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }
+
+    vid.removeEventListener("timeupdate", handleTransitionProgress);
+    vid.removeEventListener("error", handleTransitionError);
+    vid.remove();
+
+    if (keepVideoAsBackground) {
       bgSmokeVideo = vid;
-
-      // Remove from body — rerenderGameShell will re-insert it into the screen
-      document.body.removeChild(vid);
       vid.style.cssText = [
         "position:absolute", "inset:0", "width:100%", "height:100%",
         "object-fit:cover", "z-index:0", "pointer-events:none", "opacity:1"
       ].join(";");
-
-      currentAppScreen = "map_selection";
-      rerenderGameShell();
-
-      // 3. Animate map card columns in — staggered slide from right
-      requestAnimationFrame(() => {
-        const cols = document.querySelectorAll(".map-card-col");
-        cols.forEach((el, i) => {
-          setTimeout(() => el.classList.add("map-card-col--slide-in"), 200 + i * 140);
-        });
-      });
+    } else {
+      vid.pause();
+      bgSmokeVideo = null;
     }
 
-    // 4. Loop from second 5 to avoid smoke replaying
+    currentAppScreen = "map_selection";
+    rerenderGameShell();
+
+    requestAnimationFrame(() => {
+      const cols = document.querySelectorAll(".map-card-col");
+      cols.forEach((el, i) => {
+        setTimeout(() => el.classList.add("map-card-col--slide-in"), 200 + i * 140);
+      });
+    });
+  };
+
+  const handleTransitionError = () => {
+    console.warn("Map transition video could not be loaded; continuing without it.");
+    enterMapSelection(false);
+  };
+
+  function handleTransitionProgress() {
+    if (vid.currentTime >= 3.5) {
+      enterMapSelection(true);
+      return;
+    }
+
+    // Loop from second 5 to avoid smoke replaying on the map screen.
     if (vid.duration && vid.currentTime >= vid.duration - 0.5) {
       vid.currentTime = 5;
     }
-  });
+  }
+
+  vid.addEventListener("timeupdate", handleTransitionProgress);
+  vid.addEventListener("error", handleTransitionError, { once: true });
+
+  // Fade in the video overlay. If playback is blocked, continue immediately.
+  vid.playbackRate = 1.75;
+  void vid.play().catch(handleTransitionError);
+  requestAnimationFrame(() => { requestAnimationFrame(() => { vid.style.opacity = "1"; }); });
+
+  // A slow or stalled media request must never leave the interface blocked.
+  fallbackTimer = window.setTimeout(() => {
+    enterMapSelection(vid.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA);
+  }, 6000);
 };
 
 (window as any).gotoOnlineLobby = () => {
