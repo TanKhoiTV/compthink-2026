@@ -14754,3 +14754,433 @@ body,
     flex: 1 1 0;
   }
 }
+
+/* ==========================================================================
+   TRANSPARENT TRAVEL CARD FRAMES
+   The frame PNG stays above the card photo; all data is positioned against
+   the native frame proportions so compact and focused cards share one face.
+   ========================================================================== */
+
+.hand-card {
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.hand-card--selected,
+.hand-card--selected:hover,
+.hand-card--draft-selected {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.hand-card--selected .framed-card-face,
+.hand-card--draft-selected .framed-card-face {
+  filter:
+    drop-shadow(0 0 3px rgba(255, 255, 255, 0.98))
+    drop-shadow(0 0 8px rgba(200, 155, 60, 0.95));
+}
+
+.focused-card-overlay {
+  padding: 16px 16px 64px;
+}
+
+.focused-card {
+  width: auto !important;
+  height: min(493px, calc(100vh - 96px), calc(145vw - 46px));
+  min-height: 0 !important;
+  aspect-ratio: 1021 / 1482;
+  display: block;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.framed-card-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  container-type: inline-size;
+  color: #354724;
+  user-select: none;
+
+  /* Action is the reference coordinate system. */
+  --frame-left: 0%;
+  --frame-top: 0%;
+  --frame-width: 100%;
+  --frame-height: 100%;
+  --photo-top: 18.3%;
+  --photo-left: 3.45%;
+  --photo-width: 93.1%;
+  --photo-height: 46.8%;
+  --name-top: 5.65%;
+  --name-left: 21.5%;
+  --name-width: 59.5%;
+  --name-height: 10.8%;
+  --vp-top: 13.2%;
+  --vp-right: 5.25%;
+  --vp-width: 9.7%;
+  --vp-height: 6.8%;
+  --pill-top: 65.45%;
+  --pill-height: 4.7%;
+  --environment-left: 36.7%;
+  --environment-width: 26.7%;
+  --rarity-left: 65.5%;
+  --rarity-width: 30.2%;
+  --cost-top: 72.85%;
+  --cost-width: 8%;
+  --cost-height: 5.7%;
+  --coin-left: 36.4%;
+  --stamina-left: 86%;
+  --description-top: 85.3%;
+  --description-left: 10.5%;
+  --description-width: 68.5%;
+  --description-height: 10.2%;
+}
+
+/*
+  The source PNGs do not share one internal grid. Each non-Action artwork gets
+  its own measured layout while the outer card keeps Action's current size.
+*/
+.framed-card-face--frame-food {
+  --photo-top: 19.35%;
+  --photo-left: 3.63%;
+  --photo-width: 93.03%;
+  --photo-height: 46.1%;
+  --name-top: 5.7%;
+  --name-left: 20.8%;
+  --name-width: 59.8%;
+  --vp-top: 13.3%;
+  --vp-right: 5.1%;
+  --pill-top: 66.5%;
+  --environment-left: 37%;
+  --environment-width: 26.5%;
+  --rarity-left: 65.7%;
+  --rarity-width: 30%;
+  --cost-top: 74.5%;
+  --coin-left: 36.55%;
+  --stamina-left: 86.1%;
+  --description-top: 85.7%;
+  --description-left: 10.6%;
+  --description-width: 68.2%;
+}
+
+.framed-card-face--frame-culture {
+  --photo-top: 19.42%;
+  --photo-left: 3.5%;
+  --photo-width: 92.9%;
+  --photo-height: 46%;
+  --name-top: 5.8%;
+  --name-left: 20.9%;
+  --name-width: 59%;
+  --vp-top: 13.3%;
+  --vp-right: 4.95%;
+  --pill-top: 66.1%;
+  --environment-left: 37.7%;
+  --environment-width: 25.8%;
+  --rarity-left: 65.4%;
+  --rarity-width: 30.5%;
+  --cost-top: 73.05%;
+  --coin-left: 38.43%;
+  --stamina-left: 86.2%;
+  --description-top: 85%;
+  --description-left: 9.8%;
+  --description-width: 69.2%;
+}
+
+.framed-card-face--frame-utility {
+  /* Utility includes 15px/9px transparent source padding; remove it here. */
+  --frame-left: -1.562%;
+  --frame-top: -0.607%;
+  --frame-width: 103.125%;
+  --frame-height: 100.607%;
+  --photo-top: 19.82%;
+  --photo-left: 4.02%;
+  --photo-width: 92.08%;
+  --photo-height: 46.8%;
+  --name-top: 5.7%;
+  --name-left: 20.5%;
+  --name-width: 59.3%;
+  --vp-top: 14%;
+  --vp-right: 4.3%;
+  --pill-top: 67.8%;
+  --environment-left: 37.2%;
+  --environment-width: 26%;
+  --rarity-left: 65.7%;
+  --rarity-width: 30.2%;
+  --cost-top: 74.7%;
+  --coin-left: 36.2%;
+  --stamina-left: 85.75%;
+  --description-top: 85.6%;
+  --description-left: 10%;
+  --description-width: 68.5%;
+}
+
+.framed-card-face__photo {
+  position: absolute;
+  z-index: 0;
+  top: var(--photo-top);
+  left: var(--photo-left);
+  width: var(--photo-width);
+  height: var(--photo-height);
+  border-radius: 4.5%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.framed-card-face__frame {
+  position: absolute;
+  z-index: 1;
+  top: var(--frame-top);
+  left: var(--frame-left);
+  width: var(--frame-width);
+  height: var(--frame-height);
+  object-fit: fill;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.framed-card-face__name,
+.framed-card-face__vp,
+.framed-card-face__pill,
+.framed-card-face__cost,
+.framed-card-face__description {
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  color: #354724;
+  font-family: inherit;
+  text-rendering: geometricPrecision;
+  pointer-events: none;
+}
+
+.framed-card-face__name {
+  top: var(--name-top);
+  left: var(--name-left);
+  width: var(--name-width);
+  height: var(--name-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
+}
+
+.framed-card-face__name span {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.framed-card-face__vp {
+  top: var(--vp-top);
+  right: var(--vp-right);
+  width: var(--vp-width);
+  height: var(--vp-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f5f2cf;
+  font-weight: 1000;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(30, 45, 17, 0.72);
+  transform: translateY(-10%);
+}
+
+.framed-card-face__pill {
+  top: var(--pill-top);
+  height: var(--pill-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 2.5%;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.framed-card-face__pill--environment {
+  left: var(--environment-left);
+  width: var(--environment-width);
+  padding-inline: 1.2%;
+}
+
+.framed-card-face__pill--rarity {
+  left: var(--rarity-left);
+  width: var(--rarity-width);
+  letter-spacing: -0.08em;
+}
+
+.framed-card-face__cost {
+  top: var(--cost-top);
+  width: var(--cost-width);
+  height: var(--cost-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #405029;
+  font-weight: 1000;
+  line-height: 1;
+  text-align: center;
+  transform: translateY(-10%);
+}
+
+.framed-card-face__cost--coin {
+  left: var(--coin-left);
+}
+
+.framed-card-face__cost--stamina {
+  left: var(--stamina-left);
+}
+
+.framed-card-face__description {
+  top: var(--description-top);
+  left: var(--description-left);
+  width: var(--description-width);
+  height: var(--description-height);
+  display: block;
+  overflow: hidden;
+  color: #344326;
+  font-weight: 700;
+  text-align: left;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.52);
+  z-index: 3;
+}
+
+.framed-card-face--hand .framed-card-face__name {
+  font-size: 6.6cqw;
+  line-height: 1.02;
+}
+
+.framed-card-face--hand .framed-card-face__name--sm {
+  font-size: 5.8cqw;
+}
+
+.framed-card-face--hand .framed-card-face__name--xs {
+  font-size: 5.2cqw;
+}
+
+.framed-card-face--hand .framed-card-face__vp {
+  font-size: 6.9cqw;
+}
+
+.framed-card-face--hand .framed-card-face__cost {
+  font-size: 4.8cqw;
+}
+
+.framed-card-face--hand .framed-card-face__pill {
+  font-size: 4.3cqw;
+}
+
+.framed-card-face--hand .framed-card-face__pill--environment {
+  font-size: 3.8cqw;
+}
+
+.framed-card-face--hand .framed-card-face__description {
+  font-size: 3.5cqw;
+  line-height: 1.12;
+}
+
+.framed-card-face--focused .framed-card-face__name {
+  font-size: 18px;
+  line-height: 1.04;
+}
+
+.framed-card-face--focused .framed-card-face__name--sm {
+  font-size: 16px;
+}
+
+.framed-card-face--focused .framed-card-face__name--xs {
+  font-size: 14px;
+}
+
+.framed-card-face--focused .framed-card-face__vp {
+  font-size: 18px;
+}
+
+.framed-card-face--focused .framed-card-face__cost {
+  font-size: 13px;
+}
+
+.framed-card-face--focused .framed-card-face__pill {
+  font-size: 11px;
+}
+
+.framed-card-face--focused .framed-card-face__pill--environment {
+  font-size: 10.5px;
+}
+
+.framed-card-face--focused .framed-card-face__description {
+  font-size: 8px;
+  line-height: 1.18;
+}
+
+.hand-card__close,
+.focused-card__close {
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #eef0d4;
+  background: #435326;
+  color: #fffce5;
+  box-shadow: 0 3px 8px rgba(27, 37, 16, 0.42);
+}
+
+.hand-card__close {
+  top: -5px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 16px;
+}
+
+.focused-card__close {
+  top: -10px;
+  right: -10px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 24px;
+}
+
+.focused-card__return-button {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: -48px;
+  transform: translateX(-50%);
+  min-width: 150px;
+  padding: 10px 18px;
+  border: 2px solid #eef0d4;
+  border-radius: 999px;
+  background: #435326;
+  color: #fffce5;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 7px 18px rgba(20, 29, 12, 0.35);
+}
