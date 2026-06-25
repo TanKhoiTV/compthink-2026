@@ -26,7 +26,8 @@ export function renderMapSelectionScreen() {
 
         <div class="map-grid">
 
-          ${renderMapCardWrapper(`
+          ${
+    renderMapCardWrapper(`
             <div class="map-card map-card--active">
               <div class="map-card__bg" style="background-image: url('./assets/saigon.jpg')"></div>
               <div class="map-card__overlay"></div>
@@ -42,9 +43,11 @@ export function renderMapSelectionScreen() {
                 </div>
               </div>
             </div>
-          `)}
+          `)
+  }
 
-          ${renderMapCardWrapper(`
+          ${
+    renderMapCardWrapper(`
             <div class="map-card map-card--locked">
               <div class="map-card__bg" style="background-image: url('./assets/danang.jpg')"></div>
               <div class="map-card__overlay"></div>
@@ -56,9 +59,11 @@ export function renderMapSelectionScreen() {
                 </div>
               </div>
             </div>
-          `)}
+          `)
+  }
 
-          ${renderMapCardWrapper(`
+          ${
+    renderMapCardWrapper(`
             <div class="map-card map-card--locked">
               <div class="map-card__bg" style="background-image: url('./assets/hanoi.jpeg')"></div>
               <div class="map-card__overlay"></div>
@@ -70,9 +75,11 @@ export function renderMapSelectionScreen() {
                 </div>
               </div>
             </div>
-          `)}
+          `)
+  }
 
-          ${renderMapCardWrapper(`
+          ${
+    renderMapCardWrapper(`
             <div class="map-card map-card--locked">
               <div class="map-card__bg" style="background-image: url('https://images.unsplash.com/photo-1599839619722-39751411ea63?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')"></div>
               <div class="map-card__overlay"></div>
@@ -84,7 +91,8 @@ export function renderMapSelectionScreen() {
                 </div>
               </div>
             </div>
-          `)}
+          `)
+  }
 
         </div>
       </div>

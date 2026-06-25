@@ -144,9 +144,11 @@ export function calculateScoreBreakdown({
 }
 
 function getBoardTokenType(card: TravelCardData | null) {
-  return (card as TravelCardData & {
-    boardTokenType?: "debt" | "lock";
-  } | null)?.boardTokenType ?? null;
+  return (card as
+    | TravelCardData & {
+      boardTokenType?: "debt" | "lock";
+    }
+    | null)?.boardTokenType ?? null;
 }
 
 function isDebtTokenCard(card: TravelCardData | null) {
@@ -158,9 +160,11 @@ function isLockTokenCard(card: TravelCardData | null) {
 }
 
 function getDebtTokenAmount(card: TravelCardData | null) {
-  return (card as TravelCardData & {
-    debtAmount?: number;
-  } | null)?.debtAmount ?? 0;
+  return (card as
+    | TravelCardData & {
+      debtAmount?: number;
+    }
+    | null)?.debtAmount ?? 0;
 }
 
 export function buildSimulationReplaySteps({
@@ -260,15 +264,28 @@ export function buildSimulationReplaySteps({
     const tagKeys = getCardTagKeys(card);
     let comboText = "";
 
-    if (tagKeys.includes("FOOD") && countCardsWithTag(currentDayCards, "FOOD") >= 2) {
+    if (
+      tagKeys.includes("FOOD") &&
+      countCardsWithTag(currentDayCards, "FOOD") >= 2
+    ) {
       comboText = "Combo Ẩm thực đang kích hoạt";
-    } else if (tagKeys.includes("CULTURE") && countCardsWithTag(currentDayCards, "CULTURE") >= 2) {
+    } else if (
+      tagKeys.includes("CULTURE") &&
+      countCardsWithTag(currentDayCards, "CULTURE") >= 2
+    ) {
       comboText = "Combo Văn hóa đang kích hoạt";
-    } else if (tagKeys.includes("ACTION") && countCardsWithTag(currentDayCards, "ACTION") >= 2) {
+    } else if (
+      tagKeys.includes("ACTION") &&
+      countCardsWithTag(currentDayCards, "ACTION") >= 2
+    ) {
       comboText = "Chuỗi Khám phá đang kích hoạt";
     }
 
-    const randomEvent = getDeterministicRandomScanEvent(card, dayIndex, rowIndex);
+    const randomEvent = getDeterministicRandomScanEvent(
+      card,
+      dayIndex,
+      rowIndex,
+    );
     const distanceEvent = previousCard
       ? getDistanceEvent(previousCard, card, dayIndex, rowIndex)
       : null;
@@ -365,7 +382,9 @@ export function calculateSimulationResult({
       .filter((card) => card !== null).length;
 
     if (filledInRow >= 4) {
-      warnings.push(`${rows[rowIndex]} có lịch dày, nên chừa ô nghỉ/di chuyển.`);
+      warnings.push(
+        `${rows[rowIndex]} có lịch dày, nên chừa ô nghỉ/di chuyển.`,
+      );
     }
   }
 
@@ -388,8 +407,7 @@ export function calculateSimulationResult({
   }, 0);
   const comboOnlyVP = breakdown.bonusVP;
 
-  const finalVP =
-    replayBaseAndEventVP +
+  const finalVP = replayBaseAndEventVP +
     comboOnlyVP;
 
   return {
@@ -435,14 +453,18 @@ function hashStringToUnit(input: string): number {
 function getDeterministicRandomScanEvent(
   card: TravelCardData,
   dayIndex: number,
-  rowIndex: number
+  rowIndex: number,
 ): ScanEventResult | null {
-  const roll = hashStringToUnit(`${card.id}|${dayIndex}|${rowIndex}|scan-event`);
+  const roll = hashStringToUnit(
+    `${card.id}|${dayIndex}|${rowIndex}|scan-event`,
+  );
 
   // Mỗi ô có 15% cơ hội gặp random event.
   if (roll >= 0.15) return null;
 
-  const eventRoll = hashStringToUnit(`${card.id}|${dayIndex}|${rowIndex}|event-type`);
+  const eventRoll = hashStringToUnit(
+    `${card.id}|${dayIndex}|${rowIndex}|event-type`,
+  );
 
   if (eventRoll < 1 / 3) {
     return {
@@ -473,7 +495,9 @@ function getDeterministicRandomScanEvent(
   };
 }
 
-function getCardLocation(card: TravelCardData): { lat: number; lng: number } | null {
+function getCardLocation(
+  card: TravelCardData,
+): { lat: number; lng: number } | null {
   const rawCard = card as TravelCardData & {
     lat?: number;
     lng?: number;
@@ -506,7 +530,7 @@ function getPseudoDistanceKm(
   previousCard: TravelCardData,
   currentCard: TravelCardData,
   dayIndex: number,
-  rowIndex: number
+  rowIndex: number,
 ) {
   const previousLocation = getCardLocation(previousCard);
   const currentLocation = getCardLocation(currentCard);
@@ -520,19 +544,32 @@ function getPseudoDistanceKm(
     dùng city khác nhau + hash ổn định để prototype vẫn test được luật khoảng cách.
   */
   if (previousCard.city !== currentCard.city) {
-    return 22 + Math.round(hashStringToUnit(`${previousCard.id}|${currentCard.id}|distance`) * 18);
+    return 22 +
+      Math.round(
+        hashStringToUnit(`${previousCard.id}|${currentCard.id}|distance`) * 18,
+      );
   }
 
-  return 4 + Math.round(hashStringToUnit(`${previousCard.id}|${currentCard.id}|same-city|${dayIndex}|${rowIndex}`) * 12);
+  return 4 +
+    Math.round(
+      hashStringToUnit(
+        `${previousCard.id}|${currentCard.id}|same-city|${dayIndex}|${rowIndex}`,
+      ) * 12,
+    );
 }
 
 function getDistanceEvent(
   previousCard: TravelCardData,
   currentCard: TravelCardData,
   dayIndex: number,
-  rowIndex: number
+  rowIndex: number,
 ): ScanEventResult | null {
-  const distanceKm = getPseudoDistanceKm(previousCard, currentCard, dayIndex, rowIndex);
+  const distanceKm = getPseudoDistanceKm(
+    previousCard,
+    currentCard,
+    dayIndex,
+    rowIndex,
+  );
 
   if (distanceKm <= 20) return null;
 
@@ -548,7 +585,7 @@ function getDistanceEvent(
 
 function calculateDistanceKm(
   from: { lat: number; lng: number },
-  to: { lat: number; lng: number }
+  to: { lat: number; lng: number },
 ) {
   const earthRadiusKm = 6371;
   const deltaLat = toRadians(to.lat - from.lat);
@@ -556,11 +593,12 @@ function calculateDistanceKm(
   const lat1 = toRadians(from.lat);
   const lat2 = toRadians(to.lat);
 
-  const a =
-    Math.sin(deltaLat / 2) ** 2 +
+  const a = Math.sin(deltaLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
 
-  return Math.round(earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  return Math.round(
+    earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)),
+  );
 }
 
 function toRadians(value: number) {

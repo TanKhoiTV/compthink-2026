@@ -54,7 +54,14 @@ export type PlayerPublicState = {
 
 export type OnlineRoomState = {
   roomId: string;
-  phase: "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover";
+  phase:
+    | "lobby"
+    | "cinematic"
+    | "draft"
+    | "planning"
+    | "simulation"
+    | "result"
+    | "gameover";
   phaseNumber: number;
   dayIndex: number;
   draftRound: number;
@@ -202,7 +209,6 @@ function clearLegacySharedOnlineSession() {
 
 clearLegacySharedOnlineSession();
 
-
 function saveOnlineSession(playerName?: string) {
   if (!onlineClientState.roomId || !onlineClientState.playerId) return;
 
@@ -218,8 +224,11 @@ function saveOnlineSession(playerName?: string) {
     JSON.stringify({
       roomId: onlineClientState.roomId,
       playerId: onlineClientState.playerId,
-      playerName: playerName ?? onlineClientState.roomState?.players[onlineClientState.playerId]?.name ?? "Player",
-    })
+      playerName: playerName ??
+        onlineClientState.roomState?.players[onlineClientState.playerId]
+          ?.name ??
+        "Player",
+    }),
   );
 }
 
@@ -248,11 +257,9 @@ export function clearSavedOnlineSession() {
   onlineClientState.roomState = null;
 }
 
-
-
 export function initOnlineClient(
   onStateChange: () => void,
-  onGameError?: (message: string) => void
+  onGameError?: (message: string) => void,
 ) {
   const savedUser = loadSavedAuthUser();
 
@@ -293,7 +300,9 @@ export function initOnlineClient(
   });
 
   socket.on("connect_error", () => {
-    console.warn("Không kết nối được socket server. Kiểm tra server port 3001.");
+    console.warn(
+      "Không kết nối được socket server. Kiểm tra server port 3001.",
+    );
   });
 
   socket.on("room:left", () => {
@@ -323,8 +332,11 @@ export function joinOnlineRoom(roomId: string, playerName: string) {
   });
 }
 
-
-export function reconnectOnlineRoom(roomId: string, playerId: PlayerId, playerName: string) {
+export function reconnectOnlineRoom(
+  roomId: string,
+  playerId: PlayerId,
+  playerName: string,
+) {
   socket.emit("room:reconnect", {
     roomId,
     playerId,
@@ -344,7 +356,6 @@ export function setOnlineReady(isReady: boolean) {
   });
 }
 
-
 export function leaveOnlineRoom() {
   if (!onlineClientState.roomId || !onlineClientState.playerId) {
     clearSavedOnlineSession();
@@ -358,8 +369,6 @@ export function leaveOnlineRoom() {
 
   clearSavedOnlineSession();
 }
-
-
 
 export function startOnlineGame() {
   if (!onlineClientState.roomId || !onlineClientState.playerId) {
@@ -405,13 +414,19 @@ export function confirmOnlinePlanning() {
   }
 
   if (!socket.connected) {
-    throw new Error("Mất kết nối server. Hãy chạy server port 3001 rồi reload trang.");
+    throw new Error(
+      "Mất kết nối server. Hãy chạy server port 3001 rồi reload trang.",
+    );
   }
 
   const savedSession = getSavedOnlineSession();
 
   if (savedSession) {
-    reconnectOnlineRoom(savedSession.roomId, savedSession.playerId, savedSession.playerName);
+    reconnectOnlineRoom(
+      savedSession.roomId,
+      savedSession.playerId,
+      savedSession.playerName,
+    );
   }
 
   socket.emit("planning:confirm", {
@@ -443,7 +458,6 @@ export function sendPlaceCard(payload: {
   });
 }
 
-
 export function sendDiscardCard(payload: {
   cardId: string;
   coin?: number;
@@ -461,7 +475,6 @@ export function sendDiscardCard(payload: {
   });
 }
 
-
 export function sendPayDebt(payload: {
   amount?: number;
   rowIndex?: number;
@@ -477,7 +490,6 @@ export function sendPayDebt(payload: {
     ...payload,
   });
 }
-
 
 export function sendReturnBoardCard(payload: {
   rowIndex: number;

@@ -35,7 +35,7 @@ export function getPlacedCards(boardSlots: BoardSlots): TravelCardData[] {
 
 export function getCurrentDayPlacedCards(
   boardSlots: BoardSlots,
-  dayIndex: number
+  dayIndex: number,
 ): TravelCardData[] {
   const cards: TravelCardData[] = [];
 
@@ -53,7 +53,7 @@ export function getCurrentDayPlacedCards(
 export function getBoardCardByPosition(
   boardSlots: BoardSlots,
   rowIndex: number,
-  colIndex: number
+  colIndex: number,
 ): TravelCardData | null {
   return boardSlots[rowIndex]?.[colIndex] ?? null;
 }
@@ -66,6 +66,9 @@ export function getCardTagKeys(card: TravelCardData): string[] {
   return [card.tag.toUpperCase()];
 }
 
-export function countCardsWithTag(cards: TravelCardData[], tag: string): number {
+export function countCardsWithTag(
+  cards: TravelCardData[],
+  tag: string,
+): number {
   return cards.filter((card) => getCardTagKeys(card).includes(tag)).length;
 }

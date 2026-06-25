@@ -35,7 +35,7 @@ export function getActiveDraftPlayerIndex(): number {
 
 export function getCurrentDraftPlayer(
   draftPlayers: DraftPlayerState[],
-  activeIndex = getActiveDraftPlayerIndex()
+  activeIndex = getActiveDraftPlayerIndex(),
 ): DraftPlayerState | undefined {
   return draftPlayers[activeIndex];
 }
@@ -48,7 +48,7 @@ export function pickRandomCard(cards: TravelCardData[]): TravelCardData | null {
 }
 
 export function rotateDraftPoolsClockwise(
-  draftPlayers: DraftPlayerState[]
+  draftPlayers: DraftPlayerState[],
 ): DraftPlayerState[] {
   const oldPools = draftPlayers.map((player) => [...player.pool]);
 
@@ -63,7 +63,8 @@ export function rotateDraftPoolsClockwise(
 }
 
 function getPrimaryDraftTag(card: TravelCardData): string {
-  const rawId = String(card.id ?? (card as { card_id?: string }).card_id ?? "").toUpperCase();
+  const rawId = String(card.id ?? (card as { card_id?: string }).card_id ?? "")
+    .toUpperCase();
 
   if (rawId.includes("_CULT_") || rawId.startsWith("SG_CULT")) return "CULTURE";
   if (rawId.includes("_ACT_") || rawId.startsWith("SG_ACT")) return "ACTION";
@@ -102,7 +103,7 @@ function shuffleGeneric<T>(items: T[]): T[] {
 
 function createBalancedRandomDeck(
   cards: TravelCardData[],
-  shuffleCards: (cards: TravelCardData[]) => TravelCardData[]
+  shuffleCards: (cards: TravelCardData[]) => TravelCardData[],
 ): TravelCardData[] {
   const buckets = new Map<string, TravelCardData[]>();
 
@@ -154,7 +155,10 @@ export function createDailyDraftPlayers({
   */
   const requiredCards = playerCount * handSize;
   const draftDeck = createBalancedRandomDeck(deck, shuffleCards);
-  const dailyCards = draftDeck.slice(0, Math.min(requiredCards, draftDeck.length));
+  const dailyCards = draftDeck.slice(
+    0,
+    Math.min(requiredCards, draftDeck.length),
+  );
   const nextDeck = draftDeck.slice(dailyCards.length);
   const names = getDraftPlayerNames();
 

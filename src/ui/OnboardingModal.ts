@@ -92,7 +92,10 @@ export function renderOnboardingModal(options: OnboardingModalOptions = {}) {
 
   const steps = options.steps?.length ? options.steps : ONBOARDING_STEPS;
   const title = options.title || DEFAULT_ONBOARDING_TITLE;
-  const stepIndex = Math.max(0, Math.min(onboardingStepIndex, steps.length - 1));
+  const stepIndex = Math.max(
+    0,
+    Math.min(onboardingStepIndex, steps.length - 1),
+  );
   const step = steps[stepIndex];
 
   return `
@@ -107,22 +110,34 @@ export function renderOnboardingModal(options: OnboardingModalOptions = {}) {
       >
         <button type="button" class="onboarding-modal__close" data-onboarding-close aria-label="Đóng hướng dẫn">×</button>
         <p class="onboarding-modal__eyebrow">Hướng dẫn nhanh</p>
-        <h2 id="onboarding-title" class="onboarding-modal__title">${escapeHtml(title)}</h2>
+        <h2 id="onboarding-title" class="onboarding-modal__title">${
+    escapeHtml(title)
+  }</h2>
         <div class="onboarding-modal__step" aria-live="polite">
-          <strong class="onboarding-modal__count">Bước ${stepIndex + 1}/${steps.length}</strong>
+          <strong class="onboarding-modal__count">Bước ${
+    stepIndex + 1
+  }/${steps.length}</strong>
           <h3>${escapeHtml(step.title)}</h3>
           <p id="onboarding-description">${escapeHtml(step.description)}</p>
         </div>
         <div class="onboarding-modal__dots" aria-label="Tiến trình hướng dẫn">
-          ${steps
-            .map(
-              (_, index) =>
-                `<button type="button" class="onboarding-modal__dot ${index === stepIndex ? "is-active" : ""}" data-onboarding-dot="${index}" aria-label="Đến bước ${index + 1}"></button>`
-            )
-            .join("")}
+          ${
+    steps
+      .map(
+        (_, index) =>
+          `<button type="button" class="onboarding-modal__dot ${
+            index === stepIndex ? "is-active" : ""
+          }" data-onboarding-dot="${index}" aria-label="Đến bước ${
+            index + 1
+          }"></button>`,
+      )
+      .join("")
+  }
         </div>
         <div class="onboarding-modal__actions">
-          <button type="button" class="onboarding-modal__nav" data-onboarding-prev ${stepIndex === 0 ? "disabled" : ""}>Quay lại</button>
+          <button type="button" class="onboarding-modal__nav" data-onboarding-prev ${
+    stepIndex === 0 ? "disabled" : ""
+  }>Quay lại</button>
           <button type="button" class="onboarding-modal__nav onboarding-modal__nav--primary" data-onboarding-next>
             ${stepIndex === steps.length - 1 ? "Hoàn tất" : "Tiếp"}
           </button>
@@ -136,18 +151,25 @@ function closeOnboardingModal() {
   isOnboardingOpen = false;
   onboardingStepIndex = 0;
   document.body.classList.remove("onboarding-modal-open");
-  document.querySelectorAll<HTMLElement>("[data-onboarding-backdrop]").forEach((modal) => modal.remove());
+  document.querySelectorAll<HTMLElement>("[data-onboarding-backdrop]").forEach((
+    modal,
+  ) => modal.remove());
 }
 
 function setOnboardingStep(index: number) {
-  onboardingStepIndex = Math.max(0, Math.min(index, ONBOARDING_STEPS.length - 1));
+  onboardingStepIndex = Math.max(
+    0,
+    Math.min(index, ONBOARDING_STEPS.length - 1),
+  );
 }
 
 function refreshOnboardingModal() {
   const markup = renderOnboardingModal();
   if (!markup) return;
 
-  const existingModals = Array.from(document.querySelectorAll<HTMLElement>("[data-onboarding-backdrop]"));
+  const existingModals = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-onboarding-backdrop]"),
+  );
   const firstModal = existingModals.shift();
 
   existingModals.forEach((modal) => modal.remove());
@@ -162,20 +184,39 @@ function refreshOnboardingModal() {
 }
 
 function updateOnboardingModalContent(backdrop: HTMLElement) {
-  const stepIndex = Math.max(0, Math.min(onboardingStepIndex, ONBOARDING_STEPS.length - 1));
+  const stepIndex = Math.max(
+    0,
+    Math.min(onboardingStepIndex, ONBOARDING_STEPS.length - 1),
+  );
   const step = ONBOARDING_STEPS[stepIndex];
   const count = backdrop.querySelector<HTMLElement>(".onboarding-modal__count");
-  const title = backdrop.querySelector<HTMLElement>(".onboarding-modal__step h3");
-  const description = backdrop.querySelector<HTMLElement>("#onboarding-description");
-  const prevButton = backdrop.querySelector<HTMLButtonElement>("[data-onboarding-prev]");
-  const nextButton = backdrop.querySelector<HTMLButtonElement>("[data-onboarding-next]");
-  const dots = Array.from(backdrop.querySelectorAll<HTMLButtonElement>("[data-onboarding-dot]"));
+  const title = backdrop.querySelector<HTMLElement>(
+    ".onboarding-modal__step h3",
+  );
+  const description = backdrop.querySelector<HTMLElement>(
+    "#onboarding-description",
+  );
+  const prevButton = backdrop.querySelector<HTMLButtonElement>(
+    "[data-onboarding-prev]",
+  );
+  const nextButton = backdrop.querySelector<HTMLButtonElement>(
+    "[data-onboarding-next]",
+  );
+  const dots = Array.from(
+    backdrop.querySelectorAll<HTMLButtonElement>("[data-onboarding-dot]"),
+  );
 
-  if (count) count.textContent = `Bước ${stepIndex + 1}/${ONBOARDING_STEPS.length}`;
+  if (count) {
+    count.textContent = `Bước ${stepIndex + 1}/${ONBOARDING_STEPS.length}`;
+  }
   if (title) title.textContent = step.title;
   if (description) description.textContent = step.description;
   if (prevButton) prevButton.disabled = stepIndex === 0;
-  if (nextButton) nextButton.textContent = stepIndex === ONBOARDING_STEPS.length - 1 ? "Hoàn tất" : "Tiếp";
+  if (nextButton) {
+    nextButton.textContent = stepIndex === ONBOARDING_STEPS.length - 1
+      ? "Hoàn tất"
+      : "Tiếp";
+  }
 
   dots.forEach((dot, index) => {
     dot.classList.toggle("is-active", index === stepIndex);

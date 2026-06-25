@@ -5,7 +5,7 @@
    ============================================== */
 
 :root {
-  --map-accent:   #9a7c57;
+  --map-accent: #9a7c57;
   --map-accent-h: #b89167;
 }
 
@@ -19,7 +19,7 @@
   flex-direction: column;
   overflow: hidden;
   color: #4e3a2b;
-  background: #1a1410;   /* nền tối để video/ảnh hiện ra đẹp */
+  background: #1a1410; /* nền tối để video/ảnh hiện ra đẹp */
 }
 
 /* ── Topbar ──────────────────────────────────── */
@@ -36,7 +36,11 @@
   padding: 0 36px;
   z-index: 20;
   /* trong suốt, nổi lên trên video */
-  background: linear-gradient(to bottom, rgba(20,14,10,0.72) 0%, transparent 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(20, 14, 10, 0.72) 0%,
+    transparent 100%
+  );
 }
 
 .hub-topbar__logo {
@@ -44,7 +48,7 @@
   font-weight: 900;
   letter-spacing: 3px;
   color: #fff;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
 .hub-topbar__nav {
@@ -53,9 +57,9 @@
 }
 
 .hub-topbar__nav button {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -67,7 +71,7 @@
 }
 
 .hub-topbar__nav button:hover {
-  background: rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
@@ -80,11 +84,11 @@
 .hub-topbar__user {
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255, 255, 255, 0.92);
   padding: 5px 14px;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(6px);
 }
 
@@ -100,23 +104,23 @@
 }
 
 .hub-topbar__guest {
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(154,124,87,0.32);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(154, 124, 87, 0.32);
   color: #fff;
 }
 
 .hub-topbar__guest:hover {
-  background: rgba(154,124,87,0.52);
+  background: rgba(154, 124, 87, 0.52);
 }
 
 .hub-topbar__logout {
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.82);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .hub-topbar__logout:hover {
-  background: rgba(255,255,255,0.14);
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
@@ -175,10 +179,28 @@
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 90% 70% at 18% 78%, rgba(15,10,6,0.18) 0%, transparent 58%),
-    radial-gradient(ellipse 55% 45% at 88% 18%, rgba(154,124,87,0.12) 0%, transparent 62%),
-    linear-gradient(to right, rgba(12,8,5,0.72) 0%, rgba(12,8,5,0.28) 42%, rgba(12,8,5,0.08) 100%),
-    linear-gradient(to top, rgba(10,7,4,0.88) 0%, rgba(10,7,4,0.34) 38%, transparent 72%);
+    radial-gradient(
+      ellipse 90% 70% at 18% 78%,
+      rgba(15, 10, 6, 0.18) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+    ellipse 55% 45% at 88% 18%,
+    rgba(154, 124, 87, 0.12) 0%,
+    transparent 62%
+  ),
+    linear-gradient(
+    to right,
+    rgba(12, 8, 5, 0.72) 0%,
+    rgba(12, 8, 5, 0.28) 42%,
+    rgba(12, 8, 5, 0.08) 100%
+  ),
+    linear-gradient(
+    to top,
+    rgba(10, 7, 4, 0.88) 0%,
+    rgba(10, 7, 4, 0.34) 38%,
+    transparent 72%
+  );
 }
 
 .hub-hero__hitarea {
@@ -200,25 +222,25 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(12,8,5,0.58);
-  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(12, 8, 5, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(8px);
   border-radius: 999px;
   padding: 4px 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
   transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .hub-hero__audio-controls:hover {
-  background: rgba(12,8,5,0.74);
-  border-color: rgba(255,255,255,0.24);
+  background: rgba(12, 8, 5, 0.74);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
 .hub-hero__video-volume {
   width: 80px;
   height: 4px;
   -webkit-appearance: none;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -237,7 +259,7 @@
   border-radius: 50%;
   background: #fff;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .hub-hero__video-mute {
@@ -247,7 +269,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255, 255, 255, 0.92);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -296,16 +318,28 @@
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(154,124,87,0.18) 0%, transparent 45%),
-    radial-gradient(circle at 80% 20%, rgba(198,173,143,0.12) 0%, transparent 40%),
-    radial-gradient(circle at 60% 80%, rgba(154,124,87,0.10) 0%, transparent 35%);
+    radial-gradient(
+      circle at 20% 50%,
+      rgba(154, 124, 87, 0.18) 0%,
+      transparent 45%
+    ),
+    radial-gradient(
+    circle at 80% 20%,
+    rgba(198, 173, 143, 0.12) 0%,
+    transparent 40%
+  ),
+    radial-gradient(
+    circle at 60% 80%,
+    rgba(154, 124, 87, 0.10) 0%,
+    transparent 35%
+  );
   /* gợi cảm giác bản đồ hoặc địa hình */
   mask-image: repeating-linear-gradient(
     -45deg,
     transparent,
     transparent 2px,
-    rgba(255,255,255,0.015) 2px,
-    rgba(255,255,255,0.015) 4px
+    rgba(255, 255, 255, 0.015) 2px,
+    rgba(255, 255, 255, 0.015) 4px
   );
 }
 
@@ -339,14 +373,14 @@
   font-weight: 900;
   line-height: 1.05;
   color: #fff;
-  text-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
   margin-bottom: 16px;
   letter-spacing: -0.5px;
 }
 
 .hero-sub {
   font-size: 15px;
-  color: rgba(255,255,255,0.72);
+  color: rgba(255, 255, 255, 0.72);
   line-height: 1.65;
   margin-bottom: 32px;
   font-weight: 400;
@@ -365,18 +399,14 @@
   border: none;
   background: var(--map-accent);
   color: white;
-  box-shadow:
-    0 8px 24px rgba(0,0,0,0.35),
-    inset 0 -3px 0 rgba(0,0,0,0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 -3px 0 rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
 }
 
 .btn-play:hover {
   background: var(--map-accent-h);
   transform: translateY(-3px);
-  box-shadow:
-    0 14px 32px rgba(0,0,0,0.4),
-    inset 0 -3px 0 rgba(0,0,0,0.2);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4), inset 0 -3px 0 rgba(0, 0, 0, 0.2);
 }
 
 .btn-play:active {
@@ -386,7 +416,7 @@
 .hero-auth-hint {
   margin-top: 14px;
   font-size: 12px;
-  color: rgba(255,255,255,0.58);
+  color: rgba(255, 255, 255, 0.58);
   line-height: 1.5;
 }
 
@@ -450,7 +480,7 @@
   gap: 6px;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.55);
+  background: rgba(255, 255, 255, 0.55);
   border: 1px solid #e8dccb;
 }
 
@@ -484,7 +514,7 @@
   padding: 16px;
   border-radius: 14px;
   border: 1px solid #e8dccb;
-  background: rgba(255,255,255,0.72);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .hub-auth__panel.is-active {
@@ -506,7 +536,7 @@
   border: 1px solid #dcccb8;
   border-radius: 10px;
   padding: 11px 12px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255, 255, 255, 0.92);
   color: #3e2e22;
   font-size: 14px;
   font-weight: 700;
@@ -516,7 +546,7 @@
 
 .hub-auth__panel input:focus {
   border-color: var(--map-accent);
-  box-shadow: 0 0 0 3px rgba(154,124,87,0.18);
+  box-shadow: 0 0 0 3px rgba(154, 124, 87, 0.18);
 }
 
 .hub-auth__panel button[type="submit"] {
@@ -533,7 +563,7 @@
   background: linear-gradient(180deg, var(--map-accent-h), var(--map-accent));
   box-shadow:
     0 10px 22px rgba(80, 55, 25, 0.18),
-    inset 0 -2px 0 rgba(0,0,0,0.14);
+    inset 0 -2px 0 rgba(0, 0, 0, 0.14);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -541,7 +571,7 @@
   transform: translateY(-1px);
   box-shadow:
     0 14px 26px rgba(80, 55, 25, 0.22),
-    inset 0 -2px 0 rgba(0,0,0,0.14);
+    inset 0 -2px 0 rgba(0, 0, 0, 0.14);
 }
 
 .hub-auth__status {
@@ -566,11 +596,11 @@
 
 @keyframes hubAuthPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(154,124,87,0.28);
+    box-shadow: 0 0 0 0 rgba(154, 124, 87, 0.28);
   }
 
   100% {
-    box-shadow: 0 0 0 14px rgba(154,124,87,0);
+    box-shadow: 0 0 0 14px rgba(154, 124, 87, 0);
   }
 }
 
@@ -589,7 +619,9 @@
   overflow-x: hidden;
 }
 
-.hub-side::-webkit-scrollbar { width: 4px; }
+.hub-side::-webkit-scrollbar {
+  width: 4px;
+}
 .hub-side::-webkit-scrollbar-thumb {
   background: #d5c6ad;
   border-radius: 4px;
@@ -614,7 +646,7 @@
 /* ── News Items ──────────────────────────────── */
 
 .news-item {
-  background: rgba(255,255,255,0.65);
+  background: rgba(255, 255, 255, 0.65);
   border: 1px solid #e8dccb;
   padding: 14px 16px;
   border-radius: 10px;
@@ -623,7 +655,7 @@
 
 .news-item:hover {
   border-color: #c6ad8f;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 2px 12px rgba(78, 58, 43, 0.07);
   transform: translateX(-3px);
 }
@@ -640,11 +672,21 @@
   margin-bottom: 7px;
 }
 
-.news-badge--new      { background: #38d873; }
-.news-badge--culture  { background: #8b5cf6; }
-.news-badge--food     { background: #f97316; }
-.news-badge--nature   { background: #22c55e; }
-.news-badge--heritage { background: #0ea5e9; }
+.news-badge--new {
+  background: #38d873;
+}
+.news-badge--culture {
+  background: #8b5cf6;
+}
+.news-badge--food {
+  background: #f97316;
+}
+.news-badge--nature {
+  background: #22c55e;
+}
+.news-badge--heritage {
+  background: #0ea5e9;
+}
 
 .news-item h4 {
   font-size: 14px;
@@ -691,7 +733,7 @@
   width: 90%;
   max-height: 78vh;
   overflow-y: auto;
-  box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
   transform: translateY(14px);
   transition: transform 0.22s ease;
 }

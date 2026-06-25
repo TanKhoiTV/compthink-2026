@@ -35,13 +35,17 @@ let lastReturnSoundAt = 0;
 
 type GameFileSoundName = keyof typeof GAME_SOUND_FILES;
 
-const gameAudioElements: Partial<Record<GameFileSoundName, HTMLAudioElement>> = {};
-const activeGameFileSounds: Partial<Record<GameFileSoundName, HTMLAudioElement>> = {};
-const activeGameFileSoundTimers: Partial<Record<GameFileSoundName, number>> = {};
+const gameAudioElements: Partial<Record<GameFileSoundName, HTMLAudioElement>> =
+  {};
+const activeGameFileSounds: Partial<
+  Record<GameFileSoundName, HTMLAudioElement>
+> = {};
+const activeGameFileSoundTimers: Partial<Record<GameFileSoundName, number>> =
+  {};
 
 export function getGameAudioContext(): AudioContext | null {
-  const AudioContextConstructor =
-    window.AudioContext ?? (window as any).webkitAudioContext;
+  const AudioContextConstructor = window.AudioContext ??
+    (window as any).webkitAudioContext;
 
   if (!AudioContextConstructor) return null;
 
@@ -167,7 +171,11 @@ function createGameGain(audioContext: AudioContext, volume: number) {
   return gain;
 }
 
-function createCardPaperBuffer(audioContext: AudioContext, duration: number, roughness = 1) {
+function createCardPaperBuffer(
+  audioContext: AudioContext,
+  duration: number,
+  roughness = 1,
+) {
   const sampleRate = audioContext.sampleRate;
   const frameCount = Math.max(1, Math.floor(sampleRate * duration));
   const buffer = audioContext.createBuffer(1, frameCount, sampleRate);
@@ -190,8 +198,8 @@ function createCardPaperBuffer(audioContext: AudioContext, duration: number, rou
       crackleHold *= 0.82;
     }
 
-    data[index] =
-      (white * 0.55 + brown * 5.8 + crackleHold * 0.42) * attack * release;
+    data[index] = (white * 0.55 + brown * 5.8 + crackleHold * 0.42) * attack *
+      release;
   }
 
   return buffer;
@@ -223,7 +231,11 @@ export function playFilteredPaperSound(options: {
   const gain = createGameGain(audioContext, volume);
   const panner = audioContext.createStereoPanner?.();
 
-  source.buffer = createCardPaperBuffer(audioContext, duration, options.roughness ?? 1);
+  source.buffer = createCardPaperBuffer(
+    audioContext,
+    duration,
+    options.roughness ?? 1,
+  );
   source.playbackRate.setValueAtTime(options.playbackRate ?? 1, startTime);
 
   highpass.type = "highpass";
@@ -442,7 +454,9 @@ export function setupGameAudioDelegation() {
       if (!target) return;
 
       const isHandOrDraftCard = Boolean(
-        target.closest("[data-hand-card-id], [data-draft-card-id], .hand-card, .daily-draft-card")
+        target.closest(
+          "[data-hand-card-id], [data-draft-card-id], .hand-card, .daily-draft-card",
+        ),
       );
       const boardMiniCard = target.closest(".board-mini");
 
@@ -457,6 +471,6 @@ export function setupGameAudioDelegation() {
 
       playGameSound("button");
     },
-    true
+    true,
   );
 }

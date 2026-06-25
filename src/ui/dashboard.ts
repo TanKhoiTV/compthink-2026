@@ -10,7 +10,7 @@ export function cleanupDashboardHub() {
     try {
       globalHeroVideo.pause();
       globalHeroVideo.muted = true;
-      globalHeroVideo.removeAttribute('src');
+      globalHeroVideo.removeAttribute("src");
       globalHeroVideo.load();
     } catch {}
     globalHeroVideo = null;
@@ -21,10 +21,18 @@ export function initDashboardHub() {
   cleanupDashboardHub();
 
   const media = document.getElementById("hub-hero-media") as HTMLElement | null;
-  const video = document.getElementById("hub-hero-video") as HTMLVideoElement | null;
-  const hitarea = document.getElementById("hub-hero-video-hitarea") as HTMLButtonElement | null;
-  const muteButton = document.getElementById("hub-hero-video-mute") as HTMLButtonElement | null;
-  const volumeSlider = document.getElementById("hub-hero-video-volume") as HTMLInputElement | null;
+  const video = document.getElementById("hub-hero-video") as
+    | HTMLVideoElement
+    | null;
+  const hitarea = document.getElementById("hub-hero-video-hitarea") as
+    | HTMLButtonElement
+    | null;
+  const muteButton = document.getElementById("hub-hero-video-mute") as
+    | HTMLButtonElement
+    | null;
+  const volumeSlider = document.getElementById("hub-hero-video-volume") as
+    | HTMLInputElement
+    | null;
 
   if (!media || !video || !hitarea || !muteButton || !volumeSlider) return;
   globalHeroVideo = video;
@@ -35,11 +43,25 @@ export function initDashboardHub() {
   const updateVideoStatus = () => {
     media.classList.toggle("hub-hero__media--paused", video.paused);
 
-    muteButton.classList.toggle("hub-hero__video-mute--muted", video.muted || video.volume === 0);
-    muteButton.classList.toggle("hub-hero__video-mute--unmuted", !video.muted && video.volume > 0);
-    muteButton.setAttribute("aria-label", (video.muted || video.volume === 0) ? "Bật tiếng video" : "Tắt tiếng video");
-    muteButton.setAttribute("aria-pressed", (video.muted || video.volume === 0) ? "true" : "false");
-    
+    muteButton.classList.toggle(
+      "hub-hero__video-mute--muted",
+      video.muted || video.volume === 0,
+    );
+    muteButton.classList.toggle(
+      "hub-hero__video-mute--unmuted",
+      !video.muted && video.volume > 0,
+    );
+    muteButton.setAttribute(
+      "aria-label",
+      (video.muted || video.volume === 0)
+        ? "Bật tiếng video"
+        : "Tắt tiếng video",
+    );
+    muteButton.setAttribute(
+      "aria-pressed",
+      (video.muted || video.volume === 0) ? "true" : "false",
+    );
+
     volumeSlider.value = video.volume.toString();
 
     if (video.paused) {
@@ -81,7 +103,7 @@ export function initDashboardHub() {
     } else {
       video.muted = true;
     }
-    
+
     localStorage.setItem(HUB_HERO_MUTED_KEY, String(video.muted));
 
     if (!video.paused) {
@@ -384,10 +406,10 @@ export function renderDashboard(isLoading = false) {
                 ▶ &nbsp;BẮT ĐẦU HÀNH TRÌNH
               </button>
               ${
-                !isLoggedIn
-                  ? `<p class="hero-auth-hint">Đăng nhập ở panel bên phải để vào phòng online.</p>`
-                  : ""
-              }
+    !isLoggedIn
+      ? `<p class="hero-auth-hint">Đăng nhập ở panel bên phải để vào phòng online.</p>`
+      : ""
+  }
             </div>
           </div>
         </div>

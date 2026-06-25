@@ -49,7 +49,7 @@ export function getCardAffordability({
 }
 
 export function getCardAffordabilityMessage(
-  affordability: CardAffordability
+  affordability: CardAffordability,
 ): string {
   const reasons: string[] = [];
 
