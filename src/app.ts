@@ -88,14 +88,17 @@ import {
   getCardAffordabilityMessage as getCardAffordabilityMessageFromResources,
   getRemainingResources as getRemainingResourcesFromTotals,
 } from "./game/resources.js";
+import { DRAFT_STARTING_POOL_SIZE } from "./game/constants.js";
+import { state, currentPlayerId, initialDeck, playerIds }
+  from "./state/gameState.js";
+import type { AppScreen } from "./types.js";
+
 const app = document.getElementById("app")!;
 
-const DRAFT_STARTING_POOL_SIZE = 7;
-const DRAFT_PICK_TARGET = HAND_SIZE;
 
 
 import {
-  GameSoundName,
+  type GameSoundName,
   playGameSound,
   setupGameAudioDelegation,
   playCardThump,
@@ -262,16 +265,6 @@ const fallbackHandCards: TravelCardData[] = [
   },
 ];
 
-function normalizeCardImage(card: TravelCardData): TravelCardData {
-  if (card.image && card.image.trim().length > 0) {
-    return card;
-  }
-
-  return {
-    ...card,
-    image: images.food,
-  };
-}
 
 function preloadCardImages(cards: TravelCardData[]) {
   for (const card of cards) {
@@ -285,7 +278,7 @@ function preloadCardImages(cards: TravelCardData[]) {
 function preloadDraftImages() {
   const draftCards: TravelCardData[] = [];
 
-  for (const player of draftPlayers) {
+  for (const player of state.draftPlayers) {
     draftCards.push(...player.pool);
     draftCards.push(...player.picked);
   }
@@ -293,13 +286,6 @@ function preloadDraftImages() {
   preloadCardImages(draftCards);
 }
 
-function createInitialDeck() {
-  return createInitialDeckFromCards({
-    cards: phase1Cards.map(mapGameCardToTravelCard).map(normalizeCardImage),
-    fallbackCards: [],
-    handSize: HAND_SIZE,
-  });
-}
 
 function shuffleCards(cards: TravelCardData[]) {
   return shuffleCardsList(cards);
@@ -307,33 +293,33 @@ function shuffleCards(cards: TravelCardData[]) {
 
 function drawDailyHandFromDeck() {
   const result = drawDailyHandFromDeckFromState({
-    deck,
+    deck: state.deck,
     handSize: HAND_SIZE,
     shuffleCards,
   });
 
-  deck = result.deck;
+  state.deck = result.deck;
 
   return result.hand;
 }
 
 function returnUnplayedHandToDeck() {
   const result = returnUnplayedHandToDeckFromState({
-    deck,
-    playerHand,
+    deck: state.deck,
+    playerHand: state.playerHand,
     shuffleCards,
   });
 
-  deck = result.deck;
-  playerHand = result.playerHand;
+  state.deck = result.deck;
+  state.playerHand = result.playerHand;
 }
 
 function getCurrentDayLabel() {
-  return `Ngày ${days[currentDayIndex]}`;
+  return `Ngày ${days[state.currentDayIndex]}`;
 }
 
 function getCurrentPhaseLabel() {
-  return `Phase ${phaseNumber}`;
+  return `Phase ${state.phaseNumber}`;
 }
 
 export function isOnlineRoomActive() {
@@ -345,13 +331,13 @@ function isOnlineGameOver() {
 }
 
 function getOnlineFinalRankings() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state) return [];
+  if (!roomState) return [];
 
   return playerIds
     .map((playerId) => {
-      const player = state.players[playerId];
+      const player = roomState.players[playerId];
 
       return {
         playerId,
@@ -387,11 +373,11 @@ function getOnlineDraftDisplayPool(): TravelCardData[] | null {
   /*
     Fix online draft bị mất bài ở tab khác:
     server vẫn có state.self.draftPool nhưng client đôi khi đang giữ
-    onlineDraftDisplayPool rỗng/null do animation/pass state. Khi đó UI không render bài,
+    state.onlineDraftDisplayPool rỗng/null do animation/pass state. Khi đó UI không render bài,
     dù hết giờ server vẫn auto-pick được. Luôn fallback về serverPool nếu có bài.
   */
-  if (isPassingDraftCards && !isOnlineFinalDraftReturnAnimating) {
-    const passPool = onlineDraftPassSnapshotPool ?? onlineDraftDisplayPool;
+  if (state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating) {
+    const passPool = state.onlineDraftPassSnapshotPool ?? state.onlineDraftDisplayPool;
 
     if (passPool && passPool.length > 0) {
       return passPool;
@@ -401,23 +387,23 @@ function getOnlineDraftDisplayPool(): TravelCardData[] | null {
   }
 
   if (
-    (isInitialDealInProgress || isDraftCenterDealing) &&
-    onlineDraftDisplayPool &&
-    onlineDraftDisplayPool.length > 0
+    (state.isInitialDealInProgress || state.isDraftCenterDealing) &&
+    state.onlineDraftDisplayPool &&
+    state.onlineDraftDisplayPool.length > 0
   ) {
-    return onlineDraftDisplayPool;
+    return state.onlineDraftDisplayPool;
   }
 
-  if (onlineDraftDisplayPool && onlineDraftDisplayPool.length > 0) {
-    return onlineDraftDisplayPool;
+  if (state.onlineDraftDisplayPool && state.onlineDraftDisplayPool.length > 0) {
+    return state.onlineDraftDisplayPool;
   }
 
   if (serverPool && serverPool.length > 0) {
-    onlineDraftDisplayPool = [...serverPool];
-    return onlineDraftDisplayPool;
+    state.onlineDraftDisplayPool = [...serverPool];
+    return state.onlineDraftDisplayPool;
   }
 
-  return onlineDraftDisplayPool ?? serverPool;
+  return state.onlineDraftDisplayPool ?? serverPool;
 }
 
 function getDraftPoolSignature(cards: TravelCardData[] | null | undefined) {
@@ -427,31 +413,31 @@ function getDraftPoolSignature(cards: TravelCardData[] | null | undefined) {
 function setOnlineDraftDisplayPoolFromServer() {
   const serverPool = getOnlineSelfDraftPool();
 
-  onlineDraftDisplayPool = serverPool ? [...serverPool] : null;
-  onlineDraftPendingPool = null;
+  state.onlineDraftDisplayPool = serverPool ? [...serverPool] : null;
+  state.onlineDraftPendingPool = null;
 }
 
 function recoverOnlineDraftDisplayAfterTabVisible(reason = "visible-sync") {
   if (!isOnlineRoomActive()) return false;
 
-  const state = onlineClientState.roomState;
-  if (!state || state.phase !== "draft") return false;
+  const roomState = onlineClientState.roomState;
+  if (!roomState || roomState.phase !== "draft") return false;
 
   const serverPool = getOnlineSelfDraftPool();
   if (!serverPool || serverPool.length === 0) return false;
 
   const visiblePool =
-    onlineDraftDisplayPool ??
-    onlineDraftPassSnapshotPool ??
-    onlineDraftPendingPool;
+    state.onlineDraftDisplayPool ??
+    state.onlineDraftPassSnapshotPool ??
+    state.onlineDraftPendingPool;
 
   const hasVisibleCards = !!visiblePool && visiblePool.length > 0;
-  const animationExpired = draftDealVisualEndsAt > 0 && Date.now() > draftDealVisualEndsAt + 180;
+  const animationExpired = state.draftDealVisualEndsAt > 0 && Date.now() > state.draftDealVisualEndsAt + 180;
   const visualDealStillRunning =
-    isInitialDealInProgress ||
-    isDraftCenterDealing ||
-    isPassingDraftCards ||
-    Date.now() < draftDealVisualEndsAt;
+    state.isInitialDealInProgress ||
+    state.isDraftCenterDealing ||
+    state.isPassingDraftCards ||
+    Date.now() < state.draftDealVisualEndsAt;
   const staleAnimation = animationExpired && visualDealStillRunning;
 
   /*
@@ -464,24 +450,24 @@ function recoverOnlineDraftDisplayAfterTabVisible(reason = "visible-sync") {
   clearOnlineDraftAnimationTimer();
   clearDraftCenterDealAnimation();
 
-  onlineDraftDisplayPool = [...serverPool];
-  onlineDraftPassSnapshotPool = null;
-  onlineDraftPendingPool = null;
-  draftHandPendingCardId = null;
-  draftPoolFlyReturnCardId = null;
+  state.onlineDraftDisplayPool = [...serverPool];
+  state.onlineDraftPassSnapshotPool = null;
+  state.onlineDraftPendingPool = null;
+  state.draftHandPendingCardId = null;
+  state.draftPoolFlyReturnCardId = null;
 
-  isPassingDraftCards = false;
-  isInitialDealInProgress = false;
-  shouldActivateOnlineDealAnimation = false;
-  shouldActivateOnlinePassAnimation = false;
-  draftDealVisualEndsAt = 0;
+  state.isPassingDraftCards = false;
+  state.isInitialDealInProgress = false;
+  state.shouldActivateOnlineDealAnimation = false;
+  state.shouldActivateOnlinePassAnimation = false;
+  state.draftDealVisualEndsAt = 0;
 
-  draftSelectedCardId = state.self.selectedDraftCardId ?? null;
-  lastOnlineRenderSignature = "";
+  state.draftSelectedCardId = roomState.self.selectedDraftCardId ?? null;
+  state.lastOnlineRenderSignature = "";
 
   console.debug(`[DRAFT SYNC] recovered draft pool after tab visible: ${reason}`, {
     poolSize: serverPool.length,
-    timer: state.timer,
+    timer: roomState.timer,
     round: state.draftRound,
   });
 
@@ -497,14 +483,14 @@ function syncOnlineDraftDisplayAfterTabVisible() {
 }
 
 function isOnlineInterRoundPoolPassActive(): boolean {
-  return isPassingDraftCards && !isOnlineFinalDraftReturnAnimating;
+  return state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating;
 }
 
 function getDraftCenterDealCardCount(): number {
   if (isOnlineRoomActive()) {
     const pool =
-      onlineDraftDisplayPool ??
-      onlineDraftPendingPool ??
+      state.onlineDraftDisplayPool ??
+      state.onlineDraftPendingPool ??
       getOnlineSelfDraftPool() ??
       [];
     return Math.max(1, pool.length);
@@ -522,12 +508,12 @@ function getDraftCenterDealDurationForCurrentPool(): number {
 }
 
 function completeOnlineDraftPoolPassAndDeal() {
-  onlineDraftAnimationTimerId = null;
+  state.onlineDraftAnimationTimerId = null;
 
-  if (!onlineDraftPendingPool?.length) {
-    if (onlinePassCompleteRetryCount < 40) {
-      onlinePassCompleteRetryCount += 1;
-      onlineDraftAnimationTimerId = window.setTimeout(
+  if (!state.onlineDraftPendingPool?.length) {
+    if (state.onlinePassCompleteRetryCount < 40) {
+      state.onlinePassCompleteRetryCount += 1;
+      state.onlineDraftAnimationTimerId = window.setTimeout(
         completeOnlineDraftPoolPassAndDeal,
         100,
       );
@@ -535,32 +521,32 @@ function completeOnlineDraftPoolPassAndDeal() {
     }
     setOnlineDraftDisplayPoolFromServer();
   } else {
-    onlinePassCompleteRetryCount = 0;
-    onlineDraftDisplayPool = [...onlineDraftPendingPool];
-    onlineDraftPendingPool = null;
+    state.onlinePassCompleteRetryCount = 0;
+    state.onlineDraftDisplayPool = [...state.onlineDraftPendingPool];
+    state.onlineDraftPendingPool = null;
   }
 
-  onlineDraftPassSnapshotPool = null;
-  draftHandPendingCardId = null;
-  draftPoolFlyReturnCardId = null;
-  isPassingDraftCards = false;
+  state.onlineDraftPassSnapshotPool = null;
+  state.draftHandPendingCardId = null;
+  state.draftPoolFlyReturnCardId = null;
+  state.isPassingDraftCards = false;
   resetDraftPoolCollapseState();
-  isInitialDealInProgress = true;
+  state.isInitialDealInProgress = true;
 
   const roomState = onlineClientState.roomState;
-  draftSelectedCardId = roomState?.self.selectedDraftCardId ?? null;
+  state.draftSelectedCardId = roomState?.self.selectedDraftCardId ?? null;
 
   const dealMs = getDraftCenterDealDurationMs(
-    Math.max(1, onlineDraftDisplayPool?.length ?? 0),
+    Math.max(1, state.onlineDraftDisplayPool?.length ?? 0),
   );
-  isDraftCenterDealing = true;
-  draftDealVisualEndsAt = Date.now() + dealMs;
+  state.isDraftCenterDealing = true;
+  state.draftDealVisualEndsAt = Date.now() + dealMs;
 
-  lastOnlineRenderSignature = "";
+  state.lastOnlineRenderSignature = "";
   rerenderGameShell();
   startDraftCenterDealAnimation(dealMs);
 
-  onlineDraftAnimationTimerId = window.setTimeout(() => {
+  state.onlineDraftAnimationTimerId = window.setTimeout(() => {
     finishOnlineDraftDealVisualOnly();
   }, dealMs);
 }
@@ -569,34 +555,34 @@ function beginOnlineDraftPoolPass(
   snapshotPool: TravelCardData[],
   nextServerPool: TravelCardData[] | null
 ) {
-  if (isOnlineFinalDraftReturnAnimating || !isDraftPhase) return;
+  if (state.isOnlineFinalDraftReturnAnimating || !state.isDraftPhase) return;
   if (snapshotPool.length === 0) return;
 
-  if (isPassingDraftCards) {
+  if (state.isPassingDraftCards) {
     if (nextServerPool?.length) {
-      onlineDraftPendingPool = [...nextServerPool];
+      state.onlineDraftPendingPool = [...nextServerPool];
     }
     return;
   }
 
   clearOnlineDraftAnimationTimer();
 
-  onlinePassCompleteRetryCount = 0;
-  onlineDraftPassSnapshotPool = [...snapshotPool];
+  state.onlinePassCompleteRetryCount = 0;
+  state.onlineDraftPassSnapshotPool = [...snapshotPool];
   if (nextServerPool?.length) {
-    onlineDraftPendingPool = [...nextServerPool];
+    state.onlineDraftPendingPool = [...nextServerPool];
   }
 
-  draftSelectedCardId = null;
-  draftPoolFlyReturnCardId = null;
+  state.draftSelectedCardId = null;
+  state.draftPoolFlyReturnCardId = null;
   resetDraftPoolCollapseState();
 
-  shouldActivateOnlineDealAnimation = false;
-  shouldActivateOnlinePassAnimation = true;
-  isInitialDealInProgress = false;
-  isPassingDraftCards = true;
+  state.shouldActivateOnlineDealAnimation = false;
+  state.shouldActivateOnlinePassAnimation = true;
+  state.isInitialDealInProgress = false;
+  state.isPassingDraftCards = true;
 
-  onlineDraftAnimationTimerId = window.setTimeout(() => {
+  state.onlineDraftAnimationTimerId = window.setTimeout(() => {
     completeOnlineDraftPoolPassAndDeal();
   }, DRAFT_PASS_ANIMATION_MS);
 }
@@ -611,7 +597,7 @@ function getOnlineSelectedDraftCardId() {
 }
 
 function getDraftVisualSelectedCardId() {
-  return getOnlineSelectedDraftCardId() ?? draftSelectedCardId;
+  return getOnlineSelectedDraftCardId() ?? state.draftSelectedCardId;
 }
 
 function getDraftPoolHighlightedCardId(): string | null {
@@ -620,8 +606,8 @@ function getDraftPoolHighlightedCardId(): string | null {
 }
 
 function shouldShowDraftWaitBanner(): boolean {
-  if (!isDraftPhase || isDraftDealVisualActive() || isPassingDraftCards) return false;
-  if (!draftHandPendingCardId) return false;
+  if (!state.isDraftPhase || isDraftDealVisualActive() || state.isPassingDraftCards) return false;
+  if (!state.draftHandPendingCardId) return false;
 
   if (!isOnlineRoomActive()) return false;
 
@@ -658,19 +644,19 @@ function getOnlineSelfPublicPlayer() {
 }
 
 function getConnectedLobbyPlayers() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state) return [];
+  if (!roomState) return [];
 
   return playerIds
-    .map((playerId) => state.players[playerId])
+    .map((playerId) => roomState.players[playerId])
     .filter((player) => player.isConnected);
 }
 
 function canCurrentPlayerStartRoom() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state || state.phase !== "lobby") return false;
+  if (!roomState || roomState.phase !== "lobby") return false;
   if (onlineClientState.playerId !== "p1") return false;
 
   const connectedPlayers = getConnectedLobbyPlayers();
@@ -808,18 +794,18 @@ function renderOnlineEntryScreen() {
 }
 
 function renderOnlineLobbyRoomScreen() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
   const selfPlayer = getOnlineSelfPublicPlayer();
   const isHost = onlineClientState.playerId === "p1";
   const canStart = canCurrentPlayerStartRoom();
 
-  if (!state || state.phase !== "lobby") {
+  if (!roomState || roomState.phase !== "lobby") {
     return "";
   }
 
   const playersHtml = playerIds
     .map((playerId) => {
-      const player = state.players[playerId];
+      const player = roomState.players[playerId];
       const isSelf = playerId === onlineClientState.playerId;
 
       const slotClass = player.isConnected
@@ -857,7 +843,7 @@ function renderOnlineLobbyRoomScreen() {
         <div class="online-lobby-card__header">
           <div>
             <span>ONLINE ROOM</span>
-            <h1>${state.roomId}</h1>
+            <h1>${roomState.roomId}</h1>
             <p>Bạn là ${onlineClientState.playerId?.toUpperCase()} • ${selfPlayer?.name ?? "Player"}</p>
           </div>
 
@@ -921,12 +907,12 @@ function getKnownOnlineCardById(cardId: string): TravelCardData | null {
   const onlineSelf = getOnlineSelfState();
 
   const allKnownCards = [
-    ...(onlineDraftDisplayPool ?? []),
-    ...(onlineDraftPendingPool ?? []),
+    ...(state.onlineDraftDisplayPool ?? []),
+    ...(state.onlineDraftPendingPool ?? []),
     ...(onlineSelf?.draftPool ?? []),
     ...(onlineSelf?.pickedDraftCards ?? []),
     ...(onlineSelf?.hand ?? []),
-    ...playerHand,
+    ...state.playerHand,
     ...initialDeck,
   ] as TravelCardData[];
 
@@ -1016,30 +1002,30 @@ function convertOnlineBoardToBoardSlots(playerId?: PlayerId): BoardSlots | null 
 }
 
 function applyOnlineRoomStateToLocal() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state) return;
+  if (!roomState) return;
 
   syncSelfPlanningConfirmLockFromServer();
 
-  phaseNumber = state.phaseNumber ?? phaseNumber;
-  currentDayIndex = Math.max(0, Math.min(PHASE_DAYS - 1, state.dayIndex));
+  state.phaseNumber = state.phaseNumber ?? state.phaseNumber;
+  state.currentDayIndex = Math.max(0, Math.min(PHASE_DAYS - 1, roomState.dayIndex));
 
-  const onlineSelfPublicState = state.players[onlineClientState.playerId ?? currentPlayerId];
+  const onlineSelfPublicState = roomState.players[onlineClientState.playerId ?? currentPlayerId];
 
   if (onlineSelfPublicState) {
-    accumulatedVP = onlineSelfPublicState.score;
+    state.accumulatedVP = onlineSelfPublicState.score;
   }
 
   rememberCurrentCertificatePhase();
 
-  isDraftPhase = state.phase === "draft";
-  isSimulationMode = state.phase === "simulation" || state.phase === "result" || state.phase === "gameover";
-  isReplayComplete = state.phase === "result" || state.phase === "gameover";
+  state.isDraftPhase = roomState.phase === "draft";
+  state.isSimulationMode = roomState.phase === "simulation" || roomState.phase === "result" || roomState.phase === "gameover";
+  state.isReplayComplete = roomState.phase === "result" || roomState.phase === "gameover";
 
-  draftRound = state.draftRound;
-  draftPickSecondsLeft = state.timer;
-  remainingTurnSeconds = state.timer;
+  state.draftRound = state.draftRound;
+  state.draftPickSecondsLeft = roomState.timer;
+  state.remainingTurnSeconds = roomState.timer;
 
   if (isOnlineRoomActive()) {
     stopDraftTimer();
@@ -1047,30 +1033,30 @@ function applyOnlineRoomStateToLocal() {
     stopBotPlacementTimer();
   }
 
-  const serverDraftPool = (state.self.draftPool as TravelCardData[] | undefined) ?? [];
+  const serverDraftPool = (roomState.self.draftPool as TravelCardData[] | undefined) ?? [];
   const onlinePoolSignature = getDraftPoolSignature(serverDraftPool);
-  const hasDisplayPool = onlineDraftDisplayPool !== null && onlineDraftDisplayPool.length > 0;
+  const hasDisplayPool = state.onlineDraftDisplayPool !== null && state.onlineDraftDisplayPool.length > 0;
 
   if (isOnlineRoomActive()) {
-    const enteredDraft = state.phase === "draft" && lastOnlineAnimationPhase !== "draft";
-    const pickedDraftCount = state.self.pickedDraftCards?.length ?? 0;
-    const pickedIncreased = pickedDraftCount > lastOnlinePickedDraftCount;
-    const draftRoundAdvanced = state.draftRound > lastOnlineAnimationDraftRound;
+    const enteredDraft = roomState.phase === "draft" && state.lastOnlineAnimationPhase !== "draft";
+    const pickedDraftCount = roomState.self.pickedDraftCards?.length ?? 0;
+    const pickedIncreased = pickedDraftCount > state.lastOnlinePickedDraftCount;
+    const draftRoundAdvanced = state.draftRound > state.lastOnlineAnimationDraftRound;
 
     /*
       Online draft tách 3 việc:
       - server pool: dữ liệu thật mới nhất
       - display pool: pool đang render trên màn hình
       - pending pool: pool mới chờ animation pass xong mới apply
-      Như vậy lượt 2/3/4/5 có thể chạy animation trả bài vào deck trước,
+      Như vậy lượt 2/3/4/5 có thể chạy animation trả bài vào state.deck trước,
       rồi mới hiện pool tiếp theo. Lượt 1 cũng không bị full rerender/reset khi chọn.
     */
     if (enteredDraft) {
       clearOnlineDraftAnimationTimer();
       resetDraftPoolCollapseState();
-      draftHandPendingCardId = null;
-      draftPoolFlyReturnCardId = null;
-      onlineDraftPassSnapshotPool = null;
+      state.draftHandPendingCardId = null;
+      state.draftPoolFlyReturnCardId = null;
+      state.onlineDraftPassSnapshotPool = null;
 
       setOnlineDraftDisplayPoolFromServer();
 
@@ -1081,44 +1067,44 @@ function applyOnlineRoomStateToLocal() {
       */
       const shouldSkipOnlineDealAnimation =
         document.visibilityState !== "visible" ||
-        state.timer < DRAFT_PICK_SECONDS - 1;
+        roomState.timer < DRAFT_PICK_SECONDS - 1;
 
-      shouldActivateOnlineDealAnimation = !shouldSkipOnlineDealAnimation;
-      shouldActivateOnlinePassAnimation = false;
-      isInitialDealInProgress = !shouldSkipOnlineDealAnimation;
-      isPassingDraftCards = false;
-      hasPlayedOnlinePlanningDealAfterDraft = false;
+      state.shouldActivateOnlineDealAnimation = !shouldSkipOnlineDealAnimation;
+      state.shouldActivateOnlinePassAnimation = false;
+      state.isInitialDealInProgress = !shouldSkipOnlineDealAnimation;
+      state.isPassingDraftCards = false;
+      state.hasPlayedOnlinePlanningDealAfterDraft = false;
 
       if (shouldSkipOnlineDealAnimation) {
-        isDraftCenterDealing = false;
-        draftDealVisualEndsAt = 0;
-        onlineDraftAnimationTimerId = null;
+        state.isDraftCenterDealing = false;
+        state.draftDealVisualEndsAt = 0;
+        state.onlineDraftAnimationTimerId = null;
       } else {
         const dealMs = getDraftCenterDealDurationMs(
           Math.max(1, serverDraftPool.length),
         );
-        onlineDraftAnimationTimerId = window.setTimeout(() => {
+        state.onlineDraftAnimationTimerId = window.setTimeout(() => {
           finishOnlineDraftDealVisualOnly();
         }, dealMs);
       }
     } else if (
-      state.phase === "draft" &&
-      lastOnlineAnimationPhase === "draft" &&
+      roomState.phase === "draft" &&
+      state.lastOnlineAnimationPhase === "draft" &&
       (pickedIncreased || draftRoundAdvanced)
     ) {
-      if (isPassingDraftCards && !isOnlineFinalDraftReturnAnimating) {
+      if (state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating) {
         if (serverDraftPool.length > 0) {
-          onlineDraftPendingPool = [...serverDraftPool];
+          state.onlineDraftPendingPool = [...serverDraftPool];
         }
 
-        if (pickedIncreased && !isDraftPickFlying) {
-          draftHandPendingCardId = null;
-          draftPoolFlyReturnCardId = null;
+        if (pickedIncreased && !state.isDraftPickFlying) {
+          state.draftHandPendingCardId = null;
+          state.draftPoolFlyReturnCardId = null;
         }
-      } else if (!isOnlineFinalDraftReturnAnimating) {
+      } else if (!state.isOnlineFinalDraftReturnAnimating) {
         const snapshot =
-          onlineDraftDisplayPool ??
-          onlineDraftPassSnapshotPool ??
+          state.onlineDraftDisplayPool ??
+          state.onlineDraftPassSnapshotPool ??
           (serverDraftPool.length > 0 ? [...serverDraftPool] : null);
 
         if (snapshot?.length) {
@@ -1128,167 +1114,148 @@ function applyOnlineRoomStateToLocal() {
         }
       }
     } else if (
-      state.phase === "draft" &&
+      roomState.phase === "draft" &&
       serverDraftPool.length > 0 &&
-      (!onlineDraftDisplayPool || onlineDraftDisplayPool.length === 0)
+      (!state.onlineDraftDisplayPool || state.onlineDraftDisplayPool.length === 0)
     ) {
       setOnlineDraftDisplayPoolFromServer();
-    } else if (state.phase === "draft" && !hasDisplayPool) {
+    } else if (roomState.phase === "draft" && !hasDisplayPool) {
       setOnlineDraftDisplayPoolFromServer();
     }
 
     const isEnteringPlanningAfterDraft =
-      state.phase === "planning" &&
-      lastOnlineAnimationPhase === "draft" &&
-      onlineDraftDisplayPool !== null &&
-      onlineDraftDisplayPool.length > 0 &&
-      !isOnlineFinalDraftReturnAnimating &&
-      onlineFinalDraftReturnTimerId === null;
+      roomState.phase === "planning" &&
+      state.lastOnlineAnimationPhase === "draft" &&
+      state.onlineDraftDisplayPool !== null &&
+      state.onlineDraftDisplayPool.length > 0 &&
+      !state.isOnlineFinalDraftReturnAnimating &&
+      state.onlineFinalDraftReturnTimerId === null;
 
     if (isEnteringPlanningAfterDraft) {
       /*
         Lượt draft cuối: server đã chuyển sang planning, nhưng client giữ lại
-        2 lá dư trong onlineDraftDisplayPool thêm 1 nhịp để chạy animation:
-        gom bài -> bay vào deck. Không xóa display pool ngay.
+        2 lá dư trong state.onlineDraftDisplayPool thêm 1 nhịp để chạy animation:
+        gom bài -> bay vào state.deck. Không xóa display pool ngay.
       */
       clearOnlineDraftAnimationTimer();
 
-      isOnlineFinalDraftReturnAnimating = true;
-      isDraftPhase = true;
-      isSimulationMode = false;
-      isPassingDraftCards = true;
-      isInitialDealInProgress = false;
-      shouldActivateOnlinePassAnimation = true;
-      shouldActivateOnlineDealAnimation = false;
+      state.isOnlineFinalDraftReturnAnimating = true;
+      state.isDraftPhase = true;
+      state.isSimulationMode = false;
+      state.isPassingDraftCards = true;
+      state.isInitialDealInProgress = false;
+      state.shouldActivateOnlinePassAnimation = true;
+      state.shouldActivateOnlineDealAnimation = false;
 
-      onlineFinalDraftReturnTimerId = window.setTimeout(() => {
-        isOnlineFinalDraftReturnAnimating = false;
-        isPassingDraftCards = false;
-        onlineDraftDisplayPool = null;
-        onlineDraftPendingPool = null;
-        onlineFinalDraftReturnTimerId = null;
-        lastOnlineRenderSignature = "";
+      state.onlineFinalDraftReturnTimerId = window.setTimeout(() => {
+        state.isOnlineFinalDraftReturnAnimating = false;
+        state.isPassingDraftCards = false;
+        state.onlineDraftDisplayPool = null;
+        state.onlineDraftPendingPool = null;
+        state.onlineFinalDraftReturnTimerId = null;
+        state.lastOnlineRenderSignature = "";
 
         /*
-          Sau khi 2 lá dư gom và bay về deck, mới hiện hand planning
+          Sau khi 2 lá dư gom và bay về state.deck, mới hiện hand planning
           bằng animation chia bài bình thường.
         */
         playOnlinePlanningHandDealAfterDraft();
       }, 1550);
     }
 
-    if (state.phase !== "draft" && !isOnlineFinalDraftReturnAnimating) {
+    if (roomState.phase !== "draft" && !state.isOnlineFinalDraftReturnAnimating) {
       clearOnlineDraftAnimationTimer();
 
-      onlineDraftDisplayPool = null;
-      onlineDraftPassSnapshotPool = null;
-      onlineDraftPendingPool = null;
-      shouldActivateOnlineDealAnimation = false;
-      shouldActivateOnlinePassAnimation = false;
-      isInitialDealInProgress = false;
-      isPassingDraftCards = false;
+      state.onlineDraftDisplayPool = null;
+      state.onlineDraftPassSnapshotPool = null;
+      state.onlineDraftPendingPool = null;
+      state.shouldActivateOnlineDealAnimation = false;
+      state.shouldActivateOnlinePassAnimation = false;
+      state.isInitialDealInProgress = false;
+      state.isPassingDraftCards = false;
     }
 
-    if (pickedDraftCount > lastOnlinePickedDraftCount && !isDraftPickFlying && !isPassingDraftCards) {
-      draftHandPendingCardId = null;
-      draftPoolFlyReturnCardId = null;
+    if (pickedDraftCount > state.lastOnlinePickedDraftCount && !state.isDraftPickFlying && !state.isPassingDraftCards) {
+      state.draftHandPendingCardId = null;
+      state.draftPoolFlyReturnCardId = null;
     }
 
-    lastOnlinePickedDraftCount = pickedDraftCount;
-    lastOnlineAnimationPhase = state.phase;
-    lastOnlineAnimationDraftRound = state.draftRound;
-    lastOnlineAnimationPoolSignature = onlinePoolSignature;
+    state.lastOnlinePickedDraftCount = pickedDraftCount;
+    state.lastOnlineAnimationPhase = roomState.phase;
+    state.lastOnlineAnimationDraftRound = state.draftRound;
+    state.lastOnlineAnimationPoolSignature = onlinePoolSignature;
   }
 
   const shouldPlayPlanningDealFallback =
     isOnlineRoomActive() &&
-    state.phase === "planning" &&
-    lastOnlineAnimationPhase === "draft" &&
-    !isOnlineFinalDraftReturnAnimating &&
-    !hasPlayedOnlinePlanningDealAfterDraft;
+    roomState.phase === "planning" &&
+    state.lastOnlineAnimationPhase === "draft" &&
+    !state.isOnlineFinalDraftReturnAnimating &&
+    !state.hasPlayedOnlinePlanningDealAfterDraft;
 
   if (shouldPlayPlanningDealFallback) {
     playOnlinePlanningHandDealAfterDraft();
     return;
   }
 
-  if (state.phase === "planning" && !isOnlineFinalDraftReturnAnimating) {
+  if (roomState.phase === "planning" && !state.isOnlineFinalDraftReturnAnimating) {
     const onlineHand = getOnlineSelfHand();
 
     if (onlineHand) {
-      playerHand = [...onlineHand];
+      state.playerHand = [...onlineHand];
     }
 
     updatePlanningConfirmButtonVisualOnly();
   }
 
-  if (state.phase === "draft") {
-    playerHand = [];
+  if (roomState.phase === "draft") {
+    state.playerHand = [];
 
-    if (!isDraftPickFlying) {
-      draftSelectedCardId = state.self.selectedDraftCardId;
+    if (!state.isDraftPickFlying) {
+      state.draftSelectedCardId = roomState.self.selectedDraftCardId;
 
       if (
-        state.self.selectedDraftCardId &&
-        !draftHandPendingCardId &&
+        roomState.self.selectedDraftCardId &&
+        !state.draftHandPendingCardId &&
         !isDraftDealVisualActive()
       ) {
-        draftHandPendingCardId = state.self.selectedDraftCardId;
+        state.draftHandPendingCardId = roomState.self.selectedDraftCardId;
       }
     }
 
-    if (!isDraftDealVisualActive() && !isDraftPickFlying) {
+    if (!isDraftDealVisualActive() && !state.isDraftPickFlying) {
       updateDraftHandVisualOnly();
       updateDraftPoolFlownVisualOnly();
       updateDraftSelectedVisualOnly();
     }
   }
 
-  if (state.phase === "simulation" || state.phase === "result") {
-    if (isOnlineRoomActive() && !hasStartedOnlineSimulationReplay) {
+  if (roomState.phase === "simulation" || roomState.phase === "result") {
+    if (isOnlineRoomActive() && !state.hasStartedOnlineSimulationReplay) {
       runOnlineSimulationReplay();
       return;
     }
 
-    if (!simulationResult) {
-      simulationResult = calculateSimulationResult();
-      simulationReplayIndex = 0;
+    if (!state.simulationResult) {
+      state.simulationResult = calculateSimulationResult();
+      state.simulationReplayIndex = 0;
     }
   } else {
-    simulationResult = null;
-    simulationReplayIndex = 0;
-    isReplayComplete = false;
-    hasStartedOnlineSimulationReplay = false;
-    hasAppliedSimulationScore = false;
+    state.simulationResult = null;
+    state.simulationReplayIndex = 0;
+    state.isReplayComplete = false;
+    state.hasStartedOnlineSimulationReplay = false;
+    state.hasAppliedSimulationScore = false;
   }
 }
 
-function getCurrentDayPlacedCards(dayIndex = currentDayIndex): TravelCardData[] {
+function getCurrentDayPlacedCards(dayIndex = state.currentDayIndex): TravelCardData[] {
   return getCurrentDayPlacedCardsFromSlots(getBoardSlots(), dayIndex);
 }
 
-const initialDeck = createInitialDeck();
 
-const playerIds: PlayerId[] = ["p1", "p2", "p3", "p4"];
-export const currentPlayerId: PlayerId = "p1";
 
-function createEmptyPlayerBoards(): Record<PlayerId, BoardSlots> {
-  return {
-    p1: createEmptyBoardSlots(),
-    p2: createEmptyBoardSlots(),
-    p3: createEmptyBoardSlots(),
-    p4: createEmptyBoardSlots(),
-  };
-}
 
-function createEmptyBotPlacedDays(): Record<PlayerId, Set<number>> {
-  return {
-    p1: new Set<number>(),
-    p2: new Set<number>(),
-    p3: new Set<number>(),
-    p4: new Set<number>(),
-  };
-}
 
 function getCurrentPlayerBoard(): BoardSlots {
   if (isOnlineRoomActive()) {
@@ -1299,82 +1266,12 @@ function getCurrentPlayerBoard(): BoardSlots {
     }
   }
 
-  return playerBoards[currentPlayerId];
+  return state.playerBoards[currentPlayerId];
 }
 
 function setCurrentPlayerBoard(nextBoard: BoardSlots) {
-  playerBoards[currentPlayerId] = nextBoard;
+  state.playerBoards[currentPlayerId] = nextBoard;
 }
-
-export let phaseNumber = 1;
-export let currentDayIndex = 0;
-export let accumulatedVP = 0;
-let discardedResourceBonus = {
-  coin: 0,
-  stamina: 0,
-};
-let eventResourceModifier = {
-  coin: 0,
-  stamina: 0,
-};
-let localCoinDebt = 0;
-let hasAppliedFinalCoinDebtPenalty = false;
-let hasAppliedSimulationScore = false;
-let dayAdvanceTimerId: number | null = null;
-let dailyDealTimerId: number | null = null;
-let deck: TravelCardData[] = shuffleCards(initialDeck);
-let playerHand: TravelCardData[] = [];
-let isInitialDealInProgress = false;
-let isDraftPhase = true;
-let draftPlayers: DraftPlayerState[] = [];
-let draftSelectedCardId: string | null = null;
-let draftPickSecondsLeft = DRAFT_PICK_SECONDS;
-let draftTimerId: number | null = null;
-let isPassingDraftCards = false;
-let isDraftPoolCollapsed = false;
-let isDraftPoolCollapseAnimating = false;
-let draftPoolCollapseAnimMode: "collapse" | "expand" | null = null;
-let draftPoolCollapseTimerId: number | null = null;
-let draftPassDisplayPool: TravelCardData[] | null = null;
-let draftRound = 1;
-let lastDraftPickResults: DraftPickResult[] = [];
-let playerBoards: Record<PlayerId, BoardSlots> = createEmptyPlayerBoards();
-let botPlacedDays: Record<PlayerId, Set<number>> = {
-  p1: new Set<number>(),
-  p2: new Set<number>(),
-  p3: new Set<number>(),
-  p4: new Set<number>(),
-};
-let botPlacementTimerId: number | null = null;
-
-let selectedHandCardId: string | null = null;
-let draggedHandCardId: string | null = null;
-let handPointerDragState: HandPointerDragState | null = null;
-let lastPlacedBoardPosition: BoardPosition | null = null;
-let lastUtilityEffectFlash: {
-  rowIndex: number;
-  colIndex: number;
-  type: "coin" | "stamina" | "vp";
-  value: number;
-  id: number;
-} | null = null;
-let resourceOrbFlashType: "coin" | "stamina" | "vp" | null = null;
-let focusedHandCardId: string | null = null;
-let focusedBoardCard: TravelCardData | null = null;
-let focusedBoardPosition: BoardPosition | null = null;
-let holdTimer: number | null = null;
-let suppressNextClick = false;
-let isSimulationMode = false;
-export let simulationResult: SimulationResult | null = null;
-let remainingTurnSeconds = TURN_DURATION_SECONDS;
-let turnTimerId: number | null = null;
-let simulationReplayIndex = 0;
-let simulationReplayTimerId: number | null = null;
-let isReplayComplete = false;
-let isMidGameRankingOpen = false;
-let hasPlayedDealAnimation = true;
-let didMoveHandPointerDrag = false;
-let lastPointerDownCardId: string | null = null;
 
 export function getBoardSlots(): BoardSlots {
   return getCurrentPlayerBoard();
@@ -1384,7 +1281,7 @@ function getOpponentPlayerIds(): PlayerId[] {
   return playerIds.filter((playerId) => playerId !== currentPlayerId);
 }
 
-function getFirstEmptyBoardPosition(board: BoardSlots, preferredColIndex = currentDayIndex): BoardPosition | null {
+function getFirstEmptyBoardPosition(board: BoardSlots, preferredColIndex = state.currentDayIndex): BoardPosition | null {
   for (let rowIndex = 0; rowIndex < board.length; rowIndex += 1) {
     if (board[rowIndex]?.[preferredColIndex] === null) {
       return {
@@ -1411,7 +1308,7 @@ function getFirstEmptyBoardPosition(board: BoardSlots, preferredColIndex = curre
 function cloneCardForBot(card: TravelCardData, playerId: PlayerId, index: number): TravelCardData {
   return {
     ...card,
-    id: `${card.id}_${playerId}_${currentDayIndex}_${index}_${Date.now()}`,
+    id: `${card.id}_${playerId}_${state.currentDayIndex}_${index}_${Date.now()}`,
   };
 }
 
@@ -1423,7 +1320,7 @@ function getBotSourceCards(playerId: PlayerId): TravelCardData[] {
     p4: 3,
   };
 
-  const draftPlayer = draftPlayers[draftIndexByPlayerId[playerId]];
+  const draftPlayer = state.draftPlayers[draftIndexByPlayerId[playerId]];
   const pickedCards = draftPlayer?.picked ?? [];
 
   if (pickedCards.length > 0) {
@@ -1434,8 +1331,8 @@ function getBotSourceCards(playerId: PlayerId): TravelCardData[] {
 }
 
 function placeOneBotCard(playerId: PlayerId, card: TravelCardData, index: number) {
-  const board = playerBoards[playerId];
-  const position = getFirstEmptyBoardPosition(board, currentDayIndex);
+  const board = state.playerBoards[playerId];
+  const position = getFirstEmptyBoardPosition(board, state.currentDayIndex);
 
   if (!position) return;
 
@@ -1444,10 +1341,10 @@ function placeOneBotCard(playerId: PlayerId, card: TravelCardData, index: number
 
 function countBotCardsInCurrentDay(playerId: PlayerId): number {
   let count = 0;
-  const board = playerBoards[playerId];
+  const board = state.playerBoards[playerId];
 
   for (let rowIndex = 0; rowIndex < board.length; rowIndex += 1) {
-    if (board[rowIndex]?.[currentDayIndex] !== null) {
+    if (board[rowIndex]?.[state.currentDayIndex] !== null) {
       count += 1;
     }
   }
@@ -1456,9 +1353,9 @@ function countBotCardsInCurrentDay(playerId: PlayerId): number {
 }
 
 function stopBotPlacementTimer() {
-  if (botPlacementTimerId !== null) {
-    window.clearInterval(botPlacementTimerId);
-    botPlacementTimerId = null;
+  if (state.botPlacementTimerId !== null) {
+    window.clearInterval(state.botPlacementTimerId);
+    state.botPlacementTimerId = null;
   }
 }
 
@@ -1474,7 +1371,7 @@ function placeNextRealtimeBotMove() {
     return;
   }
 
-  if (isDraftPhase || isSimulationMode || isInitialDealInProgress) {
+  if (state.isDraftPhase || state.isSimulationMode || state.isInitialDealInProgress) {
     stopBotPlacementTimer();
     return;
   }
@@ -1486,7 +1383,7 @@ function placeNextRealtimeBotMove() {
 
   if (availablePlayerIds.length === 0) {
     for (const playerId of opponentIds) {
-      botPlacedDays[playerId].add(currentDayIndex);
+      state.botPlacedDays[playerId].add(state.currentDayIndex);
     }
 
     stopBotPlacementTimer();
@@ -1511,7 +1408,7 @@ function startRealtimeBotPlacement() {
   stopBotPlacementTimer();
 
   if (isOnlineRoomActive()) return;
-  if (isDraftPhase || isSimulationMode || isInitialDealInProgress) return;
+  if (state.isDraftPhase || state.isSimulationMode || state.isInitialDealInProgress) return;
   if (!hasBotPlacementAvailable()) return;
 
   /*
@@ -1519,7 +1416,7 @@ function startRealtimeBotPlacement() {
     Cứ mỗi ~1.1s sẽ có 1 người chơi phụ xếp 1 lá.
     Khi lên online thật, đoạn này sẽ được thay bằng socket event "board:updated".
   */
-  botPlacementTimerId = window.setInterval(() => {
+  state.botPlacementTimerId = window.setInterval(() => {
     placeNextRealtimeBotMove();
   }, 1100);
 }
@@ -1549,7 +1446,7 @@ function placeBotCardsAfterPlayerMove(sourceCard: TravelCardData) {
 function getPlayerBoardUsedSlots(playerId: PlayerId): number {
   let usedSlots = 0;
 
-  for (const row of playerBoards[playerId]) {
+  for (const row of state.playerBoards[playerId]) {
     for (const card of row) {
       if (card) usedSlots += 1;
     }
@@ -1560,9 +1457,9 @@ function getPlayerBoardUsedSlots(playerId: PlayerId): number {
 
 function isLastPlacedBoardCell(rowIndex: number, colIndex: number) {
   return (
-    lastPlacedBoardPosition !== null &&
-    lastPlacedBoardPosition.rowIndex === rowIndex &&
-    lastPlacedBoardPosition.colIndex === colIndex
+    state.lastPlacedBoardPosition !== null &&
+    state.lastPlacedBoardPosition.rowIndex === rowIndex &&
+    state.lastPlacedBoardPosition.colIndex === colIndex
   );
 }
 
@@ -1578,19 +1475,19 @@ function calculateScoreBreakdown(): ScoreBreakdown {
 }
 
 function stopSimulationReplayTimer() {
-  if (simulationReplayTimerId !== null) {
-    window.clearInterval(simulationReplayTimerId);
-    simulationReplayTimerId = null;
+  if (state.simulationReplayTimerId !== null) {
+    window.clearInterval(state.simulationReplayTimerId);
+    state.simulationReplayTimerId = null;
   }
 }
 
 function getCurrentReplayStep() {
-  if (!simulationResult || simulationResult.replaySteps.length === 0) {
+  if (!state.simulationResult || state.simulationResult.replaySteps.length === 0) {
     return null;
   }
 
-  return simulationResult.replaySteps[
-    Math.min(simulationReplayIndex, simulationResult.replaySteps.length - 1)
+  return state.simulationResult.replaySteps[
+    Math.min(state.simulationReplayIndex, state.simulationResult.replaySteps.length - 1)
   ];
 }
 
@@ -1645,7 +1542,7 @@ function playSimulationScanSoundForCurrentStep() {
 function buildSimulationReplaySteps() {
   return buildSimulationReplayStepsFromBoard({
     boardSlots: getBoardSlots(),
-    currentDayIndex,
+    currentDayIndex: state.currentDayIndex,
     dayLabel: getCurrentDayLabel(),
     rows,
     getCardTagKeys,
@@ -1657,7 +1554,7 @@ function buildSimulationReplaySteps() {
 function calculateSimulationResult(): SimulationResult {
   return calculateSimulationResultFromBoard({
     boardSlots: getBoardSlots(),
-    currentDayIndex,
+    currentDayIndex: state.currentDayIndex,
     dayLabel: getCurrentDayLabel(),
     rows,
     getBoardDisplayName,
@@ -1668,29 +1565,29 @@ function calculateSimulationResult(): SimulationResult {
 }
 
 export function getCurrentScoreBreakdown(): ScoreBreakdown {
-  if (!simulationResult) {
+  if (!state.simulationResult) {
     return calculateScoreBreakdown();
   }
 
   return {
-    baseVP: simulationResult.baseVP,
-    bonusVP: simulationResult.bonusVP,
-    totalVP: simulationResult.finalVP,
-    spentCoin: simulationResult.spentCoin,
-    spentStamina: simulationResult.spentStamina + getSimulationEventStaminaPenalty(simulationResult),
-    usedSlots: simulationResult.usedSlots,
-    lines: simulationResult.lines,
+    baseVP: state.simulationResult.baseVP,
+    bonusVP: state.simulationResult.bonusVP,
+    totalVP: state.simulationResult.finalVP,
+    spentCoin: state.simulationResult.spentCoin,
+    spentStamina: state.simulationResult.spentStamina + getSimulationEventStaminaPenalty(state.simulationResult),
+    usedSlots: state.simulationResult.usedSlots,
+    lines: state.simulationResult.lines,
   };
 }
 
 function getBoardTotals(): BoardTotals {
-  const breakdown = simulationResult
+  const breakdown = state.simulationResult
     ? getCurrentScoreBreakdown()
     : calculateScoreBreakdown();
 
   return {
     // Điểm chỉ cộng vào tổng sau khi replay ngày hiện tại chạy xong.
-    vp: accumulatedVP,
+    vp: state.accumulatedVP,
     coin: breakdown.spentCoin,
     stamina: breakdown.spentStamina,
     usedSlots: breakdown.usedSlots,
@@ -1753,8 +1650,8 @@ export function getRemainingResources() {
   });
 
   return {
-    coin: remaining.coin + discardedResourceBonus.coin + eventResourceModifier.coin,
-    stamina: remaining.stamina + discardedResourceBonus.stamina + eventResourceModifier.stamina,
+    coin: remaining.coin + state.discardedResourceBonus.coin + state.eventResourceModifier.coin,
+    stamina: remaining.stamina + state.discardedResourceBonus.stamina + state.eventResourceModifier.stamina,
   };
 }
 
@@ -1770,10 +1667,10 @@ function getCardAffordabilityMessage(card: TravelCardData) {
 }
 
 function drawNextCard() {
-  const nextCard = deck.shift();
+  const nextCard = state.deck.shift();
 
   if (nextCard) {
-    playerHand.push(nextCard);
+    state.playerHand.push(nextCard);
   }
 }
 
@@ -1926,7 +1823,7 @@ function addLocalDebtOrExhaustToken(params: {
   staminaDebt: number;
 }) {
   if (params.coinDebt > 0) {
-    localCoinDebt += params.coinDebt;
+    state.localCoinDebt += params.coinDebt;
   }
 
   if (params.staminaDebt <= 0) return;
@@ -1955,9 +1852,9 @@ function payLocalDebtToken(rowIndex: number, colIndex: number, card: TravelCardD
     return;
   }
 
-  eventResourceModifier = {
-    ...eventResourceModifier,
-    coin: eventResourceModifier.coin - debtAmount,
+  state.eventResourceModifier = {
+    ...state.eventResourceModifier,
+    coin: state.eventResourceModifier.coin - debtAmount,
   };
 
   getBoardSlots()[rowIndex][colIndex] = null;
@@ -1966,9 +1863,9 @@ function payLocalDebtToken(rowIndex: number, colIndex: number, card: TravelCardD
 }
 
 function payDebtToken(rowIndex: number, colIndex: number, card: TravelCardData) {
-  if (colIndex !== currentDayIndex) {
-    focusedBoardCard = card;
-    focusedBoardPosition = { rowIndex, colIndex };
+  if (colIndex !== state.currentDayIndex) {
+    state.focusedBoardCard = card;
+    state.focusedBoardPosition = { rowIndex, colIndex };
     rerenderArena();
     return;
   }
@@ -2026,7 +1923,7 @@ function getHandCardById(id: string | null) {
     }
   }
 
-  if (isDraftPhase) {
+  if (state.isDraftPhase) {
     const draftCard = getCurrentDraftPlayer()?.pool.find((card) => card.id === id) ?? null;
 
     if (draftCard) {
@@ -2034,7 +1931,7 @@ function getHandCardById(id: string | null) {
     }
   }
 
-  return playerHand.find((card) => card.id === id) ?? null;
+  return state.playerHand.find((card) => card.id === id) ?? null;
 }
 
 function getBoardCardByPosition(rowIndex: number, colIndex: number): TravelCardData | null {
@@ -2203,19 +2100,19 @@ function triggerUtilityEffectFlash(params: {
 }) {
   const flashId = Date.now();
 
-  lastUtilityEffectFlash = {
+  state.lastUtilityEffectFlash = {
     ...params,
     id: flashId,
   };
-  resourceOrbFlashType = params.type;
+  state.resourceOrbFlashType = params.type;
 
   window.setTimeout(() => {
-    if (lastUtilityEffectFlash?.id === flashId) {
-      lastUtilityEffectFlash = null;
+    if (state.lastUtilityEffectFlash?.id === flashId) {
+      state.lastUtilityEffectFlash = null;
     }
 
-    if (resourceOrbFlashType === params.type) {
-      resourceOrbFlashType = null;
+    if (state.resourceOrbFlashType === params.type) {
+      state.resourceOrbFlashType = null;
     }
 
     rerenderArena();
@@ -2228,19 +2125,19 @@ function applyUtilityPlacementEffect(card: TravelCardData, rowIndex: number, col
   if (!effect) return false;
 
   if (effect.type === "coin") {
-    eventResourceModifier = {
-      ...eventResourceModifier,
-      coin: eventResourceModifier.coin + effect.value,
+    state.eventResourceModifier = {
+      ...state.eventResourceModifier,
+      coin: state.eventResourceModifier.coin + effect.value,
     };
     playGameSound("eventPromo");
   } else if (effect.type === "stamina") {
-    eventResourceModifier = {
-      ...eventResourceModifier,
-      stamina: eventResourceModifier.stamina + effect.value,
+    state.eventResourceModifier = {
+      ...state.eventResourceModifier,
+      stamina: state.eventResourceModifier.stamina + effect.value,
     };
     playGameSound("eventPromo");
   } else if (effect.type === "vp") {
-    accumulatedVP += effect.value;
+    state.accumulatedVP += effect.value;
     playGameSound("eventPromo");
   }
 
@@ -2256,14 +2153,14 @@ function applyUtilityPlacementEffect(card: TravelCardData, rowIndex: number, col
 
 function renderUtilityEffectFlash(rowIndex: number, colIndex: number) {
   if (
-    !lastUtilityEffectFlash ||
-    lastUtilityEffectFlash.rowIndex !== rowIndex ||
-    lastUtilityEffectFlash.colIndex !== colIndex
+    !state.lastUtilityEffectFlash ||
+    state.lastUtilityEffectFlash.rowIndex !== rowIndex ||
+    state.lastUtilityEffectFlash.colIndex !== colIndex
   ) {
     return "";
   }
 
-  const { type, value } = lastUtilityEffectFlash;
+  const { type, value } = state.lastUtilityEffectFlash;
   const icon = type === "coin" ? "🪙" : type === "stamina" ? "⚡" : "★";
   const label = type === "coin" ? `+${value} Xu` : type === "stamina" ? `+${value} Thể lực` : `+${value} VP`;
 
@@ -2373,10 +2270,10 @@ function renderBoardMiniCard(card: TravelCardData, replayStep?: SimulationReplay
 
 function renderHandCard(card: TravelCardData, index: number, disableFan: boolean = false) {
   const isDraftSelected =
-    isDraftPhase &&
+    state.isDraftPhase &&
     !disableFan &&
-    card.id === draftHandPendingCardId;
-  const isPlanningSelected = !isDraftPhase && card.id === selectedHandCardId;
+    card.id === state.draftHandPendingCardId;
+  const isPlanningSelected = !state.isDraftPhase && card.id === state.selectedHandCardId;
   const isSelected = isDraftSelected || isPlanningSelected;
   const affordability = getCardAffordability(card);
   const affordabilityMessage = affordability.canAfford
@@ -2390,8 +2287,8 @@ function renderHandCard(card: TravelCardData, index: number, disableFan: boolean
       data-hand-card-id="${card.id}"
       style="${isSelected ? "box-shadow: 0 0 0 4px rgba(255,255,255,.95), 0 0 0 8px rgba(139,92,246,.82), 0 18px 34px rgba(75,47,25,.28);" : ""}"
       title="${affordabilityMessage}"
-      onpointerdown="${isDraftPhase ? `` : `event.stopPropagation(); startHandPointerDrag(event, '${card.id}')`}"
-      onclick="${isDraftPhase ? `` : `event.stopPropagation(); window['selectHandCard']('${card.id}')`}"
+      onpointerdown="${state.isDraftPhase ? `` : `event.stopPropagation(); startHandPointerDrag(event, '${card.id}')`}"
+      onclick="${state.isDraftPhase ? `` : `event.stopPropagation(); window['selectHandCard']('${card.id}')`}"
     >
       ${
         isPlanningSelected
@@ -2507,7 +2404,7 @@ function renderFocusedCard(card: TravelCardData) {
         </div>
 
         ${
-          focusedBoardPosition
+          state.focusedBoardPosition
             ? `
               <button
                 class="focused-card__return-button"
@@ -2532,13 +2429,13 @@ function renderDraftHandTopMeta() {
   return `
     <div class="draft-hand-meta">
       <div class="draft-hand-meta__info">
-        <span>Vòng ${draftRound}/5</span>
+        <span>Vòng ${state.draftRound}/5</span>
         <strong>${selectedCard ? getBoardDisplayName(selectedCard) : "Bấm 1 lá để chọn"}</strong>
         <em>
           ${
-            isInitialDealInProgress
+            state.isInitialDealInProgress
               ? "Đang phát bài vào tay..."
-              : isPassingDraftCards
+              : state.isPassingDraftCards
                 ? "Đang chuyền bài còn lại vào lượt kế tiếp..."
                 : selectedCard
                   ? "Đã chọn. Hết giờ mới chuyền bài."
@@ -2579,7 +2476,7 @@ function findCardInDraftPool(cardId: string): TravelCardData | null {
 
 function getDraftHandDisplayCards(): TravelCardData[] {
   const confirmed = getConfirmedPickedDraftCards();
-  const pendingId = draftHandPendingCardId;
+  const pendingId = state.draftHandPendingCardId;
 
   if (!pendingId || confirmed.some((card) => card.id === pendingId)) {
     return confirmed;
@@ -2753,10 +2650,10 @@ async function measureDraftPendingHandSlotRect(): Promise<DOMRect | null> {
 }
 
 function revertDraftPickFlyToHand(cardId: string) {
-  draftHandPendingCardId = null;
+  state.draftHandPendingCardId = null;
 
-  if (draftSelectedCardId === cardId) {
-    draftSelectedCardId = null;
+  if (state.draftSelectedCardId === cardId) {
+    state.draftSelectedCardId = null;
   }
 
   getDraftCenterCardWrapper(cardId)?.classList.remove("draft-center-card-wrapper--flown-to-hand");
@@ -2828,54 +2725,54 @@ function renderPickedDraftCards(options?: { hiddenPendingMeasure?: boolean }) {
   return getDraftHandDisplayCards()
     .map((card, index) =>
       renderPickedDraftCard(card, index, {
-        isPending: card.id === draftHandPendingCardId && !confirmedIds.has(card.id),
-        hiddenForMeasure: options?.hiddenPendingMeasure && card.id === draftHandPendingCardId,
+        isPending: card.id === state.draftHandPendingCardId && !confirmedIds.has(card.id),
+        hiddenForMeasure: options?.hiddenPendingMeasure && card.id === state.draftHandPendingCardId,
       })
     )
     .join("");
 }
 
 function shouldShowDraftPickPool(): boolean {
-  if (!isDraftPhase) return false;
-  if (isOnlineFinalDraftReturnAnimating) return false;
+  if (!state.isDraftPhase) return false;
+  if (state.isOnlineFinalDraftReturnAnimating) return false;
   if (isOnlineInterRoundPoolPassActive()) {
-    const passPool = onlineDraftPassSnapshotPool ?? onlineDraftDisplayPool;
+    const passPool = state.onlineDraftPassSnapshotPool ?? state.onlineDraftDisplayPool;
     if (passPool?.length) return true;
   }
-  if (isPassingDraftCards && draftPassDisplayPool?.length) return true;
-  if (getPickedDraftCount() >= DRAFT_PICK_TARGET) return false;
+  if (state.isPassingDraftCards && state.draftPassDisplayPool?.length) return true;
+  if (getPickedDraftCount() >= HAND_SIZE) return false;
   return true;
 }
 
 function getDraftCenterRenderPool(): TravelCardData[] {
   if (isOnlineRoomActive()) {
     if (isOnlineInterRoundPoolPassActive()) {
-      return onlineDraftPassSnapshotPool ?? onlineDraftDisplayPool ?? [];
+      return state.onlineDraftPassSnapshotPool ?? state.onlineDraftDisplayPool ?? [];
     }
     return getOnlineDraftDisplayPool() ?? [];
   }
 
-  if (isPassingDraftCards && draftPassDisplayPool) {
-    return draftPassDisplayPool;
+  if (state.isPassingDraftCards && state.draftPassDisplayPool) {
+    return state.draftPassDisplayPool;
   }
 
   return getCurrentDraftPlayer()?.pool ?? [];
 }
 
 function updateDraftConfirmButtonVisualOnly() {
-  if (!isDraftPhase) return;
+  if (!state.isDraftPhase) return;
 
   const button = document.querySelector(
-    ".deck-pile-panel__draft-confirm"
+    ".state.deck-pile-panel__draft-confirm"
   ) as HTMLButtonElement | null;
   if (!button) return;
 
   const canConfirm =
-    !!(draftHandPendingCardId || draftSelectedCardId) &&
-    !isDraftPickFlying &&
-    !isPassingDraftCards &&
+    !!(state.draftHandPendingCardId || state.draftSelectedCardId) &&
+    !state.isDraftPickFlying &&
+    !state.isPassingDraftCards &&
     !isDraftDealVisualActive() &&
-    !isDraftPoolCollapseAnimating;
+    !state.isDraftPoolCollapseAnimating;
 
   button.disabled = !canConfirm;
 }
@@ -2884,7 +2781,7 @@ function updatePlanningConfirmButtonVisualOnly() {
   if (!isOnlinePlanningPhase()) return;
 
   const button = document.querySelector(
-    ".deck-pile-panel__planning-confirm"
+    ".state.deck-pile-panel__planning-confirm"
   ) as HTMLButtonElement | null;
   if (!button) return;
 
@@ -2893,7 +2790,7 @@ function updatePlanningConfirmButtonVisualOnly() {
   button.textContent = confirmed ? "Đã xác nhận" : "Xác nhận";
 
   const statusElement = document.querySelector(
-    ".deck-pile-panel__planning-status"
+    ".state.deck-pile-panel__planning-status"
   ) as HTMLElement | null;
 
   if (statusElement) {
@@ -2902,39 +2799,39 @@ function updatePlanningConfirmButtonVisualOnly() {
 }
 
 function resetDraftPoolCollapseState() {
-  if (draftPoolCollapseTimerId !== null) {
-    window.clearTimeout(draftPoolCollapseTimerId);
-    draftPoolCollapseTimerId = null;
+  if (state.draftPoolCollapseTimerId !== null) {
+    window.clearTimeout(state.draftPoolCollapseTimerId);
+    state.draftPoolCollapseTimerId = null;
   }
 
-  isDraftPoolCollapsed = false;
-  isDraftPoolCollapseAnimating = false;
-  draftPoolCollapseAnimMode = null;
+  state.isDraftPoolCollapsed = false;
+  state.isDraftPoolCollapseAnimating = false;
+  state.draftPoolCollapseAnimMode = null;
 }
 
 function isDraftPoolToggleBlocked(): boolean {
   return (
-    isDraftPoolCollapseAnimating ||
-    isDraftPickFlying ||
-    isPassingDraftCards ||
-    isOnlineFinalDraftReturnAnimating
+    state.isDraftPoolCollapseAnimating ||
+    state.isDraftPickFlying ||
+    state.isPassingDraftCards ||
+    state.isOnlineFinalDraftReturnAnimating
   );
 }
 
 function renderDraftPoolCollapseButton(): string {
-  if (!isDraftPhase || !shouldShowDraftPickPool()) return "";
-  if (isPassingDraftCards || isOnlineFinalDraftReturnAnimating) return "";
+  if (!state.isDraftPhase || !shouldShowDraftPickPool()) return "";
+  if (state.isPassingDraftCards || state.isOnlineFinalDraftReturnAnimating) return "";
 
-  const label = isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
+  const label = state.isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
   const disabled = isDraftPoolToggleBlocked();
 
   return `
     <button
       type="button"
-      class="deck-pile-panel__pool-toggle"
+      class="state.deck-pile-panel__pool-toggle"
       onclick="event.stopPropagation(); toggleDraftPoolCollapse()"
       ${disabled ? "disabled" : ""}
-      title="${isDraftPoolCollapsed ? "Hiện lại pool chọn bài" : "Thu gọn pool để xem bàn cờ"}"
+      title="${state.isDraftPoolCollapsed ? "Hiện lại pool chọn bài" : "Thu gọn pool để xem bàn cờ"}"
     >
       ${label}
     </button>
@@ -2943,13 +2840,13 @@ function renderDraftPoolCollapseButton(): string {
 
 function updateDraftPoolToggleVisualOnly() {
   const button = document.querySelector(
-    ".deck-pile-panel__pool-toggle"
+    ".state.deck-pile-panel__pool-toggle"
   ) as HTMLButtonElement | null;
   if (!button) return;
 
-  button.textContent = isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
+  button.textContent = state.isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
   button.disabled = isDraftPoolToggleBlocked();
-  button.title = isDraftPoolCollapsed
+  button.title = state.isDraftPoolCollapsed
     ? "Hiện lại pool chọn bài"
     : "Thu gọn pool để xem bàn cờ";
 }
@@ -2964,7 +2861,7 @@ function activateDraftCenterPoolDeckFlyAnimation(
   mode: "collapse" | "expand"
 ): boolean {
   const overlayElement = getDraftCenterPickOverlayElement();
-  const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+  const deckStackElement = document.querySelector(".state.deck-card-stack") as HTMLElement | null;
 
   if (!overlayElement || !deckStackElement) return false;
 
@@ -2999,7 +2896,7 @@ function activateDraftCenterPoolDeckFlyAnimation(
     deckInsertY
   );
 
-  deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+  deckStackElement.closest(".state.deck-pile-panel")?.classList.add("state.deck-receiving");
   overlayElement.classList.add(
     mode === "collapse"
       ? "draft-center-overlay--collapsing"
@@ -3011,10 +2908,10 @@ function activateDraftCenterPoolDeckFlyAnimation(
 }
 
 function finishDraftPoolCollapseAnimation() {
-  draftPoolCollapseTimerId = null;
-  isDraftPoolCollapseAnimating = false;
-  draftPoolCollapseAnimMode = null;
-  isDraftPoolCollapsed = true;
+  state.draftPoolCollapseTimerId = null;
+  state.isDraftPoolCollapseAnimating = false;
+  state.draftPoolCollapseAnimMode = null;
+  state.isDraftPoolCollapsed = true;
 
   const overlayElement = getDraftCenterPickOverlayElement();
   overlayElement?.classList.remove(
@@ -3023,16 +2920,16 @@ function finishDraftPoolCollapseAnimation() {
   );
   overlayElement?.classList.add("draft-center-overlay--collapsed");
 
-  document.querySelector(".deck-pile-panel")?.classList.remove("deck-receiving");
+  document.querySelector(".state.deck-pile-panel")?.classList.remove("state.deck-receiving");
   updateDraftPoolToggleVisualOnly();
   updateDraftConfirmButtonVisualOnly();
 }
 
 function finishDraftPoolExpandAnimation() {
-  draftPoolCollapseTimerId = null;
-  isDraftPoolCollapseAnimating = false;
-  draftPoolCollapseAnimMode = null;
-  isDraftPoolCollapsed = false;
+  state.draftPoolCollapseTimerId = null;
+  state.isDraftPoolCollapseAnimating = false;
+  state.draftPoolCollapseAnimMode = null;
+  state.isDraftPoolCollapsed = false;
 
   const overlayElement = getDraftCenterPickOverlayElement();
   overlayElement?.classList.remove(
@@ -3041,16 +2938,16 @@ function finishDraftPoolExpandAnimation() {
     "pass-active"
   );
 
-  document.querySelector(".deck-pile-panel")?.classList.remove("deck-receiving");
+  document.querySelector(".state.deck-pile-panel")?.classList.remove("state.deck-receiving");
   updateDraftPoolToggleVisualOnly();
   updateDraftConfirmButtonVisualOnly();
 }
 
 function collapseDraftPoolVisual() {
-  if (isDraftPoolToggleBlocked() || isDraftPoolCollapsed) return;
+  if (isDraftPoolToggleBlocked() || state.isDraftPoolCollapsed) return;
 
-  isDraftPoolCollapseAnimating = true;
-  draftPoolCollapseAnimMode = "collapse";
+  state.isDraftPoolCollapseAnimating = true;
+  state.draftPoolCollapseAnimMode = "collapse";
   updateDraftPoolToggleVisualOnly();
   updateDraftConfirmButtonVisualOnly();
   playGameSound("returnDeck");
@@ -3063,17 +2960,17 @@ function collapseDraftPoolVisual() {
     });
   });
 
-  draftPoolCollapseTimerId = window.setTimeout(() => {
+  state.draftPoolCollapseTimerId = window.setTimeout(() => {
     finishDraftPoolCollapseAnimation();
   }, DRAFT_POOL_COLLAPSE_MS);
 }
 
 function expandDraftPoolVisual() {
-  if (isDraftPoolToggleBlocked() || !isDraftPoolCollapsed) return;
+  if (isDraftPoolToggleBlocked() || !state.isDraftPoolCollapsed) return;
 
-  isDraftPoolCollapsed = false;
-  isDraftPoolCollapseAnimating = true;
-  draftPoolCollapseAnimMode = "expand";
+  state.isDraftPoolCollapsed = false;
+  state.isDraftPoolCollapseAnimating = true;
+  state.draftPoolCollapseAnimMode = "expand";
 
   const overlayElement = getDraftCenterPickOverlayElement();
   overlayElement?.classList.remove("draft-center-overlay--collapsed");
@@ -3090,17 +2987,17 @@ function expandDraftPoolVisual() {
     });
   });
 
-  draftPoolCollapseTimerId = window.setTimeout(() => {
+  state.draftPoolCollapseTimerId = window.setTimeout(() => {
     finishDraftPoolExpandAnimation();
   }, DRAFT_POOL_COLLAPSE_MS);
 }
 
 function toggleDraftPoolCollapse() {
-  if (!isDraftPhase || !shouldShowDraftPickPool() || isDraftPoolToggleBlocked()) {
+  if (!state.isDraftPhase || !shouldShowDraftPickPool() || isDraftPoolToggleBlocked()) {
     return;
   }
 
-  if (isDraftPoolCollapsed) {
+  if (state.isDraftPoolCollapsed) {
     expandDraftPoolVisual();
   } else {
     collapseDraftPoolVisual();
@@ -3108,7 +3005,7 @@ function toggleDraftPoolCollapse() {
 }
 
 function shouldShowDraftLeftoverReturn(): boolean {
-  return isOnlineFinalDraftReturnAnimating && isPassingDraftCards;
+  return state.isOnlineFinalDraftReturnAnimating && state.isPassingDraftCards;
 }
 
 function getDraftLeftoverReturnCards(): TravelCardData[] {
@@ -3124,7 +3021,7 @@ function isDraftPickTimerFrozen(): boolean {
 
   if (isOnlineRoomActive()) {
     const serverPool = getOnlineSelfDraftPool();
-    const animationExpired = draftDealVisualEndsAt > 0 && Date.now() > draftDealVisualEndsAt + 180;
+    const animationExpired = state.draftDealVisualEndsAt > 0 && Date.now() > state.draftDealVisualEndsAt + 180;
 
     if (serverPool?.length && animationExpired) {
       return hold > 0;
@@ -3132,37 +3029,37 @@ function isDraftPickTimerFrozen(): boolean {
   }
 
   return (
-    isDraftCenterDealing ||
-    isInitialDealInProgress ||
-    isPassingDraftCards ||
+    state.isDraftCenterDealing ||
+    state.isInitialDealInProgress ||
+    state.isPassingDraftCards ||
     hold > 0 ||
-    Date.now() < draftDealVisualEndsAt
+    Date.now() < state.draftDealVisualEndsAt
   );
 }
 
 function getDraftTimerDisplayLabel(): string {
   if (isDraftPickTimerFrozen()) return "Chia bài";
-  return `${draftPickSecondsLeft}s`;
+  return `${state.draftPickSecondsLeft}s`;
 }
 
 function updateDraftTimerDisplayVisualOnly() {
   const meta = document.querySelector(".player-hand__meta");
-  if (!meta || !isDraftPhase) return;
+  if (!meta || !state.isDraftPhase) return;
 
   meta.textContent = isDraftPickTimerFrozen()
     ? "Đang chia bài..."
     : `Còn ${getDraftTimerDisplayLabel()} • ${
-        isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"
+        state.isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"
       }`;
   meta.classList.toggle("player-hand__meta--danger", isDraftTimerDanger());
 }
 
 function isDraftTimerDanger(): boolean {
-  return !isDraftPickTimerFrozen() && draftPickSecondsLeft <= 3;
+  return !isDraftPickTimerFrozen() && state.draftPickSecondsLeft <= 3;
 }
 
 function renderDraftCenterOverlay() {
-  if (!isDraftPhase) return "";
+  if (!state.isDraftPhase) return "";
   if (!shouldShowDraftPickPool()) return "";
 
   const activePool = getDraftCenterRenderPool();
@@ -3184,9 +3081,9 @@ function renderDraftCenterOverlay() {
       const globalSlot = startIndex + idx + 1;
       const isFlownToHand = shouldHideDraftPoolSlot(card.id);
       const poolPickDisabled =
-        isPassingDraftCards ||
-        isDraftPoolCollapsed ||
-        isDraftPoolCollapseAnimating;
+        state.isPassingDraftCards ||
+        state.isDraftPoolCollapsed ||
+        state.isDraftPoolCollapseAnimating;
       const pickButton = poolPickDisabled
         ? ""
         : `
@@ -3207,17 +3104,17 @@ function renderDraftCenterOverlay() {
   };
 
   const overlayModifierClass = [
-    isPassingDraftCards && !isOnlineFinalDraftReturnAnimating
+    state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating
       ? "draft-center-overlay--passing"
       : "",
-    isDraftCenterDealing || isInitialDealInProgress
+    state.isDraftCenterDealing || state.isInitialDealInProgress
       ? "draft-center-overlay--dealing"
       : "",
-    isDraftPoolCollapsed && !isDraftPoolCollapseAnimating
+    state.isDraftPoolCollapsed && !state.isDraftPoolCollapseAnimating
       ? "draft-center-overlay--collapsed"
       : "",
-    draftPoolCollapseAnimMode === "collapse" ? "draft-center-overlay--collapsing" : "",
-    draftPoolCollapseAnimMode === "expand" ? "draft-center-overlay--expanding" : "",
+    state.draftPoolCollapseAnimMode === "collapse" ? "draft-center-overlay--collapsing" : "",
+    state.draftPoolCollapseAnimMode === "expand" ? "draft-center-overlay--expanding" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -3268,14 +3165,14 @@ function getDraftPreviewIconsForPlayer(playerId: PlayerId): string[] {
     p4: 3,
   };
 
-  const draftPlayer = draftPlayers[draftIndexByPlayerId[playerId]];
+  const draftPlayer = state.draftPlayers[draftIndexByPlayerId[playerId]];
   const pickedCards = draftPlayer?.picked ?? [];
 
   return pickedCards.map((card) => card.icon);
 }
 
 function shouldRenderDraftPreviewOnSideBoard(playerId?: PlayerId): boolean {
-  return Boolean(playerId && playerId !== currentPlayerId && isDraftPhase);
+  return Boolean(playerId && playerId !== currentPlayerId && state.isDraftPhase);
 }
 
 function getOnlineBoardForPlayer(playerId?: PlayerId) {
@@ -3325,7 +3222,7 @@ function renderSidePlayerBoard(playerId?: PlayerId) {
     return renderOnlineSideBoard(playerId);
   }
 
-  const board = playerBoards[playerId];
+  const board = state.playerBoards[playerId];
   const draftPreviewIcons = shouldRenderDraftPreviewOnSideBoard(playerId)
     ? getDraftPreviewIconsForPlayer(playerId)
     : [];
@@ -3407,7 +3304,7 @@ function renderPlayer(player: Player) {
 }
 
 function getCurrentDraftPlayer() {
-  return getCurrentDraftPlayerFromList(draftPlayers, getActiveDraftPlayerIndex());
+  return getCurrentDraftPlayerFromList(state.draftPlayers, getActiveDraftPlayerIndex());
 }
 
 function isSinglePlayerLocalDraftMode() {
@@ -3515,15 +3412,15 @@ function getSinglePlayerDraftQuota(count: number) {
 }
 
 function drawRandomCardsFromDeck(count: number): TravelCardData[] {
-  if (count <= 0 || deck.length === 0) return [];
+  if (count <= 0 || state.deck.length === 0) return [];
 
   /*
     Sửa lỗi roll toàn Ẩm thực:
-    - Trước đây có thể tag bị đọc sai hoặc lấy theo thứ tự deck.
+    - Trước đây có thể tag bị đọc sai hoặc lấy theo thứ tự state.deck.
     - Bản này bucket theo prefix ID thật + quota cứng.
-    - Nếu deck còn CULTURE/ACTION/UTILITY thì pool 7 lá không thể toàn FOOD.
+    - Nếu state.deck còn CULTURE/ACTION/UTILITY thì pool 7 lá không thể toàn FOOD.
   */
-  const shuffledDeck = shuffleCards(deck);
+  const shuffledDeck = shuffleCards(state.deck);
   const buckets = new Map<string, TravelCardData[]>();
 
   for (const card of shuffledDeck) {
@@ -3569,9 +3466,9 @@ function drawRandomCardsFromDeck(count: number): TravelCardData[] {
     if (!pickedThisRound) break;
   }
 
-  deck = shuffledDeck.filter((card) => !selectedIds.has(card.id));
+  state.deck = shuffledDeck.filter((card) => !selectedIds.has(card.id));
 
-  console.log("[Draft] deck tag counts before draw:", getDraftTagCounts(shuffledDeck));
+  console.log("[Draft] state.deck tag counts before draw:", getDraftTagCounts(shuffledDeck));
   console.log("[Draft] single-player pool:", selectedCards.map((card) => `${card.id}:${getDraftPrimaryTag(card)}`));
   console.log("[Draft] single-player pool tag counts:", getDraftTagCounts(selectedCards));
 
@@ -3603,7 +3500,7 @@ function resetSinglePlayerDraftPool() {
   /*
     Chơi 1 người đúng yêu cầu:
     - Lượt 1: random 7 lá.
-    - Pick xong 1 lá: trả 6 lá còn lại về deck.
+    - Pick xong 1 lá: trả 6 lá còn lại về state.deck.
     - Lượt 2: random lại 6 lá mới.
     - Lượt 3: random lại 5 lá mới.
     - Lượt 4: random lại 4 lá mới.
@@ -3611,16 +3508,16 @@ function resetSinglePlayerDraftPool() {
     => Không giữ pool cũ, nhưng số lá giảm dần theo số lá đã pick.
   */
   if (currentPlayer.pool.length > 0) {
-    deck = shuffleCards([...deck, ...currentPlayer.pool]);
+    state.deck = shuffleCards([...state.deck, ...currentPlayer.pool]);
   }
 
   const nextPoolSize = Math.max(
     DRAFT_STARTING_POOL_SIZE - currentPlayer.picked.length,
-    DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1
+    DRAFT_STARTING_POOL_SIZE - HAND_SIZE + 1
   );
   const nextPool = drawRandomCardsFromDeck(nextPoolSize);
 
-  draftPlayers = draftPlayers.map((player, index) => {
+  state.draftPlayers = state.draftPlayers.map((player, index) => {
     if (index !== activeIndex) return player;
 
     return {
@@ -3636,22 +3533,22 @@ function createDailyDraftPlayers(): DraftPlayerState[] {
   }
 
   const result = createDailyDraftPlayersFromDeck({
-    deck,
+    deck: state.deck,
     initialDeck,
     handSize: DRAFT_STARTING_POOL_SIZE,
     playerCount: PLAYER_COUNT,
     shuffleCards,
   });
 
-  deck = result.deck;
+  state.deck = result.deck;
 
   return result.draftPlayers;
 }
 
 function stopDraftTimer() {
-  if (draftTimerId !== null) {
-    window.clearInterval(draftTimerId);
-    draftTimerId = null;
+  if (state.draftTimerId !== null) {
+    window.clearInterval(state.draftTimerId);
+    state.draftTimerId = null;
   }
 }
 
@@ -3659,18 +3556,18 @@ function startDraftTimer() {
   stopDraftTimer();
 
   if (isOnlineRoomActive()) return;
-  if (!isDraftPhase || isPassingDraftCards) return;
+  if (!state.isDraftPhase || state.isPassingDraftCards) return;
 
-  draftTimerId = window.setInterval(() => {
-    draftPickSecondsLeft -= 1;
+  state.draftTimerId = window.setInterval(() => {
+    state.draftPickSecondsLeft -= 1;
 
-    if (draftPickSecondsLeft <= 0) {
-      draftPickSecondsLeft = 0;
+    if (state.draftPickSecondsLeft <= 0) {
+      state.draftPickSecondsLeft = 0;
       autoPickDraftCard();
       return;
     }
 
-    if (isDraftPoolCollapseAnimating) {
+    if (state.isDraftPoolCollapseAnimating) {
       updateDraftTimerDisplayVisualOnly();
       return;
     }
@@ -3687,36 +3584,36 @@ function initializeDailyDraftPhase() {
   stopDraftTimer();
   stopBotPlacementTimer();
 
-  draftPlayers = createDailyDraftPlayers();
+  state.draftPlayers = createDailyDraftPlayers();
   preloadDraftImages();
-  draftSelectedCardId = null;
-  draftHandPendingCardId = null;
-  draftPoolFlyReturnCardId = null;
-  lastOnlinePickedDraftCount = 0;
-  draftPickSecondsLeft = DRAFT_PICK_SECONDS;
-  isPassingDraftCards = false;
+  state.draftSelectedCardId = null;
+  state.draftHandPendingCardId = null;
+  state.draftPoolFlyReturnCardId = null;
+  state.lastOnlinePickedDraftCount = 0;
+  state.draftPickSecondsLeft = DRAFT_PICK_SECONDS;
+  state.isPassingDraftCards = false;
   resetDraftPoolCollapseState();
-  draftPassDisplayPool = null;
-  draftRound = 1;
-  lastDraftPickResults = [];
+  state.draftPassDisplayPool = null;
+  state.draftRound = 1;
+  state.lastDraftPickResults = [];
 
-  playerHand = [];
-  isDraftPhase = true;
-  isInitialDealInProgress = false;
-  isSimulationMode = false;
-  simulationResult = null;
-  simulationReplayIndex = 0;
-  isReplayComplete = false;
-  hasAppliedSimulationScore = false;
-  remainingTurnSeconds = TURN_DURATION_SECONDS;
+  state.playerHand = [];
+  state.isDraftPhase = true;
+  state.isInitialDealInProgress = false;
+  state.isSimulationMode = false;
+  state.simulationResult = null;
+  state.simulationReplayIndex = 0;
+  state.isReplayComplete = false;
+  state.hasAppliedSimulationScore = false;
+  state.remainingTurnSeconds = TURN_DURATION_SECONDS;
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  lastPlacedBoardPosition = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.lastPlacedBoardPosition = null;
+  state.suppressNextClick = false;
 
   playDraftDealAnimationAndStartTimer();
 }
@@ -3733,13 +3630,13 @@ function getDraftSelectedCard() {
 
   const currentPlayer = getCurrentDraftPlayer();
 
-  if (!currentPlayer || !draftSelectedCardId) return null;
+  if (!currentPlayer || !state.draftSelectedCardId) return null;
 
-  return currentPlayer.pool.find((card) => card.id === draftSelectedCardId) ?? null;
+  return currentPlayer.pool.find((card) => card.id === state.draftSelectedCardId) ?? null;
 }
 
 function rotateDraftPoolsClockwise() {
-  draftPlayers = rotateDraftPoolsClockwiseList(draftPlayers);
+  state.draftPlayers = rotateDraftPoolsClockwiseList(state.draftPlayers);
 }
 
 function completeDailyDraftPhase() {
@@ -3751,32 +3648,32 @@ function completeDailyDraftPhase() {
   /*
     Draft 7 pick 5:
     - Người chơi giữ đúng 5 lá đã pick.
-    - 2 lá dư trong pool được trả lại deck và shuffle lại.
+    - 2 lá dư trong pool được trả lại state.deck và shuffle lại.
   */
-  const leftoverDraftCards = draftPlayers.reduce<TravelCardData[]>((cards, player) => {
+  const leftoverDraftCards = state.draftPlayers.reduce<TravelCardData[]>((cards, player) => {
     cards.push(...player.pool);
     return cards;
   }, []);
 
   if (leftoverDraftCards.length > 0) {
-    deck = shuffleCards([...deck, ...leftoverDraftCards]);
+    state.deck = shuffleCards([...state.deck, ...leftoverDraftCards]);
   }
 
-  playerHand = currentPlayer ? currentPlayer.picked.slice(0, DRAFT_PICK_TARGET) : [];
+  state.playerHand = currentPlayer ? currentPlayer.picked.slice(0, HAND_SIZE) : [];
 
-  isDraftPhase = false;
-  isPassingDraftCards = false;
-  draftSelectedCardId = null;
-  draftPickSecondsLeft = 0;
-  lastDraftPickResults = [];
-  isInitialDealInProgress = true;
+  state.isDraftPhase = false;
+  state.isPassingDraftCards = false;
+  state.draftSelectedCardId = null;
+  state.draftPickSecondsLeft = 0;
+  state.lastDraftPickResults = [];
+  state.isInitialDealInProgress = true;
 
   rerenderArena();
   finishDailyDealAndStartTimer();
 }
 
 function finishDraftPick(cardId: string | null) {
-  if (!isDraftPhase || isPassingDraftCards) return;
+  if (!state.isDraftPhase || state.isPassingDraftCards) return;
 
   const activeIndex = getActiveDraftPlayerIndex();
   const pickResults: DraftPickResult[] = [];
@@ -3801,9 +3698,9 @@ function finishDraftPick(cardId: string | null) {
       pickedCard: chosenCard,
     });
 
-    draftPassDisplayPool = [...currentPlayer.pool];
+    state.draftPassDisplayPool = [...currentPlayer.pool];
 
-    draftPlayers = draftPlayers.map((player, playerIndex) => {
+    state.draftPlayers = state.draftPlayers.map((player, playerIndex) => {
       if (playerIndex !== activeIndex) return player;
 
       return {
@@ -3813,22 +3710,22 @@ function finishDraftPick(cardId: string | null) {
       };
     });
 
-    lastDraftPickResults = pickResults;
-    draftSelectedCardId = null;
-    draftHandPendingCardId = null;
-    draftPoolFlyReturnCardId = null;
-    isPassingDraftCards = true;
+    state.lastDraftPickResults = pickResults;
+    state.draftSelectedCardId = null;
+    state.draftHandPendingCardId = null;
+    state.draftPoolFlyReturnCardId = null;
+    state.isPassingDraftCards = true;
 
     stopDraftTimer();
     rerenderArena();
     activateDraftCenterPoolPassAnimation();
 
     window.setTimeout(() => {
-      draftPassDisplayPool = null;
+      state.draftPassDisplayPool = null;
       const nextCurrentPlayer = getCurrentDraftPlayer();
 
-      if (!nextCurrentPlayer || nextCurrentPlayer.picked.length >= DRAFT_PICK_TARGET) {
-        isPassingDraftCards = false;
+      if (!nextCurrentPlayer || nextCurrentPlayer.picked.length >= HAND_SIZE) {
+        state.isPassingDraftCards = false;
         completeDailyDraftPhase();
         return;
       }
@@ -3840,10 +3737,10 @@ function finishDraftPick(cardId: string | null) {
       resetSinglePlayerDraftPool();
       preloadDraftImages();
 
-      draftRound += 1;
-      draftPickSecondsLeft = DRAFT_PICK_SECONDS;
-      isPassingDraftCards = false;
-      lastDraftPickResults = [];
+      state.draftRound += 1;
+      state.draftPickSecondsLeft = DRAFT_PICK_SECONDS;
+      state.isPassingDraftCards = false;
+      state.lastDraftPickResults = [];
 
       playDraftDealAnimationAndStartTimer();
     }, DRAFT_PASS_ANIMATION_MS);
@@ -3852,9 +3749,9 @@ function finishDraftPick(cardId: string | null) {
   }
 
   const currentPlayerBeforePass = getCurrentDraftPlayer();
-  draftPassDisplayPool = currentPlayerBeforePass ? [...currentPlayerBeforePass.pool] : null;
+  state.draftPassDisplayPool = currentPlayerBeforePass ? [...currentPlayerBeforePass.pool] : null;
 
-  draftPlayers = draftPlayers.map((player, playerIndex) => {
+  state.draftPlayers = state.draftPlayers.map((player, playerIndex) => {
     if (player.pool.length === 0) return player;
 
     const chosenCard =
@@ -3876,26 +3773,26 @@ function finishDraftPick(cardId: string | null) {
     };
   });
 
-  lastDraftPickResults = pickResults;
-  draftSelectedCardId = null;
-  draftHandPendingCardId = null;
-  draftPoolFlyReturnCardId = null;
-  isPassingDraftCards = true;
+  state.lastDraftPickResults = pickResults;
+  state.draftSelectedCardId = null;
+  state.draftHandPendingCardId = null;
+  state.draftPoolFlyReturnCardId = null;
+  state.isPassingDraftCards = true;
 
   stopDraftTimer();
   rerenderArena();
   activateDraftCenterPoolPassAnimation();
 
   window.setTimeout(() => {
-    draftPassDisplayPool = null;
+    state.draftPassDisplayPool = null;
     const currentPlayer = getCurrentDraftPlayer();
 
     /*
       Draft mới: phát 7 lá, nhưng chỉ pick đủ 5 lá.
-      Khi đã đủ 5 lá thì trả 2 lá dư còn lại về deck, không cần draft tới khi pool rỗng.
+      Khi đã đủ 5 lá thì trả 2 lá dư còn lại về state.deck, không cần draft tới khi pool rỗng.
     */
-    if (!currentPlayer || currentPlayer.picked.length >= DRAFT_PICK_TARGET) {
-      isPassingDraftCards = false;
+    if (!currentPlayer || currentPlayer.picked.length >= HAND_SIZE) {
+      state.isPassingDraftCards = false;
       completeDailyDraftPhase();
       return;
     }
@@ -3903,10 +3800,10 @@ function finishDraftPick(cardId: string | null) {
     rotateDraftPoolsClockwise();
     preloadDraftImages();
 
-    draftRound += 1;
-    draftPickSecondsLeft = DRAFT_PICK_SECONDS;
-    isPassingDraftCards = false;
-    lastDraftPickResults = [];
+    state.draftRound += 1;
+    state.draftPickSecondsLeft = DRAFT_PICK_SECONDS;
+    state.isPassingDraftCards = false;
+    state.lastDraftPickResults = [];
 
     playDraftDealAnimationAndStartTimer();
   }, DRAFT_PASS_ANIMATION_MS);
@@ -3915,16 +3812,16 @@ function finishDraftPick(cardId: string | null) {
 function autoPickDraftCard() {
   const currentPlayer = getCurrentDraftPlayer();
 
-  if (!currentPlayer || currentPlayer.picked.length >= DRAFT_PICK_TARGET) {
+  if (!currentPlayer || currentPlayer.picked.length >= HAND_SIZE) {
     completeDailyDraftPhase();
     return;
   }
 
-  finishDraftPick(draftSelectedCardId ?? null);
+  finishDraftPick(state.draftSelectedCardId ?? null);
 }
 
 function getDraftStatusText() {
-  if (isPassingDraftCards) {
+  if (state.isPassingDraftCards) {
     return isSinglePlayerLocalDraftMode()
       ? "Đang đổi pool mới ngẫu nhiên cho lượt kế tiếp"
       : "Đang truyền bài còn lại theo chiều kim đồng hồ";
@@ -4004,10 +3901,10 @@ function computeDraftPickFlyScaleEnd(fromRect: DOMRect, toRect: DOMRect): number
 
 function shouldHideDraftPoolSlot(cardId: string): boolean {
   if (isDraftDealVisualActive()) {
-    return cardId === draftHandPendingCardId || cardId === draftPoolFlyReturnCardId;
+    return cardId === state.draftHandPendingCardId || cardId === state.draftPoolFlyReturnCardId;
   }
 
-  if (cardId === draftHandPendingCardId || cardId === draftPoolFlyReturnCardId) {
+  if (cardId === state.draftHandPendingCardId || cardId === state.draftPoolFlyReturnCardId) {
     return true;
   }
 
@@ -4016,7 +3913,7 @@ function shouldHideDraftPoolSlot(cardId: string): boolean {
     Lá vừa pick đã nằm trên tay nhưng vẫn còn trong display pool → ẩn slot
     cho tới khi pool mới được apply sau animation.
   */
-  if (isPassingDraftCards || isOnlineFinalDraftReturnAnimating) {
+  if (state.isPassingDraftCards || state.isOnlineFinalDraftReturnAnimating) {
     return getConfirmedPickedDraftCards().some((card) => card.id === cardId);
   }
 
@@ -4108,7 +4005,7 @@ async function playDraftPickFlyToHand(cardId: string) {
     return;
   }
 
-  draftHandPendingCardId = cardId;
+  state.draftHandPendingCardId = cardId;
   wrapper.classList.add("draft-center-card-wrapper--flown-to-hand");
   updateDraftPoolFlownVisualOnly();
   updateDraftHandVisualOnly({ hiddenPendingMeasure: true });
@@ -4151,7 +4048,7 @@ async function playDraftPickFlyToPool(cardId: string) {
 
   handCard.classList.add("hand-card--picked-pending-hidden");
 
-  draftPoolFlyReturnCardId = cardId;
+  state.draftPoolFlyReturnCardId = cardId;
   updateDraftPoolFlownVisualOnly();
 
   const wrapper = getDraftCenterCardWrapper(cardId);
@@ -4159,8 +4056,8 @@ async function playDraftPickFlyToPool(cardId: string) {
   const poolTargetRect = poolCard?.getBoundingClientRect() ?? wrapper?.getBoundingClientRect();
 
   if (!poolTargetRect) {
-    draftHandPendingCardId = null;
-    draftPoolFlyReturnCardId = null;
+    state.draftHandPendingCardId = null;
+    state.draftPoolFlyReturnCardId = null;
     updateDraftHandVisualOnly();
     updateDraftPoolFlownVisualOnly();
     return;
@@ -4179,8 +4076,8 @@ async function playDraftPickFlyToPool(cardId: string) {
       flyHeight: cardH,
     });
   } finally {
-    draftHandPendingCardId = null;
-    draftPoolFlyReturnCardId = null;
+    state.draftHandPendingCardId = null;
+    state.draftPoolFlyReturnCardId = null;
     updateDraftHandVisualOnly();
     updateDraftPoolFlownVisualOnly();
   }
@@ -4221,8 +4118,8 @@ async function playDraftPickSwap(fromCardId: string, toCardId: string) {
 
   fromHandEl.classList.add("hand-card--picked-pending-hidden");
 
-  draftHandPendingCardId = toCardId;
-  draftPoolFlyReturnCardId = fromCardId;
+  state.draftHandPendingCardId = toCardId;
+  state.draftPoolFlyReturnCardId = fromCardId;
   updateDraftPoolFlownVisualOnly();
   updateDraftHandVisualOnly({ hiddenPendingMeasure: true });
 
@@ -4234,8 +4131,8 @@ async function playDraftPickSwap(fromCardId: string, toCardId: string) {
 
   if (!toHandTarget) {
     fromHandEl.classList.remove("hand-card--picked-pending-hidden");
-    draftHandPendingCardId = fromCardId;
-    draftPoolFlyReturnCardId = null;
+    state.draftHandPendingCardId = fromCardId;
+    state.draftPoolFlyReturnCardId = null;
     updateDraftPoolFlownVisualOnly();
     updateDraftHandVisualOnly();
     return;
@@ -4264,7 +4161,7 @@ async function playDraftPickSwap(fromCardId: string, toCardId: string) {
       }),
     ]);
   } finally {
-    draftPoolFlyReturnCardId = null;
+    state.draftPoolFlyReturnCardId = null;
     updateDraftHandVisualOnly();
     updateDraftPoolFlownVisualOnly();
   }
@@ -4313,7 +4210,7 @@ async function handleDraftPickSelectionChange(
   nextSelected: string | null,
   cardId: string
 ) {
-  isDraftPickFlying = true;
+  state.isDraftPickFlying = true;
 
   let didChangeHand = false;
 
@@ -4325,10 +4222,10 @@ async function handleDraftPickSelectionChange(
       }
     } else if (!prevPending) {
       await playDraftPickFlyToHand(nextSelected);
-      didChangeHand = draftHandPendingCardId === nextSelected;
+      didChangeHand = state.draftHandPendingCardId === nextSelected;
     } else if (prevPending !== nextSelected) {
       await playDraftPickSwap(prevPending, nextSelected);
-      didChangeHand = draftHandPendingCardId === nextSelected;
+      didChangeHand = state.draftHandPendingCardId === nextSelected;
     }
 
     if (didChangeHand) {
@@ -4341,44 +4238,44 @@ async function handleDraftPickSelectionChange(
       selectOnlineDraftCard(cardId);
     }
   } finally {
-    isDraftPickFlying = false;
+    state.isDraftPickFlying = false;
     updateDraftConfirmButtonVisualOnly();
     updateDraftPoolToggleVisualOnly();
   }
 }
 
 function selectDraftCard(cardId: string) {
-  if (!isDraftPhase) return;
+  if (!state.isDraftPhase) return;
 
   if (
-    isDraftPickFlying ||
-    isPassingDraftCards ||
+    state.isDraftPickFlying ||
+    state.isPassingDraftCards ||
     isDraftDealVisualActive() ||
-    isDraftPoolCollapsed ||
-    isDraftPoolCollapseAnimating
+    state.isDraftPoolCollapsed ||
+    state.isDraftPoolCollapseAnimating
   ) {
     return;
   }
 
-  if (suppressNextClick) {
-    suppressNextClick = false;
+  if (state.suppressNextClick) {
+    state.suppressNextClick = false;
 
-    if (focusedHandCardId || focusedBoardCard || focusedBoardPosition) {
+    if (state.focusedHandCardId || state.focusedBoardCard || state.focusedBoardPosition) {
       return;
     }
   }
 
-  const prevPending = draftHandPendingCardId;
-  const nextSelected = draftSelectedCardId === cardId ? null : cardId;
+  const prevPending = state.draftHandPendingCardId;
+  const nextSelected = state.draftSelectedCardId === cardId ? null : cardId;
 
   playGameSound("cardSelect");
-  draftSelectedCardId = nextSelected;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
+  state.draftSelectedCardId = nextSelected;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
 
   if (nextSelected && !prevPending) {
-    draftHandPendingCardId = nextSelected;
+    state.draftHandPendingCardId = nextSelected;
     updateDraftPoolFlownVisualOnly();
     updateDraftHandVisualOnly({ hiddenPendingMeasure: true });
     updateDraftConfirmButtonVisualOnly();
@@ -4388,17 +4285,17 @@ function selectDraftCard(cardId: string) {
 }
 
 function confirmDraftPick() {
-  if (!isDraftPhase) return;
+  if (!state.isDraftPhase) return;
 
   if (
-    isDraftPickFlying ||
-    isPassingDraftCards ||
-    !(draftHandPendingCardId || draftSelectedCardId)
+    state.isDraftPickFlying ||
+    state.isPassingDraftCards ||
+    !(state.draftHandPendingCardId || state.draftSelectedCardId)
   ) {
     return;
   }
 
-  const cardId = draftSelectedCardId ?? draftHandPendingCardId;
+  const cardId = state.draftSelectedCardId ?? state.draftHandPendingCardId;
 
   if (!cardId) return;
 
@@ -4416,15 +4313,15 @@ function isOnlinePlanningPhase() {
 
 function getSelfPlanningConfirmLockSignature() {
   const playerId = onlineClientState.playerId;
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!playerId || !state) {
+  if (!playerId || !roomState) {
     return "";
   }
 
-  const handIds = (state.self.hand ?? []).map((card) => card.id).join(",");
-  const dayIndex = state.dayIndex;
-  const board = state.players[playerId]?.board ?? [];
+  const handIds = (roomState.self.hand ?? []).map((card) => card.id).join(",");
+  const dayIndex = roomState.dayIndex;
+  const board = roomState.players[playerId]?.board ?? [];
   const dayBoard = board
     .map((row) => row[dayIndex])
     .map((cell) => cell?.cardId ?? "-")
@@ -4434,31 +4331,31 @@ function getSelfPlanningConfirmLockSignature() {
 }
 
 function resetSelfPlanningConfirmLock() {
-  selfPlanningConfirmPending = false;
-  planningConfirmLockSignature = "";
-  planningConfirmRetryCount = 0;
+  state.selfPlanningConfirmPending = false;
+  state.planningConfirmLockSignature = "";
+  state.planningConfirmRetryCount = 0;
 
-  if (planningConfirmRetryTimerId !== null) {
-    window.clearTimeout(planningConfirmRetryTimerId);
-    planningConfirmRetryTimerId = null;
+  if (state.planningConfirmRetryTimerId !== null) {
+    window.clearTimeout(state.planningConfirmRetryTimerId);
+    state.planningConfirmRetryTimerId = null;
   }
 }
 
 function getServerPlanningConfirmProgress() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state) {
+  if (!roomState) {
     return { total: 0, confirmed: 0 };
   }
 
   const connectedPlayerIds = playerIds.filter((playerId) => {
-    const player = state.players[playerId];
+    const player = roomState.players[playerId];
 
     return player?.isConnected === true && player?.hasJoined === true;
   });
 
   const confirmedCount = connectedPlayerIds.filter((playerId) => {
-    return state.players[playerId]?.planningConfirmed === true;
+    return roomState.players[playerId]?.planningConfirmed === true;
   }).length;
 
   return {
@@ -4469,32 +4366,32 @@ function getServerPlanningConfirmProgress() {
 
 function hasServerAckedPlanningConfirm() {
   const playerId = onlineClientState.playerId;
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!playerId || !state) {
+  if (!playerId || !roomState) {
     return false;
   }
 
-  if (state.phase === "simulation" || state.phase === "result") {
+  if (roomState.phase === "simulation" || roomState.phase === "result") {
     return true;
   }
 
-  return state.players[playerId]?.planningConfirmed === true;
+  return roomState.players[playerId]?.planningConfirmed === true;
 }
 
 function schedulePlanningConfirmRetry() {
-  if (planningConfirmRetryTimerId !== null) return;
-  if (!selfPlanningConfirmPending || !isOnlinePlanningPhase()) return;
+  if (state.planningConfirmRetryTimerId !== null) return;
+  if (!state.selfPlanningConfirmPending || !isOnlinePlanningPhase()) return;
   if (hasServerAckedPlanningConfirm()) {
     resetSelfPlanningConfirmLock();
     return;
   }
 
-  planningConfirmRetryTimerId = window.setTimeout(() => {
-    planningConfirmRetryTimerId = null;
+  state.planningConfirmRetryTimerId = window.setTimeout(() => {
+    state.planningConfirmRetryTimerId = null;
 
     if (
-      !selfPlanningConfirmPending ||
+      !state.selfPlanningConfirmPending ||
       !isOnlinePlanningPhase() ||
       hasServerAckedPlanningConfirm()
     ) {
@@ -4503,9 +4400,9 @@ function schedulePlanningConfirmRetry() {
       return;
     }
 
-    planningConfirmRetryCount += 1;
+    state.planningConfirmRetryCount += 1;
 
-    if (planningConfirmRetryCount > 8) {
+    if (state.planningConfirmRetryCount > 8) {
       updatePlanningConfirmButtonVisualOnly();
       return;
     }
@@ -4523,41 +4420,41 @@ function schedulePlanningConfirmRetry() {
 }
 
 function syncSelfPlanningConfirmLockFromServer() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
   const playerId = onlineClientState.playerId;
 
-  if (!state || !playerId) {
+  if (!roomState || !playerId) {
     resetSelfPlanningConfirmLock();
     return;
   }
 
-  if (state.phase !== "planning") {
+  if (roomState.phase !== "planning") {
     resetSelfPlanningConfirmLock();
-    lastOnlinePlanningDayIndex = null;
+    state.lastOnlinePlanningDayIndex = null;
     return;
   }
 
   if (
-    lastOnlinePlanningDayIndex !== null &&
-    lastOnlinePlanningDayIndex !== state.dayIndex
+    state.lastOnlinePlanningDayIndex !== null &&
+    state.lastOnlinePlanningDayIndex !== roomState.dayIndex
   ) {
     resetSelfPlanningConfirmLock();
   }
 
-  lastOnlinePlanningDayIndex = state.dayIndex;
+  state.lastOnlinePlanningDayIndex = roomState.dayIndex;
 
-  if (state.players[playerId]?.planningConfirmed === true) {
+  if (roomState.players[playerId]?.planningConfirmed === true) {
     resetSelfPlanningConfirmLock();
     return;
   }
 
-  if (selfPlanningConfirmPending) {
+  if (state.selfPlanningConfirmPending) {
     schedulePlanningConfirmRetry();
   }
 
   if (
-    selfPlanningConfirmPending &&
-    planningConfirmLockSignature !== getSelfPlanningConfirmLockSignature()
+    state.selfPlanningConfirmPending &&
+    state.planningConfirmLockSignature !== getSelfPlanningConfirmLockSignature()
   ) {
     resetSelfPlanningConfirmLock();
   }
@@ -4565,28 +4462,28 @@ function syncSelfPlanningConfirmLockFromServer() {
 
 function isSelfPlanningConfirmed() {
   const playerId = onlineClientState.playerId;
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!playerId || !state?.players[playerId]) {
+  if (!playerId || !roomState?.players[playerId]) {
     return false;
   }
 
-  if (state.players[playerId].planningConfirmed === true) {
+  if (roomState.players[playerId].planningConfirmed === true) {
     return true;
   }
 
   return (
-    selfPlanningConfirmPending &&
-    planningConfirmLockSignature !== "" &&
-    planningConfirmLockSignature === getSelfPlanningConfirmLockSignature()
+    state.selfPlanningConfirmPending &&
+    state.planningConfirmLockSignature !== "" &&
+    state.planningConfirmLockSignature === getSelfPlanningConfirmLockSignature()
   );
 }
 
 function getPlanningConfirmStatusLabel() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
   const serverProgress = getServerPlanningConfirmProgress();
 
-  if (state?.phase === "simulation") {
+  if (roomState?.phase === "simulation") {
     return "Đang quét...";
   }
 
@@ -4595,10 +4492,10 @@ function getPlanningConfirmStatusLabel() {
   }
 
   const selfServerConfirmed =
-    state?.players[onlineClientState.playerId ?? "p1"]?.planningConfirmed === true;
+    roomState?.players[onlineClientState.playerId ?? "p1"]?.planningConfirmed === true;
 
   if (isSelfPlanningConfirmed() && !selfServerConfirmed) {
-    if (planningConfirmRetryCount > 8) {
+    if (state.planningConfirmRetryCount > 8) {
       if (serverProgress.total <= 1) {
         return "Không kết nối server • chạy: cd TREKPOLOGY/server && npm start";
       }
@@ -4640,9 +4537,9 @@ function confirmPlanningPick() {
   if (!isOnlinePlanningPhase()) return;
   if (isSelfPlanningConfirmed()) return;
 
-  selfPlanningConfirmPending = true;
-  planningConfirmLockSignature = getSelfPlanningConfirmLockSignature();
-  planningConfirmRetryCount = 0;
+  state.selfPlanningConfirmPending = true;
+  state.planningConfirmLockSignature = getSelfPlanningConfirmLockSignature();
+  state.planningConfirmRetryCount = 0;
 
   try {
     confirmOnlinePlanning();
@@ -4661,31 +4558,31 @@ function confirmPlanningPick() {
 
 
 function selectHandCard(cardId: string) {
-  if (isDraftPhase || isSimulationMode || isInitialDealInProgress) return;
+  if (state.isDraftPhase || state.isSimulationMode || state.isInitialDealInProgress) return;
 
-  if (suppressNextClick) {
-    suppressNextClick = false;
+  if (state.suppressNextClick) {
+    state.suppressNextClick = false;
     return;
   }
 
   playGameSound("cardSelect");
-  selectedHandCardId = selectedHandCardId === cardId ? null : cardId;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
+  state.selectedHandCardId = state.selectedHandCardId === cardId ? null : cardId;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
 
   rerenderGameShell();
 }
 
 function clearSelectedHandCard() {
-  if (isDraftPhase) return;
+  if (state.isDraftPhase) return;
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
 
   rerenderArena();
 }
@@ -4702,9 +4599,9 @@ function formatTurnTimer(seconds: number) {
 }
 
 function stopTurnTimer() {
-  if (turnTimerId !== null) {
-    window.clearInterval(turnTimerId);
-    turnTimerId = null;
+  if (state.turnTimerId !== null) {
+    window.clearInterval(state.turnTimerId);
+    state.turnTimerId = null;
   }
 }
 
@@ -4712,13 +4609,13 @@ function startTurnTimer() {
   stopTurnTimer();
 
   if (isOnlineRoomActive()) return;
-  if (isSimulationMode || isDraftPhase) return;
+  if (state.isSimulationMode || state.isDraftPhase) return;
 
-  turnTimerId = window.setInterval(() => {
-    remainingTurnSeconds -= 1;
+  state.turnTimerId = window.setInterval(() => {
+    state.remainingTurnSeconds -= 1;
 
-    if (remainingTurnSeconds <= 0) {
-      remainingTurnSeconds = 0;
+    if (state.remainingTurnSeconds <= 0) {
+      state.remainingTurnSeconds = 0;
       stopTurnTimer();
       runSystemSimulation();
       return;
@@ -4729,16 +4626,16 @@ function startTurnTimer() {
 }
 
 function clearDayAdvanceTimer() {
-  if (dayAdvanceTimerId !== null) {
-    window.clearTimeout(dayAdvanceTimerId);
-    dayAdvanceTimerId = null;
+  if (state.dayAdvanceTimerId !== null) {
+    window.clearTimeout(state.dayAdvanceTimerId);
+    state.dayAdvanceTimerId = null;
   }
 }
 
 function clearDailyDealTimer() {
-  if (dailyDealTimerId !== null) {
-    window.clearTimeout(dailyDealTimerId);
-    dailyDealTimerId = null;
+  if (state.dailyDealTimerId !== null) {
+    window.clearTimeout(state.dailyDealTimerId);
+    state.dailyDealTimerId = null;
   }
 }
 
@@ -4747,7 +4644,7 @@ function activateDraftDealAnimation() {
 }
 
 function ensureOnlineDraftDealAnimationStarted() {
-  if (!isOnlineRoomActive() || !isDraftPhase || !isInitialDealInProgress) return;
+  if (!isOnlineRoomActive() || !state.isDraftPhase || !state.isInitialDealInProgress) return;
 
   const handElement = document.querySelector(".player-hand--draft.player-hand--dealing") as HTMLElement | null;
 
@@ -4788,9 +4685,9 @@ function applyDraftReturnGatherVars(
     card.style.setProperty("--arc2-x", `${arc2X}px`);
     card.style.setProperty("--arc2-y", `${arc2Y}px`);
 
-    card.style.setProperty("--deck-in-x", `${deckX}px`);
-    card.style.setProperty("--deck-in-y", `${deckY}px`);
-    card.style.setProperty("--deck-r", `${-6 + stackOffset * 3}deg`);
+    card.style.setProperty("--state.deck-in-x", `${deckX}px`);
+    card.style.setProperty("--state.deck-in-y", `${deckY}px`);
+    card.style.setProperty("--state.deck-r", `${-6 + stackOffset * 3}deg`);
   });
 }
 
@@ -4804,7 +4701,7 @@ function activateDraftCenterPoolPassAnimation() {
           ".draft-center-overlay--passing:not(.draft-center-overlay--returning)"
         ) as HTMLElement | null) ??
         (document.querySelector(".draft-center-overlay:not(.draft-center-overlay--returning)") as HTMLElement | null);
-      const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+      const deckStackElement = document.querySelector(".state.deck-card-stack") as HTMLElement | null;
 
       if (!overlayElement || !deckStackElement) return;
 
@@ -4834,7 +4731,7 @@ function activateDraftCenterPoolPassAnimation() {
         deckInsertY
       );
 
-      deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+      deckStackElement.closest(".state.deck-pile-panel")?.classList.add("state.deck-receiving");
       overlayElement.classList.add("pass-active");
     });
   });
@@ -4846,7 +4743,7 @@ function activateDraftPassAnimation() {
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => {
       const handCardsElement = document.querySelector(".player-hand__cards.is-passing") as HTMLElement | null;
-      const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+      const deckStackElement = document.querySelector(".state.deck-card-stack") as HTMLElement | null;
 
       if (!handCardsElement || !deckStackElement) return;
 
@@ -4879,8 +4776,8 @@ function activateDraftPassAnimation() {
 
         /*
           Quỹ đạo kiểu Slay the Spire:
-          sau khi gom, cụm bài vòng lên trên rồi mới rơi vào deck.
-          Tính control points theo vị trí thật của deck để không bay vào khoảng trắng.
+          sau khi gom, cụm bài vòng lên trên rồi mới rơi vào state.deck.
+          Tính control points theo vị trí thật của state.deck để không bay vào khoảng trắng.
         */
         const arc1X = gatherX + (deckX - gatherX) * 0.34;
         const arc1Y = Math.min(gatherY, deckY) - 150 - Math.abs(stackOffset) * 7;
@@ -4896,12 +4793,12 @@ function activateDraftPassAnimation() {
         card.style.setProperty("--arc2-x", `${arc2X}px`);
         card.style.setProperty("--arc2-y", `${arc2Y}px`);
 
-        card.style.setProperty("--deck-in-x", `${deckX}px`);
-        card.style.setProperty("--deck-in-y", `${deckY}px`);
-        card.style.setProperty("--deck-r", `${-6 + stackOffset * 3}deg`);
+        card.style.setProperty("--state.deck-in-x", `${deckX}px`);
+        card.style.setProperty("--state.deck-in-y", `${deckY}px`);
+        card.style.setProperty("--state.deck-r", `${-6 + stackOffset * 3}deg`);
       });
 
-      deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+      deckStackElement.closest(".state.deck-pile-panel")?.classList.add("state.deck-receiving");
       handCardsElement.classList.add("pass-active");
     });
   });
@@ -4915,7 +4812,7 @@ function activateDraftCenterReturnAnimation() {
       const overlayElement = document.querySelector(
         ".draft-center-overlay--returning"
       ) as HTMLElement | null;
-      const deckStackElement = document.querySelector(".deck-card-stack") as HTMLElement | null;
+      const deckStackElement = document.querySelector(".state.deck-card-stack") as HTMLElement | null;
 
       if (!overlayElement || !deckStackElement) return;
 
@@ -4940,17 +4837,17 @@ function activateDraftCenterReturnAnimation() {
         deckInsertY
       );
 
-      deckStackElement.closest(".deck-pile-panel")?.classList.add("deck-receiving");
+      deckStackElement.closest(".state.deck-pile-panel")?.classList.add("state.deck-receiving");
       overlayElement.classList.add("pass-active");
     });
   });
 }
 
 function finishDraftDealWithoutFullRerender() {
-  isInitialDealInProgress = false;
-  dailyDealTimerId = null;
+  state.isInitialDealInProgress = false;
+  state.dailyDealTimerId = null;
   clearDraftCenterDealAnimation();
-  draftDealVisualEndsAt = 0;
+  state.draftDealVisualEndsAt = 0;
 
   const handElement = document.querySelector(".player-hand");
   handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
@@ -4972,10 +4869,10 @@ function finishDraftDealWithoutFullRerender() {
 }
 
 function finishOnlineDraftDealVisualOnly() {
-  isInitialDealInProgress = false;
-  onlineDraftAnimationTimerId = null;
+  state.isInitialDealInProgress = false;
+  state.onlineDraftAnimationTimerId = null;
   clearDraftCenterDealAnimation();
-  draftDealVisualEndsAt = 0;
+  state.draftDealVisualEndsAt = 0;
 
   const handElement = document.querySelector(".player-hand");
   handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
@@ -5001,14 +4898,14 @@ function playOnlinePlanningHandDealAfterDraft() {
   const onlineHand = getOnlineSelfHand();
 
   if (onlineHand) {
-    playerHand = [...onlineHand];
+    state.playerHand = [...onlineHand];
   }
 
-  isDraftPhase = false;
-  isSimulationMode = false;
-  isPassingDraftCards = false;
-  isInitialDealInProgress = true;
-  hasPlayedOnlinePlanningDealAfterDraft = true;
+  state.isDraftPhase = false;
+  state.isSimulationMode = false;
+  state.isPassingDraftCards = false;
+  state.isInitialDealInProgress = true;
+  state.hasPlayedOnlinePlanningDealAfterDraft = true;
 
   playGameSound("deal");
   rerenderGameShell();
@@ -5019,7 +4916,7 @@ function playOnlinePlanningHandDealAfterDraft() {
     Nếu không, socket update planning kế tiếp có thể rerender lại giữa animation,
     nhìn như card bị snap/giật.
   */
-  lastOnlineRenderSignature = getOnlineRenderSignature();
+  state.lastOnlineRenderSignature = getOnlineRenderSignature();
 
   window.requestAnimationFrame(() => {
     const handElement = document.querySelector(".player-hand:not(.player-hand--draft)") as HTMLElement | null;
@@ -5027,7 +4924,7 @@ function playOnlinePlanningHandDealAfterDraft() {
   });
 
   window.setTimeout(() => {
-    isInitialDealInProgress = false;
+    state.isInitialDealInProgress = false;
 
     const handElement = document.querySelector(".player-hand");
     handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active", "planning-deal-active");
@@ -5044,8 +4941,8 @@ function playDraftDealAnimationAndStartTimer() {
   clearDailyDealTimer();
 
   resetDraftPoolCollapseState();
-  isInitialDealInProgress = true;
-  draftSelectedCardId = null;
+  state.isInitialDealInProgress = true;
+  state.draftSelectedCardId = null;
   rerenderArena();
   const dealMs = getDraftCenterDealDurationForCurrentPool();
   startDraftCenterDealAnimation(dealMs);
@@ -5054,7 +4951,7 @@ function playDraftDealAnimationAndStartTimer() {
     CSS draft deal: animation chạy trên từng wrapper theo số lá pool hiện tại.
     Không rerender toàn arena ở frame cuối; chỉ gỡ class để tránh snap/jank.
   */
-  dailyDealTimerId = window.setTimeout(() => {
+  state.dailyDealTimerId = window.setTimeout(() => {
     finishDraftDealWithoutFullRerender();
   }, dealMs);
 }
@@ -5062,9 +4959,9 @@ function playDraftDealAnimationAndStartTimer() {
 function finishDailyDealAndStartTimer() {
   clearDailyDealTimer();
 
-  dailyDealTimerId = window.setTimeout(() => {
-    isInitialDealInProgress = false;
-    dailyDealTimerId = null;
+  state.dailyDealTimerId = window.setTimeout(() => {
+    state.isInitialDealInProgress = false;
+    state.dailyDealTimerId = null;
 
     const handElement = document.querySelector(".player-hand");
     handElement?.classList.remove("player-hand--dealing", "is-dealing", "deal-active");
@@ -5076,7 +4973,7 @@ function finishDailyDealAndStartTimer() {
 
     startTurnTimer();
   
-    if (!isDraftPhase && !isSimulationMode) {
+    if (!state.isDraftPhase && !state.isSimulationMode) {
       startRealtimeBotPlacement();
 
       window.setTimeout(() => {
@@ -5095,45 +4992,45 @@ function startNextDayOrPhase() {
 
   returnUnplayedHandToDeck();
 
-  if (currentDayIndex >= PHASE_DAYS - 1) {
-    if (!hasAppliedFinalCoinDebtPenalty && localCoinDebt > 0) {
-      accumulatedVP -= localCoinDebt * 10;
-      hasAppliedFinalCoinDebtPenalty = true;
+  if (state.currentDayIndex >= PHASE_DAYS - 1) {
+    if (!state.hasAppliedFinalCoinDebtPenalty && state.localCoinDebt > 0) {
+      state.accumulatedVP -= state.localCoinDebt * 10;
+      state.hasAppliedFinalCoinDebtPenalty = true;
     }
 
-    phaseNumber += 1;
-    currentDayIndex = 0;
-    playerBoards = createEmptyPlayerBoards();
-    botPlacedDays = createEmptyBotPlacedDays();
-    deck = shuffleCards(initialDeck);
-    discardedResourceBonus = {
+    state.phaseNumber += 1;
+    state.currentDayIndex = 0;
+    state.playerBoards = { p1: createEmptyBoardSlots(), p2: createEmptyBoardSlots(), p3: createEmptyBoardSlots(), p4: createEmptyBoardSlots() };
+    state.botPlacedDays = { p1: new Set(), p2: new Set(), p3: new Set(), p4: new Set() };
+    state.deck = shuffleCards(initialDeck);
+    state.discardedResourceBonus = {
       coin: 0,
       stamina: 0,
     };
-    eventResourceModifier = {
+    state.eventResourceModifier = {
       coin: 0,
       stamina: 0,
     };
-    localCoinDebt = 0;
-    hasAppliedFinalCoinDebtPenalty = false;
+    state.localCoinDebt = 0;
+    state.hasAppliedFinalCoinDebtPenalty = false;
   } else {
-    currentDayIndex += 1;
+    state.currentDayIndex += 1;
   }
 
-  isSimulationMode = false;
-  simulationResult = null;
-  simulationReplayIndex = 0;
-  isReplayComplete = false;
-  hasAppliedSimulationScore = false;
-  remainingTurnSeconds = TURN_DURATION_SECONDS;
+  state.isSimulationMode = false;
+  state.simulationResult = null;
+  state.simulationReplayIndex = 0;
+  state.isReplayComplete = false;
+  state.hasAppliedSimulationScore = false;
+  state.remainingTurnSeconds = TURN_DURATION_SECONDS;
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  lastPlacedBoardPosition = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.lastPlacedBoardPosition = null;
+  state.suppressNextClick = false;
 
 }
 
@@ -5166,22 +5063,22 @@ function getSimulationEventStaminaPenalty(result: SimulationResult | null) {
 }
 
 function applyDailyScoreOnce() {
-  if (!simulationResult || hasAppliedSimulationScore) return;
+  if (!state.simulationResult || state.hasAppliedSimulationScore) return;
 
-  const eventModifier = getSimulationEventResourceModifier(simulationResult);
+  const eventModifier = getSimulationEventResourceModifier(state.simulationResult);
 
   /*
     Event giờ ảnh hưởng thật:
-    - VP: cộng/trừ thông qua simulationResult.finalVP.
+    - VP: cộng/trừ thông qua state.simulationResult.finalVP.
     - Thể lực: eventStaminaDelta âm sẽ trừ vào tài nguyên còn lại của phase.
   */
   // finalVP có thể âm. Dùng += để âm sẽ trừ trực tiếp khỏi tổng phase.
-  accumulatedVP += simulationResult.finalVP;
-  eventResourceModifier = {
-    coin: eventResourceModifier.coin + eventModifier.coin,
-    stamina: eventResourceModifier.stamina + eventModifier.stamina,
+  state.accumulatedVP += state.simulationResult.finalVP;
+  state.eventResourceModifier = {
+    coin: state.eventResourceModifier.coin + eventModifier.coin,
+    stamina: state.eventResourceModifier.stamina + eventModifier.stamina,
   };
-  hasAppliedSimulationScore = true;
+  state.hasAppliedSimulationScore = true;
 }
 
 function runSystemSimulation() {
@@ -5189,42 +5086,42 @@ function runSystemSimulation() {
   clearCustomHandDragVisuals();
   stopBotPlacementTimer();
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.suppressNextClick = false;
 
-  simulationResult = calculateSimulationResult();
-  simulationReplayIndex = 0;
-  isReplayComplete = false;
-  isSimulationMode = true;
+  state.simulationResult = calculateSimulationResult();
+  state.simulationReplayIndex = 0;
+  state.isReplayComplete = false;
+  state.isSimulationMode = true;
 
   playSimulationScanSoundForCurrentStep();
 
   stopTurnTimer();
   stopSimulationReplayTimer();
 
-  simulationReplayTimerId = window.setInterval(() => {
-    if (!simulationResult) return;
+  state.simulationReplayTimerId = window.setInterval(() => {
+    if (!state.simulationResult) return;
 
-    if (simulationReplayIndex >= simulationResult.replaySteps.length - 1) {
-      simulationReplayIndex = simulationResult.replaySteps.length - 1;
-      isReplayComplete = true;
+    if (state.simulationReplayIndex >= state.simulationResult.replaySteps.length - 1) {
+      state.simulationReplayIndex = state.simulationResult.replaySteps.length - 1;
+      state.isReplayComplete = true;
           applyDailyScoreOnce();
       stopSimulationReplayTimer();
       rerenderArena();
 
       clearDayAdvanceTimer();
-      dayAdvanceTimerId = window.setTimeout(() => {
+      state.dayAdvanceTimerId = window.setTimeout(() => {
         startNextDayOrPhase();
       }, 1800);
 
       return;
     }
 
-    simulationReplayIndex += 1;
+    state.simulationReplayIndex += 1;
     playSimulationScanSoundForCurrentStep();
     rerenderArena();
   }, 850);
@@ -5240,27 +5137,27 @@ function runOnlineSimulationReplay() {
   stopTurnTimer();
   stopSimulationReplayTimer();
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.suppressNextClick = false;
 
-  simulationResult = calculateSimulationResult();
-  simulationReplayIndex = 0;
-  isReplayComplete = false;
-  isSimulationMode = true;
-  hasStartedOnlineSimulationReplay = true;
+  state.simulationResult = calculateSimulationResult();
+  state.simulationReplayIndex = 0;
+  state.isReplayComplete = false;
+  state.isSimulationMode = true;
+  state.hasStartedOnlineSimulationReplay = true;
 
   playSimulationScanSoundForCurrentStep();
 
-  simulationReplayTimerId = window.setInterval(() => {
-    if (!simulationResult) return;
+  state.simulationReplayTimerId = window.setInterval(() => {
+    if (!state.simulationResult) return;
 
-    if (simulationReplayIndex >= simulationResult.replaySteps.length - 1) {
-      simulationReplayIndex = simulationResult.replaySteps.length - 1;
-      isReplayComplete = true;
+    if (state.simulationReplayIndex >= state.simulationResult.replaySteps.length - 1) {
+      state.simulationReplayIndex = state.simulationResult.replaySteps.length - 1;
+      state.isReplayComplete = true;
 
       /*
         Online: điểm do server cộng khi phase chuyển từ simulation sang result.
@@ -5271,7 +5168,7 @@ function runOnlineSimulationReplay() {
       return;
     }
 
-    simulationReplayIndex += 1;
+    state.simulationReplayIndex += 1;
     playSimulationScanSoundForCurrentStep();
     rerenderGameShell();
   }, 850);
@@ -5281,24 +5178,24 @@ function runOnlineSimulationReplay() {
 
 function resetTurnForPrototype() {
   stopBotPlacementTimer();
-  isSimulationMode = false;
-  simulationResult = null;
-  simulationReplayIndex = 0;
-  isReplayComplete = false;
-  hasAppliedSimulationScore = false;
-  remainingTurnSeconds = TURN_DURATION_SECONDS;
+  state.isSimulationMode = false;
+  state.simulationResult = null;
+  state.simulationReplayIndex = 0;
+  state.isReplayComplete = false;
+  state.hasAppliedSimulationScore = false;
+  state.remainingTurnSeconds = TURN_DURATION_SECONDS;
 
   clearDayAdvanceTimer();
   clearDailyDealTimer();
-  isInitialDealInProgress = false;
+  state.isInitialDealInProgress = false;
   stopSimulationReplayTimer();
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.suppressNextClick = false;
 
   rerenderArena();
   startTurnTimer();
@@ -5309,7 +5206,7 @@ function renderScoreBreakdownPanel() {
   const isOnlineLobby = onlineClientState.roomState?.phase === "lobby" || onlineClientState.roomState?.phase === "cinematic";
   const onlineSelfScore = getOnlineSelfScore();
   const totalScoreToDisplay =
-    onlineSelfScore ?? (simulationResult ? getStablePhaseScoreDisplay() : accumulatedVP);
+    onlineSelfScore ?? (state.simulationResult ? getStablePhaseScoreDisplay() : state.accumulatedVP);
   const compactPhaseDayLabel = getCompactPhaseDayLabel();
 
   return `
@@ -5346,7 +5243,7 @@ function renderScoreBreakdownPanel() {
       }
 
       ${
-        simulationResult
+        state.simulationResult
           ? `
             <button
               class="score-breakdown__timer score-breakdown__timer--reset"
@@ -5356,7 +5253,7 @@ function renderScoreBreakdownPanel() {
               ↺ Test lại
             </button>
           `
-          : isDraftPhase
+          : state.isDraftPhase
             ? `
               <div
                 class="score-breakdown__timer ${isDraftTimerDanger() ? "score-breakdown__timer--danger" : ""}"
@@ -5368,11 +5265,11 @@ function renderScoreBreakdownPanel() {
             `
             : `
               <div
-                class="score-breakdown__timer ${remainingTurnSeconds <= 10 ? "score-breakdown__timer--danger" : ""}"
+                class="score-breakdown__timer ${state.remainingTurnSeconds <= 10 ? "score-breakdown__timer--danger" : ""}"
                 title="Đồng hồ đếm ngược. Hết giờ hệ thống tự mô phỏng."
               >
                 <span>TIME</span>
-                <strong>${formatTurnTimer(remainingTurnSeconds)}</strong>
+                <strong>${formatTurnTimer(state.remainingTurnSeconds)}</strong>
               </div>
             `
       }
@@ -5381,7 +5278,7 @@ function renderScoreBreakdownPanel() {
 }
 
 function renderResourceOrbs() {
-  if (isSimulationMode || simulationResult || isOnlineGameOver()) {
+  if (state.isSimulationMode || state.simulationResult || isOnlineGameOver()) {
     return "";
   }
 
@@ -5389,7 +5286,7 @@ function renderResourceOrbs() {
 
   return `
     <div class="resource-orbs" aria-label="Tài nguyên hiện tại">
-      <div class="resource-orb resource-orb--coin ${resourceOrbFlashType === "coin" ? "resource-orb--effect-pulse" : ""}" title="Xu hiện có">
+      <div class="resource-orb resource-orb--coin ${state.resourceOrbFlashType === "coin" ? "resource-orb--effect-pulse" : ""}" title="Xu hiện có">
         <div class="resource-orb__frame">
           <div class="resource-orb__icon resource-orb__icon--coin">💰</div>
           <div class="resource-orb__value">${remaining.coin}</div>
@@ -5405,7 +5302,7 @@ function renderResourceOrbs() {
           steps: GAME_HELP_STEPS,
           placement: "game",
         })}
-        <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
+        <div class="resource-orb resource-orb--stamina ${state.resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
           <div class="resource-orb__frame">
             <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
             <div class="resource-orb__value">${remaining.stamina}</div>
@@ -5418,12 +5315,12 @@ function renderResourceOrbs() {
 }
 
 function getReplayDayEndIndex(dayIndex: number) {
-  if (!simulationResult) return -1;
+  if (!state.simulationResult) return -1;
 
   let endIndex = -1;
 
-  for (let index = 0; index < simulationResult.replaySteps.length; index += 1) {
-    if (simulationResult.replaySteps[index].dayIndex === dayIndex) {
+  for (let index = 0; index < state.simulationResult.replaySteps.length; index += 1) {
+    if (state.simulationResult.replaySteps[index].dayIndex === dayIndex) {
       endIndex = index;
     }
   }
@@ -5432,7 +5329,7 @@ function getReplayDayEndIndex(dayIndex: number) {
 }
 
 function shouldShowReplayDay(dayIndex: number) {
-  if (!simulationResult) return true;
+  if (!state.simulationResult) return true;
 
   const currentStep = getCurrentReplayStep();
   const activeDayIndex = currentStep?.dayIndex ?? 0;
@@ -5445,12 +5342,12 @@ function shouldShowReplayDay(dayIndex: number) {
     Mỗi replay step đang chạy khoảng 850ms.
     Chờ khoảng 3 giây sau khi ngày đã quét xong rồi mới ẩn.
   */
-  const stepsAfterDayEnded = simulationReplayIndex - dayEndIndex;
+  const stepsAfterDayEnded = state.simulationReplayIndex - dayEndIndex;
   return stepsAfterDayEnded <= 4;
 }
 
 function getReplayDayExitStage(dayIndex: number) {
-  if (!simulationResult) return 0;
+  if (!state.simulationResult) return 0;
 
   const currentStep = getCurrentReplayStep();
   const activeDayIndex = currentStep?.dayIndex ?? 0;
@@ -5459,7 +5356,7 @@ function getReplayDayExitStage(dayIndex: number) {
   if (dayIndex >= activeDayIndex) return 0;
   if (dayEndIndex < 0) return 0;
 
-  const stepsAfterDayEnded = simulationReplayIndex - dayEndIndex;
+  const stepsAfterDayEnded = state.simulationReplayIndex - dayEndIndex;
 
   if (stepsAfterDayEnded <= 0) return 0;
   if (stepsAfterDayEnded <= 4) return stepsAfterDayEnded;
@@ -5490,7 +5387,7 @@ function renderFinalRankingPanel() {
       <div class="final-ranking-panel__header">
         <span>KẾT THÚC PHASE</span>
         <h2>Bảng xếp hạng cuối cùng</h2>
-        <p>Hết 5 ngày. BXH sẽ tự đóng sau ${onlineClientState.roomState?.timer ?? 10}s để qua Phase ${phaseNumber + 1}.</p>
+        <p>Hết 5 ngày. BXH sẽ tự đóng sau ${onlineClientState.roomState?.timer ?? 10}s để qua Phase ${state.phaseNumber + 1}.</p>
       </div>
 
       <div class="final-ranking-panel__list">
@@ -5524,9 +5421,9 @@ function renderFinalRankingPanel() {
 
       <div class="final-ranking-panel__footer">
         ${
-          phaseNumber >= 3
+          state.phaseNumber >= 3
             ? "Đã kết thúc Phase 3. Đây là kết quả cuối của game."
-            : `Đang chuẩn bị chuyển sang Phase ${phaseNumber + 1}...`
+            : `Đang chuẩn bị chuyển sang Phase ${state.phaseNumber + 1}...`
         }
       </div>
     </section>
@@ -5572,68 +5469,68 @@ function formatSignedVP(value: number) {
 }
 
 function getCurrentReplayPartialVP() {
-  if (!simulationResult) return 0;
+  if (!state.simulationResult) return 0;
 
-  return simulationResult.replaySteps
-    .slice(0, simulationReplayIndex + 1)
+  return state.simulationResult.replaySteps
+    .slice(0, state.simulationReplayIndex + 1)
     .reduce((sum, step) => sum + step.vpDelta, 0);
 }
 
 function getPhaseScoreBeforeCurrentSimulation() {
-  if (!simulationResult) return accumulatedVP;
+  if (!state.simulationResult) return state.accumulatedVP;
 
   /*
-    Khi applyDailyScoreOnce đã chạy, accumulatedVP đã là điểm sau ngày hiện tại.
+    Khi applyDailyScoreOnce đã chạy, state.accumulatedVP đã là điểm sau ngày hiện tại.
     Muốn preview không cộng/trừ 2 lần thì phải lùi lại finalVP.
   */
-  return hasAppliedSimulationScore
-    ? accumulatedVP - simulationResult.finalVP
-    : accumulatedVP;
+  return state.hasAppliedSimulationScore
+    ? state.accumulatedVP - state.simulationResult.finalVP
+    : state.accumulatedVP;
 }
 
 function getPhaseScorePreview() {
-  if (!simulationResult) return accumulatedVP;
+  if (!state.simulationResult) return state.accumulatedVP;
 
   const baseScore = getPhaseScoreBeforeCurrentSimulation();
-  const currentDayDelta = isReplayComplete
-    ? simulationResult.finalVP
+  const currentDayDelta = state.isReplayComplete
+    ? state.simulationResult.finalVP
     : getCurrentReplayPartialVP();
 
   return baseScore + currentDayDelta;
 }
 
 function getStablePhaseScoreDisplay() {
-  if (!simulationResult) return accumulatedVP;
+  if (!state.simulationResult) return state.accumulatedVP;
 
   /*
     Tránh hiện tượng điểm tổng nhảy trong lúc đang scan:
     - Điểm ngày có thể lên/xuống theo từng ô.
     - Tổng phase chỉ đổi sau khi replay kết thúc và applyDailyScoreOnce chạy.
   */
-  return isReplayComplete
-    ? accumulatedVP
+  return state.isReplayComplete
+    ? state.accumulatedVP
     : getPhaseScoreBeforeCurrentSimulation();
 }
 
 function renderSimulationResultPanel() {
-  if (!simulationResult) return "";
+  if (!state.simulationResult) return "";
 
-  const result = simulationResult;
+  const result = state.simulationResult;
   const currentStep = getCurrentReplayStep();
   const totalSteps = Math.max(1, result.replaySteps.length);
-  const currentStepNumber = Math.min(simulationReplayIndex + 1, totalSteps);
-  const currentDayDelta = isReplayComplete
+  const currentStepNumber = Math.min(state.simulationReplayIndex + 1, totalSteps);
+  const currentDayDelta = state.isReplayComplete
     ? result.finalVP
     : getCurrentReplayPartialVP();
   const ticketStepWidth = 366;
   const firstTicketCenter = 223;
   const endCenterBoost =
-    simulationReplayIndex === totalSteps - 1
+    state.simulationReplayIndex === totalSteps - 1
       ? 460
-      : simulationReplayIndex === totalSteps - 2
+      : state.simulationReplayIndex === totalSteps - 2
         ? 180
         : 0;
-  const trackOffset = firstTicketCenter + simulationReplayIndex * ticketStepWidth + endCenterBoost;
+  const trackOffset = firstTicketCenter + state.simulationReplayIndex * ticketStepWidth + endCenterBoost;
 
   const getEventIcon = (eventType?: string | null) => {
     if (eventType === "storm") return "⛈";
@@ -5667,18 +5564,18 @@ function renderSimulationResultPanel() {
 
         <div
           class="ticket-scan-track"
-          style="transform: translateX(calc(50% - ${trackOffset}px)); --scan-index: ${simulationReplayIndex};"
+          style="transform: translateX(calc(50% - ${trackOffset}px)); --scan-index: ${state.simulationReplayIndex};"
         >
           ${result.replaySteps
             .map((step, stepIndex) => {
               const isLastTicket = stepIndex === totalSteps - 1;
               const shouldTearImmediately =
-                !isReplayComplete && isLastTicket && stepIndex === simulationReplayIndex;
+                !state.isReplayComplete && isLastTicket && stepIndex === state.simulationReplayIndex;
               const isActive =
-                !isReplayComplete && stepIndex === simulationReplayIndex && !shouldTearImmediately;
+                !state.isReplayComplete && stepIndex === state.simulationReplayIndex && !shouldTearImmediately;
               const isDone =
-                isReplayComplete || stepIndex < simulationReplayIndex || shouldTearImmediately;
-              const isFuture = !isReplayComplete && stepIndex > simulationReplayIndex;
+                state.isReplayComplete || stepIndex < state.simulationReplayIndex || shouldTearImmediately;
+              const isFuture = !state.isReplayComplete && stepIndex > state.simulationReplayIndex;
               const eventTitle = getEventTitle(step);
               const hasEvent = Boolean(step.eventType || step.eventText);
 
@@ -5726,7 +5623,7 @@ function renderSimulationResultPanel() {
 
                 ${
                   stepIndex < result.replaySteps.length - 1
-                    ? `<div class="score-ticket-connector ${stepIndex < simulationReplayIndex ? "is-passed" : ""}"></div>`
+                    ? `<div class="score-ticket-connector ${stepIndex < state.simulationReplayIndex ? "is-passed" : ""}"></div>`
                     : ""
                 }
               `;
@@ -5752,7 +5649,7 @@ function renderSimulationResultPanel() {
         </div>
 
         ${
-          isReplayComplete
+          state.isReplayComplete
             ? `
               <div class="ticket-scan-overlay__complete">
                 <span>Hoàn tất</span>
@@ -5767,33 +5664,33 @@ function renderSimulationResultPanel() {
 }
 
 function getReplayStepForBoardCell(rowIndex: number, colIndex: number) {
-  if (!simulationResult) return null;
+  if (!state.simulationResult) return null;
 
-  const stepIndex = simulationResult.replaySteps.findIndex(
+  const stepIndex = state.simulationResult.replaySteps.findIndex(
     (step) => step.rowIndex === rowIndex && step.dayIndex === colIndex
   );
 
-  if (stepIndex < 0 || stepIndex > simulationReplayIndex) {
+  if (stepIndex < 0 || stepIndex > state.simulationReplayIndex) {
     return null;
   }
 
-  return simulationResult.replaySteps[stepIndex] ?? null;
+  return state.simulationResult.replaySteps[stepIndex] ?? null;
 }
 
 function getBoardCellReplayClass(rowIndex: number, colIndex: number) {
-  if (!simulationResult || colIndex !== currentDayIndex) return "";
+  if (!state.simulationResult || colIndex !== state.currentDayIndex) return "";
 
   const currentStep = getCurrentReplayStep();
   const isCurrent =
     currentStep?.rowIndex === rowIndex && currentStep?.dayIndex === colIndex;
 
-  const stepIndex = simulationResult.replaySteps.findIndex(
+  const stepIndex = state.simulationResult.replaySteps.findIndex(
     (step) => step.rowIndex === rowIndex && step.dayIndex === colIndex
   );
 
-  const step = stepIndex >= 0 ? simulationResult.replaySteps[stepIndex] : null;
-  const isProcessed = stepIndex >= 0 && stepIndex < simulationReplayIndex;
-  const eventClass = step?.eventType && stepIndex <= simulationReplayIndex
+  const step = stepIndex >= 0 ? state.simulationResult.replaySteps[stepIndex] : null;
+  const isProcessed = stepIndex >= 0 && stepIndex < state.simulationReplayIndex;
+  const eventClass = step?.eventType && stepIndex <= state.simulationReplayIndex
     ? `board-cell--event-${step.eventType}`
     : "";
 
@@ -5802,8 +5699,6 @@ function getBoardCellReplayClass(rowIndex: number, colIndex: number) {
   return "board-cell--replay-pending";
 }
 
-let isDebtTokenModalOpen = false;
-let debtTokenModalNotice = "";
 
 function getCurrentCoinDebtAmount() {
   if (isOnlineRoomActive()) {
@@ -5812,20 +5707,20 @@ function getCurrentCoinDebtAmount() {
     return Math.max(0, onlineSelf?.coinDebt ?? 0);
   }
 
-  return Math.max(0, localCoinDebt);
+  return Math.max(0, state.localCoinDebt);
 }
 
 function openDebtTokenModal() {
   if (getCurrentCoinDebtAmount() <= 0) return;
 
-  isDebtTokenModalOpen = true;
-  debtTokenModalNotice = "";
+  state.isDebtTokenModalOpen = true;
+  state.debtTokenModalNotice = "";
   rerenderGameShell();
 }
 
 function closeDebtTokenModal() {
-  isDebtTokenModalOpen = false;
-  debtTokenModalNotice = "";
+  state.isDebtTokenModalOpen = false;
+  state.debtTokenModalNotice = "";
   rerenderGameShell();
 }
 
@@ -5844,28 +5739,28 @@ function payCurrentCoinDebt() {
   }
 
   const remaining = getRemainingResources();
-  const payableAmount = Math.min(remaining.coin, localCoinDebt);
+  const payableAmount = Math.min(remaining.coin, state.localCoinDebt);
 
   if (payableAmount <= 0) {
-    debtTokenModalNotice = "Bạn chưa có xu để trả nợ lúc này.";
+    state.debtTokenModalNotice = "Bạn chưa có xu để trả nợ lúc này.";
     rerenderGameShell();
     return;
   }
 
-  localCoinDebt = Math.max(0, localCoinDebt - payableAmount);
-  eventResourceModifier = {
-    ...eventResourceModifier,
-    coin: eventResourceModifier.coin - payableAmount,
+  state.localCoinDebt = Math.max(0, state.localCoinDebt - payableAmount);
+  state.eventResourceModifier = {
+    ...state.eventResourceModifier,
+    coin: state.eventResourceModifier.coin - payableAmount,
   };
 
-  debtTokenModalNotice =
-    localCoinDebt > 0
-      ? `Đã trả ${payableAmount} xu. Hiện còn nợ ${localCoinDebt} xu.`
+  state.debtTokenModalNotice =
+    state.localCoinDebt > 0
+      ? `Đã trả ${payableAmount} xu. Hiện còn nợ ${state.localCoinDebt} xu.`
       : `Đã trả hết nợ (${payableAmount} xu).`;
 
   playGameSound("eventPromo");
 
-  if (localCoinDebt <= 0) {
+  if (state.localCoinDebt <= 0) {
     closeDebtTokenModal();
     return;
   }
@@ -5884,7 +5779,7 @@ function renderDebtSealGlyph() {
 }
 
 function renderDebtTokenModal() {
-  if (!isDebtTokenModalOpen) return "";
+  if (!state.isDebtTokenModalOpen) return "";
 
   const debtAmount = getCurrentCoinDebtAmount();
   const remainingCoin = getRemainingResources().coin;
@@ -5946,8 +5841,8 @@ function renderDebtTokenModal() {
           </p>
 
           ${
-            debtTokenModalNotice
-              ? `<div class="effect-token-modal__notice">${debtTokenModalNotice}</div>`
+            state.debtTokenModalNotice
+              ? `<div class="effect-token-modal__notice">${state.debtTokenModalNotice}</div>`
               : ""
           }
         </div>
@@ -6010,33 +5905,33 @@ function renderPlayerEffectTokens() {
 }
 
 function renderDeckPilePanel() {
-  const deckCount = isOnlineRoomActive() ? 0 : deck.length;
+  const deckCount = isOnlineRoomActive() ? 0 : state.deck.length;
   const handCount =
-    (isOnlineRoomActive() ? getOnlineSelfHand() : null)?.length ?? playerHand.length;
+    (isOnlineRoomActive() ? getOnlineSelfHand() : null)?.length ?? state.playerHand.length;
   const canConfirm =
-    !!(draftHandPendingCardId || draftSelectedCardId) &&
-    !isDraftPickFlying &&
-    !isPassingDraftCards &&
+    !!(state.draftHandPendingCardId || state.draftSelectedCardId) &&
+    !state.isDraftPickFlying &&
+    !state.isPassingDraftCards &&
     !isDraftDealVisualActive() &&
-    !isDraftPoolCollapseAnimating;
+    !state.isDraftPoolCollapseAnimating;
   const isOnlinePlanning = isOnlinePlanningPhase();
   const selfPlanningConfirmed = isSelfPlanningConfirmed();
   const serverPhase = onlineClientState.roomState?.phase;
-  const showDraftConfirm = isDraftPhase && serverPhase === "draft";
+  const showDraftConfirm = state.isDraftPhase && serverPhase === "draft";
   const showPlanningConfirm = isOnlinePlanning && serverPhase === "planning";
   const planningStatusLabel = showPlanningConfirm ? getPlanningConfirmStatusLabel() : "";
   const planningConfirmButton = showPlanningConfirm
     ? `
-      <div class="deck-pile-panel__planning-actions">
+      <div class="state.deck-pile-panel__planning-actions">
         <button
           type="button"
-          class="deck-pile-panel__planning-confirm"
+          class="state.deck-pile-panel__planning-confirm"
           onclick="event.stopPropagation(); confirmPlanningPick()"
           ${selfPlanningConfirmed ? "disabled" : ""}
         >
           ${selfPlanningConfirmed ? "Đã xác nhận" : "Xác nhận"}
         </button>
-        ${planningStatusLabel ? `<div class="deck-pile-panel__planning-status">${planningStatusLabel}</div>` : ""}
+        ${planningStatusLabel ? `<div class="state.deck-pile-panel__planning-status">${planningStatusLabel}</div>` : ""}
       </div>
     `
     : "";
@@ -6044,7 +5939,7 @@ function renderDeckPilePanel() {
     ? `
       <button
         type="button"
-        class="deck-pile-panel__draft-confirm"
+        class="state.deck-pile-panel__draft-confirm"
         onclick="event.stopPropagation(); confirmDraftPick()"
         ${canConfirm ? "" : "disabled"}
       >
@@ -6059,46 +5954,46 @@ function renderDeckPilePanel() {
   const showDeckHeader = showDraftConfirm || showPlanningConfirm || effectTokensHtml.length > 0;
   const deckPanelHeader = showDeckHeader
     ? `
-      <div class="deck-pile-panel__header">
-        <div class="deck-pile-panel__header-left">${poolToggleButton}${effectTokensHtml}</div>
-        <div class="deck-pile-panel__header-right">${phaseConfirmButton}</div>
+      <div class="state.deck-pile-panel__header">
+        <div class="state.deck-pile-panel__header-left">${poolToggleButton}${effectTokensHtml}</div>
+        <div class="state.deck-pile-panel__header-right">${phaseConfirmButton}</div>
       </div>
     `
     : "";
 
   return `
     <section
-      class="deck-pile-panel${isDraftPhase ? " deck-pile-panel--draft" : ""}"
+      class="state.deck-pile-panel${state.isDraftPhase ? " state.deck-pile-panel--draft" : ""}"
       data-discard-drop-zone="true"
       title="Kéo thả lá bài trên tay vào đây để discard và nhận lại Xu/Thể lực bằng chi phí của lá."
     >
       ${deckPanelHeader}
 
-      <div class="deck-pile-panel__visual">
-        <div class="deck-card-stack">
-          <div class="deck-card-stack__card deck-card-stack__card--layer-3"></div>
-          <div class="deck-card-stack__card deck-card-stack__card--layer-2"></div>
-          <div class="deck-card-stack__card deck-card-stack__card--layer-1"></div>
+      <div class="state.deck-pile-panel__visual">
+        <div class="state.deck-card-stack">
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-3"></div>
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-2"></div>
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-1"></div>
 
-          <div class="deck-card-stack__card deck-card-stack__card--back">
-            <div class="deck-card-stack__back-frame">
-              <div class="deck-card-stack__corner deck-card-stack__corner--tl">✦</div>
-              <div class="deck-card-stack__corner deck-card-stack__corner--tr">✦</div>
-              <div class="deck-card-stack__corner deck-card-stack__corner--bl">✦</div>
-              <div class="deck-card-stack__corner deck-card-stack__corner--br">✦</div>
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--back">
+            <div class="state.deck-card-stack__back-frame">
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--tl">✦</div>
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--tr">✦</div>
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--bl">✦</div>
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--br">✦</div>
 
-              <div class="deck-card-stack__crest">
-                <div class="deck-card-stack__crest-ring"></div>
-                <div class="deck-card-stack__crest-core">🧭</div>
+              <div class="state.deck-card-stack__crest">
+                <div class="state.deck-card-stack__crest-ring"></div>
+                <div class="state.deck-card-stack__crest-core">🧭</div>
               </div>
 
-              <div class="deck-card-stack__brand">
-                <span class="deck-card-stack__brand-top">LỮ KHÁCH</span>
-                <strong class="deck-card-stack__brand-main">BÀN CỜ</strong>
-                <em class="deck-card-stack__brand-sub">TRAVEL DECK</em>
+              <div class="state.deck-card-stack__brand">
+                <span class="state.deck-card-stack__brand-top">LỮ KHÁCH</span>
+                <strong class="state.deck-card-stack__brand-main">BÀN CỜ</strong>
+                <em class="state.deck-card-stack__brand-sub">TRAVEL DECK</em>
               </div>
 
-              <div class="deck-card-stack__route">
+              <div class="state.deck-card-stack__route">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -6110,7 +6005,7 @@ function renderDeckPilePanel() {
         </div>
       </div>
 
-      <div class="deck-pile-panel__info">
+      <div class="state.deck-pile-panel__info">
         <div>
           <span>Trên tay</span>
           <strong>${handCount}</strong>
@@ -6126,10 +6021,10 @@ function renderDeckPilePanel() {
 }
 
 function renderMainArena() {
-  const focusedCard = getHandCardById(focusedHandCardId) ?? focusedBoardCard;
+  const focusedCard = getHandCardById(state.focusedHandCardId) ?? state.focusedBoardCard;
 
   return `
-    <main class="arena ${isOnlineGameOver() ? "arena--gameover" : ""} ${isSimulationMode ? "arena--scanning" : ""}">
+    <main class="arena ${isOnlineGameOver() ? "arena--gameover" : ""} ${state.isSimulationMode ? "arena--scanning" : ""}">
       <div class="arena__top arena__top--with-score">
         <div class="arena__title-block">
           <div class="blue-line"></div>
@@ -6148,7 +6043,7 @@ function renderMainArena() {
       <div class="arena__main">
         <div class="board-block">
           <div class="days-header">
-            ${days.map((day, dayIndex) => `<div class="day-pill ${dayIndex === currentDayIndex ? "day-pill--current" : ""} ${dayIndex < currentDayIndex ? "day-pill--done" : ""}">NGÀY ${day}</div>`).join("")}
+            ${days.map((day, dayIndex) => `<div class="day-pill ${dayIndex === state.currentDayIndex ? "day-pill--current" : ""} ${dayIndex < state.currentDayIndex ? "day-pill--done" : ""}">NGÀY ${day}</div>`).join("")}
           </div>
 
           <section class="board-grid">
@@ -6160,13 +6055,13 @@ function renderMainArena() {
                   ${days
                     .map((_, colIndex) => {
                       const card = getBoardCardByPosition(rowIndex, colIndex);
-                      const isCurrentDayColumn = colIndex === currentDayIndex;
-                      const isPlaceable = !isDraftPhase && !isSimulationMode && !isInitialDealInProgress && isCurrentDayColumn && selectedHandCardId !== null && card === null;
+                      const isCurrentDayColumn = colIndex === state.currentDayIndex;
+                      const isPlaceable = !state.isDraftPhase && !state.isSimulationMode && !state.isInitialDealInProgress && isCurrentDayColumn && state.selectedHandCardId !== null && card === null;
 
                       if (!card) {
                         return `
                           <div
-                            class="board-cell board-cell--empty ${getBoardCellReplayClass(rowIndex, colIndex)} ${isSimulationMode ? "board-cell--locked-mode" : ""} ${!isCurrentDayColumn && !isSimulationMode ? "board-cell--not-current-day" : ""} ${isPlaceable ? "board-cell--placeable" : ""}"
+                            class="board-cell board-cell--empty ${getBoardCellReplayClass(rowIndex, colIndex)} ${state.isSimulationMode ? "board-cell--locked-mode" : ""} ${!isCurrentDayColumn && !state.isSimulationMode ? "board-cell--not-current-day" : ""} ${isPlaceable ? "board-cell--placeable" : ""}"
                             data-board-drop-cell="true"
                             data-row-index="${rowIndex}"
                             data-col-index="${colIndex}"
@@ -6201,45 +6096,45 @@ function renderMainArena() {
           ${renderDraftCenterOverlay()}${renderDraftLeftoverReturnOverlay()}
         </div>
 
-        ${isOnlineGameOver() ? renderFinalRankingPanel() : isDraftPhase ? "" : renderSimulationResultPanel()}
+        ${isOnlineGameOver() ? renderFinalRankingPanel() : state.isDraftPhase ? "" : renderSimulationResultPanel()}
 
         ${
-          isSimulationMode
+          state.isSimulationMode
             ? ""
             : `
               <section
-          class="player-hand ${isDraftPhase ? "player-hand--draft" : ""} ${!isDraftPhase && isInitialDealInProgress ? "player-hand--dealing is-dealing" : ""}"
-          onclick="${isDraftPhase ? "" : "clearSelectedHandCard()"}"
+          class="player-hand ${state.isDraftPhase ? "player-hand--draft" : ""} ${!state.isDraftPhase && state.isInitialDealInProgress ? "player-hand--dealing is-dealing" : ""}"
+          onclick="${state.isDraftPhase ? "" : "clearSelectedHandCard()"}"
         >
           <div class="player-hand__top">
             <div class="player-hand__title">
-              <span class="hand-badge">${isDraftPhase ? "DRAFT" : "HAND"}</span>
+              <span class="hand-badge">${state.isDraftPhase ? "DRAFT" : "HAND"}</span>
               <h2>
                 ${
-                  isDraftPhase
-                    ? `Chọn bài ngày ${days[currentDayIndex]}`
-                    : `Bài ngày ${days[currentDayIndex]}`
+                  state.isDraftPhase
+                    ? `Chọn bài ngày ${days[state.currentDayIndex]}`
+                    : `Bài ngày ${days[state.currentDayIndex]}`
                 }
               </h2>
             </div>
 
-            <div class="player-hand__meta ${isDraftPhase && isDraftTimerDanger() ? "player-hand__meta--danger" : ""}">
+            <div class="player-hand__meta ${state.isDraftPhase && isDraftTimerDanger() ? "player-hand__meta--danger" : ""}">
               ${
-                isDraftPhase
+                state.isDraftPhase
                   ? isDraftPickTimerFrozen()
                     ? "Đang chia bài..."
-                    : `Còn ${draftPickSecondsLeft}s • ${isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"}`
-                  : isInitialDealInProgress
+                    : `Còn ${state.draftPickSecondsLeft}s • ${state.isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"}`
+                  : state.isInitialDealInProgress
                     ? "Đang chia bài..."
                     : "Giữ 0.5s để xem lớn"
               }
             </div>
           </div>
 
-          ${isDraftPhase ? renderDraftHandTopMeta() : ""}
+          ${state.isDraftPhase ? renderDraftHandTopMeta() : ""}
 
-          <div class="player-hand__cards ${isDraftPhase ? `player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${getDraftHandDisplayCount()}` : ""}">
-            ${isDraftPhase ? renderPickedDraftCards() : playerHand.map((card, index) => renderHandCard(card, index)).join("")}
+          <div class="player-hand__cards ${state.isDraftPhase ? `player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${getDraftHandDisplayCount()}` : ""}">
+            ${state.isDraftPhase ? renderPickedDraftCards() : state.playerHand.map((card, index) => renderHandCard(card, index)).join("")}
           </div>
         </section>
             `
@@ -6252,14 +6147,12 @@ function renderMainArena() {
 }
 
 function clearHoldTimer() {
-  if (holdTimer !== null) {
-    window.clearTimeout(holdTimer);
-    holdTimer = null;
+  if (state.holdTimer !== null) {
+    window.clearTimeout(state.holdTimer);
+    state.holdTimer = null;
   }
 }
 
-let lastAnimatedCoin = -1;
-let lastAnimatedStamina = -1;
 
 function spawnFloatingText(selector: string, delta: number, type: 'coin' | 'stamina') {
   const container = document.querySelector(selector);
@@ -6290,26 +6183,26 @@ function rerenderArena() {
 
   requestAnimationFrame(() => {
     const remaining = getRemainingResources();
-    if (lastAnimatedCoin !== -1 && remaining.coin !== lastAnimatedCoin) {
-      spawnFloatingText('.resource-orb--coin .resource-orb__frame', remaining.coin - lastAnimatedCoin, 'coin');
+    if (state.lastAnimatedCoin !== -1 && remaining.coin !== state.lastAnimatedCoin) {
+      spawnFloatingText('.resource-orb--coin .resource-orb__frame', remaining.coin - state.lastAnimatedCoin, 'coin');
     }
-    if (lastAnimatedStamina !== -1 && remaining.stamina !== lastAnimatedStamina) {
-      spawnFloatingText('.resource-orb--stamina .resource-orb__frame', remaining.stamina - lastAnimatedStamina, 'stamina');
+    if (state.lastAnimatedStamina !== -1 && remaining.stamina !== state.lastAnimatedStamina) {
+      spawnFloatingText('.resource-orb--stamina .resource-orb__frame', remaining.stamina - state.lastAnimatedStamina, 'stamina');
     }
-    lastAnimatedCoin = remaining.coin;
-    lastAnimatedStamina = remaining.stamina;
+    state.lastAnimatedCoin = remaining.coin;
+    state.lastAnimatedStamina = remaining.stamina;
   });
 }
 
 function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number) {
-  if (isSimulationMode || isInitialDealInProgress) return;
-  if (colIndex !== currentDayIndex) return;
+  if (state.isSimulationMode || state.isInitialDealInProgress) return;
+  if (colIndex !== state.currentDayIndex) return;
   if (!canPlaceOnBoardCell(rowIndex, colIndex)) return;
 
-  const handIndex = playerHand.findIndex((card) => card.id === cardId);
+  const handIndex = state.playerHand.findIndex((card) => card.id === cardId);
   if (handIndex === -1) return;
 
-  const selectedCard = playerHand[handIndex];
+  const selectedCard = state.playerHand[handIndex];
 
   if (isOnlineRoomActive()) {
     playGameSound("cardPlace");
@@ -6337,12 +6230,12 @@ function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number
       name: selectedCard.name,
     });
 
-    selectedHandCardId = null;
-    draggedHandCardId = null;
-    focusedHandCardId = null;
-    focusedBoardCard = null;
-    focusedBoardPosition = null;
-    suppressNextClick = false;
+    state.selectedHandCardId = null;
+    state.draggedHandCardId = null;
+    state.focusedHandCardId = null;
+    state.focusedBoardCard = null;
+    state.focusedBoardPosition = null;
+    state.suppressNextClick = false;
 
     if (onlineUtilityEffect) {
       rerenderArena();
@@ -6357,7 +6250,7 @@ function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number
 
   playGameSound("cardPlace");
 
-  playerHand.splice(handIndex, 1);
+  state.playerHand.splice(handIndex, 1);
 
   const didApplyUtilityEffect = applyUtilityPlacementEffect(selectedCard, rowIndex, colIndex);
 
@@ -6388,40 +6281,40 @@ function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number
 
   placeBotCardsAfterPlayerMove(selectedCard);
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.suppressNextClick = false;
 
-  lastPlacedBoardPosition = { rowIndex, colIndex };
+  state.lastPlacedBoardPosition = { rowIndex, colIndex };
 
   rerenderArena();
 
   window.setTimeout(() => {
     if (
-      lastPlacedBoardPosition?.rowIndex === rowIndex &&
-      lastPlacedBoardPosition?.colIndex === colIndex
+      state.lastPlacedBoardPosition?.rowIndex === rowIndex &&
+      state.lastPlacedBoardPosition?.colIndex === colIndex
     ) {
-      lastPlacedBoardPosition = null;
+      state.lastPlacedBoardPosition = null;
       rerenderArena();
     }
   }, 420);
 }
 
 function placeSelectedHandCard(rowIndex: number, colIndex: number) {
-  if (!selectedHandCardId) return;
+  if (!state.selectedHandCardId) return;
 
-  placeHandCardOnBoard(selectedHandCardId, rowIndex, colIndex);
+  placeHandCardOnBoard(state.selectedHandCardId, rowIndex, colIndex);
 }
 
 function returnFocusedBoardCardToHand() {
-  if (isSimulationMode) return;
-  if (!focusedBoardPosition) return;
+  if (state.isSimulationMode) return;
+  if (!state.focusedBoardPosition) return;
 
-  const { rowIndex, colIndex } = focusedBoardPosition;
-  if (colIndex !== currentDayIndex) return;
+  const { rowIndex, colIndex } = state.focusedBoardPosition;
+  if (colIndex !== state.currentDayIndex) return;
 
   const card = getBoardSlots()[rowIndex]?.[colIndex];
 
@@ -6438,12 +6331,12 @@ function returnFocusedBoardCardToHand() {
       colIndex,
     });
 
-    focusedHandCardId = null;
-    focusedBoardCard = null;
-    focusedBoardPosition = null;
-    lastPlacedBoardPosition = null;
-    selectedHandCardId = null;
-    suppressNextClick = false;
+    state.focusedHandCardId = null;
+    state.focusedBoardCard = null;
+    state.focusedBoardPosition = null;
+    state.lastPlacedBoardPosition = null;
+    state.selectedHandCardId = null;
+    state.suppressNextClick = false;
 
     return;
   }
@@ -6453,45 +6346,45 @@ function returnFocusedBoardCardToHand() {
 
   /*
     Hand UI hiện được thiết kế đẹp nhất cho 5 lá.
-    Khi đặt bài xuống board, game đã tự rút thêm 1 lá từ deck để bù hand.
+    Khi đặt bài xuống board, game đã tự rút thêm 1 lá từ state.deck để bù hand.
     Vì vậy nếu rút lá từ board về tay mà chỉ push(card), hand sẽ thành 6 lá
     và fan-layout bị tràn/cứng như ảnh bạn gửi.
 
     Cách xử lý prototype:
     - Rút lá board về tay.
-    - Nếu hand đang đủ 5 lá, trả lá cuối cùng của hand về đầu deck.
+    - Nếu hand đang đủ 5 lá, trả lá cuối cùng của hand về đầu state.deck.
     - Hand luôn giữ tối đa 5 lá, layout không bị vỡ.
   */
-  playerHand.unshift(card);
+  state.playerHand.unshift(card);
 
-  while (playerHand.length > HAND_SIZE) {
-    const overflowCard = playerHand.pop();
+  while (state.playerHand.length > HAND_SIZE) {
+    const overflowCard = state.playerHand.pop();
 
     if (overflowCard) {
-      deck.unshift(overflowCard);
+      state.deck.unshift(overflowCard);
     }
   }
 
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  lastPlacedBoardPosition = null;
-  selectedHandCardId = null;
-  suppressNextClick = false;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.lastPlacedBoardPosition = null;
+  state.selectedHandCardId = null;
+  state.suppressNextClick = false;
 
   rerenderArena();
 }
 
 function beginHandCardVisualDrag(event: PointerEvent) {
-  if (!handPointerDragState || handPointerDragState.isDragging) return;
+  if (!state.handPointerDragState || state.handPointerDragState.isDragging) return;
 
   clearHoldTimer();
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  suppressNextClick = false;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.suppressNextClick = false;
 
-  const { source } = handPointerDragState;
+  const { source } = state.handPointerDragState;
   const rect = source.getBoundingClientRect();
   const clone = source.cloneNode(true) as HTMLElement;
 
@@ -6508,23 +6401,23 @@ function beginHandCardVisualDrag(event: PointerEvent) {
 
   source.classList.add("hand-card--drag-source-hidden");
 
-  handPointerDragState.clone = clone;
-  handPointerDragState.offsetX = event.clientX - rect.left;
-  handPointerDragState.offsetY = event.clientY - rect.top;
-  handPointerDragState.isDragging = true;
-    didMoveHandPointerDrag = true;
+  state.handPointerDragState.clone = clone;
+  state.handPointerDragState.offsetX = event.clientX - rect.left;
+  state.handPointerDragState.offsetY = event.clientY - rect.top;
+  state.handPointerDragState.isDragging = true;
+    state.didMoveHandPointerDrag = true;
 
-  draggedHandCardId = handPointerDragState.id;
-  selectedHandCardId = handPointerDragState.id;
+  state.draggedHandCardId = state.handPointerDragState.id;
+  state.selectedHandCardId = state.handPointerDragState.id;
 
   updateHandCardDragPosition(event);
 }
 
 function updateHandCardDragPosition(event: PointerEvent) {
-  if (!handPointerDragState?.clone) return;
+  if (!state.handPointerDragState?.clone) return;
 
-  handPointerDragState.clone.style.left = `${event.clientX - handPointerDragState.offsetX}px`;
-  handPointerDragState.clone.style.top = `${event.clientY - handPointerDragState.offsetY}px`;
+  state.handPointerDragState.clone.style.left = `${event.clientX - state.handPointerDragState.offsetX}px`;
+  state.handPointerDragState.clone.style.top = `${event.clientY - state.handPointerDragState.offsetY}px`;
 }
 
 function getDropCellFromPointer(event: PointerEvent) {
@@ -6539,53 +6432,53 @@ function getDeckDiscardTargetFromPointer(event: PointerEvent) {
 
 function clearDeckDiscardHoverClass() {
   document
-    .querySelectorAll(".deck-pile-panel--discard-hover")
+    .querySelectorAll(".state.deck-pile-panel--discard-hover")
     .forEach((element) => {
-      element.classList.remove("deck-pile-panel--discard-hover");
+      element.classList.remove("state.deck-pile-panel--discard-hover");
       delete (element as HTMLElement).dataset.discardCoin;
       delete (element as HTMLElement).dataset.discardStamina;
     });
 }
 
 function canDiscardHandCard() {
-  return !isDraftPhase && !isSimulationMode && !isInitialDealInProgress;
+  return !state.isDraftPhase && !state.isSimulationMode && !state.isInitialDealInProgress;
 }
 
 function discardHandCardToDeck(cardId: string) {
   if (!canDiscardHandCard()) return;
 
-  const handIndex = playerHand.findIndex((card) => card.id === cardId);
+  const handIndex = state.playerHand.findIndex((card) => card.id === cardId);
   if (handIndex === -1) return;
 
-  const selectedCard = playerHand[handIndex];
+  const selectedCard = state.playerHand[handIndex];
 
   playGameSound("returnDeck");
 
   if (isOnlineRoomActive()) {
-    const state = onlineClientState.roomState;
+    const roomState = onlineClientState.roomState;
     const selfPlayerId = onlineClientState.playerId;
 
     /*
       Optimistic update để UI đổi ngay:
       - remove lá khỏi hand
       - cộng coin/stamina trên public player
-      Server vẫn là nguồn chính, room:state gửi về sẽ xác nhận lại.
+      Server vẫn là nguồn chính, room:roomState gửi về sẽ xác nhận lại.
     */
-    if (state && selfPlayerId) {
-      const onlineHandIndex = state.self.hand.findIndex((card) => card.id === selectedCard.id);
+    if (roomState && selfPlayerId) {
+      const onlineHandIndex = roomState.self.hand.findIndex((card) => card.id === selectedCard.id);
 
       if (onlineHandIndex >= 0) {
-        state.self.hand.splice(onlineHandIndex, 1);
+        roomState.self.hand.splice(onlineHandIndex, 1);
       }
 
-      const publicSelf = state.players[selfPlayerId];
+      const publicSelf = roomState.players[selfPlayerId];
 
       if (publicSelf) {
         publicSelf.coin += selectedCard.coin;
         publicSelf.stamina += selectedCard.stamina;
       }
 
-      playerHand = [...(state.self.hand as TravelCardData[])];
+      state.playerHand = [...(roomState.self.hand as TravelCardData[])];
     }
 
     sendDiscardCard({
@@ -6595,30 +6488,30 @@ function discardHandCardToDeck(cardId: string) {
       name: selectedCard.name,
     });
 
-    selectedHandCardId = null;
-    draggedHandCardId = null;
-    focusedHandCardId = null;
-    focusedBoardCard = null;
-    focusedBoardPosition = null;
-    suppressNextClick = false;
+    state.selectedHandCardId = null;
+    state.draggedHandCardId = null;
+    state.focusedHandCardId = null;
+    state.focusedBoardCard = null;
+    state.focusedBoardPosition = null;
+    state.suppressNextClick = false;
 
     rerenderGameShell();
     return;
   }
 
-  playerHand.splice(handIndex, 1);
+  state.playerHand.splice(handIndex, 1);
 
-  discardedResourceBonus = {
-    coin: discardedResourceBonus.coin + selectedCard.coin,
-    stamina: discardedResourceBonus.stamina + selectedCard.stamina,
+  state.discardedResourceBonus = {
+    coin: state.discardedResourceBonus.coin + selectedCard.coin,
+    stamina: state.discardedResourceBonus.stamina + selectedCard.stamina,
   };
 
-  selectedHandCardId = null;
-  draggedHandCardId = null;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.draggedHandCardId = null;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.suppressNextClick = false;
 
   rerenderArena();
 }
@@ -6627,31 +6520,31 @@ function clearCustomHandDragVisuals() {
   clearBoardDragHoverClass();
   clearDeckDiscardHoverClass();
 
-  if (handPointerDragState?.source) {
-    handPointerDragState.source.classList.remove("hand-card--drag-source-hidden");
+  if (state.handPointerDragState?.source) {
+    state.handPointerDragState.source.classList.remove("hand-card--drag-source-hidden");
   }
 
-  handPointerDragState?.clone?.remove();
-  handPointerDragState = null;
-  draggedHandCardId = null;
+  state.handPointerDragState?.clone?.remove();
+  state.handPointerDragState = null;
+  state.draggedHandCardId = null;
   
   // Valid Slot Highlight Remove
   document.querySelectorAll('.board-cell--placeable').forEach(el => el.classList.remove('board-cell--placeable'));
 }
 
 function handleHandPointerMove(event: PointerEvent) {
-  if (!handPointerDragState) return;
+  if (!state.handPointerDragState) return;
 
-  const distanceX = event.clientX - handPointerDragState.startX;
-  const distanceY = event.clientY - handPointerDragState.startY;
+  const distanceX = event.clientX - state.handPointerDragState.startX;
+  const distanceY = event.clientY - state.handPointerDragState.startY;
   const distance = Math.hypot(distanceX, distanceY);
 
-  if (!handPointerDragState.isDragging && distance >= 8) {
+  if (!state.handPointerDragState.isDragging && distance >= 8) {
     clearHoldTimer();
     beginHandCardVisualDrag(event);
   }
 
-  if (!handPointerDragState?.isDragging) return;
+  if (!state.handPointerDragState?.isDragging) return;
 
   event.preventDefault();
   updateHandCardDragPosition(event);
@@ -6662,9 +6555,9 @@ function handleHandPointerMove(event: PointerEvent) {
   const discardTarget = getDeckDiscardTargetFromPointer(event);
 
   if (discardTarget && canDiscardHandCard()) {
-    const draggedDiscardCard = getHandCardById(draggedHandCardId);
+    const draggedDiscardCard = getHandCardById(state.draggedHandCardId);
 
-    discardTarget.classList.add("deck-pile-panel--discard-hover");
+    discardTarget.classList.add("state.deck-pile-panel--discard-hover");
     discardTarget.dataset.discardCoin = String(draggedDiscardCard?.coin ?? 0);
     discardTarget.dataset.discardStamina = String(draggedDiscardCard?.stamina ?? 0);
     return;
@@ -6677,7 +6570,7 @@ function handleHandPointerMove(event: PointerEvent) {
   const rowIndex = Number(dropCell.dataset.rowIndex);
   const colIndex = Number(dropCell.dataset.colIndex);
 
-  const draggedCard = getHandCardById(draggedHandCardId);
+  const draggedCard = getHandCardById(state.draggedHandCardId);
 
   if (
     Number.isInteger(rowIndex) &&
@@ -6700,7 +6593,7 @@ function handleHandPointerUp(event: PointerEvent) {
   document.removeEventListener("pointerup", handleHandPointerUp);
   document.removeEventListener("pointercancel", handleHandPointerCancel);
 
-  const dragState = handPointerDragState;
+  const dragState = state.handPointerDragState;
   const wasDragging = dragState?.isDragging === true;
 
   clearHoldTimer();
@@ -6716,10 +6609,10 @@ function handleHandPointerUp(event: PointerEvent) {
 
     clearCustomHandDragVisuals();
 
-    suppressNextClick = true;
+    state.suppressNextClick = true;
 
     window.setTimeout(() => {
-      suppressNextClick = false;
+      state.suppressNextClick = false;
     }, 0);
 
     const draggedCard = getHandCardById(cardId);
@@ -6746,7 +6639,7 @@ function handleHandPointerUp(event: PointerEvent) {
       triggerResourceRejectedFeedback();
     }
 
-    selectedHandCardId = null;
+    state.selectedHandCardId = null;
     rerenderArena();
     return;
   }
@@ -6762,8 +6655,8 @@ function handleHandPointerCancel() {
   clearHoldTimer();
   clearCustomHandDragVisuals();
 
-  selectedHandCardId = null;
-  suppressNextClick = false;
+  state.selectedHandCardId = null;
+  state.suppressNextClick = false;
 
   rerenderArena();
 }
@@ -6786,7 +6679,7 @@ function triggerResourceRejectedFeedback(rowIndex?: number, colIndex?: number) {
 function getDraggedCardIdFromEvent(event: DragEvent) {
   const fromDataTransfer = event.dataTransfer?.getData("text/plain");
 
-  return fromDataTransfer || draggedHandCardId;
+  return fromDataTransfer || state.draggedHandCardId;
 }
 
 function clearBoardDragHoverClass() {
@@ -6806,12 +6699,12 @@ function clearBoardDragHoverClass() {
     Nếu rerender tại đây, DOM của lá đang bị kéo sẽ bị thay mới ngay lập tức,
     khiến trình duyệt hủy thao tác drag nên bạn sẽ thấy "không kéo được".
   */
-  draggedHandCardId = id;
-  selectedHandCardId = id;
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  suppressNextClick = true;
+  state.draggedHandCardId = id;
+  state.selectedHandCardId = id;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.suppressNextClick = true;
 
   event.dataTransfer?.setData("text/plain", id);
 
@@ -6824,15 +6717,15 @@ function clearBoardDragHoverClass() {
   clearHoldTimer();
   clearBoardDragHoverClass();
 
-  draggedHandCardId = null;
+  state.draggedHandCardId = null;
 
   window.setTimeout(() => {
-    suppressNextClick = false;
+    state.suppressNextClick = false;
   }, 0);
 };
 
 (window as any).handleBoardCellDragOver = (event: DragEvent, rowIndex: number, colIndex: number) => {
-  if (!draggedHandCardId) return;
+  if (!state.draggedHandCardId) return;
   if (getBoardSlots()[rowIndex][colIndex] !== null) return;
 
   if (event.dataTransfer) {
@@ -6854,7 +6747,7 @@ function clearBoardDragHoverClass() {
 
   const cardId = getDraggedCardIdFromEvent(event);
 
-  draggedHandCardId = null;
+  state.draggedHandCardId = null;
 
   if (!cardId) return;
 
@@ -6869,13 +6762,13 @@ function clearBoardDragHoverClass() {
 };
 
 (window as any).startHandPointerDrag = (event: PointerEvent, id: string) => {
-  if (isInitialDealInProgress) return;
+  if (state.isInitialDealInProgress) return;
 
-  if (isSimulationMode) return;
+  if (state.isSimulationMode) return;
   if (event.button !== 0) return;
 
-  didMoveHandPointerDrag = false;
-  lastPointerDownCardId = id;
+  state.didMoveHandPointerDrag = false;
+  state.lastPointerDownCardId = id;
 
   const card = getHandCardById(id);
 
@@ -6890,7 +6783,7 @@ function clearBoardDragHoverClass() {
   const source = event.currentTarget as HTMLElement | null;
   if (!source) return;
 
-  handPointerDragState = {
+  state.handPointerDragState = {
     id,
     source,
     clone: null,
@@ -6937,15 +6830,15 @@ function clearBoardDragHoverClass() {
 (globalThis as any).toggleDraftPoolCollapse = toggleDraftPoolCollapse;
 
 (window as any).startHoldHandCard = (id: string) => {
-  if (isPassingDraftCards || isInitialDealInProgress) return;
+  if (state.isPassingDraftCards || state.isInitialDealInProgress) return;
 
   clearHoldTimer();
 
-  holdTimer = window.setTimeout(() => {
-    focusedHandCardId = id;
-    focusedBoardCard = null;
-    focusedBoardPosition = null;
-    suppressNextClick = true;
+  state.holdTimer = window.setTimeout(() => {
+    state.focusedHandCardId = id;
+    state.focusedBoardCard = null;
+    state.focusedBoardPosition = null;
+    state.suppressNextClick = true;
     clearHoldTimer();
     rerenderArena();
   }, 500);
@@ -6958,9 +6851,9 @@ function clearBoardDragHoverClass() {
 (window as any).clearSelectedHandCard = () => {
   clearHoldTimer();
 
-  if (selectedHandCardId === null) return;
+  if (state.selectedHandCardId === null) return;
 
-  selectedHandCardId = null;
+  state.selectedHandCardId = null;
   rerenderArena();
 };
 
@@ -6971,7 +6864,7 @@ function clearBoardDragHoverClass() {
 
   if (card) {
     if (isBoardDebtToken(card)) {
-      if (!isDraftPhase && !isInitialDealInProgress && colIndex === currentDayIndex && selectedHandCardId) {
+      if (!state.isDraftPhase && !state.isInitialDealInProgress && colIndex === state.currentDayIndex && state.selectedHandCardId) {
         placeSelectedHandCard(rowIndex, colIndex);
         return;
       }
@@ -6981,16 +6874,16 @@ function clearBoardDragHoverClass() {
     }
 
     clearCustomHandDragVisuals();
-    focusedHandCardId = null;
-    focusedBoardCard = card;
-    focusedBoardPosition = { rowIndex, colIndex };
-    selectedHandCardId = null;
-    suppressNextClick = false;
+    state.focusedHandCardId = null;
+    state.focusedBoardCard = card;
+    state.focusedBoardPosition = { rowIndex, colIndex };
+    state.selectedHandCardId = null;
+    state.suppressNextClick = false;
     rerenderArena();
     return;
   }
 
-  if (!isDraftPhase && !isInitialDealInProgress && colIndex === currentDayIndex) {
+  if (!state.isDraftPhase && !state.isInitialDealInProgress && colIndex === state.currentDayIndex) {
     placeSelectedHandCard(rowIndex, colIndex);
   }
 };
@@ -6999,11 +6892,11 @@ function clearBoardDragHoverClass() {
   const card = getBoardCardByPosition(rowIndex, colIndex);
   if (!card) return;
 
-  focusedHandCardId = null;
-  focusedBoardCard = card;
-  focusedBoardPosition = { rowIndex, colIndex };
-  selectedHandCardId = null;
-  suppressNextClick = false;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = card;
+  state.focusedBoardPosition = { rowIndex, colIndex };
+  state.selectedHandCardId = null;
+  state.suppressNextClick = false;
 
   rerenderArena();
 };
@@ -7023,11 +6916,11 @@ function clearBoardDragHoverClass() {
 (window as any).closeFocusedHandCard = () => {
   clearHoldTimer();
 
-  focusedHandCardId = null;
-  focusedBoardCard = null;
-  focusedBoardPosition = null;
-  draggedHandCardId = null;
-  suppressNextClick = false;
+  state.focusedHandCardId = null;
+  state.focusedBoardCard = null;
+  state.focusedBoardPosition = null;
+  state.draggedHandCardId = null;
+  state.suppressNextClick = false;
 
   rerenderArena();
 };
@@ -7106,13 +6999,13 @@ function getRightSidePlayersToRender(): Player[] {
 }
 
 function getMidGameRankings() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state) return [];
+  if (!roomState) return [];
 
   return playerIds
     .map((playerId) => {
-      const player = state.players[playerId];
+      const player = roomState.players[playerId];
 
       return {
         playerId,
@@ -7134,7 +7027,7 @@ function getMidGameRankings() {
 }
 
 function renderMidGameRankingModal() {
-  if (!isMidGameRankingOpen || !isOnlineRoomActive()) {
+  if (!state.isMidGameRankingOpen || !isOnlineRoomActive()) {
     return "";
   }
 
@@ -7211,43 +7104,30 @@ function renderMidGameRankingModal() {
 
 const IN_GAME_BACKGROUND_MUSIC_SRC = "assets/sounds/in-game-background.mp3";
 const IN_GAME_MUSIC_MUTED_KEY = "travelDeck.inGameMusicMuted";
-const IN_GAME_MUSIC_VOLUME_KEY = "travelDeck.inGameMusicVolume";
+const IN_GAME_MUSIC_VOLUME_KEY = "travelDeck.state.inGameMusicVolume";
 const DEFAULT_IN_GAME_MUSIC_VOLUME = 0.5;
 
-let inGameBackgroundMusic: HTMLAudioElement | null = null;
-const savedInGameMusicMuted = localStorage.getItem(IN_GAME_MUSIC_MUTED_KEY);
-const savedInGameMusicVolume = Number(localStorage.getItem(IN_GAME_MUSIC_VOLUME_KEY));
-let isInGameMusicMuted = savedInGameMusicMuted === "true";
-let inGameMusicVolume = savedInGameMusicVolume;
 
 /*
   Mặc định nhạc trong game phải bắt đầu ở 50%.
   Nếu localStorage cũ từng lưu 0 do các bản trước, reset về 50% để không còn hiện 0%.
 */
-if (!Number.isFinite(inGameMusicVolume) || inGameMusicVolume <= 0) {
-  inGameMusicVolume = DEFAULT_IN_GAME_MUSIC_VOLUME;
-  localStorage.setItem(IN_GAME_MUSIC_VOLUME_KEY, String(inGameMusicVolume));
-
-  if (savedInGameMusicMuted === null) {
-    localStorage.setItem(IN_GAME_MUSIC_MUTED_KEY, "false");
-  }
-}
 
 function clampInGameMusicVolume(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
 function getInGameBackgroundMusic() {
-  if (!inGameBackgroundMusic) {
+  if (!state.inGameBackgroundMusic) {
     const audio = new Audio(IN_GAME_BACKGROUND_MUSIC_SRC);
     audio.loop = true;
     audio.preload = "auto";
-    audio.volume = clampInGameMusicVolume(inGameMusicVolume);
-    audio.muted = isInGameMusicMuted;
-    inGameBackgroundMusic = audio;
+    audio.volume = clampInGameMusicVolume(state.inGameMusicVolume);
+    audio.muted = state.isInGameMusicMuted;
+    state.inGameBackgroundMusic = audio;
   }
 
-  return inGameBackgroundMusic;
+  return state.inGameBackgroundMusic;
 }
 
 function shouldPlayInGameMusic() {
@@ -7261,7 +7141,7 @@ function stopOutsideBackgroundMedia() {
   */
   cleanupDashboardHub();
   document.querySelectorAll("audio, video").forEach((media) => {
-    if (media === inGameBackgroundMusic) return;
+    if (media === state.inGameBackgroundMusic) return;
 
     const element = media as HTMLMediaElement;
 
@@ -7281,8 +7161,8 @@ function stopOutsideBackgroundMedia() {
 function syncInGameBackgroundMusic() {
   const audio = getInGameBackgroundMusic();
 
-  audio.volume = clampInGameMusicVolume(inGameMusicVolume);
-  audio.muted = isInGameMusicMuted;
+  audio.volume = clampInGameMusicVolume(state.inGameMusicVolume);
+  audio.muted = state.isInGameMusicMuted;
 
   if (!shouldPlayInGameMusic()) {
     audio.pause();
@@ -7291,7 +7171,7 @@ function syncInGameBackgroundMusic() {
 
   stopOutsideBackgroundMedia();
 
-  if (isInGameMusicMuted || inGameMusicVolume <= 0) {
+  if (state.isInGameMusicMuted || state.inGameMusicVolume <= 0) {
     audio.pause();
     return;
   }
@@ -7310,27 +7190,27 @@ function updateInGameMusicMenuDom() {
   const slider = document.querySelector<HTMLInputElement>("[data-in-game-music-slider]");
 
   if (button) {
-    button.classList.toggle("is-muted", isInGameMusicMuted || inGameMusicVolume <= 0);
-    button.textContent = isInGameMusicMuted || inGameMusicVolume <= 0 ? "🔇" : "🔊";
-    button.title = isInGameMusicMuted ? "Bật nhạc nền" : "Tắt nhạc nền";
+    button.classList.toggle("is-muted", state.isInGameMusicMuted || state.inGameMusicVolume <= 0);
+    button.textContent = state.isInGameMusicMuted || state.inGameMusicVolume <= 0 ? "🔇" : "🔊";
+    button.title = state.isInGameMusicMuted ? "Bật nhạc nền" : "Tắt nhạc nền";
   }
 
   if (value) {
-    value.textContent = `${Math.round(clampInGameMusicVolume(inGameMusicVolume) * 100)}%`;
+    value.textContent = `${Math.round(clampInGameMusicVolume(state.inGameMusicVolume) * 100)}%`;
   }
 
   if (slider) {
-    slider.value = String(Math.round(clampInGameMusicVolume(inGameMusicVolume) * 100));
+    slider.value = String(Math.round(clampInGameMusicVolume(state.inGameMusicVolume) * 100));
   }
 }
 
 function toggleInGameBackgroundMusic() {
-  isInGameMusicMuted = !isInGameMusicMuted;
-  localStorage.setItem(IN_GAME_MUSIC_MUTED_KEY, String(isInGameMusicMuted));
+  state.isInGameMusicMuted = !state.isInGameMusicMuted;
+  localStorage.setItem(IN_GAME_MUSIC_MUTED_KEY, String(state.isInGameMusicMuted));
 
-  if (!isInGameMusicMuted && inGameMusicVolume <= 0) {
-    inGameMusicVolume = DEFAULT_IN_GAME_MUSIC_VOLUME;
-    localStorage.setItem(IN_GAME_MUSIC_VOLUME_KEY, String(inGameMusicVolume));
+  if (!state.isInGameMusicMuted && state.inGameMusicVolume <= 0) {
+    state.inGameMusicVolume = DEFAULT_IN_GAME_MUSIC_VOLUME;
+    localStorage.setItem(IN_GAME_MUSIC_VOLUME_KEY, String(state.inGameMusicVolume));
   }
 
   syncInGameBackgroundMusic();
@@ -7342,19 +7222,19 @@ function setInGameBackgroundMusicVolume(value: string | number) {
 
   if (!Number.isFinite(normalizedValue)) return;
 
-  inGameMusicVolume = clampInGameMusicVolume(normalizedValue > 1 ? normalizedValue / 100 : normalizedValue);
-  isInGameMusicMuted = inGameMusicVolume <= 0;
+  state.inGameMusicVolume = clampInGameMusicVolume(normalizedValue > 1 ? normalizedValue / 100 : normalizedValue);
+  state.isInGameMusicMuted = state.inGameMusicVolume <= 0;
 
-  localStorage.setItem(IN_GAME_MUSIC_VOLUME_KEY, String(inGameMusicVolume));
-  localStorage.setItem(IN_GAME_MUSIC_MUTED_KEY, String(isInGameMusicMuted));
+  localStorage.setItem(IN_GAME_MUSIC_VOLUME_KEY, String(state.inGameMusicVolume));
+  localStorage.setItem(IN_GAME_MUSIC_MUTED_KEY, String(state.isInGameMusicMuted));
 
   syncInGameBackgroundMusic();
   updateInGameMusicMenuDom();
 }
 
 function renderInGameMusicControl() {
-  const volumePercent = Math.round(clampInGameMusicVolume(inGameMusicVolume) * 100);
-  const isMuted = isInGameMusicMuted || volumePercent <= 0;
+  const volumePercent = Math.round(clampInGameMusicVolume(state.inGameMusicVolume) * 100);
+  const isMuted = state.isInGameMusicMuted || volumePercent <= 0;
 
   return `
     <div class="online-room-menu__music" title="Nhạc nền trong trận">
@@ -7459,11 +7339,8 @@ function renderSidePlayerSpacers(count: number) {
 }
 
 
-export type AppScreen = "dashboard" | "map_selection" | "lobby" | "game";
-export let currentAppScreen: AppScreen = "dashboard";
 
 // Background smoke video reference (shared between gotoMapSelection and rerenderGameShell)
-let bgSmokeVideo: HTMLVideoElement | null = null;
 
 function transitionToScreen(newScreen: AppScreen) {
   if (newScreen !== "dashboard") {
@@ -7471,26 +7348,25 @@ function transitionToScreen(newScreen: AppScreen) {
   }
 
   if (!(document as any).startViewTransition) {
-    currentAppScreen = newScreen;
+    state.currentAppScreen = newScreen;
     rerenderGameShell();
     return;
   }
   (document as any).startViewTransition(() => {
-    currentAppScreen = newScreen;
+    state.currentAppScreen = newScreen;
     rerenderGameShell();
   });
 }
 
-let isTransitioning = false;
 
 (window as any).gotoMapSelection = () => {
-  if (isTransitioning) return;
+  if (state.isTransitioning) return;
   if (!authClientState.user) {
     (window as any).focusHubAuthPanel();
     setAuthStatus("Đăng nhập hoặc đăng ký để bắt đầu hành trình.");
     return;
   }
-  isTransitioning = true;
+  state.isTransitioning = true;
 
   // 1. Create overlay video — plays from beginning (smoke effect)
   const vid = document.createElement("video");
@@ -7515,8 +7391,8 @@ let isTransitioning = false;
     // 2. When smoke covers screen (~3.5s), swap to map selection
     if (!transitioned && vid.currentTime >= 3.5) {
       transitioned = true;
-      isTransitioning = false;
-      bgSmokeVideo = vid;
+      state.isTransitioning = false;
+      state.bgSmokeVideo = vid;
 
       // Remove from body — rerenderGameShell will re-insert it into the screen
       document.body.removeChild(vid);
@@ -7525,7 +7401,7 @@ let isTransitioning = false;
         "object-fit:cover", "z-index:0", "pointer-events:none", "opacity:1"
       ].join(";");
 
-      currentAppScreen = "map_selection";
+      state.currentAppScreen = "map_selection";
       rerenderGameShell();
 
       // 3. Animate map card columns in — staggered slide from right
@@ -7555,10 +7431,10 @@ let isTransitioning = false;
 
 (window as any).gotoDashboard = () => {
   // Remove background video cleanly
-  if (bgSmokeVideo) {
-    bgSmokeVideo.pause();
-    bgSmokeVideo.remove();
-    bgSmokeVideo = null;
+  if (state.bgSmokeVideo) {
+    state.bgSmokeVideo.pause();
+    state.bgSmokeVideo.remove();
+    state.bgSmokeVideo = null;
   }
   transitionToScreen("dashboard");
 };
@@ -7583,7 +7459,7 @@ let isTransitioning = false;
   const authPanel = document.getElementById("hub-auth");
 
   if (!authPanel) {
-    currentAppScreen = "dashboard";
+    state.currentAppScreen = "dashboard";
     rerenderGameShell();
 
     window.requestAnimationFrame(() => {
@@ -7686,12 +7562,10 @@ function getSaigonBackgroundCoordinate(shell: HTMLElement, event: MouseEvent) {
   };
 }
 
-let lastOnlinePhase: string | null = null;
-let isCinematicTransitioning = false;
 
 function triggerCinematicLobbyToGameTransition() {
   console.log("TRIGGERING CINEMATIC TRANSITION!");
-  isCinematicTransitioning = true;
+  state.isCinematicTransitioning = true;
   
   const blocker = document.createElement("div");
   blocker.id = "cinematic-blocker";
@@ -7709,7 +7583,7 @@ function triggerCinematicLobbyToGameTransition() {
   
   if (!video || !overlay) {
     console.warn("Missing video or overlay for cinematic transition.");
-    isCinematicTransitioning = false;
+    state.isCinematicTransitioning = false;
     rerenderGameShell();
     return;
   }
@@ -7729,15 +7603,15 @@ function triggerCinematicLobbyToGameTransition() {
     });
 
     video.onpause = () => {
-      if (isCinematicTransitioning) {
+      if (state.isCinematicTransitioning) {
           console.warn("Video paused unexpectedly, resuming...");
           video.play().catch(err => console.error(err));
       }
     };
 
     const finishTransition = () => {
-      if (!isCinematicTransitioning) return;
-      isCinematicTransitioning = false;
+      if (!state.isCinematicTransitioning) return;
+      state.isCinematicTransitioning = false;
 
       overlay.style.display = "block";
       overlay.style.opacity = "1";
@@ -7777,7 +7651,7 @@ function triggerCinematicLobbyToGameTransition() {
 
     // Fallback if video fails to play or gets stuck completely
     setTimeout(() => {
-      if (isCinematicTransitioning) {
+      if (state.isCinematicTransitioning) {
         console.warn("Cinematic transition video timeout fallback.");
         finishTransition();
       }
@@ -7827,12 +7701,12 @@ function renderGameShell() {
   }
 
   if (!isOnlineRoomActive()) {
-    if (!authClientState.user || currentAppScreen === "dashboard") {
-      currentAppScreen = "dashboard";
+    if (!authClientState.user || state.currentAppScreen === "dashboard") {
+      state.currentAppScreen = "dashboard";
       return renderWithGlobalOverlays(renderDashboard());
     }
     
-    if (currentAppScreen === "map_selection") {
+    if (state.currentAppScreen === "map_selection") {
       return renderWithGlobalOverlays(renderMapSelectionScreen());
     }
 
@@ -7898,10 +7772,10 @@ function rerenderGameShell() {
   initDashboardHub();
 
   // Re-insert background video into map selection screen if it exists
-  if (currentAppScreen === "map_selection" && bgSmokeVideo) {
+  if (state.currentAppScreen === "map_selection" && state.bgSmokeVideo) {
     const screen = document.querySelector(".map-selection-screen");
     if (screen && screen.firstChild) {
-      screen.insertBefore(bgSmokeVideo, screen.firstChild);
+      screen.insertBefore(state.bgSmokeVideo, screen.firstChild);
     }
   }
 
@@ -7914,44 +7788,16 @@ function rerenderGameShell() {
   }
 }
 
-let lastOnlineRenderSignature = "";
-let lastOnlineAnimationPhase: string | null = null;
-let selfPlanningConfirmPending = false;
-let planningConfirmLockSignature = "";
-let lastOnlinePlanningDayIndex: number | null = null;
-let planningConfirmRetryTimerId: number | null = null;
-let planningConfirmRetryCount = 0;
-let lastOnlineAnimationDraftRound = 0;
-let lastOnlineAnimationPoolSignature = "";
-let onlineDraftAnimationTimerId: number | null = null;
-let hasStartedOnlineSimulationReplay = false;
-let onlineDraftDisplayPool: TravelCardData[] | null = null;
-let onlineDraftPassSnapshotPool: TravelCardData[] | null = null;
-let onlineDraftPendingPool: TravelCardData[] | null = null;
-let onlinePassCompleteRetryCount = 0;
 
-let isDraftCenterDealing = false;
-let draftDealVisualEndsAt = 0;
-let isDraftPickFlying = false;
-let draftHandPendingCardId: string | null = null;
-let draftPoolFlyReturnCardId: string | null = null;
-let lastOnlinePickedDraftCount = 0;
 const DRAFT_PICK_FLY_MS = 750;
 const DRAFT_POOL_COLLAPSE_MS = 1350;
 const DRAFT_HAND_PICK_SCALE = 0.84;
-let shouldActivateOnlineDealAnimation = false;
-let shouldActivateOnlinePassAnimation = false;
-let isOnlineFinalDraftReturnAnimating = false;
-let onlineFinalDraftReturnTimerId: number | null = null;
-let hasPlayedOnlinePlanningDealAfterDraft = false;
-let draftCenterDealEndTimerId: number | null = null;
-let draftCenterDealGeneration = 0;
 
 function isDraftDealVisualActive(): boolean {
   return (
-    isDraftCenterDealing ||
-    isInitialDealInProgress ||
-    Date.now() < draftDealVisualEndsAt
+    state.isDraftCenterDealing ||
+    state.isInitialDealInProgress ||
+    Date.now() < state.draftDealVisualEndsAt
   );
 }
 
@@ -7979,14 +7825,14 @@ function restartDraftCenterDealVisuals(): boolean {
 }
 
 function clearDraftCenterDealAnimation() {
-  draftCenterDealGeneration += 1;
+  state.draftCenterDealGeneration += 1;
 
-  if (draftCenterDealEndTimerId !== null) {
-    window.clearTimeout(draftCenterDealEndTimerId);
-    draftCenterDealEndTimerId = null;
+  if (state.draftCenterDealEndTimerId !== null) {
+    window.clearTimeout(state.draftCenterDealEndTimerId);
+    state.draftCenterDealEndTimerId = null;
   }
 
-  isDraftCenterDealing = false;
+  state.isDraftCenterDealing = false;
   document.querySelector(".draft-center-overlay")?.classList.remove("draft-center-overlay--dealing");
 }
 
@@ -8000,18 +7846,18 @@ function getDraftCenterPoolSignature(): string {
 function startDraftCenterDealAnimation(
   durationMs = getDraftCenterDealDurationForCurrentPool(),
 ) {
-  if (draftCenterDealEndTimerId !== null) {
-    window.clearTimeout(draftCenterDealEndTimerId);
-    draftCenterDealEndTimerId = null;
+  if (state.draftCenterDealEndTimerId !== null) {
+    window.clearTimeout(state.draftCenterDealEndTimerId);
+    state.draftCenterDealEndTimerId = null;
   }
 
-  const generation = ++draftCenterDealGeneration;
-  isDraftCenterDealing = true;
-  draftDealVisualEndsAt = Date.now() + durationMs;
+  const generation = ++state.draftCenterDealGeneration;
+  state.isDraftCenterDealing = true;
+  state.draftDealVisualEndsAt = Date.now() + durationMs;
   playGameSound("deal");
 
   const activate = () => {
-    if (generation !== draftCenterDealGeneration) return;
+    if (generation !== state.draftCenterDealGeneration) return;
     restartDraftCenterDealVisuals();
   };
 
@@ -8019,38 +7865,38 @@ function startDraftCenterDealAnimation(
     window.requestAnimationFrame(activate);
   });
 
-  draftCenterDealEndTimerId = window.setTimeout(() => {
-    if (generation !== draftCenterDealGeneration) return;
+  state.draftCenterDealEndTimerId = window.setTimeout(() => {
+    if (generation !== state.draftCenterDealGeneration) return;
 
-    draftCenterDealEndTimerId = null;
-    isDraftCenterDealing = false;
+    state.draftCenterDealEndTimerId = null;
+    state.isDraftCenterDealing = false;
     document.querySelector(".draft-center-overlay")?.classList.remove("draft-center-overlay--dealing");
   }, durationMs);
 }
 
 function clearOnlineDraftAnimationTimer() {
-  if (onlineDraftAnimationTimerId !== null) {
-    window.clearTimeout(onlineDraftAnimationTimerId);
-    onlineDraftAnimationTimerId = null;
+  if (state.onlineDraftAnimationTimerId !== null) {
+    window.clearTimeout(state.onlineDraftAnimationTimerId);
+    state.onlineDraftAnimationTimerId = null;
   }
 
-  if (onlineFinalDraftReturnTimerId !== null) {
-    window.clearTimeout(onlineFinalDraftReturnTimerId);
-    onlineFinalDraftReturnTimerId = null;
+  if (state.onlineFinalDraftReturnTimerId !== null) {
+    window.clearTimeout(state.onlineFinalDraftReturnTimerId);
+    state.onlineFinalDraftReturnTimerId = null;
   }
 
   clearDraftCenterDealAnimation();
 }
 
 function getOnlineRenderSignature() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state) return "offline";
+  if (!roomState) return "offline";
 
-  const self = state.self;
+  const self = roomState.self;
   const playersSignature = playerIds
     .map((playerId) => {
-      const player = state.players[playerId];
+      const player = roomState.players[playerId];
       const boardSignature = player.board
         .map((row) => row.map((cell) => {
           if (!cell) return "-";
@@ -8075,11 +7921,11 @@ function getOnlineRenderSignature() {
     .join("||");
 
   return [
-    state.phase,
+    roomState.phase,
     state.phaseNumber ?? 1,
-    state.dayIndex,
+    roomState.dayIndex,
     state.draftRound,
-    state.timer,
+    roomState.timer,
     self.draftPool.map((card) => card.id).join(","),
     self.pickedDraftCards.map((card) => card.id).join(","),
     self.hand.map((card) => card.id).join(","),
@@ -8088,33 +7934,33 @@ function getOnlineRenderSignature() {
 }
 
 function updateOnlineTimerOnly() {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
   const timerElement = document.querySelector(".score-breakdown__timer") as HTMLElement | null;
   const timerValueElement = timerElement?.querySelector("strong") as HTMLElement | null;
 
-  if (!state || !timerElement || !timerValueElement) return;
+  if (!roomState || !timerElement || !timerValueElement) return;
 
-  if (state.phase === "draft") {
+  if (roomState.phase === "draft") {
     timerValueElement.textContent = getDraftTimerDisplayLabel();
     timerElement.classList.toggle(
       "score-breakdown__timer--danger",
-      !isDraftPickTimerFrozen() && draftPickSecondsLeft <= 3
+      !isDraftPickTimerFrozen() && state.draftPickSecondsLeft <= 3
     );
     updateDraftTimerDisplayVisualOnly();
     updateDraftPoolToggleVisualOnly();
     return;
   }
 
-  if (state.phase === "planning") {
-    timerValueElement.textContent = formatTurnTimer(state.timer);
-    timerElement.classList.toggle("score-breakdown__timer--danger", state.timer <= 10);
+  if (roomState.phase === "planning") {
+    timerValueElement.textContent = formatTurnTimer(roomState.timer);
+    timerElement.classList.toggle("score-breakdown__timer--danger", roomState.timer <= 10);
     updatePlanningConfirmButtonVisualOnly();
     return;
   }
 
-  if (state.phase === "gameover") {
-    timerValueElement.textContent = `${state.timer}s`;
-    timerElement.classList.toggle("score-breakdown__timer--danger", state.timer <= 3);
+  if (roomState.phase === "gameover") {
+    timerValueElement.textContent = `${roomState.timer}s`;
+    timerElement.classList.toggle("score-breakdown__timer--danger", roomState.timer <= 3);
   }
 }
 
@@ -8122,41 +7968,41 @@ function renderAfterOnlineStateChange() {
   const nextSignature = getOnlineRenderSignature();
   const currentPhase = onlineClientState.roomState?.phase ?? null;
 
-  if (nextSignature !== lastOnlineRenderSignature) {
-    console.log("Signature changed:", lastOnlineRenderSignature, "=>", nextSignature); 
-    lastOnlineRenderSignature = nextSignature;
+  if (nextSignature !== state.lastOnlineRenderSignature) {
+    console.log("Signature changed:", state.lastOnlineRenderSignature, "=>", nextSignature); 
+    state.lastOnlineRenderSignature = nextSignature;
 
-    if (lastOnlinePhase === "lobby" && currentPhase === "cinematic") {
-      lastOnlinePhase = currentPhase;
+    if (state.lastOnlinePhase === "lobby" && currentPhase === "cinematic") {
+      state.lastOnlinePhase = currentPhase;
       triggerCinematicLobbyToGameTransition();
       return;
     }
     
-    lastOnlinePhase = currentPhase;
+    state.lastOnlinePhase = currentPhase;
 
     const shouldDeferRerenderForActiveDeal =
-      (isDraftDealVisualActive() || isDraftPickFlying) &&
-      !shouldActivateOnlineDealAnimation &&
-      !shouldActivateOnlinePassAnimation;
+      (isDraftDealVisualActive() || state.isDraftPickFlying) &&
+      !state.shouldActivateOnlineDealAnimation &&
+      !state.shouldActivateOnlinePassAnimation;
 
     const shouldDeferRerenderForDraftTransition =
-      (isPassingDraftCards ||
-        isInitialDealInProgress ||
-        isDraftCenterDealing) &&
-      !shouldActivateOnlinePassAnimation &&
-      !shouldActivateOnlineDealAnimation;
+      (state.isPassingDraftCards ||
+        state.isInitialDealInProgress ||
+        state.isDraftCenterDealing) &&
+      !state.shouldActivateOnlinePassAnimation &&
+      !state.shouldActivateOnlineDealAnimation;
 
     const passVisualRunning =
       isOnlineInterRoundPoolPassActive() &&
       document.querySelector(".draft-center-overlay--passing.pass-active");
 
     const poolCollapseVisualRunning =
-      isDraftPoolCollapseAnimating &&
+      state.isDraftPoolCollapseAnimating &&
       document.querySelector(
         ".draft-center-overlay--collapsing.pass-active, .draft-center-overlay--expanding.pass-active"
       );
 
-    if (!isCinematicTransitioning) {
+    if (!state.isCinematicTransitioning) {
       if (shouldDeferRerenderForActiveDeal || shouldDeferRerenderForDraftTransition) {
         updateDraftSelectedVisualOnly();
         updateDraftHandVisualOnly();
@@ -8165,8 +8011,8 @@ function renderAfterOnlineStateChange() {
         updateDraftConfirmButtonVisualOnly();
       } else if (
         (passVisualRunning || poolCollapseVisualRunning) &&
-        !shouldActivateOnlinePassAnimation &&
-        !shouldActivateOnlineDealAnimation
+        !state.shouldActivateOnlinePassAnimation &&
+        !state.shouldActivateOnlineDealAnimation
       ) {
         updateOnlineTimerOnly();
         updateDraftPoolToggleVisualOnly();
@@ -8175,14 +8021,14 @@ function renderAfterOnlineStateChange() {
       }
     }
 
-    if (shouldActivateOnlineDealAnimation) {
-      shouldActivateOnlineDealAnimation = false;
+    if (state.shouldActivateOnlineDealAnimation) {
+      state.shouldActivateOnlineDealAnimation = false;
       startDraftCenterDealAnimation(getDraftCenterDealDurationForCurrentPool());
     }
 
-    if (shouldActivateOnlinePassAnimation) {
-      shouldActivateOnlinePassAnimation = false;
-      if (isOnlineFinalDraftReturnAnimating) {
+    if (state.shouldActivateOnlinePassAnimation) {
+      state.shouldActivateOnlinePassAnimation = false;
+      if (state.isOnlineFinalDraftReturnAnimating) {
         activateDraftCenterReturnAnimation();
       } else {
         activateDraftCenterPoolPassAnimation();
@@ -8196,8 +8042,8 @@ function renderAfterOnlineStateChange() {
 }
 
 rerenderGameShell();
-lastOnlineRenderSignature = getOnlineRenderSignature();
-lastOnlinePhase = onlineClientState.roomState?.phase ?? null;
+state.lastOnlineRenderSignature = getOnlineRenderSignature();
+state.lastOnlinePhase = onlineClientState.roomState?.phase ?? null;
 
 function setupCardClickDelegation() {
   let holdStartX = 0;
@@ -8225,10 +8071,10 @@ function setupCardClickDelegation() {
     let nextCardId: string | null = null;
     let nextMode: "draft" | "hand" | null = null;
 
-    if (isDraftPhase && draftCardElement) {
+    if (state.isDraftPhase && draftCardElement) {
       nextCardId = draftCardElement.dataset.draftCardId ?? null;
       nextMode = "draft";
-    } else if (!isDraftPhase && !isSimulationMode && handCardElement) {
+    } else if (!state.isDraftPhase && !state.isSimulationMode && handCardElement) {
       nextCardId = handCardElement.dataset.handCardId ?? null;
       nextMode = "hand";
     }
@@ -8243,7 +8089,7 @@ function setupCardClickDelegation() {
 
     clearHoldTimer();
 
-    if (nextMode === "draft" && !isPassingDraftCards) {
+    if (nextMode === "draft" && !state.isPassingDraftCards) {
       /*
         Online/offline draft chọn ngay từ pointerdown.
         Lượt 1 đang có deal animation nên browser click có thể bị mất;
@@ -8253,20 +8099,20 @@ function setupCardClickDelegation() {
       selectDraftCard(nextCardId);
     }
 
-    holdTimer = window.setTimeout(() => {
+    state.holdTimer = window.setTimeout(() => {
       if (!holdCardId) return;
 
       didOpenHoldPreview = true;
-      focusedHandCardId = holdCardId;
-      focusedBoardCard = null;
-      focusedBoardPosition = null;
-      suppressNextClick = true;
+      state.focusedHandCardId = holdCardId;
+      state.focusedBoardCard = null;
+      state.focusedBoardPosition = null;
+      state.suppressNextClick = true;
       rerenderGameShell();
     }, 500);
   }, true);
 
   document.addEventListener("pointermove", (event) => {
-    if (!holdCardId || holdTimer === null) return;
+    if (!holdCardId || state.holdTimer === null) return;
 
     const distance = Math.hypot(
       event.clientX - holdStartX,
@@ -8293,7 +8139,7 @@ function setupCardClickDelegation() {
       Draft đã chọn ở pointerdown để không bị mất click trong animation dealing.
       Pointerup chỉ dọn hold state, không select lần nữa để tránh toggle ngược.
     */
-    if (mode === "draft" && cardId && !openedPreview && distance <= 8 && isDraftPhase) {
+    if (mode === "draft" && cardId && !openedPreview && distance <= 8 && state.isDraftPhase) {
       event.preventDefault();
       event.stopPropagation();
     }
@@ -8310,7 +8156,7 @@ function setupCardClickDelegation() {
 
     const draftCardElement = target.closest("[data-draft-card-id]") as HTMLElement | null;
 
-    if (draftCardElement && isDraftPhase) {
+    if (draftCardElement && state.isDraftPhase) {
       event.preventDefault();
       event.stopPropagation();
 
@@ -8330,7 +8176,7 @@ function setupCardClickDelegation() {
 
     const handCardElement = target.closest("[data-hand-card-id]") as HTMLElement | null;
 
-    if (handCardElement && !isDraftPhase) {
+    if (handCardElement && !state.isDraftPhase) {
       event.preventDefault();
       event.stopPropagation();
 
@@ -8476,7 +8322,7 @@ function setupAuthFormDelegation() {
   onlineClientState.roomId = null;
   onlineClientState.playerId = null;
   onlineClientState.roomState = null;
-  currentAppScreen = "dashboard";
+  state.currentAppScreen = "dashboard";
 
   rerenderGameShell();
 };
@@ -8561,12 +8407,12 @@ function setupAuthFormDelegation() {
 
 
 (window as any).openMidGameRanking = () => {
-  isMidGameRankingOpen = true;
+  state.isMidGameRankingOpen = true;
   rerenderGameShell();
 };
 
 (window as any).closeMidGameRanking = () => {
-  isMidGameRankingOpen = false;
+  state.isMidGameRankingOpen = false;
   rerenderGameShell();
 };
 
@@ -8588,9 +8434,9 @@ function setupAuthFormDelegation() {
 
 
 (window as any).debugOnlineBoards = () => {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
-  if (!state) {
+  if (!roomState) {
     console.log("No online room state.");
     return null;
   }
@@ -8609,10 +8455,9 @@ function setupAuthFormDelegation() {
     }>;
   }> = {};
 
-  const playerIds: PlayerId[] = ["p1", "p2", "p3", "p4"];
 
   for (const playerId of playerIds) {
-    const player = state.players[playerId];
+    const player = roomState.players[playerId];
     const filledCells: Array<{
       rowIndex: number;
       colIndex: number;
@@ -8667,7 +8512,7 @@ function setupAuthFormDelegation() {
 
 
 (window as any).debugOnlineScores = () => {
-  const state = onlineClientState.roomState;
+  const roomState = onlineClientState.roomState;
 
   if (!state) {
     console.log("No online room state.");
@@ -8675,7 +8520,7 @@ function setupAuthFormDelegation() {
   }
 
   const result = playerIds.map((playerId) => {
-    const player = state.players[playerId];
+    const player = roomState!.players[playerId];
 
     return {
       playerId,

@@ -1,18 +1,13 @@
 import { onlineClientState } from "../online/socketClient.js";
 import type { TravelCardData } from "../types.js";
 import { days, rows } from "../game/constants.js";
-// You may need to import state getters from app.ts or inject them
+import { state, currentPlayerId } from "../state/gameState.js";
 import { 
   getBoardSlots, 
   getCurrentScoreBreakdown, 
   getRemainingResources, 
   getDisplayPlayerName,
   isOnlineRoomActive,
-  phaseNumber,
-  currentDayIndex,
-  simulationResult,
-  accumulatedVP,
-  currentPlayerId
 } from "../app.js";
 
 const CERTIFICATE_HISTORY_STORAGE_KEY = "travel_board_certificate_history";
@@ -95,13 +90,13 @@ export function buildTravelTimelineExport() {
     version: 1,
     createdAt,
     playerName: getDisplayPlayerName(),
-    phaseNumber,
-    currentDay: days[currentDayIndex],
+    phaseNumber: state.phaseNumber,
+    currentDay: days[state.currentDayIndex],
     score: {
       baseVP: breakdown.baseVP,
       bonusVP: breakdown.bonusVP,
-      totalVP: simulationResult?.finalVP ?? breakdown.totalVP,
-      accumulatedVP,
+      totalVP: state.simulationResult?.finalVP ?? breakdown.totalVP,
+      accumulatedVP: state.accumulatedVP,
     },
     resources: {
       spentCoin: breakdown.spentCoin,
@@ -161,7 +156,7 @@ export function getPhaseStyleLabel(cards: Array<{ tag: string; tagLabel: string 
   return sorted[0]?.label ?? "Kết hợp";
 }
 
-export function createCertificatePhaseSnapshot(phaseToSnapshot = phaseNumber): CertificatePhaseSnapshot {
+export function createCertificatePhaseSnapshot(phaseToSnapshot = state.phaseNumber): CertificatePhaseSnapshot {
   const boardSlots = getBoardSlots();
   const daysSnapshot = days.map((day, dayIndex) => {
     return {
@@ -225,7 +220,7 @@ export function rememberCurrentCertificatePhase() {
   if (!onlineClientState.roomState) return;
   if (onlineClientState.roomState.phase === "lobby" || onlineClientState.roomState.phase === "draft") return;
 
-  const snapshot = createCertificatePhaseSnapshot(phaseNumber);
+  const snapshot = createCertificatePhaseSnapshot(state.phaseNumber);
 
   /*
     Không ghi đè phase cũ bằng board rỗng lúc server vừa reset qua phase mới.
@@ -245,7 +240,7 @@ export function getCertificateExportData() {
   rememberCurrentCertificatePhase();
 
   const history = loadCertificateHistory();
-  const currentSnapshot = createCertificatePhaseSnapshot(phaseNumber);
+  const currentSnapshot = createCertificatePhaseSnapshot(state.phaseNumber);
   const merged = history.filter((phase) => phase.phaseNumber !== currentSnapshot.phaseNumber);
 
   if (currentSnapshot.completedSlots > 0) {
