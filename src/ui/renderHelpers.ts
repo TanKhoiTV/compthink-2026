@@ -2,9 +2,17 @@ import { state } from "../state/gameState.js";
 import { onlineClientState } from "../online/socketClient.js";
 import { days } from "../game/constants.js";
 import {
+  getCurrentScoreBreakdown,
+  getMidGameRankings,
+  getOnlineFinalRankings,
   getOnlineSelfPublicPlayer,
+  getOnlineSelfScore,
+  getRemainingResources,
   isOnlineRoomActive,
 } from "../game/queries.js";
+import type { SimulationReplayStep } from "../game/scoring.js";
+import { formatSignedVP, formatTurnTimer } from "./cardDisplay.js";
+import { GAME_HELP_STEPS, renderHelpBubble } from "./HelpBubble.js";
 
 function getCurrentDayLabel() {
   return `Ngày ${days[state.currentDayIndex]}`;
@@ -181,6 +189,480 @@ function renderDebtSealGlyph() {
   `;
 }
 
+// ── Group B render functions ──
+
+function renderResourceOrbs() {
+  if (state.isSimulationMode || state.simulationResult || isOnlineGameOver()) {
+    return "";
+  }
+
+  const remaining = getRemainingResources();
+
+  return `
+    <div class="resource-orbs" aria-label="Tài nguyên hiện tại">
+      <div class="resource-orb resource-orb--coin ${
+    state.resourceOrbFlashType === "coin" ? "resource-orb--effect-pulse" : ""
+  }" title="Xu hiện có">
+        <div class="resource-orb__frame">
+          <div class="resource-orb__icon resource-orb__icon--coin">💰</div>
+          <div class="resource-orb__value">${remaining.coin}</div>
+        </div>
+        <div class="resource-orb__label">TIỀN</div>
+      </div>
+
+      <div class="resource-orb-cluster resource-orb-cluster--stamina">
+        ${
+    renderHelpBubble({
+      id: "gameplay-help",
+      title: "Cách chơi",
+      bubbleLabel: "Cách chơi",
+      steps: GAME_HELP_STEPS,
+      placement: "game",
+    })
+  }
+        <div class="resource-orb resource-orb--stamina ${
+    state.resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""
+  }" title="Thể lực hiện có">
+          <div class="resource-orb__frame">
+            <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
+            <div class="resource-orb__value">${remaining.stamina}</div>
+          </div>
+          <div class="resource-orb__label">THỂ LỰC</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderScoreBreakdownPanel(options?: {
+  draftTimerDanger?: boolean;
+  draftTimerDisplayLabel?: string;
+}) {
+  const { draftTimerDanger = false, draftTimerDisplayLabel = "" } = options ??
+    {};
+  const breakdown = getCurrentScoreBreakdown();
+  const isOnlineLobby = onlineClientState.roomState?.phase === "lobby" ||
+    onlineClientState.roomState?.phase === "cinematic";
+  const onlineSelfScore = getOnlineSelfScore();
+  const totalScoreToDisplay = onlineSelfScore ??
+    (state.simulationResult
+      ? getStablePhaseScoreDisplay()
+      : state.accumulatedVP);
+  const compactPhaseDayLabel = getCompactPhaseDayLabel();
+
+  return `
+    <section class="score-breakdown score-breakdown--status" title="${compactPhaseDayLabel}">
+      <div class="score-breakdown__header score-breakdown__capsule score-breakdown__capsule--score">
+        <span>ĐIỂM</span>
+        <strong>${totalScoreToDisplay}</strong>
+      </div>
+
+      <div class="score-breakdown__details score-breakdown__capsule score-breakdown__capsule--phase">
+        <span>PHASE</span>
+        <strong>${compactPhaseDayLabel}</strong>
+      </div>
+
+      <div class="score-breakdown__item score-breakdown__capsule score-breakdown__capsule--slots">
+        <span>SLOT</span>
+        <strong>${breakdown.usedSlots}/5</strong>
+      </div>
+
+      ${
+    isOnlineLobby
+      ? `
+            <div class="score-breakdown__lobby-actions">
+              <button
+                class="online-start-button"
+                onclick="event.stopPropagation(); startOnlineGame()"
+                title="Bắt đầu trò chơi cho toàn bộ người chơi trong phòng."
+              >
+                ▶ Bắt đầu trò chơi
+              </button>
+            </div>
+          `
+      : ""
+  }
+
+      ${
+    state.simulationResult
+      ? `
+            <button
+              class="score-breakdown__timer score-breakdown__timer--reset"
+              onclick="event.stopPropagation(); resetSimulation()"
+              title="Prototype: mở khóa để test lại lượt"
+            >
+              ↺ Test lại
+            </button>
+          `
+      : state.isDraftPhase
+      ? `
+              <div
+                class="score-breakdown__timer ${
+        draftTimerDanger ? "score-breakdown__timer--danger" : ""
+      }"
+                title="Thời gian chọn bài trong phase chia bài."
+              >
+                <span>DRAFT</span>
+                <strong>${draftTimerDisplayLabel}</strong>
+              </div>
+            `
+      : `
+              <div
+                class="score-breakdown__timer ${
+        state.remainingTurnSeconds <= 10 ? "score-breakdown__timer--danger" : ""
+      }"
+                title="Đồng hồ đếm ngược. Hết giờ hệ thống tự mô phỏng."
+              >
+                <span>TIME</span>
+                <strong>${formatTurnTimer(state.remainingTurnSeconds)}</strong>
+              </div>
+            `
+  }
+    </section>
+  `;
+}
+
+function renderFinalRankingPanel() {
+  if (!isOnlineGameOver()) return "";
+
+  const rankings = getOnlineFinalRankings();
+  const selfPlayerId = onlineClientState.playerId;
+
+  return `
+    <section class="final-ranking-panel">
+      <div class="final-ranking-panel__header">
+        <span>KẾT THÚC PHASE</span>
+        <h2>Bảng xếp hạng cuối cùng</h2>
+        <p>Hết 5 ngày. BXH sẽ tự đóng sau ${
+    onlineClientState.roomState?.timer ?? 10
+  }s để qua Phase ${state.phaseNumber + 1}.</p>
+      </div>
+
+      <div class="final-ranking-panel__list">
+        ${
+    rankings
+      .map((player, index) => {
+        const isSelf = player.playerId === selfPlayerId;
+
+        return `
+              <div class="final-ranking-row ${
+          isSelf ? "final-ranking-row--self" : ""
+        }">
+                <div class="final-ranking-row__rank">#${index + 1}</div>
+
+                <div class="final-ranking-row__name">
+                  <strong>${player.name}</strong>
+                  <span>${player.playerId}${
+          player.isConnected ? "" : " • offline"
+        }</span>
+                </div>
+
+                <div class="final-ranking-row__score">${player.score} VP</div>
+
+                <div class="final-ranking-row__meta">
+                  <span>🪙 ${player.coin}</span>
+                  <span>⚡ ${player.stamina}</span>
+                  <span>${player.usedSlots}/25</span>
+                </div>
+              </div>
+            `;
+      })
+      .join("")
+  }
+      </div>
+
+      ${renderTravelTimelineExportPanel("travel-export-panel--final")}
+
+      <div class="final-ranking-panel__footer">
+        ${
+    state.phaseNumber >= 3
+      ? "Đã kết thúc Phase 3. Đây là kết quả cuối của game."
+      : `Đang chuẩn bị chuyển sang Phase ${state.phaseNumber + 1}...`
+  }
+      </div>
+    </section>
+  `;
+}
+
+function renderSimulationResultPanel() {
+  if (!state.simulationResult) return "";
+
+  const result = state.simulationResult;
+  const currentStep = getCurrentReplayStep();
+  const totalSteps = Math.max(1, result.replaySteps.length);
+  const currentStepNumber = Math.min(
+    state.simulationReplayIndex + 1,
+    totalSteps,
+  );
+  const currentDayDelta = state.isReplayComplete
+    ? result.finalVP
+    : getCurrentReplayPartialVP();
+  const ticketStepWidth = 366;
+  const firstTicketCenter = 223;
+  const endCenterBoost = state.simulationReplayIndex === totalSteps - 1
+    ? 460
+    : state.simulationReplayIndex === totalSteps - 2
+    ? 180
+    : 0;
+  const trackOffset = firstTicketCenter +
+    state.simulationReplayIndex * ticketStepWidth +
+    endCenterBoost;
+
+  const getEventIcon = (eventType?: string | null) => {
+    if (eventType === "storm") return "⛈";
+    if (eventType === "traffic") return "🚦";
+    if (eventType === "distance") return "🧭";
+    if (eventType === "promo") return "🏷";
+    return "✦";
+  };
+
+  const getEventTitle = (step: SimulationReplayStep) => {
+    if (step.eventText) return step.eventText;
+    if (step.eventType === "storm") return "Mưa giông";
+    if (step.eventType === "traffic") return "Kẹt xe";
+    if (step.eventType === "distance") return "Xa tuyến";
+    if (step.eventType === "promo") return "Ưu đãi";
+    return "";
+  };
+
+  return `
+    <section class="ticket-scan-overlay" onclick="event.stopPropagation()">
+      <div class="ticket-scan-overlay__scrim"></div>
+
+      <div class="ticket-scan-overlay__header">
+        <span>ĐANG QUÉT TÍNH ĐIỂM</span>
+        <strong>${getCurrentPhaseLabel()} • ${getCurrentDayLabel()}</strong>
+        <em>${
+    currentStep ? `Đang tính: ${currentStep.timeLabel}` : "Đang chuẩn bị..."
+  }</em>
+      </div>
+
+      <div class="ticket-scan-strip">
+        <div class="ticket-scan-strip__backdrop"></div>
+
+        <div
+          class="ticket-scan-track"
+          style="transform: translateX(calc(50% - ${trackOffset}px)); --scan-index: ${state.simulationReplayIndex};"
+        >
+          ${
+    result.replaySteps
+      .map((step, stepIndex) => {
+        const isLastTicket = stepIndex === totalSteps - 1;
+        const shouldTearImmediately = !state.isReplayComplete &&
+          isLastTicket &&
+          stepIndex === state.simulationReplayIndex;
+        const isActive = !state.isReplayComplete &&
+          stepIndex === state.simulationReplayIndex &&
+          !shouldTearImmediately;
+        const isDone = state.isReplayComplete ||
+          stepIndex < state.simulationReplayIndex ||
+          shouldTearImmediately;
+        const isFuture = !state.isReplayComplete &&
+          stepIndex > state.simulationReplayIndex;
+        const eventTitle = getEventTitle(step);
+        const hasEvent = Boolean(step.eventType || step.eventText);
+
+        return `
+                <article
+                  class="score-ticket ${isActive ? "is-active" : ""} ${
+          isDone ? "is-torn" : ""
+        } ${isFuture ? "is-future" : ""} ${step.isEmpty ? "is-empty" : ""} ${
+          hasEvent ? "has-event" : ""
+        } ${step.eventType ? `score-ticket--event-${step.eventType}` : ""}"
+                >
+                  <div class="score-ticket__perforation score-ticket__perforation--left"></div>
+                  <div class="score-ticket__perforation score-ticket__perforation--right"></div>
+
+                  <div class="score-ticket__head">
+                    <span>${step.timeLabel}</span>
+                    <strong>${
+          step.vpDelta >= 0 ? "+" : ""
+        }${step.vpDelta} VP</strong>
+                  </div>
+
+                  <div class="score-ticket__body">
+                    <h4>${step.title}</h4>
+                    <p>${step.subtitle}</p>
+                  </div>
+
+                  <div class="score-ticket__stats">
+                    <span class="${
+          step.coinDelta > 0 ? "is-cost" : ""
+        }">Xu ${step.coinDelta}</span>
+                    <span class="${
+          step.staminaDelta > 0 ? "is-cost" : ""
+        }">Lực ${step.staminaDelta}</span>
+                  </div>
+
+                  ${
+          step.comboText ? `<div class="score-ticket__combo">COMBO</div>` : ""
+        }
+
+                  ${
+          hasEvent
+            ? `
+                        <div class="score-ticket__stamp">
+                          <b>${getEventIcon(step.eventType)}</b>
+                          <span>${eventTitle}</span>
+                        </div>
+                      `
+            : ""
+        }
+
+                  <div class="score-ticket__tear-mark"></div>
+                </article>
+
+                ${
+          stepIndex < result.replaySteps.length - 1
+            ? `<div class="score-ticket-connector ${
+              stepIndex < state.simulationReplayIndex ? "is-passed" : ""
+            }"></div>`
+            : ""
+        }
+              `;
+      })
+      .join("")
+  }
+        </div>
+      </div>
+
+      <div class="ticket-scan-overlay__footer">
+        <div>
+          <span>Tiến trình</span>
+          <strong>${currentStepNumber}/${totalSteps}</strong>
+        </div>
+
+        <div>
+          <span>Điểm ngày</span>
+          <strong>${formatSignedVP(currentDayDelta)}</strong>
+        </div>
+
+        <div>
+          <span>Tổng phase</span>
+          <strong>${getStablePhaseScoreDisplay()} VP</strong>
+        </div>
+
+        ${
+    state.isReplayComplete
+      ? `
+              <div class="ticket-scan-overlay__complete">
+                <span>Hoàn tất</span>
+                <strong>${getPhaseScoreBeforeCurrentSimulation()} → ${getPhaseScorePreview()} VP</strong>
+              </div>
+            `
+      : ""
+  }
+      </div>
+    </section>
+  `;
+}
+
+function renderPlayerEffectTokens() {
+  const effectTokens: string[] = [];
+  const coinDebt = getCurrentCoinDebtAmount();
+
+  if (coinDebt > 0) {
+    effectTokens.push(`
+      <button
+        type="button"
+        class="player-effect-seal player-effect-seal--debt"
+        onclick="event.stopPropagation(); window.openDebtTokenModal()"
+        aria-label="Token nợ: ${coinDebt} xu"
+      >
+        <span class="player-effect-seal__surface">
+          <span class="player-effect-seal__ring"></span>
+
+          <span class="player-effect-seal__glyph player-effect-seal__glyph--debt" aria-hidden="true">${renderDebtSealGlyph()}</span>
+        </span>
+
+        <span class="player-effect-seal__count">${coinDebt}</span>
+        <span class="player-effect-seal__hover-label">TOKEN NỢ</span>
+      </button>
+    `);
+  }
+
+  if (!effectTokens.length) {
+    return "";
+  }
+
+  return `
+    <div class="player-effect-dock">
+      ${effectTokens.join("")}
+    </div>
+  `;
+}
+
+function renderMidGameRankingModal() {
+  if (!state.isMidGameRankingOpen || !isOnlineRoomActive()) {
+    return "";
+  }
+
+  const rankings = getMidGameRankings();
+  const selfPlayerId = onlineClientState.playerId;
+  const phaseDayLabel = getCompactPhaseDayLabel();
+
+  return `
+    <div class="mid-ranking-backdrop" onclick="event.stopPropagation(); closeMidGameRanking()">
+      <section class="mid-ranking-modal" onclick="event.stopPropagation()">
+        <div class="mid-ranking-modal__header">
+          <div>
+            <span>BẢNG XẾP HẠNG GIỮA TRẬN</span>
+            <h2>${phaseDayLabel}</h2>
+            <p>Cập nhật sau mỗi ngày khi server cộng điểm simulation xong.</p>
+          </div>
+
+          <button
+            class="mid-ranking-modal__close"
+            onclick="event.stopPropagation(); closeMidGameRanking()"
+            title="Đóng bảng xếp hạng"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="mid-ranking-modal__list">
+          ${
+    rankings.length > 0
+      ? rankings
+        .map((player, index) => {
+          const isSelf = player.playerId === selfPlayerId;
+
+          return `
+                      <div class="mid-ranking-row ${
+            isSelf ? "mid-ranking-row--self" : ""
+          }">
+                        <div class="mid-ranking-row__rank">#${index + 1}</div>
+
+                        <div class="mid-ranking-row__player">
+                          <strong>${player.name}</strong>
+                          <span>${player.playerId}${
+            player.isConnected ? "" : " • offline"
+          }</span>
+                        </div>
+
+                        <div class="mid-ranking-row__score">${player.score} VP</div>
+
+                        <div class="mid-ranking-row__meta">
+                          <span>🪙 ${player.coin}</span>
+                          <span>⚡ ${player.stamina}</span>
+                          <span>${player.usedSlots}/25</span>
+                        </div>
+                      </div>
+                    `;
+        })
+        .join("")
+      : `<div class="mid-ranking-empty">Chưa có người chơi trong phòng.</div>`
+  }
+        </div>
+
+        <div class="mid-ranking-modal__footer">
+          Điểm chỉ thay đổi sau khi kết thúc quét điểm từng ngày.
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 export {
   getCompactPhaseDayLabel,
   getCurrentCoinDebtAmount,
@@ -196,6 +678,12 @@ export {
   getStablePhaseScoreDisplay,
   isOnlineGameOver,
   renderDebtSealGlyph,
+  renderFinalRankingPanel,
+  renderMidGameRankingModal,
+  renderPlayerEffectTokens,
+  renderResourceOrbs,
+  renderScoreBreakdownPanel,
+  renderSimulationResultPanel,
   renderTravelTimelineExportPanel,
   shouldShowReplayDay,
 };
