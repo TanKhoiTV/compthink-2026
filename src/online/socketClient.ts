@@ -1,303 +1,495 @@
-/**
- * socketClient.ts — WebSocket JSON-RPC client for the Deno game server.
- *
- * Protocol: JSON-RPC 2.0 over WebSocket.
- * Server: ws://localhost:8080/ws?roomId=X&playerId=Y&name=Z
- *
- * This replaces Trekkopoly's Socket.IO client (src/online/socketClient.ts).
- */
+import type { PlayerId } from "../types.js";
 
-import type { RoomSnapshot } from "../shared/types.ts";
+declare const io: any;
 
-// ── Connection state ────────────────────────────────────────────────────────
+export type PublicBoardCell = {
+  cardId: string;
+  name?: string;
+  tag: string;
+  icon: string;
+  vp: number;
+  coin?: number;
+  stamina?: number;
+  image?: string;
+  type?: "card" | "debt" | "lock";
+  debtAmount?: number;
+  lockedReason?: string;
+  sourceCardName?: string;
+} | null;
 
-let socket: WebSocket | null = null;
-let requestId = 0;
-let pendingResolve: ((value: unknown) => void) | null = null;
-let pendingReject: ((reason: Error) => void) | null = null;
-let onRoomSnapshotCallback: ((snapshot: RoomSnapshot) => void) | null = null;
-let onDisconnectCallback: (() => void) | null = null;
-// Auto-detect: use the deployed Deno server when on GitHub Pages,
-// localhost for development.
-const isProduction =
-	typeof window !== "undefined" &&
-	(window.location.hostname === "tankhoitv.github.io" ||
-		window.location.hostname.includes("github.io"));
+export type OnlineTravelCardData = {
+  id: string;
+  name: string;
+  city: string;
+  image: string;
+  rarity: "common" | "uncommon" | "epic" | "legendary";
+  rarityLabel: string;
+  vp: number;
+  coin: number;
+  stamina: number;
+  tag: string;
+  tagLabel: string;
+  tags?: string[];
+  icon: string;
+  description: string;
+  bonusText: string;
+  shortName?: string;
+  shortCity?: string;
+};
 
-let serverBaseUrl = isProduction
-	? (localStorage.getItem("trekkopoly_server_url") ?? "https://khoinguyentran-trekkopoly-server.hf.space")
-	: "http://localhost:8080";
-let wsBaseUrl = isProduction
-	? serverBaseUrl.replace(/^http/, "ws")
-	: "ws://localhost:8080";
+export type PlayerPublicState = {
+  id: PlayerId;
+  name: string;
+  score: number;
+  coin: number;
+  stamina: number;
+  usedSlots: number;
+  coinDebt: number;
+  isConnected: boolean;
+  isReady: boolean;
+  hasJoined: boolean;
+  planningConfirmed?: boolean;
+  board: PublicBoardCell[][];
+};
 
-// ── Auth state ────────────────────────────────────────────────────────────
+export type OnlineRoomState = {
+  roomId: string;
+  phase: "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover";
+  phaseNumber: number;
+  dayIndex: number;
+  draftRound: number;
+  timer: number;
+  draftTimerHold: number;
+  selfPlayerId: PlayerId;
+  players: Record<PlayerId, PlayerPublicState>;
+  self: {
+    draftPool: OnlineTravelCardData[];
+    pickedDraftCards: OnlineTravelCardData[];
+    hand: OnlineTravelCardData[];
+    selectedDraftCardId: string | null;
+  };
+};
+
+export type OnlineClientState = {
+  roomId: string | null;
+  playerId: PlayerId | null;
+  roomState: OnlineRoomState | null;
+};
 
 export type AuthUser = {
-	id: string;
-	username: string;
-	displayName: string;
+  id: string;
+  username: string;
+  displayName: string;
 };
 
-export interface AuthClientState {
-	isReady: boolean;
-	user: AuthUser | null;
-	token: string | null;
-}
+export type AuthClientState = {
+  isReady: boolean;
+  user: AuthUser | null;
+};
+
+const AUTH_STORAGE_KEY = "travel_board_auth_user";
 
 export const authClientState: AuthClientState = {
-	isReady: false,
-	user: null,
-	token: null,
+  isReady: false,
+  user: null,
 };
 
-const AUTH_TOKEN_KEY = "trekkopoly_auth_token";
-const AUTH_USER_KEY = "trekkopoly_auth_user";
+function loadSavedAuthUser() {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
 
-/** Load saved auth session from localStorage (called once at startup). */
-export function loadAuthSession(): void {
-	try {
-		const token = localStorage.getItem(AUTH_TOKEN_KEY);
-		const userRaw = localStorage.getItem(AUTH_USER_KEY);
-		if (token && userRaw) {
-			authClientState.token = token;
-			authClientState.user = JSON.parse(userRaw) as AuthUser;
-			authClientState.isReady = true;
-		}
-	} catch {
-		// Corrupted storage — ignore
-	}
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as AuthUser;
+
+    if (!parsed || !parsed.username) return null;
+
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
-/** Save auth token + user to state and localStorage. */
-export function saveAuthSession(token: string, user: AuthUser): void {
-	authClientState.token = token;
-	authClientState.user = user;
-	authClientState.isReady = true;
-	try {
-		localStorage.setItem(AUTH_TOKEN_KEY, token);
-		localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-	} catch {
-		// Storage full or unavailable
-	}
+function saveAuthUser(user: AuthUser) {
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
 }
 
-/** Clear auth session from state and localStorage. */
-export function clearAuthSession(): void {
-	authClientState.token = null;
-	authClientState.user = null;
-	authClientState.isReady = false;
-	try {
-		localStorage.removeItem(AUTH_TOKEN_KEY);
-		localStorage.removeItem(AUTH_USER_KEY);
-	} catch {
-		// ignore
-	}
+function createLocalAuthUser(username: string, displayName?: string): AuthUser {
+  const cleanUsername = username.trim();
+
+  return {
+    id: cleanUsername.toLowerCase(),
+    username: cleanUsername,
+    displayName: displayName?.trim() || cleanUsername,
+  };
 }
 
-/** Get the auth token for WebSocket connections. */
-export function getAuthToken(): string | null {
-	return authClientState.token;
-}
-
-/**
- * Get the display name of the logged-in user, or null if not logged in.
- */
-export function getAuthDisplayName(): string | null {
-	return authClientState.user?.displayName ?? null;
-}
-
-/**
- * Get the saved auth token or null if no active session.
- * Kept for backward compatibility — prefer getAuthToken().
- */
-export function getToken(): string | null {
-	return authClientState.token;
-}
-
-export function configureServerUrls(httpUrl: string, wsUrl: string) {
-	serverBaseUrl = httpUrl;
-	wsBaseUrl = wsUrl;
-}
-
-export function setOnRoomSnapshot(callback: (snapshot: RoomSnapshot) => void) {
-	onRoomSnapshotCallback = callback;
-}
-
-export function setOnDisconnect(callback: () => void) {
-	onDisconnectCallback = callback;
-}
-
-export function getSocket(): WebSocket | null {
-	return socket;
-}
-
-export function isConnected(): boolean {
-	return socket !== null && socket.readyState === WebSocket.OPEN;
-}
-
-/**
- * Connect to a game room via WebSocket.
- * Automatically sends joinRoom after the connection opens.
- * If the user is logged in, the auth token is passed as a query param
- * so the server can link the WebSocket session to the authenticated user.
- */
-export function connectToRoom(
-	roomId: string,
-	playerId: string,
-	name: string,
-): Promise<{ ok: boolean; playerId: string }> {
-	return new Promise((resolve, reject) => {
-		if (socket) {
-			socket.close();
-			socket = null;
-		}
-
-		// Append auth token if logged in
-		const token = getAuthToken();
-		let url = `${wsBaseUrl}/ws?roomId=${encodeURIComponent(roomId)}&playerId=${encodeURIComponent(playerId)}&name=${encodeURIComponent(name)}`;
-		if (token) {
-			url += `&token=${encodeURIComponent(token)}`;
-		}
-		socket = new WebSocket(url);
-
-		socket.onopen = () => {
-			// Send joinRoom immediately after connection
-			rpcCall("joinRoom", { roomId, name })
-				.then((result) => resolve(result as { ok: boolean; playerId: string }))
-				.catch(reject);
-		};
-
-		socket.onmessage = (event: MessageEvent) => {
-			try {
-				const msg = JSON.parse(event.data as string);
-
-				if (msg.method) {
-					// Server notification (no id)
-					handleNotification(msg);
-				} else if (msg.id !== undefined) {
-					// Response to our request
-					handleResponse(msg);
-				}
-			} catch {
-				console.warn("[socketClient] Failed to parse message:", event.data);
-			}
-		};
-
-		socket.onclose = () => {
-			socket = null;
-			if (onDisconnectCallback) onDisconnectCallback();
-		};
-
-		socket.onerror = () => {
-			reject(new Error("WebSocket connection failed"));
-		};
-	});
-}
-
-/**
- * Make a JSON-RPC call. Returns a promise that resolves with the result
- * or rejects on error / timeout.
- */
-export function rpcCall(
-	method: string,
-	params: Record<string, unknown> = {},
-): Promise<unknown> {
-	return new Promise((resolve, reject) => {
-		if (!socket || socket.readyState !== WebSocket.OPEN) {
-			reject(new Error("WebSocket not connected"));
-			return;
-		}
-
-		requestId += 1;
-		const id = requestId;
-		pendingResolve = resolve;
-		pendingReject = reject;
-
-		socket.send(
-			JSON.stringify({
-				jsonrpc: "2.0",
-				id,
-				method,
-				params,
-			}),
-		);
-
-		// Timeout after 10 seconds
-		setTimeout(() => {
-			if (pendingResolve === resolve) {
-				pendingResolve = null;
-				pendingReject = null;
-				reject(new Error(`RPC call '${method}' timed out`));
-			}
-		}, 10000);
-	});
-}
-
-/**
- * Disconnect from the current room.
- */
-export function disconnectFromRoom() {
-	if (socket) {
-		socket.close();
-		socket = null;
-	}
-}
-
-/**
- * Create a room via HTTP POST, then connect to it via WebSocket.
- * Convenience wrapper for the full join flow.
- */
-export async function createRoomAndJoin(
-	cards: unknown[],
-	playerId: string,
-	playerName: string,
-	maxPlayers = 2,
-	maxDays = 5,
-): Promise<{ ok: boolean; playerId: string; roomId: string }> {
-	const response = await fetch(`${serverBaseUrl}/rooms`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ cards, maxPlayers, maxDays }),
-	});
-
-	if (!response.ok) {
-		throw new Error(`Failed to create room: ${response.statusText}`);
-	}
-
-	const { roomId } = (await response.json()) as { roomId: string };
-	const result = await connectToRoom(roomId, playerId, playerName);
-	return { ...result, roomId };
-}
-
-// ── Low-level helpers ───────────────────────────────────────────────────────
-
-function handleNotification(msg: { method: string; params: unknown }) {
-	switch (msg.method) {
-		case "roomSnapshot":
-			if (onRoomSnapshotCallback) {
-				onRoomSnapshotCallback(msg.params as RoomSnapshot);
-			}
-			break;
-		default:
-			console.debug("[socketClient] Unhandled notification:", msg.method);
-	}
-}
-
-function handleResponse(msg: {
-	id: number;
-	result?: unknown;
-	error?: { code: number; message: string };
+export async function loginAccount(payload: {
+  username: string;
+  password: string;
 }) {
-	if (msg.error) {
-		if (pendingReject) {
-			pendingReject(new Error(msg.error.message));
-			pendingResolve = null;
-			pendingReject = null;
-		}
-	} else if (pendingResolve) {
-		pendingResolve(msg.result);
-		pendingResolve = null;
-		pendingReject = null;
-	}
+  const username = payload.username.trim();
+
+  if (!username) {
+    throw new Error("Nhập username trước.");
+  }
+
+  if (!payload.password) {
+    throw new Error("Nhập password trước.");
+  }
+
+  const user = createLocalAuthUser(username);
+
+  authClientState.user = user;
+  authClientState.isReady = true;
+  saveAuthUser(user);
+
+  return user;
+}
+
+export async function registerAccount(payload: {
+  displayName?: string;
+  username: string;
+  password: string;
+}) {
+  const username = payload.username.trim();
+
+  if (!username) {
+    throw new Error("Nhập username trước.");
+  }
+
+  if (!payload.password || payload.password.length < 6) {
+    throw new Error("Password cần ít nhất 6 ký tự.");
+  }
+
+  const user = createLocalAuthUser(username, payload.displayName);
+
+  authClientState.user = user;
+  authClientState.isReady = true;
+  saveAuthUser(user);
+
+  return user;
+}
+
+export function logoutAccount() {
+  authClientState.user = null;
+  authClientState.isReady = true;
+
+  onlineClientState.roomId = null;
+  onlineClientState.playerId = null;
+  onlineClientState.roomState = null;
+
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  clearSavedOnlineSession();
+}
+
+const socket = io("http://localhost:3001");
+const ONLINE_SESSION_STORAGE_KEY = "travel_board_online_session";
+
+export const onlineClientState: OnlineClientState = {
+  roomId: null,
+  playerId: null,
+  roomState: null,
+};
+
+function clearLegacySharedOnlineSession() {
+  /*
+    Xóa session cũ đã từng lưu bằng localStorage.
+    Nếu không xóa, các tab cũ có thể tiếp tục reconnect nhầm player.
+  */
+  localStorage.removeItem(ONLINE_SESSION_STORAGE_KEY);
+}
+
+clearLegacySharedOnlineSession();
+
+
+function saveOnlineSession(playerName?: string) {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) return;
+
+  /*
+    Dùng sessionStorage thay vì localStorage.
+    localStorage bị share giữa các tab, nên tab 2 join P2 sẽ ghi đè session của tab 1.
+    Khi tab 1 refresh sẽ reconnect nhầm thành P2.
+    sessionStorage là riêng từng tab, nên tab 1 giữ P1, tab 2 giữ P2.
+  */
+  localStorage.removeItem(ONLINE_SESSION_STORAGE_KEY);
+  sessionStorage.setItem(
+    ONLINE_SESSION_STORAGE_KEY,
+    JSON.stringify({
+      roomId: onlineClientState.roomId,
+      playerId: onlineClientState.playerId,
+      playerName: playerName ?? onlineClientState.roomState?.players[onlineClientState.playerId]?.name ?? "Player",
+    })
+  );
+}
+
+export function getSavedOnlineSession(): {
+  roomId: string;
+  playerId: PlayerId;
+  playerName: string;
+} | null {
+  const raw = sessionStorage.getItem(ONLINE_SESSION_STORAGE_KEY);
+
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    sessionStorage.removeItem(ONLINE_SESSION_STORAGE_KEY);
+    return null;
+  }
+}
+
+export function clearSavedOnlineSession() {
+  sessionStorage.removeItem(ONLINE_SESSION_STORAGE_KEY);
+  localStorage.removeItem(ONLINE_SESSION_STORAGE_KEY);
+  onlineClientState.roomId = null;
+  onlineClientState.playerId = null;
+  onlineClientState.roomState = null;
+}
+
+
+
+export function initOnlineClient(
+  onStateChange: () => void,
+  onGameError?: (message: string) => void
+) {
+  const savedUser = loadSavedAuthUser();
+
+  authClientState.user = savedUser;
+  authClientState.isReady = true;
+  window.setTimeout(onStateChange, 0);
+
+  socket.on("connect", () => {
+    const savedSession = getSavedOnlineSession();
+
+    if (!savedSession) return;
+
+    socket.emit("room:reconnect", savedSession);
+  });
+
+  socket.on("room:joined", (payload: {
+    roomId: string;
+    playerId: PlayerId;
+    state: OnlineRoomState;
+  }) => {
+    onlineClientState.roomId = payload.roomId;
+    onlineClientState.playerId = payload.playerId;
+    onlineClientState.roomState = payload.state;
+
+    saveOnlineSession(payload.state.players[payload.playerId]?.name);
+    console.log("Joined room:", payload.roomId, "as", payload.playerId);
+    onStateChange();
+  });
+
+  socket.on("room:state", (state: OnlineRoomState) => {
+    onlineClientState.roomState = state;
+    onStateChange();
+  });
+
+  socket.on("game:error", (payload: { message: string }) => {
+    onGameError?.(payload.message);
+    alert(payload.message);
+  });
+
+  socket.on("connect_error", () => {
+    console.warn("Không kết nối được socket server. Kiểm tra server port 3001.");
+  });
+
+  socket.on("room:left", () => {
+    clearSavedOnlineSession();
+    onStateChange();
+  });
+}
+
+export function createOnlineRoom(playerName: string) {
+  if (!socket.connected) {
+    socket.connect();
+  }
+
+  socket.emit("room:create", {
+    playerName,
+  });
+}
+
+export function joinOnlineRoom(roomId: string, playerName: string) {
+  if (!socket.connected) {
+    socket.connect();
+  }
+
+  socket.emit("room:join", {
+    roomId,
+    playerName,
+  });
+}
+
+
+export function reconnectOnlineRoom(roomId: string, playerId: PlayerId, playerName: string) {
+  socket.emit("room:reconnect", {
+    roomId,
+    playerId,
+    playerName,
+  });
+}
+
+export function setOnlineReady(isReady: boolean) {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("room:setReady", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+    isReady,
+  });
+}
+
+
+export function leaveOnlineRoom() {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    clearSavedOnlineSession();
+    return;
+  }
+
+  socket.emit("room:leave", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+  });
+
+  clearSavedOnlineSession();
+}
+
+
+
+export function startOnlineGame() {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("game:start", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+  });
+}
+
+export function selectOnlineDraftCard(cardId: string) {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("draft:selectCard", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+    cardId,
+  });
+}
+
+export function confirmOnlineDraftPick() {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("draft:confirmPick", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+  });
+}
+
+export function isOnlineSocketConnected() {
+  return Boolean(socket.connected);
+}
+
+export function confirmOnlinePlanning() {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    throw new Error("Chưa vào phòng online.");
+  }
+
+  if (!socket.connected) {
+    throw new Error("Mất kết nối server. Hãy chạy server port 3001 rồi reload trang.");
+  }
+
+  const savedSession = getSavedOnlineSession();
+
+  if (savedSession) {
+    reconnectOnlineRoom(savedSession.roomId, savedSession.playerId, savedSession.playerName);
+  }
+
+  socket.emit("planning:confirm", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+  });
+}
+
+export function sendPlaceCard(payload: {
+  cardId: string;
+  rowIndex: number;
+  colIndex: number;
+  tag?: string;
+  icon?: string;
+  vp?: number;
+  coin?: number;
+  stamina?: number;
+  image?: string;
+  name?: string;
+}) {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("planning:placeCard", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+    ...payload,
+  });
+}
+
+
+export function sendDiscardCard(payload: {
+  cardId: string;
+  coin?: number;
+  stamina?: number;
+  name?: string;
+}) {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("planning:discardCard", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+    ...payload,
+  });
+}
+
+
+export function sendPayDebt(payload: {
+  amount?: number;
+  rowIndex?: number;
+  colIndex?: number;
+} = {}) {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("planning:payDebt", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+    ...payload,
+  });
+}
+
+
+export function sendReturnBoardCard(payload: {
+  rowIndex: number;
+  colIndex: number;
+}) {
+  if (!onlineClientState.roomId || !onlineClientState.playerId) {
+    return;
+  }
+
+  socket.emit("planning:returnBoardCard", {
+    roomId: onlineClientState.roomId,
+    playerId: onlineClientState.playerId,
+    ...payload,
+  });
 }

@@ -23,7 +23,13 @@ import {
 } from "./rooms.js";
 import { tickRoom } from "./timerEngine.js";
 
-const httpServer = http.createServer();
+const httpServer = http.createServer((req, res) => {
+  if (req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("ok");
+    return;
+  }
+});
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {

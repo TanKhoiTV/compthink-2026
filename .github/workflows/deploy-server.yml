@@ -1,36 +1,67 @@
-name: Deploy Server (Fly.io)
+# Deploys the old Node.js server to HF Space when server-relevant
+# files change on main.
+#
+# The HF Space (khoinguyentran/trekkopoly-old-server) needs:
+#   server/  src/data/  src/types.ts  Dockerfile  README.md
+# Auth via HF_TOKEN secret (write scope) stored in GitHub secrets.
+name: Deploy Server to HF Space
 
 on:
   push:
     branches: [main]
     paths:
       - "server/**"
-      - "src/shared/**"
-      - ".github/workflows/deploy-server.yml"
-
-  # Manual trigger from Actions tab
-  workflow_dispatch:
+      - "src/data/**"
+      - "src/types.ts"
+      - "Dockerfile"
 
 jobs:
-  deploy:
+  sync:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clone repository
+      - name: Checkout compthink-2026
         uses: actions/checkout@v4
 
-      - name: Install Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: Run server tests
-        run: deno task test
-        working-directory: server
-
-      - name: Deploy to Fly.io
-        uses: superfly/flyctl-actions/deploy@v1
-        with:
-          args: "--remote-only"
+      - name: Sync files to HF Space
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -eux
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          # Clone the target HF Space repo
+          git clone \
+            https://user:${HF_TOKEN}@huggingface.co/spaces/khoinguyentran/trekkopoly-old-server \
+            /tmp/hf-space
+
+          # Remove existing files from the HF clone (keep .git)
+          cd /tmp/hf-space
+          for item in * .*; do
+            [ "$item" = "." ] && continue
+            [ "$item" = ".." ] && continue
+            [ "$item" = ".git" ] && continue
+            rm -rf "$item"
+          done
+
+          # Copy new content from the current checkout
+          cd "${GITHUB_WORKSPACE}"
+          cp -r server /tmp/hf-space/server
+          mkdir -p /tmp/hf-space/src/data
+          cp -r src/data/. /tmp/hf-space/src/data/
+          cp src/types.ts /tmp/hf-space/src/types.ts
+          cp Dockerfile /tmp/hf-space/Dockerfile
+          cp .internal/old-server-hf/README.md \
+             /tmp/hf-space/README.md
+
+          # Commit and push
+          cd /tmp/hf-space
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to deploy"
+          else
+            git commit -m \
+              "Sync server from compthink-2026@${GITHUB_SHA::7}"
+            git push
+          fi

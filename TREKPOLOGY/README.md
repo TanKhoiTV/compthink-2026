@@ -1,1 +1,0 @@
-# compthink-2026

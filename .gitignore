@@ -1,16 +1,12 @@
-# Dependencies
-node_modules/
-/dist
-/build
-/.next/
-/out/
+node_modules
 
-# Environment & debug logs
+# Build artifacts
+build/
+dist/
+
+# Environment
 .env
 .env.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # OS metadata
 .DS_Store
@@ -18,18 +14,12 @@ Thumbs.db
 
 # Tool caches
 .pi-lens/
+.internal/
 context.md
 
-# Build artifacts
-build_pipeline.zip
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# TREKPOLOGY build output
-TREKPOLOGY/build/
-TREKPOLOGY/dist/
-TREKPOLOGY/server/server.log
-TREKPOLOGY/server/data/
-
-# Sub-package lockfiles (managed by root)
-TREKPOLOGY/package-lock.json
-TREKPOLOGY/server/package-lock.json
-/assets
+# Sub-package lockfiles

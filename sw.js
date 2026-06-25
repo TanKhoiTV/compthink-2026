@@ -1,89 +1,75 @@
-const CACHE_NAME = "trekkopoly-v5";
+const CACHE_NAME = 'trekkopoly-cache-v1';
 
-// Danh sách các file cần lưu vào bộ nhớ đệm để chơi offline
-const ASSETS_TO_CACHE = [
-	"./",
-	"./index.html",
-	"./manifest.json",
-	"./build/client.js",
-	"./build/client.css",
-	"assets/images/cities/danang.jpg",
-	"assets/images/cities/hanoi.jpeg",
-	"assets/images/cities/saigon.jpg",
-	"assets/images/backgrounds/lobby-bg.jpg",
-	"assets/images/backgrounds/saigon-collage-hover/saigon-collage-bg.png",
+// Danh sách toàn bộ file cần thiết để game offline
+const urlsToCache = [
+  './',
+  './index.html',
+  './manifest.json', 
+
+
+  './app.js',
+  './types.js',
+  './client.css',
+
+
+  'https://cdn.socket.io/4.8.1/socket.io.min.js',
+
+
+  '/assets/chuyencanh2.mp4',
+  '/assets/danang.jpg',
+  '/assets/hanoi.jpeg',
+  '/assets/saigon.jpg',
+  '/assets/backgrounds/lobby-background.jpg',
+  '/assets/backgrounds/saigon-collage-hover/saigon-collage-bg.png',
+  '/assets/sounds/in-game-background.mp3'
 ];
 
-// 1. Sự kiện Cài đặt (Install) - Gom hàng vào kho Cache
-self.addEventListener("install", (event) => {
-	event.waitUntil(
-		caches
-			.open(CACHE_NAME)
-			.then((cache) => {
-				console.log("SW: Đang nạp các file tĩnh vào bộ nhớ đệm...");
-				return cache.addAll(ASSETS_TO_CACHE);
-			})
-			.then(() => self.skipWaiting()),
-	);
+// 1. Quá trình Cài đặt (Install): Tải và cất vào cache
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('SW: Đang lưu trữ tài nguyên vào Cache...');
+        // Dùng catch để lỡ có thiếu 1 file mp3 nào đó thì SW vẫn cài đặt thành công
+        return cache.addAll(urlsToCache).catch(err => console.warn('Lỗi khi cache tài nguyên tĩnh:', err));
+      })
+  );
 });
 
-// 2. Sự kiện Kích hoạt (Activate) - Dọn dẹp cache cũ
-self.addEventListener("activate", (event) => {
-	event.waitUntil(
-		caches
-			.keys()
-			.then((cacheNames) => {
-				return Promise.all(
-					cacheNames.map((cache) => {
-						if (cache !== CACHE_NAME) {
-							console.log("SW: Đang xóa cache cũ:", cache);
-							return caches.delete(cache);
-						}
-					}),
-				);
-			})
-			.then(() => self.clients.claim()),
-	);
+// 2. Quá trình Dọn dẹp (Activate): Xóa kho cũ nếu đổi CACHE_NAME (ví dụ lên v2, v3)
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('SW: Đang xóa cache cũ:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
 });
 
-// 4. Lắng nghe lệnh từ trang — SKIP_WAITING để SW mới active ngay
-self.addEventListener("message", (event) => {
-	if (event.data === "SKIP_WAITING") {
-		self.skipWaiting();
-	}
-});
+// 3. Quá trình Đánh chặn (Fetch): Chiến thuật "Network First, Fallback to Cache"
+self.addEventListener('fetch', (event) => {
+  // Bỏ qua các request gửi API lên server thật hoặc các request không phải GET
+  if (event.request.method !== 'GET' || event.request.url.includes('/socket.io/')) return;
 
-// 3. Chiến lược: Network-First cho app shell, Network-Only cho media.
-//    - App shell (JS, CSS, HTML): network-first, cache fallback offline.
-//    - Media (video, audio): network-only — too large to cache, avoid stream clone errors.
-//    - API/WebSocket requests to remote server: network-only — POST can't be cached
-//      and cache.put() rejects on non-GET, causing the whole fetch to hang.
-self.addEventListener("fetch", (event) => {
-	const url = new URL(event.request.url);
-
-	// Skip caching for large media files — serve from network only
-	if (url.pathname.match(/\.(mp4|webm|ogg|mp3|wav|m4a|mov)$/i)) {
-		return;
-	}
-
-	// Skip caching for API requests to the remote game server
-	if (url.hostname !== location.hostname) {
-		return;
-	}
-
-	// Only cache GET requests — POST/PUT/DELETE can't be stored in Cache API
-	if (event.request.method !== "GET") {
-		return;
-	}
-
-	event.respondWith(
-		caches.open(CACHE_NAME).then((cache) => {
-			return fetch(event.request)
-				.then((network) => {
-					cache.put(event.request, network.clone());
-					return network;
-				})
-				.catch(() => cache.match(event.request));
-		}),
-	);
+  event.respondWith(
+    // Ưu tiên ra Internet lấy file mới nhất (vì code thay đổi liên tục)
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Nếu lấy được file mới, cất luôn một bản copy vào kho để update
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        });
+      })
+      .catch(() => {
+        // Rớt mạng thì lấy trong cache ra xài
+        return caches.match(event.request);
+      })
+  );
 });
