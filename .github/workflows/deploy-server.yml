@@ -52,7 +52,7 @@ jobs:
           cp -r src/data/. /tmp/hf-space/src/data/
           cp src/types.ts /tmp/hf-space/src/types.ts
           cp Dockerfile /tmp/hf-space/Dockerfile
-          cp .internal/old-server-hf/README.md \
+          cp server/hf-readme.md \
              /tmp/hf-space/README.md
 
           # Commit and push
