@@ -19,7 +19,7 @@ Trekkopoly is a travel itinerary board game built as a **single-page web app** w
 ├── manifest.json         # PWA manifest (icons, display mode)
 │
 ├── src/                  # Client source (TypeScript, compiled by tsc)
-│   ├── app.ts            # Application controller (monolithic, 332+ functions)
+│   ├── app.ts            # Application controller (monolithic, 321 functions)
 │   │                     # State, rendering, bot AI, drag-and-drop, animations
 │   ├── types.ts          # Shared types (18 importers across both layers)
 │   │
@@ -35,7 +35,7 @@ Trekkopoly is a travel itinerary board game built as a **single-page web app** w
 │   │   └── socketClient.ts  # Socket.IO connection lifecycle, RPC dispatch
 │   │
 │   ├── data/             # Card definitions and mapping
-│   │   ├── cards.phase1.ts  # ~150 Saigon phase 1 card objects
+│   │   ├── cards.phase1.ts  # 103 Saigon phase 1 card objects
 │   │   ├── cards.all.ts    # Query helpers (by phase pool, tag, id)
 │   │   └── cardMapper.ts   # GameCardData → UI display data
 │   │
@@ -121,7 +121,7 @@ State is managed via **module-level variables** in `src/app.ts`:
 
 ```
 Key state slices (module-level variables in app.ts):
-  ├── Game phase           → "lobby" | "draft" | "placement" | "scoring" | "finished"
+  ├── Game phase           → "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover"
   ├── Board                → 5×5 grid of (TravelCard | null) per player
   ├── Hand                 → Array of TravelCard (5 cards after draft)
   ├── Draft pool           → 7→6→5→4→3 cards per round
@@ -205,7 +205,7 @@ server/index.ts
 - **Capture-phase event delegation** — prevents double-fire from per-element listeners
 - **Cross-layer server/client types** — `src/data/cards.phase1.ts` and `src/types.ts` shared by both via tsx path resolution
 - **Monolithic app.ts** — single controller handles all screens (not separate router/screens). Known area for improvement.
-- **Card data as TypeScript** — ~150 card objects as const arrays, compiled into both client and server bundles
+- **Card data as TypeScript** — 103 card objects as const arrays, compiled into both client and server bundles
 - **No database** — auth users stored as JSON file
 - **Squash merge policy** — clean linear history, admin bypass for critical merges
 
