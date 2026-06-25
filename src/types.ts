@@ -130,3 +130,10 @@ export type HandPointerDragState = {
 };
 
 export type AppScreen = "dashboard" | "map_selection" | "lobby" | "game";
+
+export type BoardTokenCard = TravelCardData & {
+	boardTokenType?: "debt" | "lock";
+	debtAmount?: number;
+	lockedReason?: string;
+	sourceCardName?: string;
+};

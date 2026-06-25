@@ -2,297 +2,326 @@ import { onlineClientState } from "../online/socketClient.js";
 import type { TravelCardData } from "../types.js";
 import { days, rows } from "../game/constants.js";
 import { state, currentPlayerId } from "../state/gameState.js";
-import { 
-  getBoardSlots, 
-  getCurrentScoreBreakdown, 
-  getRemainingResources, 
-  getDisplayPlayerName,
-  isOnlineRoomActive,
+import {
+	getBoardSlots,
+	getCurrentScoreBreakdown,
+	getRemainingResources,
+	getDisplayPlayerName,
+	isOnlineRoomActive,
 } from "../app.js";
 
 const CERTIFICATE_HISTORY_STORAGE_KEY = "travel_board_certificate_history";
 
 type CertificateSlotSnapshot = {
-  timeLabel: string;
-  card: {
-    id: string;
-    name: string;
-    city: string;
-    tag: string;
-    tagLabel: string;
-    vp: number;
-    coin: number;
-    stamina: number;
-    description: string;
-  } | null;
+	timeLabel: string;
+	card: {
+		id: string;
+		name: string;
+		city: string;
+		tag: string;
+		tagLabel: string;
+		vp: number;
+		coin: number;
+		stamina: number;
+		description: string;
+	} | null;
 };
 
 type CertificateDaySnapshot = {
-  day: number;
-  label: string;
-  slots: CertificateSlotSnapshot[];
+	day: number;
+	label: string;
+	slots: CertificateSlotSnapshot[];
 };
 
 type CertificatePhaseSnapshot = {
-  phaseNumber: number;
-  phaseScore: number;
-  completedDays: number;
-  completedSlots: number;
-  styleLabel: string;
-  days: CertificateDaySnapshot[];
-  updatedAt: string;
+	phaseNumber: number;
+	phaseScore: number;
+	completedDays: number;
+	completedSlots: number;
+	styleLabel: string;
+	days: CertificateDaySnapshot[];
+	updatedAt: string;
 };
 
-
 export function getExportFileSafeName(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64) || "lich-trinh";
+	return (
+		value
+			.trim()
+			.toLowerCase()
+			.replace(/[^\p{L}\p{N}]+/gu, "-")
+			.replace(/^-+|-+$/g, "")
+			.slice(0, 64) || "lich-trinh"
+	);
 }
 
 export function buildTravelTimelineExport() {
-  const boardSlots = getBoardSlots();
-  const breakdown = getCurrentScoreBreakdown();
-  const remaining = getRemainingResources();
-  const createdAt = new Date().toISOString();
+	const boardSlots = getBoardSlots();
+	const breakdown = getCurrentScoreBreakdown();
+	const remaining = getRemainingResources();
+	const createdAt = new Date().toISOString();
 
-  const timeline = days.map((day, dayIndex) => {
-    return {
-      day,
-      label: `Ngày ${day}`,
-      slots: rows.map((timeLabel, rowIndex) => {
-        const card = boardSlots[rowIndex]?.[dayIndex] ?? null;
+	const timeline = days.map((day, dayIndex) => {
+		return {
+			day,
+			label: `Ngày ${day}`,
+			slots: rows.map((timeLabel, rowIndex) => {
+				const card = boardSlots[rowIndex]?.[dayIndex] ?? null;
 
-        return {
-          timeLabel,
-          card: card
-            ? {
-                id: card.id,
-                name: card.name,
-                city: card.city,
-                tag: card.tag,
-                tagLabel: card.tagLabel,
-                vp: card.vp,
-                coin: card.coin,
-                stamina: card.stamina,
-                description: card.description,
-              }
-            : null,
-        };
-      }),
-    };
-  });
+				return {
+					timeLabel,
+					card: card
+						? {
+								id: card.id,
+								name: card.name,
+								city: card.city,
+								tag: card.tag,
+								tagLabel: card.tagLabel,
+								vp: card.vp,
+								coin: card.coin,
+								stamina: card.stamina,
+								description: card.description,
+							}
+						: null,
+				};
+			}),
+		};
+	});
 
-  return {
-    version: 1,
-    createdAt,
-    playerName: getDisplayPlayerName(),
-    phaseNumber: state.phaseNumber,
-    currentDay: days[state.currentDayIndex],
-    score: {
-      baseVP: breakdown.baseVP,
-      bonusVP: breakdown.bonusVP,
-      totalVP: state.simulationResult?.finalVP ?? breakdown.totalVP,
-      accumulatedVP: state.accumulatedVP,
-    },
-    resources: {
-      spentCoin: breakdown.spentCoin,
-      spentStamina: breakdown.spentStamina,
-      remainingCoin: remaining.coin,
-      remainingStamina: remaining.stamina,
-      usedSlots: breakdown.usedSlots,
-    },
-    timeline,
-  };
+	return {
+		version: 1,
+		createdAt,
+		playerName: getDisplayPlayerName(),
+		phaseNumber: state.phaseNumber,
+		currentDay: days[state.currentDayIndex],
+		score: {
+			baseVP: breakdown.baseVP,
+			bonusVP: breakdown.bonusVP,
+			totalVP: state.simulationResult?.finalVP ?? breakdown.totalVP,
+			accumulatedVP: state.accumulatedVP,
+		},
+		resources: {
+			spentCoin: breakdown.spentCoin,
+			spentStamina: breakdown.spentStamina,
+			remainingCoin: remaining.coin,
+			remainingStamina: remaining.stamina,
+			usedSlots: breakdown.usedSlots,
+		},
+		timeline,
+	};
 }
 
 export function getCertificateHistoryStorageKey() {
-  return `${CERTIFICATE_HISTORY_STORAGE_KEY}:${onlineClientState.roomId ?? "local"}:${onlineClientState.playerId ?? currentPlayerId}`;
+	return `${CERTIFICATE_HISTORY_STORAGE_KEY}:${onlineClientState.roomId ?? "local"}:${onlineClientState.playerId ?? currentPlayerId}`;
 }
 
 export function loadCertificateHistory(): CertificatePhaseSnapshot[] {
-  try {
-    const raw = localStorage.getItem(getCertificateHistoryStorageKey());
+	try {
+		const raw = localStorage.getItem(getCertificateHistoryStorageKey());
 
-    if (!raw) return [];
+		if (!raw) return [];
 
-    const parsed = JSON.parse(raw) as CertificatePhaseSnapshot[];
+		const parsed = JSON.parse(raw) as CertificatePhaseSnapshot[];
 
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
 }
 
 export function saveCertificateHistory(phases: CertificatePhaseSnapshot[]) {
-  localStorage.setItem(getCertificateHistoryStorageKey(), JSON.stringify(phases));
+	localStorage.setItem(
+		getCertificateHistoryStorageKey(),
+		JSON.stringify(phases),
+	);
 }
 
-export function getPhaseStyleLabel(cards: Array<{ tag: string; tagLabel: string }>) {
-  if (cards.length === 0) return "Chưa có dữ liệu";
+export function getPhaseStyleLabel(
+	cards: Array<{ tag: string; tagLabel: string }>,
+) {
+	if (cards.length === 0) return "Chưa có dữ liệu";
 
-  const tagCounts = new Map<string, { label: string; count: number }>();
+	const tagCounts = new Map<string, { label: string; count: number }>();
 
-  for (const card of cards) {
-    const key = card.tag || "unknown";
-    const current = tagCounts.get(key) ?? {
-      label: card.tagLabel || card.tag || "Khác",
-      count: 0,
-    };
+	for (const card of cards) {
+		const key = card.tag || "unknown";
+		const current = tagCounts.get(key) ?? {
+			label: card.tagLabel || card.tag || "Khác",
+			count: 0,
+		};
 
-    current.count += 1;
-    tagCounts.set(key, current);
-  }
+		current.count += 1;
+		tagCounts.set(key, current);
+	}
 
-  const sorted = [...tagCounts.values()].sort((a, b) => b.count - a.count);
+	const sorted = [...tagCounts.values()].sort((a, b) => b.count - a.count);
 
-  if (sorted.length >= 2 && sorted[0].count === sorted[1].count) {
-    return "Kết hợp";
-  }
+	if (sorted.length >= 2 && sorted[0].count === sorted[1].count) {
+		return "Kết hợp";
+	}
 
-  return sorted[0]?.label ?? "Kết hợp";
+	return sorted[0]?.label ?? "Kết hợp";
 }
 
-export function createCertificatePhaseSnapshot(phaseToSnapshot = state.phaseNumber): CertificatePhaseSnapshot {
-  const boardSlots = getBoardSlots();
-  const daysSnapshot = days.map((day, dayIndex) => {
-    return {
-      day,
-      label: `Ngày ${day}`,
-      slots: rows.map((timeLabel, rowIndex) => {
-        const card = boardSlots[rowIndex]?.[dayIndex] ?? null;
+export function createCertificatePhaseSnapshot(
+	phaseToSnapshot = state.phaseNumber,
+): CertificatePhaseSnapshot {
+	const boardSlots = getBoardSlots();
+	const daysSnapshot = days.map((day, dayIndex) => {
+		return {
+			day,
+			label: `Ngày ${day}`,
+			slots: rows.map((timeLabel, rowIndex) => {
+				const card = boardSlots[rowIndex]?.[dayIndex] ?? null;
 
-        return {
-          timeLabel,
-          card: card
-            ? {
-                id: card.id,
-                name: card.name,
-                city: card.city,
-                tag: card.tag,
-                tagLabel: card.tagLabel,
-                vp: card.vp,
-                coin: card.coin,
-                stamina: card.stamina,
-                description: card.description,
-              }
-            : null,
-        };
-      }),
-    };
-  });
+				return {
+					timeLabel,
+					card: card
+						? {
+								id: card.id,
+								name: card.name,
+								city: card.city,
+								tag: card.tag,
+								tagLabel: card.tagLabel,
+								vp: card.vp,
+								coin: card.coin,
+								stamina: card.stamina,
+								description: card.description,
+							}
+						: null,
+				};
+			}),
+		};
+	});
 
-  const cards: Array<NonNullable<CertificateSlotSnapshot["card"]>> = [];
+	const cards: Array<NonNullable<CertificateSlotSnapshot["card"]>> = [];
 
-  for (const day of daysSnapshot) {
-    for (const slot of day.slots) {
-      if (slot.card) {
-        cards.push(slot.card);
-      }
-    }
-  }
+	for (const day of daysSnapshot) {
+		for (const slot of day.slots) {
+			if (slot.card) {
+				cards.push(slot.card);
+			}
+		}
+	}
 
-  const completedDays = daysSnapshot.filter((day: CertificateDaySnapshot) => {
-    return day.slots.some((slot: CertificateSlotSnapshot) => slot.card !== null);
-  }).length;
+	const completedDays = daysSnapshot.filter((day: CertificateDaySnapshot) => {
+		return day.slots.some(
+			(slot: CertificateSlotSnapshot) => slot.card !== null,
+		);
+	}).length;
 
-  const completedSlots = cards.length;
-  const phaseScore = cards.reduce((sum: number, card: NonNullable<CertificateSlotSnapshot["card"]>) => {
-    return sum + card.vp;
-  }, 0);
+	const completedSlots = cards.length;
+	const phaseScore = cards.reduce(
+		(sum: number, card: NonNullable<CertificateSlotSnapshot["card"]>) => {
+			return sum + card.vp;
+		},
+		0,
+	);
 
-  return {
-    phaseNumber: phaseToSnapshot,
-    phaseScore,
-    completedDays,
-    completedSlots,
-    styleLabel: getPhaseStyleLabel(cards),
-    days: daysSnapshot,
-    updatedAt: new Date().toISOString(),
-  };
+	return {
+		phaseNumber: phaseToSnapshot,
+		phaseScore,
+		completedDays,
+		completedSlots,
+		styleLabel: getPhaseStyleLabel(cards),
+		days: daysSnapshot,
+		updatedAt: new Date().toISOString(),
+	};
 }
 
 export function rememberCurrentCertificatePhase() {
-  if (!isOnlineRoomActive()) return;
-  if (!onlineClientState.roomState) return;
-  if (onlineClientState.roomState.phase === "lobby" || onlineClientState.roomState.phase === "draft") return;
+	if (!isOnlineRoomActive()) return;
+	if (!onlineClientState.roomState) return;
+	if (
+		onlineClientState.roomState.phase === "lobby" ||
+		onlineClientState.roomState.phase === "draft"
+	)
+		return;
 
-  const snapshot = createCertificatePhaseSnapshot(state.phaseNumber);
+	const snapshot = createCertificatePhaseSnapshot(state.phaseNumber);
 
-  /*
+	/*
     Không ghi đè phase cũ bằng board rỗng lúc server vừa reset qua phase mới.
     Chỉ lưu khi phase hiện tại đã có ít nhất 1 slot được xếp.
   */
-  if (snapshot.completedSlots <= 0) return;
+	if (snapshot.completedSlots <= 0) return;
 
-  const history = loadCertificateHistory();
-  const nextHistory = history.filter((phase) => phase.phaseNumber !== snapshot.phaseNumber);
+	const history = loadCertificateHistory();
+	const nextHistory = history.filter(
+		(phase) => phase.phaseNumber !== snapshot.phaseNumber,
+	);
 
-  nextHistory.push(snapshot);
-  nextHistory.sort((a, b) => a.phaseNumber - b.phaseNumber);
-  saveCertificateHistory(nextHistory);
+	nextHistory.push(snapshot);
+	nextHistory.sort((a, b) => a.phaseNumber - b.phaseNumber);
+	saveCertificateHistory(nextHistory);
 }
 
 export function getCertificateExportData() {
-  rememberCurrentCertificatePhase();
+	rememberCurrentCertificatePhase();
 
-  const history = loadCertificateHistory();
-  const currentSnapshot = createCertificatePhaseSnapshot(state.phaseNumber);
-  const merged = history.filter((phase) => phase.phaseNumber !== currentSnapshot.phaseNumber);
+	const history = loadCertificateHistory();
+	const currentSnapshot = createCertificatePhaseSnapshot(state.phaseNumber);
+	const merged = history.filter(
+		(phase) => phase.phaseNumber !== currentSnapshot.phaseNumber,
+	);
 
-  if (currentSnapshot.completedSlots > 0) {
-    merged.push(currentSnapshot);
-  }
+	if (currentSnapshot.completedSlots > 0) {
+		merged.push(currentSnapshot);
+	}
 
-  merged.sort((a, b) => a.phaseNumber - b.phaseNumber);
+	merged.sort((a, b) => a.phaseNumber - b.phaseNumber);
 
-  const phases = [1, 2, 3].map((phaseNumberToFind) => {
-    return (
-      merged.find((phase) => phase.phaseNumber === phaseNumberToFind) ?? {
-        phaseNumber: phaseNumberToFind,
-        phaseScore: 0,
-        completedDays: 0,
-        completedSlots: 0,
-        styleLabel: "Chưa hoàn thành",
-        days: days.map((day) => ({
-          day,
-          label: `Ngày ${day}`,
-          slots: rows.map((timeLabel) => ({
-            timeLabel,
-            card: null,
-          })),
-        })),
-        updatedAt: new Date().toISOString(),
-      }
-    );
-  });
+	const phases = [1, 2, 3].map((phaseNumberToFind) => {
+		return (
+			merged.find((phase) => phase.phaseNumber === phaseNumberToFind) ?? {
+				phaseNumber: phaseNumberToFind,
+				phaseScore: 0,
+				completedDays: 0,
+				completedSlots: 0,
+				styleLabel: "Chưa hoàn thành",
+				days: days.map((day) => ({
+					day,
+					label: `Ngày ${day}`,
+					slots: rows.map((timeLabel) => ({
+						timeLabel,
+						card: null,
+					})),
+				})),
+				updatedAt: new Date().toISOString(),
+			}
+		);
+	});
 
-  const totalScore = phases.reduce((sum, phase) => sum + phase.phaseScore, 0);
-  const completedPhaseCount = phases.filter((phase) => phase.completedSlots > 0).length;
-  const completedSlots = phases.reduce((sum, phase) => sum + phase.completedSlots, 0);
-  const completedDays = phases.reduce((sum, phase) => sum + phase.completedDays, 0);
+	const totalScore = phases.reduce((sum, phase) => sum + phase.phaseScore, 0);
+	const completedPhaseCount = phases.filter(
+		(phase) => phase.completedSlots > 0,
+	).length;
+	const completedSlots = phases.reduce(
+		(sum, phase) => sum + phase.completedSlots,
+		0,
+	);
+	const completedDays = phases.reduce(
+		(sum, phase) => sum + phase.completedDays,
+		0,
+	);
 
-  return {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    playerName: getDisplayPlayerName(),
-    roomId: onlineClientState.roomId ?? "LOCAL",
-    totalScore,
-    completedPhaseCount,
-    completedDays,
-    completedSlots,
-    phases,
-  };
+	return {
+		version: 1,
+		exportedAt: new Date().toISOString(),
+		playerName: getDisplayPlayerName(),
+		roomId: onlineClientState.roomId ?? "LOCAL",
+		totalScore,
+		completedPhaseCount,
+		completedDays,
+		completedSlots,
+		phases,
+	};
 }
 
 export function buildTravelCertificateHtml() {
-  const data = getCertificateExportData();
-  const safeDataJson = JSON.stringify(data).replace(/</g, "\\u003c");
+	const data = getCertificateExportData();
+	const safeDataJson = JSON.stringify(data).replace(/</g, "\\u003c");
 
-  return `<!doctype html>
+	return `<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
@@ -825,111 +854,113 @@ export function buildTravelCertificateHtml() {
 }
 
 export function downloadTravelCertificateHtml() {
-  const data = getCertificateExportData();
-  const baseName = getExportFileSafeName(
-    `${data.playerName}-chung-nhan-hanh-trinh-3-phase`
-  );
+	const data = getCertificateExportData();
+	const baseName = getExportFileSafeName(
+		`${data.playerName}-chung-nhan-hanh-trinh-3-phase`,
+	);
 
-  downloadTextFile(
-    `${baseName}.html`,
-    buildTravelCertificateHtml(),
-    "text/html;charset=utf-8"
-  );
+	downloadTextFile(
+		`${baseName}.html`,
+		buildTravelCertificateHtml(),
+		"text/html;charset=utf-8",
+	);
 }
 
 export function formatTravelTimelineAsText() {
-  const data = buildTravelTimelineExport();
-  const lines: string[] = [];
+	const data = buildTravelTimelineExport();
+	const lines: string[] = [];
 
-  lines.push("LỮ KHÁCH BÀN CỜ - LỊCH TRÌNH DU LỊCH");
-  lines.push(`Người chơi: ${data.playerName}`);
-  lines.push(`Phase: ${data.phaseNumber}`);
-  lines.push(`Ngày xuất: ${new Date(data.createdAt).toLocaleString("vi-VN")}`);
-  lines.push("");
-  lines.push("TỔNG KẾT");
-  lines.push(`- Điểm ngày: ${data.score.totalVP} VP`);
-  lines.push(`- Tổng phase hiện tại: ${data.score.accumulatedVP} VP`);
-  lines.push(`- Xu đã dùng: ${data.resources.spentCoin}`);
-  lines.push(`- Thể lực đã dùng: ${data.resources.spentStamina}`);
-  lines.push(`- Slot đã dùng: ${data.resources.usedSlots}/25`);
-  lines.push("");
+	lines.push("LỮ KHÁCH BÀN CỜ - LỊCH TRÌNH DU LỊCH");
+	lines.push(`Người chơi: ${data.playerName}`);
+	lines.push(`Phase: ${data.phaseNumber}`);
+	lines.push(`Ngày xuất: ${new Date(data.createdAt).toLocaleString("vi-VN")}`);
+	lines.push("");
+	lines.push("TỔNG KẾT");
+	lines.push(`- Điểm ngày: ${data.score.totalVP} VP`);
+	lines.push(`- Tổng phase hiện tại: ${data.score.accumulatedVP} VP`);
+	lines.push(`- Xu đã dùng: ${data.resources.spentCoin}`);
+	lines.push(`- Thể lực đã dùng: ${data.resources.spentStamina}`);
+	lines.push(`- Slot đã dùng: ${data.resources.usedSlots}/25`);
+	lines.push("");
 
-  for (const day of data.timeline) {
-    const hasAnyCard = day.slots.some((slot) => slot.card !== null);
+	for (const day of data.timeline) {
+		const hasAnyCard = day.slots.some((slot) => slot.card !== null);
 
-    if (!hasAnyCard) continue;
+		if (!hasAnyCard) continue;
 
-    lines.push(day.label.toUpperCase());
+		lines.push(day.label.toUpperCase());
 
-    for (const slot of day.slots) {
-      if (!slot.card) {
-        lines.push(`- ${slot.timeLabel}: Nghỉ / Di chuyển`);
-        continue;
-      }
+		for (const slot of day.slots) {
+			if (!slot.card) {
+				lines.push(`- ${slot.timeLabel}: Nghỉ / Di chuyển`);
+				continue;
+			}
 
-      lines.push(
-        `- ${slot.timeLabel}: ${slot.card.name} (${slot.card.city || "Không rõ khu vực"})`
-      );
-      lines.push(
-        `  Tag: ${slot.card.tagLabel || slot.card.tag} • VP: ${slot.card.vp} • Xu: ${slot.card.coin} • Thể lực: ${slot.card.stamina}`
-      );
+			lines.push(
+				`- ${slot.timeLabel}: ${slot.card.name} (${slot.card.city || "Không rõ khu vực"})`,
+			);
+			lines.push(
+				`  Tag: ${slot.card.tagLabel || slot.card.tag} • VP: ${slot.card.vp} • Xu: ${slot.card.coin} • Thể lực: ${slot.card.stamina}`,
+			);
 
-      if (slot.card.description) {
-        lines.push(`  Ghi chú: ${slot.card.description}`);
-      }
-    }
+			if (slot.card.description) {
+				lines.push(`  Ghi chú: ${slot.card.description}`);
+			}
+		}
 
-    lines.push("");
-  }
+		lines.push("");
+	}
 
-  return lines.join("\n");
+	return lines.join("\n");
 }
 
-export function downloadTextFile(filename: string, content: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+export function downloadTextFile(
+	filename: string,
+	content: string,
+	mimeType: string,
+) {
+	const blob = new Blob([content], { type: mimeType });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
 
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+	link.href = url;
+	link.download = filename;
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
 
-  URL.revokeObjectURL(url);
+	URL.revokeObjectURL(url);
 }
 
 export function downloadTravelTimeline(format: "txt" | "json") {
-  const data = buildTravelTimelineExport();
-  const baseName = getExportFileSafeName(
-    `${data.playerName}-phase-${data.phaseNumber}-lich-trinh`
-  );
+	const data = buildTravelTimelineExport();
+	const baseName = getExportFileSafeName(
+		`${data.playerName}-phase-${data.phaseNumber}-lich-trinh`,
+	);
 
-  if (format === "json") {
-    downloadTextFile(
-      `${baseName}.json`,
-      JSON.stringify(data, null, 2),
-      "application/json;charset=utf-8"
-    );
-    return;
-  }
+	if (format === "json") {
+		downloadTextFile(
+			`${baseName}.json`,
+			JSON.stringify(data, null, 2),
+			"application/json;charset=utf-8",
+		);
+		return;
+	}
 
-  downloadTextFile(
-    `${baseName}.txt`,
-    formatTravelTimelineAsText(),
-    "text/plain;charset=utf-8"
-  );
+	downloadTextFile(
+		`${baseName}.txt`,
+		formatTravelTimelineAsText(),
+		"text/plain;charset=utf-8",
+	);
 }
 
 export async function copyTravelTimelineToClipboard() {
-  const text = formatTravelTimelineAsText();
+	const text = formatTravelTimelineAsText();
 
-  try {
-    await navigator.clipboard.writeText(text);
-    alert("Đã copy lịch trình vào clipboard.");
-  } catch {
-    prompt("Copy lịch trình:", text);
-  }
+	try {
+		await navigator.clipboard.writeText(text);
+		alert("Đã copy lịch trình vào clipboard.");
+	} catch {
+		prompt("Copy lịch trình:", text);
+	}
 }
-
-
