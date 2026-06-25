@@ -18,7 +18,7 @@ jobs:
           deno-version: v2.x
 
       - name: Check formatting
-        run: deno fmt --check server/ index.html sw.js manifest.json tsconfig.json
+        run: deno fmt --check server/ src/ index.html sw.js manifest.json tsconfig.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
