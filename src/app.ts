@@ -130,17 +130,23 @@ import {
   getCurrentScoreBreakdown,
   getDisplayPlayerName,
   getOnlinePlayerBoard,
+  getOnlineSelfHand,
   getOnlineSelfPublicPlayer,
   getOnlineSelfState,
+  getPlanningConfirmStatusLabel,
   getRemainingResources,
   getSelfPlanningConfirmLockSignature,
   getSimulationEventResourceModifier,
   isDraftDealVisualActive,
+  isDraftPoolToggleBlocked,
+  isOnlineInterRoundPoolPassActive,
   isOnlinePlanningPhase,
   isOnlineRoomActive,
   isSelfPlanningConfirmed,
+  shouldShowDraftPickPool,
 } from "./game/queries.js";
 import {
+  renderDeckPilePanel,
   renderFinalRankingPanel,
   renderMidGameRankingModal,
   renderPlayerEffectTokens,
@@ -521,10 +527,6 @@ function syncOnlineDraftDisplayAfterTabVisible() {
   }
 }
 
-function isOnlineInterRoundPoolPassActive(): boolean {
-  return state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating;
-}
-
 function getDraftCenterDealCardCount(): number {
   if (isOnlineRoomActive()) {
     const pool = state.onlineDraftDisplayPool ??
@@ -623,10 +625,6 @@ function beginOnlineDraftPoolPass(
   state.onlineDraftAnimationTimerId = window.setTimeout(() => {
     completeOnlineDraftPoolPassAndDeal();
   }, DRAFT_PASS_ANIMATION_MS);
-}
-
-function getOnlineSelfHand(): TravelCardData[] | null {
-  return (getOnlineSelfState()?.hand as TravelCardData[] | undefined) ?? null;
 }
 
 function getOnlineSelectedDraftCardId() {
@@ -2038,13 +2036,6 @@ function renderDraftHandTopMeta() {
   `;
 }
 
-function getPickedDraftCount(): number {
-  if (isOnlineRoomActive()) {
-    return getOnlineSelfState()?.pickedDraftCards?.length ?? 0;
-  }
-  return getCurrentDraftPlayer()?.picked?.length ?? 0;
-}
-
 function getConfirmedPickedDraftCards(): TravelCardData[] {
   if (isOnlineRoomActive()) {
     return (
@@ -2359,21 +2350,6 @@ function renderPickedDraftCards(options?: { hiddenPendingMeasure?: boolean }) {
     .join("");
 }
 
-function shouldShowDraftPickPool(): boolean {
-  if (!state.isDraftPhase) return false;
-  if (state.isOnlineFinalDraftReturnAnimating) return false;
-  if (isOnlineInterRoundPoolPassActive()) {
-    const passPool = state.onlineDraftPassSnapshotPool ??
-      state.onlineDraftDisplayPool;
-    if (passPool?.length) return true;
-  }
-  if (state.isPassingDraftCards && state.draftPassDisplayPool?.length) {
-    return true;
-  }
-  if (getPickedDraftCount() >= HAND_SIZE) return false;
-  return true;
-}
-
 function getDraftCenterRenderPool(): TravelCardData[] {
   if (isOnlineRoomActive()) {
     if (isOnlineInterRoundPoolPassActive()) {
@@ -2439,41 +2415,6 @@ function resetDraftPoolCollapseState() {
   state.isDraftPoolCollapsed = false;
   state.isDraftPoolCollapseAnimating = false;
   state.draftPoolCollapseAnimMode = null;
-}
-
-function isDraftPoolToggleBlocked(): boolean {
-  return (
-    state.isDraftPoolCollapseAnimating ||
-    state.isDraftPickFlying ||
-    state.isPassingDraftCards ||
-    state.isOnlineFinalDraftReturnAnimating
-  );
-}
-
-function renderDraftPoolCollapseButton(): string {
-  if (!state.isDraftPhase || !shouldShowDraftPickPool()) return "";
-  if (state.isPassingDraftCards || state.isOnlineFinalDraftReturnAnimating) {
-    return "";
-  }
-
-  const label = state.isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
-  const disabled = isDraftPoolToggleBlocked();
-
-  return `
-    <button
-      type="button"
-      class="state.deck-pile-panel__pool-toggle"
-      onclick="event.stopPropagation(); toggleDraftPoolCollapse()"
-      ${disabled ? "disabled" : ""}
-      title="${
-    state.isDraftPoolCollapsed
-      ? "Hiện lại pool chọn bài"
-      : "Thu gọn pool để xem bàn cờ"
-  }"
-    >
-      ${label}
-    </button>
-  `;
 }
 
 function updateDraftPoolToggleVisualOnly() {
@@ -4088,29 +4029,6 @@ function resetSelfPlanningConfirmLock() {
   }
 }
 
-function getServerPlanningConfirmProgress() {
-  const roomState = onlineClientState.roomState;
-
-  if (!roomState) {
-    return { total: 0, confirmed: 0 };
-  }
-
-  const connectedPlayerIds = playerIds.filter((playerId) => {
-    const player = roomState.players[playerId];
-
-    return player?.isConnected === true && player?.hasJoined === true;
-  });
-
-  const confirmedCount = connectedPlayerIds.filter((playerId) => {
-    return roomState.players[playerId]?.planningConfirmed === true;
-  }).length;
-
-  return {
-    total: connectedPlayerIds.length,
-    confirmed: confirmedCount,
-  };
-}
-
 function hasServerAckedPlanningConfirm() {
   const playerId = onlineClientState.playerId;
   const roomState = onlineClientState.roomState;
@@ -4205,66 +4123,6 @@ function syncSelfPlanningConfirmLockFromServer() {
   ) {
     resetSelfPlanningConfirmLock();
   }
-}
-
-function getPlanningConfirmStatusLabel() {
-  const roomState = onlineClientState.roomState;
-  const serverProgress = getServerPlanningConfirmProgress();
-
-  if (roomState?.phase === "simulation") {
-    return "Đang quét...";
-  }
-
-  if (serverProgress.total <= 0) {
-    return "";
-  }
-
-  const selfServerConfirmed =
-    roomState?.players[onlineClientState.playerId ?? "p1"]
-      ?.planningConfirmed === true;
-
-  if (isSelfPlanningConfirmed() && !selfServerConfirmed) {
-    if (state.planningConfirmRetryCount > 8) {
-      if (serverProgress.total <= 1) {
-        return "Không kết nối server • chạy: cd TREKPOLOGY/server && npm start";
-      }
-
-      return "Không nhận phản hồi server • thử reload trang";
-    }
-
-    if (serverProgress.total <= 1) {
-      return "Đã xác nhận • đang chạy lịch trình...";
-    }
-
-    if (serverProgress.total > 1) {
-      const waitingCount = Math.max(
-        0,
-        serverProgress.total - serverProgress.confirmed - 1,
-      );
-
-      return `Đã xác nhận • chờ ${waitingCount} người (${
-        serverProgress.confirmed + 1
-      }/${serverProgress.total})`;
-    }
-
-    return "Đã xác nhận • đang đồng bộ server...";
-  }
-
-  if (serverProgress.confirmed >= serverProgress.total) {
-    return "Đủ người xác nhận • đang quét...";
-  }
-
-  if (isSelfPlanningConfirmed()) {
-    const waitingCount = serverProgress.total - serverProgress.confirmed;
-
-    return `Đã xác nhận • chờ ${waitingCount} người (${serverProgress.confirmed}/${serverProgress.total})`;
-  }
-
-  if (serverProgress.total > 1) {
-    return `Cần tất cả online xác nhận (${serverProgress.confirmed}/${serverProgress.total})`;
-  }
-
-  return "";
 }
 
 function confirmPlanningPick() {
@@ -5172,132 +5030,6 @@ function renderDebtTokenModal() {
         </div>
       </section>
     </div>
-  `;
-}
-
-function renderDeckPilePanel() {
-  const deckCount = isOnlineRoomActive() ? 0 : state.deck.length;
-  const handCount =
-    (isOnlineRoomActive() ? getOnlineSelfHand() : null)?.length ??
-      state.playerHand.length;
-  const canConfirm =
-    !!(state.draftHandPendingCardId || state.draftSelectedCardId) &&
-    !state.isDraftPickFlying &&
-    !state.isPassingDraftCards &&
-    !isDraftDealVisualActive() &&
-    !state.isDraftPoolCollapseAnimating;
-  const isOnlinePlanning = isOnlinePlanningPhase();
-  const selfPlanningConfirmed = isSelfPlanningConfirmed();
-  const serverPhase = onlineClientState.roomState?.phase;
-  const showDraftConfirm = state.isDraftPhase && serverPhase === "draft";
-  const showPlanningConfirm = isOnlinePlanning && serverPhase === "planning";
-  const planningStatusLabel = showPlanningConfirm
-    ? getPlanningConfirmStatusLabel()
-    : "";
-  const planningConfirmButton = showPlanningConfirm
-    ? `
-      <div class="state.deck-pile-panel__planning-actions">
-        <button
-          type="button"
-          class="state.deck-pile-panel__planning-confirm"
-          onclick="event.stopPropagation(); confirmPlanningPick()"
-          ${selfPlanningConfirmed ? "disabled" : ""}
-        >
-          ${selfPlanningConfirmed ? "Đã xác nhận" : "Xác nhận"}
-        </button>
-        ${
-      planningStatusLabel
-        ? `<div class="state.deck-pile-panel__planning-status">${planningStatusLabel}</div>`
-        : ""
-    }
-      </div>
-    `
-    : "";
-  const draftConfirmButton = showDraftConfirm
-    ? `
-      <button
-        type="button"
-        class="state.deck-pile-panel__draft-confirm"
-        onclick="event.stopPropagation(); confirmDraftPick()"
-        ${canConfirm ? "" : "disabled"}
-      >
-        Kết thúc lượt
-      </button>
-    `
-    : "";
-  const phaseConfirmButton = draftConfirmButton || planningConfirmButton;
-
-  const effectTokensHtml = renderPlayerEffectTokens();
-  const poolToggleButton = renderDraftPoolCollapseButton();
-  const showDeckHeader = showDraftConfirm || showPlanningConfirm ||
-    effectTokensHtml.length > 0;
-  const deckPanelHeader = showDeckHeader
-    ? `
-      <div class="state.deck-pile-panel__header">
-        <div class="state.deck-pile-panel__header-left">${poolToggleButton}${effectTokensHtml}</div>
-        <div class="state.deck-pile-panel__header-right">${phaseConfirmButton}</div>
-      </div>
-    `
-    : "";
-
-  return `
-    <section
-      class="state.deck-pile-panel${
-    state.isDraftPhase ? " state.deck-pile-panel--draft" : ""
-  }"
-      data-discard-drop-zone="true"
-      title="Kéo thả lá bài trên tay vào đây để discard và nhận lại Xu/Thể lực bằng chi phí của lá."
-    >
-      ${deckPanelHeader}
-
-      <div class="state.deck-pile-panel__visual">
-        <div class="state.deck-card-stack">
-          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-3"></div>
-          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-2"></div>
-          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-1"></div>
-
-          <div class="state.deck-card-stack__card state.deck-card-stack__card--back">
-            <div class="state.deck-card-stack__back-frame">
-              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--tl">✦</div>
-              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--tr">✦</div>
-              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--bl">✦</div>
-              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--br">✦</div>
-
-              <div class="state.deck-card-stack__crest">
-                <div class="state.deck-card-stack__crest-ring"></div>
-                <div class="state.deck-card-stack__crest-core">🧭</div>
-              </div>
-
-              <div class="state.deck-card-stack__brand">
-                <span class="state.deck-card-stack__brand-top">LỮ KHÁCH</span>
-                <strong class="state.deck-card-stack__brand-main">BÀN CỜ</strong>
-                <em class="state.deck-card-stack__brand-sub">TRAVEL DECK</em>
-              </div>
-
-              <div class="state.deck-card-stack__route">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="state.deck-pile-panel__info">
-        <div>
-          <span>Trên tay</span>
-          <strong>${handCount}</strong>
-        </div>
-
-        <div>
-          <span>Đã xếp ngày</span>
-          <strong>${getCurrentDayPlacedCards().length}</strong>
-        </div>
-      </div>
-    </section>
   `;
 }
 

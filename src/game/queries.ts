@@ -17,7 +17,11 @@ import {
   getCurrentDayPlacedCards as getCurrentDayPlacedCardsFromSlots,
 } from "./board.js";
 import { getRemainingResources as getRemainingResourcesFromTotals } from "./resources.js";
-import { STARTING_COIN, STARTING_STAMINA } from "./constants.js";
+import { HAND_SIZE, STARTING_COIN, STARTING_STAMINA } from "./constants.js";
+import {
+  getActiveDraftPlayerIndex,
+  getCurrentDraftPlayer as getCurrentDraftPlayerFromDraft,
+} from "./draft.js";
 import { getBoardDisplayName } from "../ui/cardDisplay.js";
 
 const FALLBACK_CARD_IMAGE =
@@ -211,7 +215,7 @@ function convertOnlineBoardToBoardSlots(
   });
 }
 
-function getCurrentDayPlacedCards(
+export function getCurrentDayPlacedCards(
   dayIndex = state.currentDayIndex,
 ): TravelCardData[] {
   return getCurrentDayPlacedCardsFromSlots(getBoardSlots(), dayIndex);
@@ -288,9 +292,7 @@ export function getOnlineSelfPublicPlayer() {
 // ── Online rankings ──
 
 export function getOnlineSelfScore(): number | null {
-  return getOnlineScoreForPlayer(
-    onlineClientState.playerId ?? currentPlayerId,
-  );
+  return getOnlineScoreForPlayer(onlineClientState.playerId ?? currentPlayerId);
 }
 
 export function getOnlineFinalRankings() {
@@ -479,4 +481,140 @@ export function getSimulationEventStaminaPenalty(
   const modifier = getSimulationEventResourceModifier(result);
 
   return Math.abs(Math.min(0, modifier.stamina));
+}
+
+// ── Online self hand ──
+
+export function getOnlineSelfHand(): TravelCardData[] | null {
+  return (getOnlineSelfState()?.hand as TravelCardData[] | undefined) ?? null;
+}
+
+// ── Draft pool pass ──
+
+export function isOnlineInterRoundPoolPassActive(): boolean {
+  return (
+    state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating
+  );
+}
+
+export function getPickedDraftCount(): number {
+  if (isOnlineRoomActive()) {
+    return getOnlineSelfState()?.pickedDraftCards?.length ?? 0;
+  }
+
+  return (
+    getCurrentDraftPlayerFromDraft(
+      state.draftPlayers,
+      getActiveDraftPlayerIndex(),
+    )?.picked?.length ?? 0
+  );
+}
+
+export function shouldShowDraftPickPool(): boolean {
+  if (!state.isDraftPhase) return false;
+  if (state.isOnlineFinalDraftReturnAnimating) return false;
+  if (isOnlineInterRoundPoolPassActive()) {
+    const passPool = state.onlineDraftPassSnapshotPool ??
+      state.onlineDraftDisplayPool;
+    if (passPool?.length) return true;
+  }
+  if (state.isPassingDraftCards && state.draftPassDisplayPool?.length) {
+    return true;
+  }
+  if (getPickedDraftCount() >= HAND_SIZE) return false;
+  return true;
+}
+
+export function isDraftPoolToggleBlocked(): boolean {
+  return (
+    state.isDraftPoolCollapseAnimating ||
+    state.isDraftPickFlying ||
+    state.isPassingDraftCards ||
+    state.isOnlineFinalDraftReturnAnimating
+  );
+}
+
+// ── Planning confirm progress ──
+
+export function getServerPlanningConfirmProgress() {
+  const roomState = onlineClientState.roomState;
+
+  if (!roomState) {
+    return { total: 0, confirmed: 0 };
+  }
+
+  const connectedPlayerIds = playerIds.filter((playerId) => {
+    const player = roomState.players[playerId];
+
+    return player?.isConnected === true && player?.hasJoined === true;
+  });
+
+  const confirmedCount = connectedPlayerIds.filter((playerId) => {
+    return roomState.players[playerId]?.planningConfirmed === true;
+  }).length;
+
+  return {
+    total: connectedPlayerIds.length,
+    confirmed: confirmedCount,
+  };
+}
+
+export function getPlanningConfirmStatusLabel() {
+  const roomState = onlineClientState.roomState;
+  const serverProgress = getServerPlanningConfirmProgress();
+
+  if (roomState?.phase === "simulation") {
+    return "Đang quét...";
+  }
+
+  if (serverProgress.total <= 0) {
+    return "";
+  }
+
+  const selfServerConfirmed =
+    roomState?.players[onlineClientState.playerId ?? "p1"]
+      ?.planningConfirmed === true;
+
+  if (isSelfPlanningConfirmed() && !selfServerConfirmed) {
+    if (state.planningConfirmRetryCount > 8) {
+      if (serverProgress.total <= 1) {
+        return "Không kết nối server • chạy: cd TREKPOLOGY/server && npm start";
+      }
+
+      return "Không nhận phản hồi server • thử reload trang";
+    }
+
+    if (serverProgress.total <= 1) {
+      return "Đã xác nhận • đang chạy lịch trình...";
+    }
+
+    if (serverProgress.total > 1) {
+      const waitingCount = Math.max(
+        0,
+        serverProgress.total - serverProgress.confirmed - 1,
+      );
+
+      return `Đã xác nhận • chờ ${waitingCount} người (${
+        serverProgress.confirmed + 1
+      }/${serverProgress.total})`;
+    }
+
+    return "Đã xác nhận • đang đồng bộ server...";
+  }
+
+  if (serverProgress.confirmed >= serverProgress.total) {
+    return "Đủ người xác nhận • đang quét...";
+  }
+
+  if (isSelfPlanningConfirmed()) {
+    const waitingCount = serverProgress.total - serverProgress.confirmed;
+
+    return `Đã xác nhận • chờ ${waitingCount} người (${serverProgress.confirmed}/${serverProgress.total})`;
+  }
+
+  if (serverProgress.total > 1) {
+    return `Cần tất cả online xác nhận (${serverProgress.confirmed}/${serverProgress.total})`;
+  }
+
+  return "";
 }

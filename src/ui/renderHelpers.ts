@@ -2,13 +2,21 @@ import { state } from "../state/gameState.js";
 import { onlineClientState } from "../online/socketClient.js";
 import { days } from "../game/constants.js";
 import {
+  getCurrentDayPlacedCards,
   getCurrentScoreBreakdown,
   getMidGameRankings,
   getOnlineFinalRankings,
+  getOnlineSelfHand,
   getOnlineSelfPublicPlayer,
   getOnlineSelfScore,
+  getPlanningConfirmStatusLabel,
   getRemainingResources,
+  isDraftDealVisualActive,
+  isDraftPoolToggleBlocked,
+  isOnlinePlanningPhase,
   isOnlineRoomActive,
+  isSelfPlanningConfirmed,
+  shouldShowDraftPickPool,
 } from "../game/queries.js";
 import type { SimulationReplayStep } from "../game/scoring.js";
 import { formatSignedVP, formatTurnTimer } from "./cardDisplay.js";
@@ -678,6 +686,8 @@ export {
   getStablePhaseScoreDisplay,
   isOnlineGameOver,
   renderDebtSealGlyph,
+  renderDeckPilePanel,
+  renderDraftPoolCollapseButton,
   renderFinalRankingPanel,
   renderMidGameRankingModal,
   renderPlayerEffectTokens,
@@ -687,3 +697,158 @@ export {
   renderTravelTimelineExportPanel,
   shouldShowReplayDay,
 };
+
+// ── Draft pool toggle button ──
+
+function renderDraftPoolCollapseButton(): string {
+  if (!state.isDraftPhase || !shouldShowDraftPickPool()) return "";
+  if (state.isPassingDraftCards || state.isOnlineFinalDraftReturnAnimating) {
+    return "";
+  }
+
+  const label = state.isDraftPoolCollapsed ? "Mở pool" : "Thu gọn";
+  const disabled = isDraftPoolToggleBlocked();
+
+  return `
+    <button
+      type="button"
+      class="state.deck-pile-panel__pool-toggle"
+      onclick="event.stopPropagation(); toggleDraftPoolCollapse()"
+      ${disabled ? "disabled" : ""}
+      title="${
+    state.isDraftPoolCollapsed
+      ? "Hiện lại pool chọn bài"
+      : "Thu gọn pool để xem bàn cờ"
+  }"
+    >
+      ${label}
+    </button>
+  `;
+}
+
+// ── Deck pile panel ──
+
+function renderDeckPilePanel() {
+  const handCount =
+    (isOnlineRoomActive() ? getOnlineSelfHand() : null)?.length ??
+      state.playerHand.length;
+  const canConfirm =
+    !!(state.draftHandPendingCardId || state.draftSelectedCardId) &&
+    !state.isDraftPickFlying &&
+    !state.isPassingDraftCards &&
+    !isDraftDealVisualActive() &&
+    !state.isDraftPoolCollapseAnimating;
+  const isOnlinePlanning = isOnlinePlanningPhase();
+  const selfPlanningConfirmed = isSelfPlanningConfirmed();
+  const serverPhase = onlineClientState.roomState?.phase;
+  const showDraftConfirm = state.isDraftPhase && serverPhase === "draft";
+  const showPlanningConfirm = isOnlinePlanning && serverPhase === "planning";
+  const planningStatusLabel = showPlanningConfirm
+    ? getPlanningConfirmStatusLabel()
+    : "";
+  const planningConfirmButton = showPlanningConfirm
+    ? `
+      <div class="state.deck-pile-panel__planning-actions">
+        <button
+          type="button"
+          class="state.deck-pile-panel__planning-confirm"
+          onclick="event.stopPropagation(); confirmPlanningPick()"
+          ${selfPlanningConfirmed ? "disabled" : ""}
+        >
+          ${selfPlanningConfirmed ? "Đã xác nhận" : "Xác nhận"}
+        </button>
+        ${
+      planningStatusLabel
+        ? `<div class="state.deck-pile-panel__planning-status">${planningStatusLabel}</div>`
+        : ""
+    }
+      </div>
+    `
+    : "";
+  const draftConfirmButton = showDraftConfirm
+    ? `
+      <button
+        type="button"
+        class="state.deck-pile-panel__draft-confirm"
+        onclick="event.stopPropagation(); confirmDraftPick()"
+        ${canConfirm ? "" : "disabled"}
+      >
+        Kết thúc lượt
+      </button>
+    `
+    : "";
+  const phaseConfirmButton = draftConfirmButton || planningConfirmButton;
+
+  const effectTokensHtml = renderPlayerEffectTokens();
+  const poolToggleButton = renderDraftPoolCollapseButton();
+  const showDeckHeader = showDraftConfirm || showPlanningConfirm ||
+    effectTokensHtml.length > 0;
+  const deckPanelHeader = showDeckHeader
+    ? `
+      <div class="state.deck-pile-panel__header">
+        <div class="state.deck-pile-panel__header-left">${poolToggleButton}${effectTokensHtml}</div>
+        <div class="state.deck-pile-panel__header-right">${phaseConfirmButton}</div>
+      </div>
+    `
+    : "";
+
+  return `
+    <section
+      class="state.deck-pile-panel${
+    state.isDraftPhase ? " state.deck-pile-panel--draft" : ""
+  }"
+      data-discard-drop-zone="true"
+      title="Kéo thả lá bài trên tay vào đây để discard và nhận lại Xu/Thể lực bằng chi phí của lá."
+    >
+      ${deckPanelHeader}
+
+      <div class="state.deck-pile-panel__visual">
+        <div class="state.deck-card-stack">
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-3"></div>
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-2"></div>
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--layer-1"></div>
+
+          <div class="state.deck-card-stack__card state.deck-card-stack__card--back">
+            <div class="state.deck-card-stack__back-frame">
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--tl">✦</div>
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--tr">✦</div>
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--bl">✦</div>
+              <div class="state.deck-card-stack__corner state.deck-card-stack__corner--br">✦</div>
+
+              <div class="state.deck-card-stack__crest">
+                <div class="state.deck-card-stack__crest-ring"></div>
+                <div class="state.deck-card-stack__crest-core">🧭</div>
+              </div>
+
+              <div class="state.deck-card-stack__brand">
+                <span class="state.deck-card-stack__brand-top">LỮ KHÁCH</span>
+                <strong class="state.deck-card-stack__brand-main">BÀN CỜ</strong>
+                <em class="state.deck-card-stack__brand-sub">TRAVEL DECK</em>
+              </div>
+
+              <div class="state.deck-card-stack__route">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state.deck-pile-panel__info">
+        <div>
+          <span>Trên tay</span>
+          <strong>${handCount}</strong>
+        </div>
+
+        <div>
+          <span>Đã xếp ngày</span>
+          <strong>${getCurrentDayPlacedCards().length}</strong>
+        </div>
+      </div>
+    </section>
+  `;
+}
