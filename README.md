@@ -50,7 +50,7 @@ docs/
 
 Start with:
 
-1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — architecture notes: dual game loop, animation system, online/single-player split, key decisions (this file)
+1. [`docs/ARCHITECTURE-REFERENCE.md`](docs/ARCHITECTURE-REFERENCE.md) — architecture notes: dual game loop, animation system, online/single-player split, key decisions (this file)
 2. [`docs/game-logic-design.md`](docs/game-logic-design.md) — game rules, card system, scoring, campaign structure
 3. [`docs/team-scoping-plan.html`](docs/team-scoping-plan.html) — top-down view of domains and deliverables
 4. [`docs/architecture.html`](docs/architecture.html) — system diagram with module descriptions

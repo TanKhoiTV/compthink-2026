@@ -3,6 +3,8 @@
 > Current architecture as of June 2026. Supersedes the Room FSM refactor
 > (archived to `.archive/TREKKOPOLY-v1-refactor/`).
 
+> **Quick overview:** [`ARCHITECTURE.md`](../ARCHITECTURE.md) for directory structure, build pipeline, deployment/CI/CD tables, and architectural invariants.
+
 ---
 
 ## Game Loop
@@ -115,31 +117,6 @@ src/app.ts (monolithic controller, 321 functions)
 - **Client:** `src/online/socketClient.ts` — JWT stored in localStorage, appended as `?token=` to socket connection
 - **Persistence:** `server/data/users.json` (JSON file, not a database)
 - **Secret:** `AUTH_SECRET` env var (set in HF Space)
-
----
-
-## Deployment
-
-| Target | Platform | Config |
-|--------|----------|--------|
-| Frontend | GitHub Pages | `deploy-pages.yml` — build + `actions/deploy-pages@v4` |
-| Server | Hugging Face Spaces | `deploy-server.yml` — git push to HF Space repo |
-| Server port | 7860 | `Dockerfile` EXPOSE + `app_port` in README |
-| Server Alpine | Node 22 | `Dockerfile: FROM node:22-alpine` |
-
-**Dockerfile:** Selectively copies `server/`, `src/data/`, `src/types.ts` into the container. Entrypoint: `npx tsx server/index.ts`.
-
-**Server sync workflow:** Clones the HF Space git repo, replaces files, commits, pushes. Auth via `HF_TOKEN` GitHub secret.
-
----
-
-## CI/CD
-
-| Workflow | Purpose | Status (June 2026) |
-|----------|---------|--------------------|
-| `ci.yml` | Build check (`npm ci + npm run build`) | ✅ All passing |
-| `deploy-pages.yml` | Deploy frontend to GH Pages | ✅ All passing |
-| `deploy-server.yml` | Sync server to HF Space | ✅ All passing |
 
 ---
 
