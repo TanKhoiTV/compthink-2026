@@ -21,13 +21,11 @@ Built by a university team for the Computational Thinking course.
 
 | Layer | Choice |
 |---|---|
-| **Frontend** | Vanilla TypeScript + Less + CSS Grid + Rollup |
-| **Backend** | Deno + WebSocket + JSON-RPC 2.0 |
-| **Database** | PocketBase (SQLite) |
-| **Offline** | Service Worker (cache-first) + IndexedDB (Dexie.js) |
-| **Deployment** | Docker (backend), static host (frontend PWA) |
-
-**Shared logic** (`scr/shared/`) — board, rules, scoring, dice — runs on both client and server. Optimistic client with authoritative server validation.
+| **Frontend** | Vanilla TypeScript + Less + CSS Grid + DOM |
+| **Backend** | Node.js + Socket.IO + tsx |
+| **Database** | None (JSON file for auth) |
+| **Offline** | Service Worker (network-first) |
+| **Deployment** | Hugging Face Spaces Docker (server), GitHub Pages (frontend) |
 
 ## Project Status
 
@@ -51,6 +49,7 @@ docs/
 ```
 
 Start with:
+
 1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — architecture notes: dual game loop, animation system, online/single-player split, key decisions (this file)
 2. [`docs/game-logic-design.md`](docs/game-logic-design.md) — game rules, card system, scoring, campaign structure
 3. [`docs/team-scoping-plan.html`](docs/team-scoping-plan.html) — top-down view of domains and deliverables

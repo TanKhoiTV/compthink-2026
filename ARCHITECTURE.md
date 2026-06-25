@@ -2,11 +2,11 @@
 
 ## Overview
 
-Trekkopoly is a travel itinerary board game built as a **single-page web app** with a **lightweight WebSocket relay server**. The game runs in a browser; the server handles room management and online multiplayer. Single-player/local mode runs entirely client-side.
+Trekkopoly is a travel itinerary board game built as a **single-page web app** with a **Node.js/Socket.IO multiplayer server**. The client is vanilla TypeScript with no framework — plain DOM manipulation. Single-player runs entirely client-side. Online mode uses Socket.IO for real-time sync.
 
-**Live:** https://tankhoitv.github.io/compthink-2026/  
-**Server:** https://trekkopoly-3ecx8dx2y5kj.compthink-2026.deno.net  
-**Source:** https://github.com/TanKhoiTV/compthink-2026
+**Live:** <https://tankhoitv.github.io/compthink-2026/>  
+**Server:** <https://khoinguyentran-trekkopoly-old-server.hf.space>  
+**Source:** <https://github.com/TanKhoiTV/compthink-2026>
 
 ---
 
@@ -14,175 +14,178 @@ Trekkopoly is a travel itinerary board game built as a **single-page web app** w
 
 ```
 .
-├── index.html            # SPA entry point (minimal shell)
+├── index.html            # SPA entry point (minimal shell, loads app.js)
 ├── sw.js                 # Service worker (network-first, offline fallback)
+├── manifest.json         # PWA manifest (icons, display mode)
 │
-├── src/                  # Client source (TypeScript, bundled by Rollup)
-│   ├── app.ts            # Entry point, game loop, timer, audio orchestration
-│   ├── router.ts         # Screen routing, event delegation (capture-phase clicks)
-│   ├── state.ts          # Global state (module-level variables + get/set exports)
+├── src/                  # Client source (TypeScript, compiled by tsc)
+│   ├── app.ts            # Application controller (monolithic, 332+ functions)
+│   │                     # State, rendering, bot AI, drag-and-drop, animations
+│   ├── types.ts          # Shared types (18 importers across both layers)
 │   │
-│   ├── arena/            # Arena screen (game board, hand, draft)
-│   │   ├── render.ts     # DOM rendering: board grid, hand fan, draft pool, focused card
-│   │   └── board-interaction.ts  # [DEAD CODE] Old placement/bot logic, not imported
-│   │
-│   ├── screens/          # Screen renderers (splash, dashboard, map selection)
-│   │
-│   ├── audio/            # Audio engine
-│   │   └── gameAudio.ts  # Playback, throttling, AudioContext unlock, BGM
+│   ├── game/             # Pure game logic
+│   │   ├── board.ts      # BoardSlots, position helpers, tag counting
+│   │   ├── deck.ts       # Deck creation, shuffle, daily hand draw
+│   │   ├── draft.ts      # Draft pool, rotation, pick logic
+│   │   ├── scoring.ts    # 5-step simulation engine
+│   │   ├── resources.ts  # Resource/affordability calculations
+│   │   └── constants.ts  # STARTING_*, HAND_SIZE, PHASE_DAYS
 │   │
 │   ├── online/           # WebSocket client (multiplayer)
-│   │   └── socketClient.ts
+│   │   └── socketClient.ts  # Socket.IO connection lifecycle, RPC dispatch
 │   │
-│   └── shared/           # Shared game logic (same code, dual-runtime)
-│       ├── types.ts      # TravelCard, GamePhase, Resource types
-│       ├── constants.ts  # PHASE_DAYS, HAND_SIZE, STARTING_*, DRAFT_PICK_SECONDS
-│       ├── board.ts      # BoardSlots, position validation, distance calculation
-│       ├── deck.ts       # Card pool, deck creation, shuffle
-│       ├── resources.ts  # Remaining resource calculation, affordability
-│       ├── scoring.ts    # Simulation engine (5-step scoring algorithm)
-│       └── data/         # Card data (Saigon phase 1)
-│           └── index.ts
+│   ├── data/             # Card definitions and mapping
+│   │   ├── cards.phase1.ts  # ~150 Saigon phase 1 card objects
+│   │   ├── cards.all.ts    # Query helpers (by phase pool, tag, id)
+│   │   └── cardMapper.ts   # GameCardData → UI display data
+│   │
+│   ├── ui/               # UI components
+│   │   ├── dashboard.ts     # Lobby/dashboard screen
+│   │   ├── mapSelection.ts  # Region selection screen
+│   │   ├── HelpBubble.ts    # Contextual help overlay
+│   │   └── OnboardingModal.ts  # First-time tutorial
+│   │
+│   ├── audio/            # Audio engine
+│   │   └── gameAudio.ts  # Web Audio API + <audio> element, BGM
+│   │
+│   ├── export/           # Travel certificate export
+│   │   └── certificate.ts  # HTML certificate + timeline text export
+│   │
+│   └── styles/           # Less stylesheets
+│       ├── client.less      # Main game styles (board, cards, draft)
+│       ├── dashboard.less   # Lobby/dashboard layout
+│       └── mapSelection.less # Map selection screen
 │
-├── server/               # Deno server (WebSocket relay + room management)
-│   ├── server.ts         # HTTP + WS listener, CORS, health endpoint
-│   ├── game.ts           # Game state machine, draft/placement/scoring relay
-│   ├── rooms.ts          # Room CRUD, player join/leave
-│   ├── player.ts         # Player state
-│   ├── deno.json         # Deno config (imports, tasks, lint)
-│   └── test-data.ts      # Local dev test helpers
-│
-├── css/                  # Styles (Less → CSS)
-│   ├── style.less        # Entry point (imports all partials)
-│   └── client.less       # Compiled/aggregated stylesheet
+├── server/               # Node.js server (Socket.IO)
+│   ├── index.ts          # Entry point: HTTP server + Socket.IO binding, /health
+│   ├── types.ts          # Socket.IO wire event types
+│   ├── gameEngine.ts     # Game state factories (board, deck, player)
+│   ├── draftEngine.ts    # Draft state machine (create, rotate, select, confirm)
+│   ├── timerEngine.ts    # Simulation tick + scoring + day transition
+│   ├── rooms.ts          # Room lifecycle (create, join, leave, card ops)
+│   ├── auth.ts           # PBKDF2 + JWT auth (no external deps)
+│   ├── package.json      # Server dependencies (socket.io, tsx, typescript)
+│   ├── tsconfig.json     # Server TypeScript config
+│   └── hf-readme.md      # HF Space metadata README (copied to root on deploy)
 │
 ├── assets/               # Static assets (Git LFS-tracked)
-│   └── audio/            # MP3 sound effects + BGM
+│   ├── cards/saigon/     # 117 card JPEGs (action, culture, food)
+│   ├── backgrounds/      # Lobby/game backgrounds
+│   ├── sounds/           # 12 MP3 sound effects + BGM
+│   ├── videos/           # Cinematic transition videos
+│   ├── chuyencanh.mp4    # Cinematic intro
+│   └── chuyencanh2.mp4   # Cinematic outro
 │
-├── build/                # Rollup output (client.js, client.js.map)
-├── _site/                # Deploy artifact (CI copies everything here)
+├── TREKPOLOGY/           # Brand assets only (card frame templates)
+│   └── assets/cardFrames/  # Per-tag frame overlays (action, culture, food, utility)
 │
-├── rollup.config.js      # Rollup config: TypeScript + replace (build timestamp)
-├── tsconfig.json         # Shared TS config (dual-runtime compatible)
-├── eslint.config.mjs     # ESLint flat config (client TypeScript)
-├── vitest.config.ts      # Vitest config (smoke tests for shared logic)
-├── package.json          # npm scripts: build, lint, test
+├── .archive/             # Archived v1 refactor code
+│   └── TREKKOPOLY-v1-refactor/  # Pre-restructure Deno + Rollup + PocketBase code
 │
-├── docs/                 # Design docs, meeting notes, decisions
+├── docs/                 # Design docs, decisions, notes
 │   ├── game-logic-design.md  # Source of truth for game rules
-│   └── adr/              # Architecture Decision Records
+│   ├── adr/              # Architecture Decision Records
+│   └── ...               # Meeting notes, POC docs
 │
-├── TREKPOLOGY/           # Original codebase (reference only, deferred cleanup #82)
-└── .internal/            # Agent instructions, plans, TODO (git-ignored)
+├── Dockerfile            # HF Space container (Node 22 Alpine)
+├── package.json          # npm scripts: build (tsc + lessc)
+├── tsconfig.json         # TypeScript config
+└── .github/workflows/    # CI/CD
+    ├── ci.yml            # Build check (on push/PR)
+    ├── deploy-pages.yml  # Deploy frontend to GitHub Pages
+    └── deploy-server.yml # Deploy server to HF Space
 ```
-
----
-
-## Dual Runtime
-
-| Runtime | Role | Entry | Bundler | Deploy Target |
-|---------|------|-------|---------|--------------|
-| **Deno** | WebSocket relay server | `server/server.ts` | Deno native | Deno Deploy |
-| **Browser** | Game client (SPA) | `src/app.ts` | Rollup + TypeScript | GitHub Pages |
-
-The `src/shared/` directory is compiled into both bundles:
-- `src/shared/` → server imports via `../src/shared/...` (Deno resolves `.ts` extensions natively)
-- `src/shared/` → client imports via `./shared/...` (Rollup resolves `.ts` through @rollup/plugin-typescript)
 
 ---
 
 ## Build Pipeline
 
+No bundler. Two sequential compilation steps:
+
 ```
 npm run build
-  ├── npm run build:css   → lessc css/style.less build/client.css
-  └── npm run build:js    → rollup -c
-       ├── @rollup/plugin-replace     (BUILD_TIME placeholder → UTC+7 timestamp)
-       └── @rollup/plugin-typescript  (.ts → .js bundle)
-
-npm test
-  └── vitest run          → src/game-logic.test.ts (6 smoke tests)
-
-npm run lint
-  ├── eslint src/         → Client TypeScript (flat config)
-  └── cd server && deno lint → Server TypeScript
+  ├── tsc                   → src/*.ts  → build/app.js + build/types.js
+  └── npx lessc ...         → src/styles/client.less → build/client.css
 ```
 
-**Key constraint:** `@rollup/plugin-replace` must come **before** `@rollup/plugin-typescript` in the plugins array. If reversed, TypeScript parses the raw `__BUILD_TIME_PLACEHOLDER__` string as a value it can't resolve.
+- TypeScript compiles from `src/` to `build/` (folder-to-folder, `tsconfig.json`).
+- Less compiles only `client.less` (which imports `dashboard.less`, `mapSelection.less`).
+- Build output: `build/app.js` (288 KB), `build/types.js` (11 B), `build/client.css` (376 KB).
+- No Rollup, no Vite, no Webpack — plain `tsc` + `lessc`.
 
 ---
 
-## Game State Model
+## Game State Management
 
-State is managed via **module-level variables** in `src/state.ts` with getter/setter exports. No framework (React, Vue) — pure TypeScript.
-
-```
-Key state slices:
-  ├── Game phase          → "lobby" | "draft" | "placement" | "scoring" | "finished"
-  ├── Board               → 5×5 grid of (TravelCard | null) per player
-  ├── Hand                → Array of TravelCard (5 cards after draft)
-  ├── Draft pool          → 7→6→5→4→3 cards per round
-  ├── Simulation result   → { replaySteps, totalVP, ... }
-  ├── Timer state         → Draft timer (10s), turn timer (15s)
-  ├── Audio               → BGM instance, mute/volume, sound throttling
-  └── UI interaction      → Selected/focused card ids, hold timer, popup state
-```
-
----
-
-## Game Loop (FSM)
+State is managed via **module-level variables** in `src/app.ts`:
 
 ```
-LOBBY ──START──▶ DRAFT ──5 picks──▶ PLACEMENT ──endDay──▶ SCORING ──next──▶ DRAFT
-                                                                │
-                                                                │ (after Day 5)
-                                                                ▼
-                                                             FINISHED
+Key state slices (module-level variables in app.ts):
+  ├── Game phase           → "lobby" | "draft" | "placement" | "scoring" | "finished"
+  ├── Board                → 5×5 grid of (TravelCard | null) per player
+  ├── Hand                 → Array of TravelCard (5 cards after draft)
+  ├── Draft pool           → 7→6→5→4→3 cards per round
+  ├── Simulation result    → { replaySteps, totalVP, ... }
+  ├── Resources            → Xu, Stamina scores
+  └── UI interaction       → Selected/focused card ids, hold timer, drag state
 ```
 
-**Draft phase:** (7 cards dealt, pick 1 per round, 5 rounds)
-1. Deal animation: cards fly into pool (1.32s)
-2. Player picks a card (click or timer auto-pick)
-3. Pass animation: unselected cards fly to deck (0.94s)
-4. Deal animation for next round's pool (1.32s)
-5. Repeat until 5 picks made → transition to placement
-
-**Placement phase:**
-1. Player hand fan rendered at bottom of arena
-2. Click card to select, click board cell (current day column) to place
-3. Resource costs checked: coin debt tracked (penalty at day advance), stamina debt creates lock token on next slot
-4. "End Day" button advances to simulation
-
-**Scoring (simulation):**
-1. 5-step simulation runs: debt scan → random events → combo scan → distance scan → final tally
-2. Step-by-step replay overlay (850ms per step)
-3. After replay: score applied, day advances or game over
+No state management framework — module-level `let` variables with direct mutation. The render layer reads these variables to build DOM, never mutates state directly.
 
 ---
 
 ## Event Delegation
 
-Click handling uses **capture-phase** delegation (matches old TREKPOLOGY):
+Click handling uses **capture-phase** delegation:
 
 ```typescript
 document.addEventListener("click", handler, true);
 ```
 
 This single handler:
+
 1. Checks for `[data-draft-card-id]` → draft card selection
 2. Checks for `[data-hand-card-id]` → hand card selection (placement)
 3. Checks for `[data-board-cell]` → board cell click (place card)
+4. Checks for `[data-discard]` → discard card
 
-No per-element `addEventListener("click")` — capture-phase is the single path. This was done to eliminate double-fire bugs.
+No per-element `addEventListener("click")`. This eliminates double-fire bugs.
 
 ---
 
-## Audio
+## Server Architecture
 
-- **SFX:** `playGameSound(name)` — throttled per-sound (100ms debounce). 15+ named sounds (cardSelect, cardPlace, deal, returnDeck, scanCell, scanBad, etc.)
-- **BGM:** Singleton `Audio` element with `loop=true`, 50% default volume. Mute/volume persisted in localStorage.
-- **Autoplay unlock:** PointerDown/KeyDown delegation on document. `syncInGameBgm()` retries on user interaction.
-- **Files:** Git LFS-tracked (require `lfs: true` in `actions/checkout@v4` — otherwise 130-byte pointer files are served instead of MP3s).
+```
+server/index.ts
+  ├── HTTP server (http.createServer) + /health endpoint
+  └── Socket.IO server (io() on the same HTTP server)
+        ├── connection → bindSocketPlayer() — wires socket events
+        │     ├── rooms.ts:  createRoom, joinRoom, leaveRoom, startGame
+        │     ├── draftEngine.ts:  selectDraftCard, confirmDraftPick
+        │     ├── rooms.ts:  placeCard, discardCard, payDebt, confirmPlanning
+        │     └── timerEngine.ts:  simulation, scoring, day transitions
+        └── emitRoomState() — broadcasts state to all players
+```
+
+**Cross-layer dependency:** `server/gameEngine.ts` imports `src/data/cards.phase1.ts` (which reaches `src/types.ts` through its imports). This works because `tsx` resolves relative paths at runtime.
+
+**Auth:** HTTP-only, separate from Socket.IO. PBKDF2 password hashing + JWT-style tokens via `crypto.subtle`. Users stored in `server/data/users.json`.
+
+---
+
+## Deployment
+
+| Target | Platform | Method | Auto-deploy |
+|--------|----------|--------|-------------|
+| Frontend (static PWA) | GitHub Pages | `deploy-pages.yml`: build → `_site/` → `upload-pages-artifact` | Push to `main` |
+| Server (Socket.IO) | Hugging Face Spaces | `deploy-server.yml`: git push to HF Space repo | Push to `main` touching `server/`, `src/data/`, `src/types.ts`, or `Dockerfile` |
+
+**HF Space details:**
+
+- SDK: Docker (Node 22 Alpine)
+- `app_port: 7860`
+- Health endpoint: `/health` (returns 200 "ok")
+- Auth: `HF_TOKEN` secret in GitHub
 
 ---
 
@@ -190,21 +193,28 @@ No per-element `addEventListener("click")` — capture-phase is the single path.
 
 | Workflow | Trigger | Outcome |
 |----------|---------|---------|
-| `ci.yml` | PR / push to main | Lint → test → build (3 jobs) |
-| `deploy-pages.yml` | Push to main | Build + deploy to GitHub Pages |
-| `deploy-server.yml` | Push to main | Deploy server to Deno Deploy |
-
-**Pages deploy:** `actions/checkout@v4` with `lfs: true`, builds JS + CSS, copies to `_site/`, deploys via `actions/deploy-pages@v4`.
-
-**Deno Deploy:** Authenticated via `DENO_DEPLOY_TOKEN`. Org = `compthink-2026`, app = `trekkopoly`, entrypoint = `server/server.ts`.
+| `ci.yml` | PR / push to main | `npm ci` + `npm run build` (single job) |
+| `deploy-pages.yml` | Push to main | Build + deploy to GH Pages |
+| `deploy-server.yml` | Push to main, paths: server/**, src/data/**, src/types.ts, Dockerfile | Sync to HF Space |
 
 ---
 
 ## Key Design Decisions
 
-- **No framework** — pure TypeScript DOM manipulation, minimal dependency footprint
-- **Capture-phase event delegation** — matches old TREKPOLOGY, prevents double-fire from per-element listeners
-- **Direct push to main allowed** — admin bypass for migration speed (PR workflow re-enabled post-migration)
-- **Version bump in same commit** — never standalone, always paired with the feature/fix it versions
-- **CSS from Less compiled by `lessc`** — 9500+ lines, auto-formatted by biome/lessc
-- **Service worker: network-first** — always fetch from network, cache as offline fallback. Cache name (`trekkopoly-vN`) bumped on content changes to flush LFS pointer poison
+- **No framework** — pure TypeScript DOM manipulation, minimal dependencies
+- **Capture-phase event delegation** — prevents double-fire from per-element listeners
+- **Cross-layer server/client types** — `src/data/cards.phase1.ts` and `src/types.ts` shared by both via tsx path resolution
+- **Monolithic app.ts** — single controller handles all screens (not separate router/screens). Known area for improvement.
+- **Card data as TypeScript** — ~150 card objects as const arrays, compiled into both client and server bundles
+- **No database** — auth users stored as JSON file
+- **Squash merge policy** — clean linear history, admin bypass for critical merges
+
+---
+
+## Architectural Invariants
+
+1. **State flows one direction:** Parse → mutate app.ts variables → render. Render never mutates state.
+2. **Socket.IO is the sole transport:** No REST API, no HTTP polling.
+3. **Single-player is entirely client-side:** No local server process. The server is only needed for online multiplayer.
+4. **No bundler:** tsc + lessc. Build output mirrors source structure under `build/`.
+5. **Server is not self-contained:** Depends on `src/data/` and `src/types.ts` (client directory).

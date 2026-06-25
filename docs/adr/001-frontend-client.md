@@ -1,8 +1,17 @@
+> **⚠️ SUPERSEDED — June 2026**
+> This ADR describes the *proposed* architecture from the initial design phase.
+> The actual implementation diverged significantly:
+>
+> - Frontend: vanilla TypeScript + tsc + lessc (not Svelte/IndexedDB)
+> - Backend: Node.js + Socket.IO on HF Spaces (not PocketBase/VPS)
+>
+> See [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.
+
 # ADR 001: Frontend — Progressive Web App (PWA) Architecture
 
 ## Status
 
-Proposed
+Superseded
 
 ---
 
@@ -101,15 +110,15 @@ We will implement the frontend as a Progressive Web App using the following stac
 
 ### Positive
 
-* **Works offline by design**: After the first install, the game runs entirely from the device. No internet connection is required during play.
-* **No app store required**: Players install via their browser. There is no submission process, review wait, or platform fee.
-* **Self-contained and fast**: Because everything is stored locally, gameplay is consistent and instant regardless of network conditions.
-* **Automated service worker management**: `vite-plugin-pwa` handles the most complex parts of the service worker lifecycle, reducing the risk of caching errors that are hard to debug.
+- **Works offline by design**: After the first install, the game runs entirely from the device. No internet connection is required during play.
+- **No app store required**: Players install via their browser. There is no submission process, review wait, or platform fee.
+- **Self-contained and fast**: Because everything is stored locally, gameplay is consistent and instant regardless of network conditions.
+- **Automated service worker management**: `vite-plugin-pwa` handles the most complex parts of the service worker lifecycle, reducing the risk of caching errors that are hard to debug.
 
 ### Negative
 
-* **No native push notifications without additional infrastructure**: Browser push notifications require a separate notification service and explicit user permission. This is out of scope for the demo but limits future feature options if push is ever needed.
-* **IndexedDB schema changes are the frontend dev's permanent responsibility**: There is no automated tool managing data migrations. Every future change to how data is stored must be written as an explicit, versioned migration. If done incorrectly, player data can be corrupted or silently lost on update.
-* **Bundle size is a shared constraint, not just a technical one**: The content downloaded via IF-1 must stay within a size budget that does not make first install feel slow. This is not something the frontend dev can solve alone — the game designer and data dev must agree on content limits before production begins.
-* **HTTPS is required before live testing can begin**: Service workers will not function on plain HTTP. TLS must be provisioned on the server before the frontend developer can test any offline behaviour against the live environment. This is a sequencing dependency the team should resolve early.
-* **Svelte is less widely known than React**: If the assigned developer is unfamiliar with Svelte, there is a learning curve before they are productive. This should be confirmed before the framework choice is finalised.
+- **No native push notifications without additional infrastructure**: Browser push notifications require a separate notification service and explicit user permission. This is out of scope for the demo but limits future feature options if push is ever needed.
+- **IndexedDB schema changes are the frontend dev's permanent responsibility**: There is no automated tool managing data migrations. Every future change to how data is stored must be written as an explicit, versioned migration. If done incorrectly, player data can be corrupted or silently lost on update.
+- **Bundle size is a shared constraint, not just a technical one**: The content downloaded via IF-1 must stay within a size budget that does not make first install feel slow. This is not something the frontend dev can solve alone — the game designer and data dev must agree on content limits before production begins.
+- **HTTPS is required before live testing can begin**: Service workers will not function on plain HTTP. TLS must be provisioned on the server before the frontend developer can test any offline behaviour against the live environment. This is a sequencing dependency the team should resolve early.
+- **Svelte is less widely known than React**: If the assigned developer is unfamiliar with Svelte, there is a learning curve before they are productive. This should be confirmed before the framework choice is finalised.

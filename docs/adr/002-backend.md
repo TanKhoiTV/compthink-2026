@@ -1,8 +1,17 @@
+> **⚠️ SUPERSEDED — June 2026**
+> This ADR describes the *proposed* architecture from the initial design phase.
+> The actual implementation diverged significantly:
+>
+> - Frontend: vanilla TypeScript + tsc + lessc (not Svelte/IndexedDB)
+> - Backend: Node.js + Socket.IO on HF Spaces (not PocketBase/VPS)
+>
+> See [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.
+
 # ADR 002: Backend — PocketBase as the Server Platform
 
 ## Status
 
-Proposed
+Superseded
 
 ---
 
@@ -83,10 +92,10 @@ PocketBase is a single executable file. Running it gives the team: a SQLite-back
 
 In this project, PocketBase covers all four interfaces:
 
-* **IF-1**: A collection in PocketBase holds the versioned game bundle. The endpoint is exposed as a standard REST API route. Alternatively, the bundle can be served as a static file from PocketBase's file storage if the bundle is pre-built by the data pipeline.
-* **IF-2**: The PocketBase admin UI acts as the CMS. The game designer and data dev create and manage content through the browser-based interface. The backend dev configures the collections (the database tables) and the transformation logic that produces the IF-1 bundle from that raw content.
-* **IF-3**: PocketBase can accept analytics event payloads via a custom API route or a dedicated collection. Records are stored in SQLite for the analysts to export or query.
-* **IF-4**: A lightweight custom route that compares the client's submitted `bundle_version` against the current value and returns the appropriate response. This can be a simple read from a settings record in PocketBase.
+- **IF-1**: A collection in PocketBase holds the versioned game bundle. The endpoint is exposed as a standard REST API route. Alternatively, the bundle can be served as a static file from PocketBase's file storage if the bundle is pre-built by the data pipeline.
+- **IF-2**: The PocketBase admin UI acts as the CMS. The game designer and data dev create and manage content through the browser-based interface. The backend dev configures the collections (the database tables) and the transformation logic that produces the IF-1 bundle from that raw content.
+- **IF-3**: PocketBase can accept analytics event payloads via a custom API route or a dedicated collection. Records are stored in SQLite for the analysts to export or query.
+- **IF-4**: A lightweight custom route that compares the client's submitted `bundle_version` against the current value and returns the appropriate response. This can be a simple read from a settings record in PocketBase.
 
 ### Hosting
 
@@ -110,15 +119,15 @@ PocketBase runs on a single VPS. Nginx sits in front of it as a reverse proxy, h
 
 ### Positive
 
-* **Single binary, minimal operational overhead**: The entire backend is one executable file. There is no database server, no separate cache layer, no process manager beyond a simple systemd service. A team member without backend experience can follow the PocketBase documentation and have a working server running quickly.
-* **Built-in admin UI serves as a CMS from day one**: The game designer and data dev can create and edit content through the browser-based admin interface immediately, without waiting for a custom tool to be built.
-* **All four interfaces covered without custom frameworks**: PocketBase's collections, file storage, and custom routes are sufficient to implement IF-1 through IF-4 without introducing additional backend technologies.
-* **No external service dependencies**: The entire backend stack — PocketBase, Nginx, Certbot — runs on the VPS. There are no third-party services that can go down or change pricing.
+- **Single binary, minimal operational overhead**: The entire backend is one executable file. There is no database server, no separate cache layer, no process manager beyond a simple systemd service. A team member without backend experience can follow the PocketBase documentation and have a working server running quickly.
+- **Built-in admin UI serves as a CMS from day one**: The game designer and data dev can create and edit content through the browser-based admin interface immediately, without waiting for a custom tool to be built.
+- **All four interfaces covered without custom frameworks**: PocketBase's collections, file storage, and custom routes are sufficient to implement IF-1 through IF-4 without introducing additional backend technologies.
+- **No external service dependencies**: The entire backend stack — PocketBase, Nginx, Certbot — runs on the VPS. There are no third-party services that can go down or change pricing.
 
 ### Negative
 
-* **No horizontal scaling**: PocketBase runs as a single instance. If the demo unexpectedly needs to handle many simultaneous users, there is no straightforward way to run multiple copies. Any path to production at scale requires a full backend re-evaluation.
-* **SQLite is a single-writer database**: Only one process can write to the database at a time. For the demo's expected load this is not a concern, but it is a ceiling worth recording.
-* **TLS is a hard prerequisite that creates a sequencing risk**: The frontend developer cannot test live integration until HTTPS is running. If VPS setup is delayed, it blocks frontend testing. This dependency should be resolved as early as possible in the project timeline.
-* **PocketBase custom logic lives outside standard frameworks**: If the team needs to write custom server-side logic (e.g. bundle generation, event validation), it must be written in Go or via PocketBase's JavaScript hook system. This may be unfamiliar to team members with a JavaScript-only background.
-* **Backup and recovery is the team's responsibility**: Because PocketBase is self-hosted, database backups must be configured manually. SQLite's single-file nature makes this straightforward, but it does not happen automatically.
+- **No horizontal scaling**: PocketBase runs as a single instance. If the demo unexpectedly needs to handle many simultaneous users, there is no straightforward way to run multiple copies. Any path to production at scale requires a full backend re-evaluation.
+- **SQLite is a single-writer database**: Only one process can write to the database at a time. For the demo's expected load this is not a concern, but it is a ceiling worth recording.
+- **TLS is a hard prerequisite that creates a sequencing risk**: The frontend developer cannot test live integration until HTTPS is running. If VPS setup is delayed, it blocks frontend testing. This dependency should be resolved as early as possible in the project timeline.
+- **PocketBase custom logic lives outside standard frameworks**: If the team needs to write custom server-side logic (e.g. bundle generation, event validation), it must be written in Go or via PocketBase's JavaScript hook system. This may be unfamiliar to team members with a JavaScript-only background.
+- **Backup and recovery is the team's responsibility**: Because PocketBase is self-hosted, database backups must be configured manually. SQLite's single-file nature makes this straightforward, but it does not happen automatically.
