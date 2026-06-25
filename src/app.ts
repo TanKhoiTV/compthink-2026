@@ -83,7 +83,6 @@ import type {
 import {
   type BoardPosition,
   type BoardSlots,
-  type BoardTotals,
   countCardsWithTag,
   createEmptyBoardSlots,
   getBoardCardByPosition as getBoardCardByPositionFromSlots,
@@ -102,10 +101,8 @@ import {
 } from "./game/draft.js";
 import {
   buildSimulationReplaySteps as buildSimulationReplayStepsFromBoard,
-  calculateScoreBreakdown as calculateScoreBreakdownFromCards,
   calculateSimulationResult as calculateSimulationResultFromBoard,
   type DayScoreSummary,
-  type ScoreBreakdown,
   type SimulationReplayStep,
   type SimulationResult,
 } from "./game/scoring.js";
@@ -118,7 +115,6 @@ import {
 import {
   getCardAffordability as getCardAffordabilityFromResources,
   getCardAffordabilityMessage as getCardAffordabilityMessageFromResources,
-  getRemainingResources as getRemainingResourcesFromTotals,
 } from "./game/resources.js";
 import { DRAFT_STARTING_POOL_SIZE } from "./game/constants.js";
 import {
@@ -127,6 +123,15 @@ import {
   playerIds,
   state,
 } from "./state/gameState.js";
+import {
+  getBoardSlots,
+  getBoardTotals,
+  getCurrentScoreBreakdown,
+  getDisplayPlayerName,
+  getOnlineSelfPublicPlayer,
+  getRemainingResources,
+  isOnlineRoomActive,
+} from "./game/queries.js";
 import type { AppScreen } from "./types.js";
 
 import {
@@ -370,14 +375,6 @@ function returnUnplayedHandToDeck() {
 
   state.deck = result.deck;
   state.playerHand = result.playerHand;
-}
-
-export function isOnlineRoomActive() {
-  return Boolean(
-    onlineClientState.roomId &&
-      onlineClientState.playerId &&
-      onlineClientState.roomState,
-  );
 }
 
 function getOnlineFinalRankings() {
@@ -678,25 +675,10 @@ function shouldShowDraftWaitBanner(): boolean {
   return connectedCount > 1;
 }
 
-function getOnlinePlayer(playerId?: PlayerId) {
+export function getOnlinePlayer(playerId?: PlayerId) {
   if (!playerId || !onlineClientState.roomState) return null;
 
   return onlineClientState.roomState.players[playerId] ?? null;
-}
-
-export function getDisplayPlayerName() {
-  const selfPlayerId = onlineClientState.playerId ?? currentPlayerId;
-  const onlineSelf = getOnlinePlayer(selfPlayerId);
-
-  return onlineSelf?.name ?? "Player";
-}
-
-export function getOnlineSelfPublicPlayer() {
-  const selfPlayerId = onlineClientState.playerId;
-
-  if (!selfPlayerId || !onlineClientState.roomState) return null;
-
-  return onlineClientState.roomState.players[selfPlayerId] ?? null;
 }
 
 function getConnectedLobbyPlayers() {
@@ -1117,7 +1099,7 @@ function getCurrentDayPlacedCards(
   return getCurrentDayPlacedCardsFromSlots(getBoardSlots(), dayIndex);
 }
 
-function getCurrentPlayerBoard(): BoardSlots {
+export function getCurrentPlayerBoard(): BoardSlots {
   if (isOnlineRoomActive()) {
     const onlineBoard = convertOnlineBoardToBoardSlots(
       getCurrentOnlinePlayerId(),
@@ -1133,10 +1115,6 @@ function getCurrentPlayerBoard(): BoardSlots {
 
 function setCurrentPlayerBoard(nextBoard: BoardSlots) {
   state.playerBoards[currentPlayerId] = nextBoard;
-}
-
-export function getBoardSlots(): BoardSlots {
-  return getCurrentPlayerBoard();
 }
 
 function getOpponentPlayerIds(): PlayerId[] {
@@ -1358,13 +1336,6 @@ function getPlacedCards(): TravelCardData[] {
   return getPlacedCardsFromSlots(getBoardSlots());
 }
 
-function calculateScoreBreakdown(): ScoreBreakdown {
-  return calculateScoreBreakdownFromCards({
-    placedCards: getCurrentDayPlacedCards(),
-    getBoardDisplayName,
-  });
-}
-
 function stopSimulationReplayTimer() {
   if (state.simulationReplayTimerId !== null) {
     window.clearInterval(state.simulationReplayTimerId);
@@ -1450,37 +1421,6 @@ function calculateSimulationResult(): SimulationResult {
   });
 }
 
-export function getCurrentScoreBreakdown(): ScoreBreakdown {
-  if (!state.simulationResult) {
-    return calculateScoreBreakdown();
-  }
-
-  return {
-    baseVP: state.simulationResult.baseVP,
-    bonusVP: state.simulationResult.bonusVP,
-    totalVP: state.simulationResult.finalVP,
-    spentCoin: state.simulationResult.spentCoin,
-    spentStamina: state.simulationResult.spentStamina +
-      getSimulationEventStaminaPenalty(state.simulationResult),
-    usedSlots: state.simulationResult.usedSlots,
-    lines: state.simulationResult.lines,
-  };
-}
-
-function getBoardTotals(): BoardTotals {
-  const breakdown = state.simulationResult
-    ? getCurrentScoreBreakdown()
-    : calculateScoreBreakdown();
-
-  return {
-    // Điểm chỉ cộng vào tổng sau khi replay ngày hiện tại chạy xong.
-    vp: state.accumulatedVP,
-    coin: breakdown.spentCoin,
-    stamina: breakdown.spentStamina,
-    usedSlots: breakdown.usedSlots,
-  };
-}
-
 function getPlayersLeft() {
   const totals = getBoardTotals();
 
@@ -1515,39 +1455,6 @@ function getPlayersRight() {
         : player.usedSlots,
     };
   });
-}
-
-export function getRemainingResources() {
-  /*
-    Online phải lấy trực tiếp coin/stamina từ server state.
-    Trước đó hàm này vẫn tính STARTING - cost trên board nên discard ở server đã cộng tài nguyên
-    nhưng UI orb không đổi.
-  */
-  if (isOnlineRoomActive()) {
-    const onlineSelf = getOnlineSelfPublicPlayer();
-
-    if (onlineSelf) {
-      return {
-        coin: onlineSelf.coin,
-        stamina: onlineSelf.stamina,
-      };
-    }
-  }
-
-  const remaining = getRemainingResourcesFromTotals({
-    totals: getBoardTotals(),
-    startingCoin: STARTING_COIN,
-    startingStamina: STARTING_STAMINA,
-  });
-
-  return {
-    coin: remaining.coin +
-      state.discardedResourceBonus.coin +
-      state.eventResourceModifier.coin,
-    stamina: remaining.stamina +
-      state.discardedResourceBonus.stamina +
-      state.eventResourceModifier.stamina,
-  };
 }
 
 function getCardAffordability(card: TravelCardData) {
@@ -5188,7 +5095,9 @@ function getSimulationEventResourceModifier(result: SimulationResult | null) {
   );
 }
 
-function getSimulationEventStaminaPenalty(result: SimulationResult | null) {
+export function getSimulationEventStaminaPenalty(
+  result: SimulationResult | null,
+) {
   const modifier = getSimulationEventResourceModifier(result);
 
   return Math.abs(Math.min(0, modifier.stamina));

@@ -1,7 +1,10 @@
 import { state } from "../state/gameState.js";
 import { onlineClientState } from "../online/socketClient.js";
 import { days } from "../game/constants.js";
-import { getOnlineSelfPublicPlayer, isOnlineRoomActive } from "../app.js";
+import {
+  getOnlineSelfPublicPlayer,
+  isOnlineRoomActive,
+} from "../game/queries.js";
 
 function getCurrentDayLabel() {
   return `Ngày ${days[state.currentDayIndex]}`;

@@ -8,7 +8,7 @@ import {
   getDisplayPlayerName,
   getRemainingResources,
   isOnlineRoomActive,
-} from "../app.js";
+} from "../game/queries.js";
 
 const CERTIFICATE_HISTORY_STORAGE_KEY = "travel_board_certificate_history";
 
