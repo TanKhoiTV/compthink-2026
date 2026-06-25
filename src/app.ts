@@ -131,7 +131,6 @@ import type { AppScreen } from "./types.js";
 
 import {
   applyLobbyBackground,
-  renderAuthScreen,
   renderOnlineEntryScreen,
   renderOnlineLobbyRoomScreen,
   renderOnlineRoomMenu,
@@ -721,9 +720,6 @@ function canCurrentPlayerStartRoom() {
     connectedPlayers.every((player) => player.isReady)
   );
 }
-
-
-
 
 function getOnlinePlayerBoard(playerId?: PlayerId) {
   return getOnlinePlayer(playerId)?.board ?? null;
@@ -7663,7 +7659,6 @@ function setupInGameMusicDelegation() {
 (window as any).toggleInGameBackgroundMusic = toggleInGameBackgroundMusic;
 (window as any).setInGameBackgroundMusicVolume = setInGameBackgroundMusicVolume;
 
-
 function renderSidePlayerSpacers(count: number) {
   return Array.from({ length: Math.max(0, count) }, () => {
     return `<section class="side-player side-player--empty-spacer" aria-hidden="true"></section>`;
@@ -7837,10 +7832,6 @@ function transitionToScreen(newScreen: AppScreen) {
   alert("Chế độ chơi offline (Bot) đang được phát triển!");
 };
 
-
-
-
-
 function triggerCinematicLobbyToGameTransition() {
   console.log("TRIGGERING CINEMATIC TRANSITION!");
   state.isCinematicTransitioning = true;
@@ -7955,8 +7946,6 @@ function triggerCinematicLobbyToGameTransition() {
   }, 400);
 }
 
-
-
 function renderWithGlobalOverlays(content: string) {
   return `${content}${renderOnboardingModal()}`;
 }
@@ -7981,12 +7970,12 @@ function renderGameShell() {
 
   if (onlineClientState.roomState?.phase === "lobby") {
     return renderWithGlobalOverlays(renderOnlineLobbyRoomScreen(
-    onlineClientState.roomState,
-    getOnlineSelfPublicPlayer(),
-    onlineClientState.playerId,
-    canCurrentPlayerStartRoom(),
-    playerIds,
-  ));
+      onlineClientState.roomState,
+      getOnlineSelfPublicPlayer(),
+      onlineClientState.playerId,
+      canCurrentPlayerStartRoom(),
+      playerIds,
+    ));
   }
 
   const leftPlayers = getLeftSidePlayersToRender();
@@ -7995,12 +7984,14 @@ function renderGameShell() {
   return renderWithGlobalOverlays(`
     <div class="game-shell">
       ${renderSaigonCollageBackground()}
-      ${renderOnlineRoomMenu({
-    isRoomActive: isOnlineRoomActive(),
-    roomId: onlineClientState.roomId,
-    roomPhase: onlineClientState.roomState?.phase,
-    renderInGameMusicControl,
-  })}
+      ${
+    renderOnlineRoomMenu({
+      isRoomActive: isOnlineRoomActive(),
+      roomId: onlineClientState.roomId,
+      roomPhase: onlineClientState.roomState?.phase,
+      renderInGameMusicControl,
+    })
+  }
       ${renderMidGameRankingModal()}
       ${renderDebtTokenModal()}
 
@@ -8027,7 +8018,11 @@ function rerenderGameShell() {
 
   syncOnboardingAutoOpen(authClientState.isReady);
   app.innerHTML = renderGameShell();
-  applyLobbyBackground(app, isOnlineRoomActive(), onlineClientState.roomState?.phase);
+  applyLobbyBackground(
+    app,
+    isOnlineRoomActive(),
+    onlineClientState.roomState?.phase,
+  );
   setupSaigonCollageHover();
   syncInGameBackgroundMusic();
   initDashboardHub();

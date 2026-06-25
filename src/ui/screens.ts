@@ -1,5 +1,11 @@
-import { authClientState, getSavedOnlineSession } from "../online/socketClient.js";
-import type { OnlineRoomState, PlayerPublicState } from "../online/socketClient.js";
+import {
+  authClientState,
+  getSavedOnlineSession,
+} from "../online/socketClient.js";
+import type {
+  OnlineRoomState,
+  PlayerPublicState,
+} from "../online/socketClient.js";
 import type { PlayerId } from "../types.js";
 
 // ──────────────────────────────────────────
@@ -234,7 +240,8 @@ export function renderOnlineEntryScreen() {
           <p>Tạo phòng, mời bạn bè bằng mã phòng, rồi bắt đầu khi mọi người sẵn sàng.</p>
           <p class="online-entry-card__welcome">
             Xin chào, <strong>${
-    authClientState.user?.displayName ?? authClientState.user?.username ??
+    authClientState.user?.displayName ??
+      authClientState.user?.username ??
       "Nhà Lữ Hành"
   }</strong>
           </p>
@@ -350,7 +357,7 @@ export function renderOnlineLobbyRoomScreen(
             <strong>${playerDisplayName}</strong>
             <span>${
         player.isConnected
-          ? (player.isReady ? "Sẵn sàng" : "Chưa sẵn sàng")
+          ? player.isReady ? "Sẵn sàng" : "Chưa sẵn sàng"
           : player.hasJoined
           ? "Đã offline • giữ slot"
           : "Trống"
