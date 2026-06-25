@@ -1,6 +1,14 @@
 import type { PlayerId, RoomState } from "./types.js";
-import { finishDraftRound, startDraftForCurrentDay, DRAFT_PICK_SECONDS } from "./draftEngine.js";
-import { PLAYER_IDS, createEmptyBoard, createServerDeck } from "./gameEngine.js";
+import {
+  DRAFT_PICK_SECONDS,
+  finishDraftRound,
+  startDraftForCurrentDay,
+} from "./draftEngine.js";
+import {
+  createEmptyBoard,
+  createServerDeck,
+  PLAYER_IDS,
+} from "./gameEngine.js";
 
 export const SIMULATION_SECONDS = 6;
 const RESULT_SECONDS = 3;
@@ -13,7 +21,7 @@ type ServerScanEventResult = {
 };
 
 const SERVER_CARD_LOOKUP = new Map(
-  createServerDeck().map((card) => [card.id, card])
+  createServerDeck().map((card) => [card.id, card]),
 );
 
 function hashStringToUnit(input: string): number {
@@ -27,7 +35,11 @@ function hashStringToUnit(input: string): number {
   return (hash >>> 0) / 4294967295;
 }
 
-function getRandomScanEventDelta(cardId: string, dayIndex: number, rowIndex: number): ServerScanEventResult {
+function getRandomScanEventDelta(
+  cardId: string,
+  dayIndex: number,
+  rowIndex: number,
+): ServerScanEventResult {
   const roll = hashStringToUnit(`${cardId}|${dayIndex}|${rowIndex}|scan-event`);
 
   if (roll >= 0.15) {
@@ -37,7 +49,9 @@ function getRandomScanEventDelta(cardId: string, dayIndex: number, rowIndex: num
     };
   }
 
-  const eventRoll = hashStringToUnit(`${cardId}|${dayIndex}|${rowIndex}|event-type`);
+  const eventRoll = hashStringToUnit(
+    `${cardId}|${dayIndex}|${rowIndex}|event-type`,
+  );
 
   if (eventRoll < 1 / 3) {
     return {
@@ -59,7 +73,12 @@ function getRandomScanEventDelta(cardId: string, dayIndex: number, rowIndex: num
   };
 }
 
-function getPseudoDistanceKm(previousCardId: string, currentCardId: string, dayIndex: number, rowIndex: number) {
+function getPseudoDistanceKm(
+  previousCardId: string,
+  currentCardId: string,
+  dayIndex: number,
+  rowIndex: number,
+) {
   const previousCard = SERVER_CARD_LOOKUP.get(previousCardId);
   const currentCard = SERVER_CARD_LOOKUP.get(currentCardId);
 
@@ -69,10 +88,18 @@ function getPseudoDistanceKm(previousCardId: string, currentCardId: string, dayI
     - Cùng city: 4-16km, không phạt.
   */
   if (previousCard && currentCard && previousCard.city !== currentCard.city) {
-    return 22 + Math.round(hashStringToUnit(`${previousCardId}|${currentCardId}|distance`) * 18);
+    return 22 +
+      Math.round(
+        hashStringToUnit(`${previousCardId}|${currentCardId}|distance`) * 18,
+      );
   }
 
-  return 4 + Math.round(hashStringToUnit(`${previousCardId}|${currentCardId}|same-city|${dayIndex}|${rowIndex}`) * 12);
+  return 4 +
+    Math.round(
+      hashStringToUnit(
+        `${previousCardId}|${currentCardId}|same-city|${dayIndex}|${rowIndex}`,
+      ) * 12,
+    );
 }
 
 function getCurrentDayComboBonus(state: RoomState, playerId: PlayerId) {
@@ -102,7 +129,10 @@ function getCurrentDayComboBonus(state: RoomState, playerId: PlayerId) {
   return bonus;
 }
 
-function getCurrentDaySimulationDelta(state: RoomState, playerId: PlayerId): ServerScanEventResult {
+function getCurrentDaySimulationDelta(
+  state: RoomState,
+  playerId: PlayerId,
+): ServerScanEventResult {
   const player = state.players[playerId];
   const dayIndex = state.dayIndex;
 
@@ -137,7 +167,12 @@ function getCurrentDaySimulationDelta(state: RoomState, playerId: PlayerId): Ser
       Nếu distance > 20km thì -30VP và không roll random event cho ô đó.
     */
     if (previousCardId) {
-      const distanceKm = getPseudoDistanceKm(previousCardId, cell.cardId, dayIndex, rowIndex);
+      const distanceKm = getPseudoDistanceKm(
+        previousCardId,
+        cell.cardId,
+        dayIndex,
+        rowIndex,
+      );
 
       if (distanceKm > 20) {
         totalVp -= 30;

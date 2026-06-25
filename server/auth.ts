@@ -25,8 +25,8 @@ const DATA_DIR = path.join(__dirname, "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PASSWORD_ITERATIONS = 120_000;
-const AUTH_SECRET =
-  process.env.AUTH_SECRET ?? "dev-secret-change-me-before-deploying-online";
+const AUTH_SECRET = process.env.AUTH_SECRET ??
+  "dev-secret-change-me-before-deploying-online";
 
 function ensureUsersFile() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -34,7 +34,11 @@ function ensureUsersFile() {
   }
 
   if (!fs.existsSync(USERS_FILE)) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify({ users: [] }, null, 2), "utf-8");
+    fs.writeFileSync(
+      USERS_FILE,
+      JSON.stringify({ users: [] }, null, 2),
+      "utf-8",
+    );
   }
 }
 
@@ -86,7 +90,7 @@ function verifyPassword(password: string, passwordHash: string) {
 
   return crypto.timingSafeEqual(
     Buffer.from(actualHash, "hex"),
-    Buffer.from(expectedHash, "hex")
+    Buffer.from(expectedHash, "hex"),
   );
 }
 
@@ -110,7 +114,7 @@ function signTokenPayload(encodedHeader: string, encodedPayload: string) {
     crypto
       .createHmac("sha256", AUTH_SECRET)
       .update(`${encodedHeader}.${encodedPayload}`)
-      .digest()
+      .digest(),
   );
 }
 
@@ -145,7 +149,7 @@ export function verifyAuthToken(token?: string | null): AuthUser | null {
   if (
     !crypto.timingSafeEqual(
       Buffer.from(signature),
-      Buffer.from(expectedSignature)
+      Buffer.from(expectedSignature),
     )
   ) {
     return null;
@@ -180,7 +184,7 @@ function findUserByUsername(username: string) {
 
   return (
     readUsersDatabase().users.find(
-      (user) => normalizeUsername(user.username) === normalizedUsername
+      (user) => normalizeUsername(user.username) === normalizedUsername,
     ) ?? null
   );
 }
@@ -203,7 +207,9 @@ export function registerUser(payload: {
 
   const database = readUsersDatabase();
 
-  if (database.users.some((user) => normalizeUsername(user.username) === username)) {
+  if (
+    database.users.some((user) => normalizeUsername(user.username) === username)
+  ) {
     throw new Error("Username này đã tồn tại.");
   }
 
@@ -253,7 +259,7 @@ function getBearerToken(request: http.IncomingMessage) {
 function sendJson(
   response: http.ServerResponse,
   statusCode: number,
-  payload: unknown
+  payload: unknown,
 ) {
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -278,7 +284,7 @@ async function readJsonBody<T>(request: http.IncomingMessage): Promise<T> {
 
 export async function handleAuthHttpRequest(
   request: http.IncomingMessage,
-  response: http.ServerResponse
+  response: http.ServerResponse,
 ): Promise<boolean> {
   const requestUrl = new URL(request.url ?? "/", "http://localhost");
 
@@ -317,7 +323,9 @@ export async function handleAuthHttpRequest(
       const user = verifyAuthToken(getBearerToken(request));
 
       if (!user) {
-        sendJson(response, 401, { message: "Chưa đăng nhập hoặc token hết hạn." });
+        sendJson(response, 401, {
+          message: "Chưa đăng nhập hoặc token hết hạn.",
+        });
         return true;
       }
 
@@ -329,7 +337,9 @@ export async function handleAuthHttpRequest(
     return true;
   } catch (error) {
     sendJson(response, 400, {
-      message: error instanceof Error ? error.message : "Auth request không hợp lệ.",
+      message: error instanceof Error
+        ? error.message
+        : "Auth request không hợp lệ.",
     });
     return true;
   }

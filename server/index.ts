@@ -16,8 +16,8 @@ import {
   leaveRoom,
   payDebtTokenOnBoard,
   placeCardOnPlayerBoard,
-  returnBoardCardToPlayerHand,
   reconnectRoom,
+  returnBoardCardToPlayerHand,
   setPlayerReady,
   startGame,
 } from "./rooms.js";
@@ -44,7 +44,7 @@ const socketRoomIds = new Map<string, string>();
 function bindSocketPlayer(
   socket: { id: string; join: (room: string) => void },
   payload: { roomId: string; playerId: PlayerId },
-  state: RoomState
+  state: RoomState,
 ): PlayerId | null {
   const mappedPlayerId = socketPlayerIds.get(socket.id);
   const playerId = mappedPlayerId ?? payload.playerId;
@@ -135,14 +135,18 @@ io.on("connection", (socket) => {
     const state = rooms.get(roomId);
 
     if (!state) {
-      socket.emit("game:error", { message: "Không tìm thấy phòng để reconnect." });
+      socket.emit("game:error", {
+        message: "Không tìm thấy phòng để reconnect.",
+      });
       return;
     }
 
     const reconnectedPlayerId = reconnectRoom(state, { playerId, playerName });
 
     if (!reconnectedPlayerId) {
-      socket.emit("game:error", { message: "Không tìm thấy người chơi để reconnect." });
+      socket.emit("game:error", {
+        message: "Không tìm thấy người chơi để reconnect.",
+      });
       return;
     }
 
@@ -338,7 +342,9 @@ io.on("connection", (socket) => {
     const playerId = bindSocketPlayer(socket, payload, state);
 
     if (!playerId) {
-      socket.emit("game:error", { message: "Người chơi chưa kết nối hoặc không hợp lệ." });
+      socket.emit("game:error", {
+        message: "Người chơi chưa kết nối hoặc không hợp lệ.",
+      });
       return;
     }
 

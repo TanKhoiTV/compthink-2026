@@ -1,7 +1,11 @@
-import type { PlayerId, PublicBoardCell, RoomState, ServerTravelCardData } from "./types.js";
+import type {
+  PlayerId,
+  PublicBoardCell,
+  RoomState,
+  ServerTravelCardData,
+} from "./types.js";
 import { phase1Cards } from "../src/data/cards.phase1.js";
 import { mapGameCardToTravelCard } from "../src/data/cardMapper.js";
-
 
 type ServerCardEffect = {
   has_effect: boolean;
@@ -57,16 +61,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "☕",
-    "description": "Trải nghiệm vỉa hè chuẩn Sài Gòn. Thức uống siêu rẻ nhưng bạn phải đánh cược với thời tiết nắng mưa bất chợt.",
+    "description":
+      "Trải nghiệm vỉa hè chuẩn Sài Gòn. Thức uống siêu rẻ nhưng bạn phải đánh cược với thời tiết nắng mưa bất chợt.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_002",
@@ -84,16 +89,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍽️",
-    "description": "Tụ điểm hóng gió lý tưởng nhưng khói bụi giao thông là điều không thể tránh khỏi.",
+    "description":
+      "Tụ điểm hóng gió lý tưởng nhưng khói bụi giao thông là điều không thể tránh khỏi.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_003",
@@ -111,16 +117,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "☕",
-    "description": "Hương vị thời gian đọng lại trong quán cà phê vợt lâu đời nhất thành phố. Yên bình, rẻ và an toàn tuyệt đối.",
+    "description":
+      "Hương vị thời gian đọng lại trong quán cà phê vợt lâu đời nhất thành phố. Yên bình, rẻ và an toàn tuyệt đối.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_004",
@@ -138,16 +145,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍜",
-    "description": "Chén phá lấu đỏ au, thơm lừng nước cốt dừa ăn kèm bánh mì nóng giòn. Ngồi ghế súp vỉa hè ngắm xe cộ qua lại đúng chất dân chơi Quận 4.",
+    "description":
+      "Chén phá lấu đỏ au, thơm lừng nước cốt dừa ăn kèm bánh mì nóng giòn. Ngồi ghế súp vỉa hè ngắm xe cộ qua lại đúng chất dân chơi Quận 4.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_005",
@@ -165,16 +173,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍜",
-    "description": "Chén súp nóng hổi, đặc ruột cạnh ngôi chợ hồng biểu tượng. Cứu đói nhanh gọn cho hành trình dài.",
+    "description":
+      "Chén súp nóng hổi, đặc ruột cạnh ngôi chợ hồng biểu tượng. Cứu đói nhanh gọn cho hành trình dài.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_006",
@@ -192,16 +201,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🥖",
-    "description": "Ổ bánh mì nặng trịch pate, ăn một nửa cũng đủ no. Đổi lại, bạn phải kiên nhẫn xếp hàng mua mang đi.",
+    "description":
+      "Ổ bánh mì nặng trịch pate, ăn một nửa cũng đủ no. Đổi lại, bạn phải kiên nhẫn xếp hàng mua mang đi.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_007",
@@ -219,16 +229,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍽️",
-    "description": "Thiên đường ăn vặt và mùi hoa tươi đan xen. Ăn no căng bụng nhưng rã rời đôi chân vì chen lấn.",
+    "description":
+      "Thiên đường ăn vặt và mùi hoa tươi đan xen. Ăn no căng bụng nhưng rã rời đôi chân vì chen lấn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_008",
@@ -246,16 +257,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "☕",
-    "description": "Trạm nghỉ chân hoài cổ nhìn ra phố đi bộ hiện đại. Nơi trú mưa hoàn hảo giữa lịch trình cạn kiệt.",
+    "description":
+      "Trạm nghỉ chân hoài cổ nhìn ra phố đi bộ hiện đại. Nơi trú mưa hoàn hảo giữa lịch trình cạn kiệt.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_009",
@@ -273,16 +285,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍽️",
-    "description": "Tiếng gọi món rôm rả cả góc phố người Hoa. Nằm xa trung tâm nên hãy cẩn thận bẫy khoảng cách di chuyển.",
+    "description":
+      "Tiếng gọi món rôm rả cả góc phố người Hoa. Nằm xa trung tâm nên hãy cẩn thận bẫy khoảng cách di chuyển.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_010",
@@ -300,7 +313,7 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
     "description": "Miếng sườn nướng than to bằng cái đĩa. Trải nghiệm no nê.",
@@ -308,8 +321,8 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_011",
@@ -327,16 +340,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍽️",
-    "description": "Mùi bơ tỏi và mỡ hành nức mũi. Đại diện xuất sắc nhất cho văn hóa ăn ốc của giới trẻ thành phố.",
+    "description":
+      "Mùi bơ tỏi và mỡ hành nức mũi. Đại diện xuất sắc nhất cho văn hóa ăn ốc của giới trẻ thành phố.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_012",
@@ -354,16 +368,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Tiệm bánh xèo miền Nam truyền thống ẩn trong hẻm. Vừa giòn.",
+    "description":
+      "Tiệm bánh xèo miền Nam truyền thống ẩn trong hẻm. Vừa giòn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_013",
@@ -381,16 +396,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Chè trứng gà trà, chè mè đen trứ danh. Điểm chốt ngọt ngào sau chuyến khám phá văn hóa phố Tàu.",
+    "description":
+      "Chè trứng gà trà, chè mè đen trứ danh. Điểm chốt ngọt ngào sau chuyến khám phá văn hóa phố Tàu.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_014",
@@ -408,16 +424,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍜",
-    "description": "Biểu tượng Phở miền Nam nổi tiếng với khách quốc tế. Không gian lịch sự, giá cao nhưng trải nghiệm tròn trịa.",
+    "description":
+      "Biểu tượng Phở miền Nam nổi tiếng với khách quốc tế. Không gian lịch sự, giá cao nhưng trải nghiệm tròn trịa.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_015",
@@ -435,16 +452,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍜",
-    "description": "Nồi lẩu chua lá giang sôi sùng sục cùng cá kèo tươi rói. Biểu tượng nhậu lai rai cực kỳ bén mồi của người miền Nam.",
+    "description":
+      "Nồi lẩu chua lá giang sôi sùng sục cùng cá kèo tươi rói. Biểu tượng nhậu lai rai cực kỳ bén mồi của người miền Nam.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_016",
@@ -462,16 +480,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Những món ăn thuần Việt được nâng tầm tinh tế. Không gian hoài cổ với chén sành, đũa tre, mang lại lượng điểm ổn định giữa lòng Quận 1.",
+    "description":
+      "Những món ăn thuần Việt được nâng tầm tinh tế. Không gian hoài cổ với chén sành, đũa tre, mang lại lượng điểm ổn định giữa lòng Quận 1.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_017",
@@ -489,16 +508,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Bữa sáng xa xỉ kiểu Quảng Đông. Đánh đổi số tiền lớn để thu về lượng điểm khổng lồ ngay từ lúc bình minh.",
+    "description":
+      "Bữa sáng xa xỉ kiểu Quảng Đông. Đánh đổi số tiền lớn để thu về lượng điểm khổng lồ ngay từ lúc bình minh.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_018",
@@ -516,16 +536,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Không gian thiền tịnh, thức ăn thanh lọc. Mọi muộn phiền tan biến, cơ thể bạn được hồi phục sinh lực hoàn toàn.",
+    "description":
+      "Không gian thiền tịnh, thức ăn thanh lọc. Mọi muộn phiền tan biến, cơ thể bạn được hồi phục sinh lực hoàn toàn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_019",
@@ -543,16 +564,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "ACTION"
+      "ACTION",
     ],
     "icon": "🍽️",
-    "description": "Thưởng thức bít tết và rượu vang trôi dọc dòng sông rực sáng ánh đèn. Trải nghiệm đắt đỏ nhưng xứng đáng từng đồng.",
+    "description":
+      "Thưởng thức bít tết và rượu vang trôi dọc dòng sông rực sáng ánh đèn. Trải nghiệm đắt đỏ nhưng xứng đáng từng đồng.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_020",
@@ -570,16 +592,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Bữa ăn trên đỉnh bầu trời Sài Gòn. Bạn đốt ngót nghét 60% ngân sách khởi điểm để giáng đòn chí mạng về điểm số.",
+    "description":
+      "Bữa ăn trên đỉnh bầu trời Sài Gòn. Bạn đốt ngót nghét 60% ngân sách khởi điểm để giáng đòn chí mạng về điểm số.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_021",
@@ -597,16 +620,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Mâm cơm quê mộc mạc với trứng chiên, canh chua nhưng được phục vụ trong không gian sang trọng bậc nhất. Trải nghiệm tìm về tuổi thơ nhưng với một cái giá của người trưởng thành.",
+    "description":
+      "Mâm cơm quê mộc mạc với trứng chiên, canh chua nhưng được phục vụ trong không gian sang trọng bậc nhất. Trải nghiệm tìm về tuổi thơ nhưng với một cái giá của người trưởng thành.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_022",
@@ -624,16 +648,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍽️",
-    "description": "Thức uống giải nhiệt huyền thoại dưới những tán cây cổ thụ. Rẻ, mát lạnh nhưng bạn phải đứng uống giữa khói bụi dòng xe qua lại.",
+    "description":
+      "Thức uống giải nhiệt huyền thoại dưới những tán cây cổ thụ. Rẻ, mát lạnh nhưng bạn phải đứng uống giữa khói bụi dòng xe qua lại.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_023",
@@ -651,16 +676,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Đĩa bột chiên giòn rụm với trứng và đu đủ ngâm chua. Nằm sâu trong khu người Hoa, giá rẻ và an toàn tuyệt đối khỏi những cơn mưa.",
+    "description":
+      "Đĩa bột chiên giòn rụm với trứng và đu đủ ngâm chua. Nằm sâu trong khu người Hoa, giá rẻ và an toàn tuyệt đối khỏi những cơn mưa.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_024",
@@ -678,16 +704,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍽️",
-    "description": "Gói xôi thập cẩm bọc lá chuối chắc nịch đầy lạp xưởng và chà bông. Bữa sáng quốc dân cung cấp năng lượng tức thì để bắt đầu ngày mới.",
+    "description":
+      "Gói xôi thập cẩm bọc lá chuối chắc nịch đầy lạp xưởng và chà bông. Bữa sáng quốc dân cung cấp năng lượng tức thì để bắt đầu ngày mới.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_025",
@@ -705,16 +732,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🍜",
-    "description": "Nồi lẩu khói nghi ngút bên vỉa hè sầm uất. Ngon rẻ và rất dễ để tụ tập nối Combo với bạn bè vào buổi tối muộn.",
+    "description":
+      "Nồi lẩu khói nghi ngút bên vỉa hè sầm uất. Ngon rẻ và rất dễ để tụ tập nối Combo với bạn bè vào buổi tối muộn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_026",
@@ -732,16 +760,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Hương vị thịt nướng sả ướp đậm đà lan tỏa cả góc phố. Một lựa chọn cực kỳ chắc bụng, miễn nhiễm với thời tiết xấu.",
+    "description":
+      "Hương vị thịt nướng sả ướp đậm đà lan tỏa cả góc phố. Một lựa chọn cực kỳ chắc bụng, miễn nhiễm với thời tiết xấu.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_027",
@@ -759,16 +788,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Một trong những tiệm ốc chất lượng nhất. Bạn được ăn ngon, an toàn nhưng phải chầu chực xếp hàng lấy số đến mức hao mòn thể lực.",
+    "description":
+      "Một trong những tiệm ốc chất lượng nhất. Bạn được ăn ngon, an toàn nhưng phải chầu chực xếp hàng lấy số đến mức hao mòn thể lực.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_028",
@@ -786,16 +816,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Chén tàu hũ truyền thống kết hợp topping hiện đại. Khuất bóng ở khu phố ẩm thực sầm uất, là trạm nghỉ chân ngọt ngào và mát lạnh.",
+    "description":
+      "Chén tàu hũ truyền thống kết hợp topping hiện đại. Khuất bóng ở khu phố ẩm thực sầm uất, là trạm nghỉ chân ngọt ngào và mát lạnh.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_029",
@@ -813,16 +844,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍜",
-    "description": "Thưởng thức cua Cà Mau chắc thịt trong không gian máy lạnh. Tốn kém nhưng lại mang đến lượng VP khổng lồ vô cùng an toàn.",
+    "description":
+      "Thưởng thức cua Cà Mau chắc thịt trong không gian máy lạnh. Tốn kém nhưng lại mang đến lượng VP khổng lồ vô cùng an toàn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_FOOD_030",
@@ -840,16 +872,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Ẩm thực",
     "tags": [
       "FOOD",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🍽️",
-    "description": "Bữa ăn tuyệt mật hoàn toàn trong bóng tối, được phục vụ bởi người khiếm thị. Trải nghiệm ẩm thực thức tỉnh mọi giác quan khiến tâm trí bạn kiệt sức nhưng ấn tượng sâu sắc.",
+    "description":
+      "Bữa ăn tuyệt mật hoàn toàn trong bóng tối, được phục vụ bởi người khiếm thị. Trải nghiệm ẩm thực thức tỉnh mọi giác quan khiến tâm trí bạn kiệt sức nhưng ấn tượng sâu sắc.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "DEDUCT_LA",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_UTIL_001",
@@ -867,16 +900,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏧",
-    "description": "Ngân sách cạn kiệt, bạn rảo bộ tìm bốt ATM để tiếp tế đạn dược. Mỏi chân đôi chút nhưng ví tiền lại rủng rỉnh.",
+    "description":
+      "Ngân sách cạn kiệt, bạn rảo bộ tìm bốt ATM để tiếp tế đạn dược. Mỏi chân đôi chút nhưng ví tiền lại rủng rỉnh.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_XU",
-      "effect_value": 2
-    }
+      "effect_value": 2,
+    },
   },
   {
     "id": "SG_UTIL_002",
@@ -894,16 +928,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏧",
-    "description": "Ngân sách cạn kiệt, bạn rảo bộ tìm bốt ATM để tiếp tế đạn dược. Mỏi chân đôi chút nhưng ví tiền lại rủng rỉnh.",
+    "description":
+      "Ngân sách cạn kiệt, bạn rảo bộ tìm bốt ATM để tiếp tế đạn dược. Mỏi chân đôi chút nhưng ví tiền lại rủng rỉnh.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_XU",
-      "effect_value": 2
-    }
+      "effect_value": 2,
+    },
   },
   {
     "id": "SG_UTIL_003",
@@ -921,16 +956,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🛵",
-    "description": "Chớp được mã gọi xe giá hời trên ứng dụng. Ngồi ô tô máy lạnh cho phép bạn nhảy cóc đến bất cứ đâu mà không lo mỏi chân.",
+    "description":
+      "Chớp được mã gọi xe giá hời trên ứng dụng. Ngồi ô tô máy lạnh cho phép bạn nhảy cóc đến bất cứ đâu mà không lo mỏi chân.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "IGNORE_DISTANCE_NEXT",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_UTIL_004",
@@ -948,16 +984,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🛵",
-    "description": "Chớp được mã gọi xe giá hời trên ứng dụng. Ngồi ô tô máy lạnh cho phép bạn nhảy cóc đến bất cứ đâu mà không lo mỏi chân.",
+    "description":
+      "Chớp được mã gọi xe giá hời trên ứng dụng. Ngồi ô tô máy lạnh cho phép bạn nhảy cóc đến bất cứ đâu mà không lo mỏi chân.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "IGNORE_DISTANCE_NEXT",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_UTIL_005",
@@ -976,16 +1013,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "UTILITY",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎟️",
-    "description": "Thu thập được một mã khuyến mãi chớp nhoáng. Thẻ này sẽ giúp bạn giảm đáng kể chi phí cho hoạt động đắt đỏ tiếp theo.",
+    "description":
+      "Thu thập được một mã khuyến mãi chớp nhoáng. Thẻ này sẽ giúp bạn giảm đáng kể chi phí cho hoạt động đắt đỏ tiếp theo.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "DISCOUNT_XU_NEXT",
-      "effect_value": 2
-    }
+      "effect_value": 2,
+    },
   },
   {
     "id": "SG_UTIL_006",
@@ -1004,16 +1042,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "UTILITY",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎟️",
-    "description": "Thu thập được một mã khuyến mãi chớp nhoáng. Thẻ này sẽ giúp bạn giảm đáng kể chi phí cho hoạt động đắt đỏ tiếp theo.",
+    "description":
+      "Thu thập được một mã khuyến mãi chớp nhoáng. Thẻ này sẽ giúp bạn giảm đáng kể chi phí cho hoạt động đắt đỏ tiếp theo.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "DISCOUNT_XU_NEXT",
-      "effect_value": 2
-    }
+      "effect_value": 2,
+    },
   },
   {
     "id": "SG_UTIL_007",
@@ -1031,16 +1070,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🛵",
-    "description": "Quét mã thuê một chiếc xe đạp để băng qua dòng xe kẹt cứng. Né được thuật toán trừ điểm khoảng cách nhưng bạn sẽ toát mồ hôi hột.",
+    "description":
+      "Quét mã thuê một chiếc xe đạp để băng qua dòng xe kẹt cứng. Né được thuật toán trừ điểm khoảng cách nhưng bạn sẽ toát mồ hôi hột.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "IGNORE_DISTANCE_NEXT",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_UTIL_008",
@@ -1058,16 +1098,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🛵",
-    "description": "Quét mã thuê một chiếc xe đạp để băng qua dòng xe kẹt cứng. Né được thuật toán trừ điểm khoảng cách nhưng bạn sẽ toát mồ hôi hột.",
+    "description":
+      "Quét mã thuê một chiếc xe đạp để băng qua dòng xe kẹt cứng. Né được thuật toán trừ điểm khoảng cách nhưng bạn sẽ toát mồ hôi hột.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "IGNORE_DISTANCE_NEXT",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_UTIL_009",
@@ -1085,16 +1126,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🧰",
-    "description": "Ngâm chân thảo mộc và ấn huyệt chuyên sâu. Một khoản đầu tư xứng đáng để đôi chân được hồi sinh sau chuỗi ngày cuốc bộ rã rời.",
+    "description":
+      "Ngâm chân thảo mộc và ấn huyệt chuyên sâu. Một khoản đầu tư xứng đáng để đôi chân được hồi sinh sau chuỗi ngày cuốc bộ rã rời.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_LA",
-      "effect_value": 3
-    }
+      "effect_value": 3,
+    },
   },
   {
     "id": "SG_UTIL_010",
@@ -1112,16 +1154,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🧰",
-    "description": "Ngâm chân thảo mộc và ấn huyệt chuyên sâu. Một khoản đầu tư xứng đáng để đôi chân được hồi sinh sau chuỗi ngày cuốc bộ rã rời.",
+    "description":
+      "Ngâm chân thảo mộc và ấn huyệt chuyên sâu. Một khoản đầu tư xứng đáng để đôi chân được hồi sinh sau chuỗi ngày cuốc bộ rã rời.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_LA",
-      "effect_value": 3
-    }
+      "effect_value": 3,
+    },
   },
   {
     "id": "SG_UTIL_011",
@@ -1139,16 +1182,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🧰",
-    "description": "Đẩy cửa bước vào, luồng khí lạnh phả vào mặt lập tức xua tan cái nóng. Mua tạm chai nước suối và đứng hưởng sái điều hòa.",
+    "description":
+      "Đẩy cửa bước vào, luồng khí lạnh phả vào mặt lập tức xua tan cái nóng. Mua tạm chai nước suối và đứng hưởng sái điều hòa.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_LA",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_UTIL_012",
@@ -1166,16 +1210,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🧰",
-    "description": "Đẩy cửa bước vào, luồng khí lạnh phả vào mặt lập tức xua tan cái nóng. Mua tạm chai nước suối và đứng hưởng sái điều hòa.",
+    "description":
+      "Đẩy cửa bước vào, luồng khí lạnh phả vào mặt lập tức xua tan cái nóng. Mua tạm chai nước suối và đứng hưởng sái điều hòa.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_LA",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_UTIL_013",
@@ -1193,16 +1238,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🧰",
-    "description": "Đắm chìm trong hương sả chanh và những động tác xoa bóp điêu luyện. Trải nghiệm thư giãn đặc sản này giúp bạn rũ bỏ mọi mệt mỏi.",
+    "description":
+      "Đắm chìm trong hương sả chanh và những động tác xoa bóp điêu luyện. Trải nghiệm thư giãn đặc sản này giúp bạn rũ bỏ mọi mệt mỏi.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_LA",
-      "effect_value": 2
-    }
+      "effect_value": 2,
+    },
   },
   {
     "id": "SG_UTIL_014",
@@ -1220,16 +1266,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🧰",
-    "description": "Đắm chìm trong hương sả chanh và những động tác xoa bóp điêu luyện. Trải nghiệm thư giãn đặc sản này giúp bạn rũ bỏ mọi mệt mỏi.",
+    "description":
+      "Đắm chìm trong hương sả chanh và những động tác xoa bóp điêu luyện. Trải nghiệm thư giãn đặc sản này giúp bạn rũ bỏ mọi mệt mỏi.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "RECOVER_LA",
-      "effect_value": 2
-    }
+      "effect_value": 2,
+    },
   },
   {
     "id": "SG_UTIL_015",
@@ -1247,16 +1294,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Tiện ích",
     "tags": [
       "UTILITY",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🧰",
-    "description": "Bắt gặp một thợ nháy dạo chuyên nghiệp, bạn chi tiền để có bộ ảnh sống ảo chất lượng. Nhân đôi giá trị kỷ niệm cho điểm đến kế tiếp.",
+    "description":
+      "Bắt gặp một thợ nháy dạo chuyên nghiệp, bạn chi tiền để có bộ ảnh sống ảo chất lượng. Nhân đôi giá trị kỷ niệm cho điểm đến kế tiếp.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": true,
       "effect_type": "DOUBLE_VP_NEXT",
-      "effect_value": 1
-    }
+      "effect_value": 1,
+    },
   },
   {
     "id": "SG_ACT_001",
@@ -1274,16 +1322,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Lạc bước giữa không gian xanh mát của khu bảo tồn động thực vật lâu đời nhất thành phố. Khuôn viên rộng lớn sẽ ngốn của bạn không ít mồ hôi và sức lực.",
+    "description":
+      "Lạc bước giữa không gian xanh mát của khu bảo tồn động thực vật lâu đời nhất thành phố. Khuôn viên rộng lớn sẽ ngốn của bạn không ít mồ hôi và sức lực.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_002",
@@ -1301,16 +1350,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Nhịp sống cuồng nhiệt không ngủ. Bạn vui hết nấc trong tiếng nhạc xập xình, nhưng việc chen lấn giữa biển người sẽ vắt kiệt thể lực của bạn.",
+    "description":
+      "Nhịp sống cuồng nhiệt không ngủ. Bạn vui hết nấc trong tiếng nhạc xập xình, nhưng việc chen lấn giữa biển người sẽ vắt kiệt thể lực của bạn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_003",
@@ -1328,16 +1378,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🎒",
-    "description": "Thưởng thức những vở kịch chất lượng cao trong không gian khán phòng ấm cúng. Trải nghiệm giải trí tuyệt vời mà không tốn một giọt mồ hôi.",
+    "description":
+      "Thưởng thức những vở kịch chất lượng cao trong không gian khán phòng ấm cúng. Trải nghiệm giải trí tuyệt vời mà không tốn một giọt mồ hôi.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_004",
@@ -1355,16 +1406,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Vẫy vùng trong làn nước mát lạnh và thử sức với các ống trượt cảm giác mạnh. Một ngày vui chơi tơi bời nhưng cũng đốt cháy toàn bộ năng lượng.",
+    "description":
+      "Vẫy vùng trong làn nước mát lạnh và thử sức với các ống trượt cảm giác mạnh. Một ngày vui chơi tơi bời nhưng cũng đốt cháy toàn bộ năng lượng.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_005",
@@ -1382,16 +1434,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🎒",
-    "description": "Trải nghiệm cái lạnh cắt da giữa lòng thành phố nhiệt đới. Chơi đùa với bãi tuyết nhân tạo mang lại cảm giác thích thú lạ kỳ và vô cùng sảng khoái.",
+    "description":
+      "Trải nghiệm cái lạnh cắt da giữa lòng thành phố nhiệt đới. Chơi đùa với bãi tuyết nhân tạo mang lại cảm giác thích thú lạ kỳ và vô cùng sảng khoái.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_006",
@@ -1409,16 +1462,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Hòa mình vào không khí cuồng nhiệt trên khán đài. Tiếng hò reo cổ vũ vang dội làm bạn vô cùng phấn khích và tiêu hao đôi chút năng lượng.",
+    "description":
+      "Hòa mình vào không khí cuồng nhiệt trên khán đài. Tiếng hò reo cổ vũ vang dội làm bạn vô cùng phấn khích và tiêu hao đôi chút năng lượng.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_007",
@@ -1436,16 +1490,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🎒",
-    "description": "Thử thách bản thân với các trò chơi nhún nhảy bạt lò xo. Một hoạt động thể chất cường độ cao, đảm bảo khiến bạn thở dốc chỉ sau vài chục phút.",
+    "description":
+      "Thử thách bản thân với các trò chơi nhún nhảy bạt lò xo. Một hoạt động thể chất cường độ cao, đảm bảo khiến bạn thở dốc chỉ sau vài chục phút.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_008",
@@ -1463,16 +1518,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Tận hưởng không gian xanh mát và yên bình ven hồ. Một buổi cắm trại dã ngoại nhẹ nhàng giúp gắn kết tình cảm với những người bạn đồng hành.",
+    "description":
+      "Tận hưởng không gian xanh mát và yên bình ven hồ. Một buổi cắm trại dã ngoại nhẹ nhàng giúp gắn kết tình cảm với những người bạn đồng hành.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_009",
@@ -1490,16 +1546,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Khua mái chèo lướt đi trên dòng sông tĩnh lặng ngắm hoàng hôn. Trải nghiệm lãng mạn nhưng cũng đòi hỏi sự thăng bằng và sức mạnh đáng kể từ đôi tay.",
+    "description":
+      "Khua mái chèo lướt đi trên dòng sông tĩnh lặng ngắm hoàng hôn. Trải nghiệm lãng mạn nhưng cũng đòi hỏi sự thăng bằng và sức mạnh đáng kể từ đôi tay.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_010",
@@ -1517,16 +1574,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Khu vui chơi giải trí khổng lồ mang đậm màu sắc văn hóa dân tộc. Đi bộ qua các đền đài và tham gia vô vàn trò chơi sẽ rút cạn sức lực của bạn.",
+    "description":
+      "Khu vui chơi giải trí khổng lồ mang đậm màu sắc văn hóa dân tộc. Đi bộ qua các đền đài và tham gia vô vàn trò chơi sẽ rút cạn sức lực của bạn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_011",
@@ -1544,16 +1602,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Hành trình mạo hiểm tiến sâu vào khu dự trữ sinh quyển ngập mặn. Thách thức lớn về cả khoảng cách di chuyển lẫn sức chịu đựng trước thiên nhiên hoang dã.",
+    "description":
+      "Hành trình mạo hiểm tiến sâu vào khu dự trữ sinh quyển ngập mặn. Thách thức lớn về cả khoảng cách di chuyển lẫn sức chịu đựng trước thiên nhiên hoang dã.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_012",
@@ -1571,16 +1630,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Tản bộ thong dong trên con phố hiện đại bậc nhất nhộn nhịp người qua lại. Khá dễ chịu vào buổi tối nhưng sẽ rút sức bạn nhanh chóng nếu ghé qua vào buổi trưa.",
+    "description":
+      "Tản bộ thong dong trên con phố hiện đại bậc nhất nhộn nhịp người qua lại. Khá dễ chịu vào buổi tối nhưng sẽ rút sức bạn nhanh chóng nếu ghé qua vào buổi trưa.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_013",
@@ -1598,16 +1658,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🎒",
-    "description": "Chìm đắm trong thế giới mua sắm cao cấp ngập tràn ánh đèn và hàng hiệu. Một trải nghiệm đốt tiền nhanh chóng nhưng bù lại bằng sự thỏa mãn tuyệt đối.",
+    "description":
+      "Chìm đắm trong thế giới mua sắm cao cấp ngập tràn ánh đèn và hàng hiệu. Một trải nghiệm đốt tiền nhanh chóng nhưng bù lại bằng sự thỏa mãn tuyệt đối.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_014",
@@ -1625,16 +1686,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🎒",
-    "description": "Đắm mình dưới làn nước xanh mát của hồ bơi hoặc bung sức tại các sân cầu lông. Lựa chọn tuyệt vời để rèn luyện thể chất vào những ngày nhiệt độ tăng cao.",
+    "description":
+      "Đắm mình dưới làn nước xanh mát của hồ bơi hoặc bung sức tại các sân cầu lông. Lựa chọn tuyệt vời để rèn luyện thể chất vào những ngày nhiệt độ tăng cao.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_015",
@@ -1652,16 +1714,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Ngắm nhìn toàn cảnh thành phố lung linh từ phía bờ Đông. Bãi cỏ rộng lớn và gió lộng thổi không ngừng, lý tưởng để dạo mát và thả diều.",
+    "description":
+      "Ngắm nhìn toàn cảnh thành phố lung linh từ phía bờ Đông. Bãi cỏ rộng lớn và gió lộng thổi không ngừng, lý tưởng để dạo mát và thả diều.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_016",
@@ -1679,16 +1742,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Hóa thân thành cung thủ trong một trận chiến sinh tồn đầy kịch tính. Bạn sẽ phải chạy nước rút, ẩn nấp và ngắm bắn liên tục đến bở hơi tai.",
+    "description":
+      "Hóa thân thành cung thủ trong một trận chiến sinh tồn đầy kịch tính. Bạn sẽ phải chạy nước rút, ẩn nấp và ngắm bắn liên tục đến bở hơi tai.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_017",
@@ -1706,16 +1770,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🎒",
-    "description": "Mũi giày trượt lướt êm ái trên mặt băng lạnh giá trong tòa nhà cao nhất Việt Nam. Trải nghiệm giải trí xa xỉ tiêu tốn không ít hầu bao của bạn.",
+    "description":
+      "Mũi giày trượt lướt êm ái trên mặt băng lạnh giá trong tòa nhà cao nhất Việt Nam. Trải nghiệm giải trí xa xỉ tiêu tốn không ít hầu bao của bạn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_018",
@@ -1733,16 +1798,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Lá phổi xanh của thành phố ngập tràn bóng cây cổ thụ. Dạo bước trên những con đường rợp bóng mát là cách tuyệt vời để thư giãn đôi chân mỏi mệt.",
+    "description":
+      "Lá phổi xanh của thành phố ngập tràn bóng cây cổ thụ. Dạo bước trên những con đường rợp bóng mát là cách tuyệt vời để thư giãn đôi chân mỏi mệt.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_019",
@@ -1760,16 +1826,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🎒",
-    "description": "Đấu trí căng thẳng qua những ván cờ đầy toan tính. Tiếng cười nói rộn rã trong phòng máy lạnh xua tan đi cái mệt nhọc của những chuyến đi dài.",
+    "description":
+      "Đấu trí căng thẳng qua những ván cờ đầy toan tính. Tiếng cười nói rộn rã trong phòng máy lạnh xua tan đi cái mệt nhọc của những chuyến đi dài.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_ACT_020",
@@ -1787,16 +1854,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Trải nghiệm",
     "tags": [
       "ACTION",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🎒",
-    "description": "Lướt trên mặt sóng ngắm nhìn toàn cảnh đường chân trời hiện đại dọc hai bờ sông. Trải nghiệm ngắm cảnh thư thái tuyệt vời mà không đòi hỏi nhiều sự vận động.",
+    "description":
+      "Lướt trên mặt sóng ngắm nhìn toàn cảnh đường chân trời hiện đại dọc hai bờ sông. Trải nghiệm ngắm cảnh thư thái tuyệt vời mà không đòi hỏi nhiều sự vận động.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_001",
@@ -1815,16 +1883,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Chứng nhân lịch sử với kiến trúc độc bản. Khám phá các sảnh đường khổng lồ và đường hầm bí mật sẽ tiêu tốn không ít thể lực của bạn.",
+    "description":
+      "Chứng nhân lịch sử với kiến trúc độc bản. Khám phá các sảnh đường khổng lồ và đường hầm bí mật sẽ tiêu tốn không ít thể lực của bạn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_002",
@@ -1842,16 +1911,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Mái vòm thép vĩ đại mang đậm dấu ấn hoài niệm. Gửi một tấm bưu thiếp và tận hưởng không gian kiến trúc Pháp an toàn, mát mẻ.",
+    "description":
+      "Mái vòm thép vĩ đại mang đậm dấu ấn hoài niệm. Gửi một tấm bưu thiếp và tận hưởng không gian kiến trúc Pháp an toàn, mát mẻ.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_003",
@@ -1869,16 +1939,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Biểu tượng tôn giáo với gạch nung đỏ rực. Chiêm ngưỡng vẻ đẹp cổ kính từ bên ngoài và lắng nghe tiếng chuông ngân vang giữa phố thị.",
+    "description":
+      "Biểu tượng tôn giáo với gạch nung đỏ rực. Chiêm ngưỡng vẻ đẹp cổ kính từ bên ngoài và lắng nghe tiếng chuông ngân vang giữa phố thị.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_004",
@@ -1896,16 +1967,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Trải nghiệm lịch sử sâu sắc và nặng nề. Những tư liệu chân thực khiến bạn tĩnh lặng và tiêu hao đáng kể năng lượng tinh thần.",
+    "description":
+      "Trải nghiệm lịch sử sâu sắc và nặng nề. Những tư liệu chân thực khiến bạn tĩnh lặng và tiêu hao đáng kể năng lượng tinh thần.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_005",
@@ -1923,16 +1995,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Kho tàng di sản ngàn năm của dân tộc. Đi bộ mải miết qua các gian trưng bày rộng lớn đòi hỏi sự bền bỉ của đôi chân.",
+    "description":
+      "Kho tàng di sản ngàn năm của dân tộc. Đi bộ mải miết qua các gian trưng bày rộng lớn đòi hỏi sự bền bỉ của đôi chân.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_006",
@@ -1950,16 +2023,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Tòa dinh thự 99 cửa với hành lang ngập nắng. Trạm dừng chân nghệ thuật tuyệt đẹp để cho ra đời những bức ảnh lưu niệm ấn tượng.",
+    "description":
+      "Tòa dinh thự 99 cửa với hành lang ngập nắng. Trạm dừng chân nghệ thuật tuyệt đẹp để cho ra đời những bức ảnh lưu niệm ấn tượng.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_007",
@@ -1978,16 +2052,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Thưởng thức nghệ thuật thính phòng trong một công trình tráng lệ. Một buổi tối đắt đỏ nhưng mang lại trải nghiệm văn hóa đẳng cấp.",
+    "description":
+      "Thưởng thức nghệ thuật thính phòng trong một công trình tráng lệ. Một buổi tối đắt đỏ nhưng mang lại trải nghiệm văn hóa đẳng cấp.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_008",
@@ -2005,16 +2080,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Kiến trúc thời Pháp tuyệt đẹp ngay trung tâm. Một điểm check-in không tốn kém, nhưng việc nán lại lâu dưới nắng gắt sẽ khiến bạn hao tổn sức lực.",
+    "description":
+      "Kiến trúc thời Pháp tuyệt đẹp ngay trung tâm. Một điểm check-in không tốn kém, nhưng việc nán lại lâu dưới nắng gắt sẽ khiến bạn hao tổn sức lực.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_009",
@@ -2032,16 +2108,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Ngôi chùa cổ linh thiêng ngập trong khói nhang. Nơi du khách tìm kiếm sự bình an và tĩnh lặng giữa nhịp sống hối hả.",
+    "description":
+      "Ngôi chùa cổ linh thiêng ngập trong khói nhang. Nơi du khách tìm kiếm sự bình an và tĩnh lặng giữa nhịp sống hối hả.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_010",
@@ -2059,16 +2136,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Tuyệt tác kiến trúc của người Hoa tại Chợ Lớn. Khói nhang vòng cuộn tỏa mang theo những lời cầu nguyện bình an che chở bạn khỏi muộn phiền.",
+    "description":
+      "Tuyệt tác kiến trúc của người Hoa tại Chợ Lớn. Khói nhang vòng cuộn tỏa mang theo những lời cầu nguyện bình an che chở bạn khỏi muộn phiền.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_011",
@@ -2086,16 +2164,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Rực rỡ với nghệ thuật chạm khắc gỗ tinh xảo. Nơi giao lưu văn hóa và tín ngưỡng đặc sắc của cộng đồng Triều Châu ẩn mình trong khu phố chật hẹp.",
+    "description":
+      "Rực rỡ với nghệ thuật chạm khắc gỗ tinh xảo. Nơi giao lưu văn hóa và tín ngưỡng đặc sắc của cộng đồng Triều Châu ẩn mình trong khu phố chật hẹp.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_012",
@@ -2113,16 +2192,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Khu chợ đầu mối sầm uất với kiến trúc hình bát quái. Đôi chân bạn mỏi nhừ vì luồn lách qua hàng ngàn sạp hàng chen chúc.",
+    "description":
+      "Khu chợ đầu mối sầm uất với kiến trúc hình bát quái. Đôi chân bạn mỏi nhừ vì luồn lách qua hàng ngàn sạp hàng chen chúc.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_013",
@@ -2141,16 +2221,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Sự kết hợp độc đáo giữa kiến trúc Gothic và phong cách Á Đông nằm ngay giữa lòng khu Chợ Lớn sầm uất.",
+    "description":
+      "Sự kết hợp độc đáo giữa kiến trúc Gothic và phong cách Á Đông nằm ngay giữa lòng khu Chợ Lớn sầm uất.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_014",
@@ -2168,16 +2249,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Ngôi chùa cổ kính với mặt tiền lộng lẫy và những quần thể tượng gốm tinh xảo trải dài trên mái ngói nhuốm màu thời gian.",
+    "description":
+      "Ngôi chùa cổ kính với mặt tiền lộng lẫy và những quần thể tượng gốm tinh xảo trải dài trên mái ngói nhuốm màu thời gian.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_015",
@@ -2196,16 +2278,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Tòa nhà mang kiến trúc Á-Âu bên bờ sông lộng gió. Không gian lịch sử hào hùng cùng tầm nhìn thoáng đãng ra dòng sông rộng lớn.",
+    "description":
+      "Tòa nhà mang kiến trúc Á-Âu bên bờ sông lộng gió. Không gian lịch sử hào hùng cùng tầm nhìn thoáng đãng ra dòng sông rộng lớn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_016",
@@ -2224,16 +2307,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Biểu tượng văn hóa lâu đời của đất Gia Định. Việc tản bộ trong khuôn viên rộng lớn và uy nghiêm này đòi hỏi sự bền bỉ của đôi chân.",
+    "description":
+      "Biểu tượng văn hóa lâu đời của đất Gia Định. Việc tản bộ trong khuôn viên rộng lớn và uy nghiêm này đòi hỏi sự bền bỉ của đôi chân.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_017",
@@ -2251,16 +2335,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Hành trình luồn lách dưới lòng đất hẹp. Một thử thách sinh tồn vắt kiệt thể lực và tốn kém thời gian đi lại, nhưng trải nghiệm lịch sử mang lại thực sự vô giá.",
+    "description":
+      "Hành trình luồn lách dưới lòng đất hẹp. Một thử thách sinh tồn vắt kiệt thể lực và tốn kém thời gian đi lại, nhưng trải nghiệm lịch sử mang lại thực sự vô giá.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_018",
@@ -2278,16 +2363,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Khám phá căn cứ địa giữa rừng ngập mặn Cần Giờ. Hành trình lội rừng vất vả và chặng đường dài sẽ thử thách sức chịu đựng của bạn.",
+    "description":
+      "Khám phá căn cứ địa giữa rừng ngập mặn Cần Giờ. Hành trình lội rừng vất vả và chặng đường dài sẽ thử thách sức chịu đựng của bạn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_019",
@@ -2305,16 +2391,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Lộng lẫy như một cung điện Thái Lan thu nhỏ ẩn mình ở vùng ven thành phố. Bạn sẽ mất kha khá thời gian và sức lực để đến được đây, nhưng khung cảnh thì hoàn toàn xứng đáng.",
+    "description":
+      "Lộng lẫy như một cung điện Thái Lan thu nhỏ ẩn mình ở vùng ven thành phố. Bạn sẽ mất kha khá thời gian và sức lực để đến được đây, nhưng khung cảnh thì hoàn toàn xứng đáng.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_020",
@@ -2332,16 +2419,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Di tích lịch sử oai hùng nằm lặng lẽ ở ngoại ô Hóc Môn. Một chuyến đi dài về vùng ven sẽ thử thách tính kiên nhẫn và sức bền của bất kỳ đôi chân nào.",
+    "description":
+      "Di tích lịch sử oai hùng nằm lặng lẽ ở ngoại ô Hóc Môn. Một chuyến đi dài về vùng ven sẽ thử thách tính kiên nhẫn và sức bền của bất kỳ đôi chân nào.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_021",
@@ -2360,16 +2448,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Di tích kiến trúc cổ mang đậm dấu ấn làng mạc Nam Bộ xưa. Yên tĩnh, mộc mạc và hoàn toàn tách biệt khỏi nhịp sống ồn ào của phố thị.",
+    "description":
+      "Di tích kiến trúc cổ mang đậm dấu ấn làng mạc Nam Bộ xưa. Yên tĩnh, mộc mạc và hoàn toàn tách biệt khỏi nhịp sống ồn ào của phố thị.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_022",
@@ -2387,16 +2476,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Điểm đến tâm linh thanh tịnh. Nơi thích hợp để trú chân, lấy lại sự bình tĩnh và phục hồi tinh thần sau những chặng đường dài.",
+    "description":
+      "Điểm đến tâm linh thanh tịnh. Nơi thích hợp để trú chân, lấy lại sự bình tĩnh và phục hồi tinh thần sau những chặng đường dài.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_024",
@@ -2414,16 +2504,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Tìm hiểu về vẻ đẹp và sự kiên cường của người phụ nữ Nam Bộ. Một không gian mang tính giáo dục và là trạm dừng chân an toàn khỏi thời tiết khắc nghiệt.",
+    "description":
+      "Tìm hiểu về vẻ đẹp và sự kiên cường của người phụ nữ Nam Bộ. Một không gian mang tính giáo dục và là trạm dừng chân an toàn khỏi thời tiết khắc nghiệt.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_025",
@@ -2441,16 +2532,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Công trình kiến trúc Gothic rực rỡ với sắc hồng độc đáo. Một bức ảnh check-in tại đây là điều không thể thiếu, dù thời tiết bên ngoài có oi ả đến đâu.",
+    "description":
+      "Công trình kiến trúc Gothic rực rỡ với sắc hồng độc đáo. Một bức ảnh check-in tại đây là điều không thể thiếu, dù thời tiết bên ngoài có oi ả đến đâu.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_026",
@@ -2468,16 +2560,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Con hẻm trăm tuổi mang đậm màu sắc điện ảnh Hong Kong xưa. Đi bộ nhẹ nhàng nhưng mang lại cảm giác bình yên, hoài cổ giữa lòng Chợ Lớn sầm uất.",
+    "description":
+      "Con hẻm trăm tuổi mang đậm màu sắc điện ảnh Hong Kong xưa. Đi bộ nhẹ nhàng nhưng mang lại cảm giác bình yên, hoài cổ giữa lòng Chợ Lớn sầm uất.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_027",
@@ -2495,16 +2588,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Cả khu phố rực sáng bởi hàng ngàn chiếc lồng đèn thủ công. Vô cùng náo nhiệt nhưng việc luồn lách giữa dòng người đông đúc sẽ làm bạn toát mồ hôi.",
+    "description":
+      "Cả khu phố rực sáng bởi hàng ngàn chiếc lồng đèn thủ công. Vô cùng náo nhiệt nhưng việc luồn lách giữa dòng người đông đúc sẽ làm bạn toát mồ hôi.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_028",
@@ -2522,16 +2616,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Tổ đình lâu đời nhất Sài Gòn với kiến trúc chữ Tam truyền thống. Không gian tĩnh lặng, an toàn để bạn né tránh những cơn mưa rào bất chợt.",
+    "description":
+      "Tổ đình lâu đời nhất Sài Gòn với kiến trúc chữ Tam truyền thống. Không gian tĩnh lặng, an toàn để bạn né tránh những cơn mưa rào bất chợt.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_029",
@@ -2549,16 +2644,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Tản bộ dọc dòng kênh ngắm nhìn những chiếc thuyền chở đầy hoa trái miền Tây. Một trải nghiệm văn hóa sông nước hiếm hoi còn sót lại.",
+    "description":
+      "Tản bộ dọc dòng kênh ngắm nhìn những chiếc thuyền chở đầy hoa trái miền Tây. Một trải nghiệm văn hóa sông nước hiếm hoi còn sót lại.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_030",
@@ -2576,16 +2672,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Khám phá câu chuyện phát triển của thành phố trong tòa dinh thự cổ kính. Cầu thang gỗ và những hành lang rộng mở đem đến sự thư thái tuyệt đối.",
+    "description":
+      "Khám phá câu chuyện phát triển của thành phố trong tòa dinh thự cổ kính. Cầu thang gỗ và những hành lang rộng mở đem đến sự thư thái tuyệt đối.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_031",
@@ -2604,16 +2701,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Ngôi chùa khổng lồ với bảo tháp sừng sững giữa lòng Quận 10. Khuôn viên rộng lớn đòi hỏi bạn phải đi bộ khá nhiều dưới tiết trời oi ả.",
+    "description":
+      "Ngôi chùa khổng lồ với bảo tháp sừng sững giữa lòng Quận 10. Khuôn viên rộng lớn đòi hỏi bạn phải đi bộ khá nhiều dưới tiết trời oi ả.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_032",
@@ -2631,16 +2729,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Con phố ngắn ngủi nhưng chứa đựng hàng ngàn món cổ vật. Bạn mất khá nhiều thời gian và công sức để lùng sục những món đồ ưng ý dọc hai bên vỉa hè.",
+    "description":
+      "Con phố ngắn ngủi nhưng chứa đựng hàng ngàn món cổ vật. Bạn mất khá nhiều thời gian và công sức để lùng sục những món đồ ưng ý dọc hai bên vỉa hè.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_033",
@@ -2658,16 +2757,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "INDOOR"
+      "INDOOR",
     ],
     "icon": "🏛️",
-    "description": "Một bảo tàng tư nhân độc đáo với kiến trúc gỗ chạm khắc tinh xảo. Đắt tiền, nhưng trải nghiệm không gian y học cổ truyền dịu mát là vô giá.",
+    "description":
+      "Một bảo tàng tư nhân độc đáo với kiến trúc gỗ chạm khắc tinh xảo. Đắt tiền, nhưng trải nghiệm không gian y học cổ truyền dịu mát là vô giá.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_034",
@@ -2685,16 +2785,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tagLabel": "Văn hóa",
     "tags": [
       "CULTURE",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Công trình uy nghiêm mang đậm tinh thần dân tộc. Việc lặn lội ra tận vùng ngoại ô ngập nắng sẽ bào mòn đáng kể thể lực của bạn.",
+    "description":
+      "Công trình uy nghiêm mang đậm tinh thần dân tộc. Việc lặn lội ra tận vùng ngoại ô ngập nắng sẽ bào mòn đáng kể thể lực của bạn.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_035",
@@ -2713,16 +2814,17 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Không gian kiến trúc mộc mạc ẩn mình giữa thiên nhiên tĩnh lặng. Một chuyến đi đòi hỏi sự đầu tư lớn về mặt thời gian và sức lực khi phải rời xa chốn thị thành.",
+    "description":
+      "Không gian kiến trúc mộc mạc ẩn mình giữa thiên nhiên tĩnh lặng. Một chuyến đi đòi hỏi sự đầu tư lớn về mặt thời gian và sức lực khi phải rời xa chốn thị thành.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
+      "effect_value": 0,
+    },
   },
   {
     "id": "SG_CULT_036",
@@ -2741,17 +2843,18 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
     "tags": [
       "CULTURE",
       "INDOOR",
-      "OUTDOOR"
+      "OUTDOOR",
     ],
     "icon": "🏛️",
-    "description": "Góc Nhật Bản thu nhỏ với những mảng màu nâu trầm và mái ngói uốn lượn. Nằm khá xa trung tâm thành phố, đòi hỏi bạn phải có một lịch trình di chuyển thật khéo léo.",
+    "description":
+      "Góc Nhật Bản thu nhỏ với những mảng màu nâu trầm và mái ngói uốn lượn. Nằm khá xa trung tâm thành phố, đòi hỏi bạn phải có một lịch trình di chuyển thật khéo léo.",
     "bonusText": "",
     "onPlayEffect": {
       "has_effect": false,
       "effect_type": "NONE",
-      "effect_value": 0
-    }
-  }
+      "effect_value": 0,
+    },
+  },
 ];
 
 void LEGACY_SERVER_CARDS;
@@ -2770,7 +2873,9 @@ function cloneServerCard(card: ServerCardWithEffect): ServerCardWithEffect {
   return {
     ...card,
     tags: [...(card.tags ?? [])],
-    onPlayEffect: card.onPlayEffect ? { ...card.onPlayEffect } : card.onPlayEffect,
+    onPlayEffect: card.onPlayEffect
+      ? { ...card.onPlayEffect }
+      : card.onPlayEffect,
   };
 }
 
@@ -2783,14 +2888,13 @@ export function createServerDeck(): ServerCardWithEffect[] {
   return REAL_SERVER_CARDS.map(cloneServerCard);
 }
 
-
 const STARTING_COIN = 30;
 const STARTING_STAMINA = 15;
 
 export function createEmptyPlayer(
   id: PlayerId,
   name: string,
-  isConnected: boolean
+  isConnected: boolean,
 ): RoomState["players"][PlayerId] {
   return {
     id,

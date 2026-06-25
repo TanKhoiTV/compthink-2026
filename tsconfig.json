@@ -7,7 +7,6 @@
     "strict": true,
     "lib": ["DOM", "ES2016"],
     "esModuleInterop": true
-    
   },
   "include": ["src/**/*", "src/app.ts"]
 }

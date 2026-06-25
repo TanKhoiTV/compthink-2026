@@ -24,7 +24,6 @@ function clearPlayerPlanningConfirmed(player: RoomState["players"][PlayerId]) {
   player.planningConfirmed = false;
 }
 
-
 type ServerCardEffect = {
   has_effect: boolean;
   effect_type: string;
@@ -41,7 +40,9 @@ type PlayerWithTemporaryEffects = RoomState["players"][PlayerId] & {
   doubleVpNext?: number;
 };
 
-function getCardEffect(card: ServerTravelCardData | null): ServerCardEffect | null {
+function getCardEffect(
+  card: ServerTravelCardData | null,
+): ServerCardEffect | null {
   return (card as ServerTravelCardWithEffect | null)?.onPlayEffect ?? null;
 }
 
@@ -90,10 +91,13 @@ function addStaminaLockToNextSlot(
     colIndex: number;
     cardId: string;
     cardName: string;
-  }
+  },
 ) {
   const player = state.players[payload.playerId];
-  const nextPosition = getNextTimeSlotPosition(payload.rowIndex, payload.colIndex);
+  const nextPosition = getNextTimeSlotPosition(
+    payload.rowIndex,
+    payload.colIndex,
+  );
 
   if (!player || !nextPosition) return;
 
@@ -117,7 +121,7 @@ function addStaminaLockToNextSlot(
 
 function applyUtilityCardEffect(
   player: RoomState["players"][PlayerId],
-  card: ServerTravelCardData
+  card: ServerTravelCardData,
 ) {
   const effect = getCardEffect(card);
 
@@ -140,15 +144,18 @@ function applyUtilityCardEffect(
       return;
 
     case "IGNORE_DISTANCE_NEXT":
-      playerWithEffects.ignoreDistanceNext = (playerWithEffects.ignoreDistanceNext ?? 0) + effectValue;
+      playerWithEffects.ignoreDistanceNext =
+        (playerWithEffects.ignoreDistanceNext ?? 0) + effectValue;
       return;
 
     case "DISCOUNT_XU_NEXT":
-      playerWithEffects.discountXuNext = (playerWithEffects.discountXuNext ?? 0) + effectValue;
+      playerWithEffects.discountXuNext =
+        (playerWithEffects.discountXuNext ?? 0) + effectValue;
       return;
 
     case "DOUBLE_VP_NEXT":
-      playerWithEffects.doubleVpNext = (playerWithEffects.doubleVpNext ?? 0) + effectValue;
+      playerWithEffects.doubleVpNext = (playerWithEffects.doubleVpNext ?? 0) +
+        effectValue;
       return;
 
     default:
@@ -167,10 +174,13 @@ function clearGeneratedTokenForReturnedCard(
     rowIndex: number;
     colIndex: number;
     cardName: string;
-  }
+  },
 ) {
   const player = state.players[payload.playerId];
-  const nextPosition = getNextTimeSlotPosition(payload.rowIndex, payload.colIndex);
+  const nextPosition = getNextTimeSlotPosition(
+    payload.rowIndex,
+    payload.colIndex,
+  );
 
   if (!player || !nextPosition) return;
 
@@ -216,8 +226,13 @@ export function createRoom(firstPlayerName: string): {
   };
 }
 
-export function joinRoom(state: RoomState, playerName: string): PlayerId | null {
-  const openPlayerId = PLAYER_IDS.find((playerId) => !state.players[playerId].hasJoined);
+export function joinRoom(
+  state: RoomState,
+  playerName: string,
+): PlayerId | null {
+  const openPlayerId = PLAYER_IDS.find((playerId) =>
+    !state.players[playerId].hasJoined
+  );
 
   if (!openPlayerId) {
     return null;
@@ -239,7 +254,7 @@ export function reconnectRoom(
   payload: {
     playerId: PlayerId;
     playerName: string;
-  }
+  },
 ): PlayerId | null {
   const player = state.players[payload.playerId];
 
@@ -260,7 +275,7 @@ export function setPlayerReady(
   payload: {
     playerId: PlayerId;
     isReady: boolean;
-  }
+  },
 ): string | null {
   if (state.phase !== "lobby") {
     return "Chỉ có thể sẵn sàng khi phòng đang chờ.";
@@ -285,14 +300,15 @@ function getConnectedPlayers(state: RoomState) {
 function areAllConnectedPlayersReady(state: RoomState) {
   const connectedPlayers = getConnectedPlayers(state);
 
-  return connectedPlayers.length > 0 && connectedPlayers.every((player) => player.isReady);
+  return connectedPlayers.length > 0 &&
+    connectedPlayers.every((player) => player.isReady);
 }
 
 export function leaveRoom(
   state: RoomState,
   payload: {
     playerId: PlayerId;
-  }
+  },
 ): string | null {
   const player = state.players[payload.playerId];
 
@@ -316,7 +332,7 @@ export function startGame(
   state: RoomState,
   payload: {
     playerId: PlayerId;
-  }
+  },
 ): string | null {
   if (state.phase !== "lobby") {
     return "Phòng đã bắt đầu.";
@@ -347,7 +363,6 @@ export function startGame(
   return null;
 }
 
-
 export function placeCardOnPlayerBoard(
   state: RoomState,
   payload: {
@@ -362,13 +377,15 @@ export function placeCardOnPlayerBoard(
     stamina?: number;
     image?: string;
     name?: string;
-  }
+  },
 ): string | null {
   const player = state.players[payload.playerId];
 
   if (!player) return "Không tìm thấy người chơi.";
   if (state.phase !== "planning") return "Chưa tới phase xếp bài.";
-  if (payload.colIndex !== state.dayIndex) return "Chỉ được xếp bài vào ngày hiện tại.";
+  if (payload.colIndex !== state.dayIndex) {
+    return "Chỉ được xếp bài vào ngày hiện tại.";
+  }
 
   clearPlayerPlanningConfirmed(player);
 
@@ -453,12 +470,14 @@ export function discardCardFromPlayerHand(
     coin?: number;
     stamina?: number;
     name?: string;
-  }
+  },
 ): string | null {
   const player = state.players[payload.playerId];
 
   if (!player) return "Không tìm thấy người chơi.";
-  if (state.phase !== "planning") return "Chỉ được discard trong phase xếp bài.";
+  if (state.phase !== "planning") {
+    return "Chỉ được discard trong phase xếp bài.";
+  }
 
   clearPlayerPlanningConfirmed(player);
 
@@ -481,7 +500,6 @@ export function discardCardFromPlayerHand(
   return null;
 }
 
-
 export function payDebtTokenOnBoard(
   state: RoomState,
   payload: {
@@ -489,7 +507,7 @@ export function payDebtTokenOnBoard(
     amount?: number;
     rowIndex?: number;
     colIndex?: number;
-  }
+  },
 ): string | null {
   const player = state.players[payload.playerId];
 
@@ -523,13 +541,17 @@ export function returnBoardCardToPlayerHand(
     playerId: PlayerId;
     rowIndex: number;
     colIndex: number;
-  }
+  },
 ): string | null {
   const player = state.players[payload.playerId];
 
   if (!player) return "Không tìm thấy người chơi.";
-  if (state.phase !== "planning") return "Chỉ được rút bài trong phase xếp bài.";
-  if (payload.colIndex !== state.dayIndex) return "Chỉ được rút bài của ngày hiện tại.";
+  if (state.phase !== "planning") {
+    return "Chỉ được rút bài trong phase xếp bài.";
+  }
+  if (payload.colIndex !== state.dayIndex) {
+    return "Chỉ được rút bài của ngày hiện tại.";
+  }
 
   clearPlayerPlanningConfirmed(player);
 
@@ -590,7 +612,7 @@ export function confirmPlanning(
   state: RoomState,
   payload: {
     playerId: PlayerId;
-  }
+  },
 ): string | null {
   if (state.phase !== "planning") {
     return "Chưa tới phase xếp bài.";

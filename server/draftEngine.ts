@@ -1,5 +1,5 @@
 import type { PlayerId, RoomState, ServerTravelCardData } from "./types.js";
-import { PLAYER_IDS, createServerDeck, shuffleCards } from "./gameEngine.js";
+import { createServerDeck, PLAYER_IDS, shuffleCards } from "./gameEngine.js";
 
 const DRAFT_STARTING_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = 5;
@@ -7,7 +7,8 @@ const DRAFT_PICK_SECONDS = 90;
 export { DRAFT_PICK_SECONDS };
 const DRAFT_CENTER_DEAL_CARD_MS = 900;
 const DRAFT_CENTER_DEAL_GAP_MS = 150;
-const DRAFT_CENTER_DEAL_STEP_MS = DRAFT_CENTER_DEAL_CARD_MS + DRAFT_CENTER_DEAL_GAP_MS;
+const DRAFT_CENTER_DEAL_STEP_MS = DRAFT_CENTER_DEAL_CARD_MS +
+  DRAFT_CENTER_DEAL_GAP_MS;
 const DRAFT_PASS_ANIMATION_MS = 1500;
 
 function getDraftCenterDealDurationMs(cardCount: number): number {
@@ -15,7 +16,10 @@ function getDraftCenterDealDurationMs(cardCount: number): number {
   return DRAFT_CENTER_DEAL_STEP_MS * (n - 1) + DRAFT_CENTER_DEAL_CARD_MS + 250;
 }
 
-function getDraftDealHoldSeconds(cardCount: number, includePass = false): number {
+function getDraftDealHoldSeconds(
+  cardCount: number,
+  includePass = false,
+): number {
   const dealMs = getDraftCenterDealDurationMs(cardCount);
   const extraMs = includePass ? DRAFT_PASS_ANIMATION_MS + 300 : 300;
   return Math.max(1, Math.ceil((dealMs + extraMs) / 1000));
@@ -23,7 +27,10 @@ function getDraftDealHoldSeconds(cardCount: number, includePass = false): number
 
 function maxDraftPoolSize(state: RoomState, playerIds: PlayerId[]): number {
   if (playerIds.length === 0) return DRAFT_STARTING_POOL_SIZE;
-  return Math.max(...playerIds.map((id) => state.players[id].draftPool.length), 1);
+  return Math.max(
+    ...playerIds.map((id) => state.players[id].draftPool.length),
+    1,
+  );
 }
 
 function getActiveDraftPlayerIds(state: RoomState): PlayerId[] {
@@ -56,7 +63,13 @@ function collectInFlightDraftCardIds(state: RoomState): Set<string> {
   for (const playerId of PLAYER_IDS) {
     const player = state.players[playerId];
 
-    for (const card of [...player.draftPool, ...player.pickedDraftCards, ...player.hand]) {
+    for (
+      const card of [
+        ...player.draftPool,
+        ...player.pickedDraftCards,
+        ...player.hand,
+      ]
+    ) {
       ids.add(card.id);
     }
   }
@@ -72,7 +85,8 @@ function rebuildDeckFromAvailableCards(state: RoomState) {
   const deckIds = new Set(state.deck.map((card) => card.id));
 
   const available = createServerDeck().filter((card) => {
-    return !usedOnBoards.has(card.id) && !inFlight.has(card.id) && !deckIds.has(card.id);
+    return !usedOnBoards.has(card.id) && !inFlight.has(card.id) &&
+      !deckIds.has(card.id);
   });
 
   if (available.length > 0) {
@@ -83,10 +97,15 @@ function rebuildDeckFromAvailableCards(state: RoomState) {
   if (state.deck.length > 0) return;
 
   const emergency = createServerDeck().filter((card) => !inFlight.has(card.id));
-  state.deck = shuffleCards(emergency.length > 0 ? emergency : createServerDeck());
+  state.deck = shuffleCards(
+    emergency.length > 0 ? emergency : createServerDeck(),
+  );
 }
 
-function drawRandomCardsFromDeck(state: RoomState, count: number): ServerTravelCardData[] {
+function drawRandomCardsFromDeck(
+  state: RoomState,
+  count: number,
+): ServerTravelCardData[] {
   rebuildDeckFromAvailableCards(state);
   state.deck = shuffleCards(state.deck);
 
@@ -129,10 +148,9 @@ export function startDraftForCurrentDay(state: RoomState) {
   activePlayerIds.forEach((playerId) => {
     state.players[playerId].draftPool = drawRandomCardsFromDeck(
       state,
-      DRAFT_STARTING_POOL_SIZE
+      DRAFT_STARTING_POOL_SIZE,
     );
   });
-
 }
 
 export function selectDraftCard(
@@ -140,7 +158,7 @@ export function selectDraftCard(
   payload: {
     playerId: PlayerId;
     cardId: string;
-  }
+  },
 ): string | null {
   if (state.phase !== "draft") {
     return "Chưa tới phase chia bài.";
@@ -154,8 +172,9 @@ export function selectDraftCard(
     return "Lá này không nằm trong bài đang được chọn.";
   }
 
-  player.selectedDraftCardId =
-    player.selectedDraftCardId === payload.cardId ? null : payload.cardId;
+  player.selectedDraftCardId = player.selectedDraftCardId === payload.cardId
+    ? null
+    : payload.cardId;
 
   return null;
 }
@@ -164,7 +183,7 @@ export function confirmDraftPick(
   state: RoomState,
   payload: {
     playerId: PlayerId;
-  }
+  },
 ): string | null {
   if (state.phase !== "draft") {
     return "Chưa tới phase chia bài.";
@@ -206,12 +225,15 @@ export function finishDraftRound(state: RoomState) {
 
     if (player.draftPool.length === 0) continue;
 
-    const selectedCard =
-      player.draftPool.find((card) => card.id === player.selectedDraftCardId) ??
+    const selectedCard = player.draftPool.find((card) =>
+      card.id === player.selectedDraftCardId
+    ) ??
       player.draftPool[0];
 
     player.pickedDraftCards.push(selectedCard);
-    player.draftPool = player.draftPool.filter((card) => card.id !== selectedCard.id);
+    player.draftPool = player.draftPool.filter((card) =>
+      card.id !== selectedCard.id
+    );
     player.selectedDraftCardId = null;
     player.draftPickConfirmed = false;
   }
@@ -228,20 +250,32 @@ export function finishDraftRound(state: RoomState) {
   if (activePlayerIds.length > 1) {
     rotateDraftPoolsClockwise(state, activePlayerIds);
 
-    if (activePlayerIds.every((playerId) => state.players[playerId].draftPool.length === 0)) {
+    if (
+      activePlayerIds.every((playerId) =>
+        state.players[playerId].draftPool.length === 0
+      )
+    ) {
       for (const playerId of activePlayerIds) {
-        const needed = DRAFT_PICK_TARGET - state.players[playerId].pickedDraftCards.length;
+        const needed = DRAFT_PICK_TARGET -
+          state.players[playerId].pickedDraftCards.length;
         const nextPoolSize = Math.min(
           DRAFT_STARTING_POOL_SIZE,
-          Math.max(needed, DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1)
+          Math.max(needed, DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1),
         );
 
-        state.players[playerId].draftPool = drawRandomCardsFromDeck(state, nextPoolSize);
+        state.players[playerId].draftPool = drawRandomCardsFromDeck(
+          state,
+          nextPoolSize,
+        );
         state.players[playerId].selectedDraftCardId = null;
         state.players[playerId].draftPickConfirmed = false;
       }
 
-      if (activePlayerIds.every((playerId) => state.players[playerId].draftPool.length === 0)) {
+      if (
+        activePlayerIds.every((playerId) =>
+          state.players[playerId].draftPool.length === 0
+        )
+      ) {
         finishDraftAndStartPlanning(state);
         return;
       }
@@ -258,7 +292,7 @@ export function finishDraftRound(state: RoomState) {
 
     const nextPoolSize = Math.max(
       DRAFT_STARTING_POOL_SIZE - onlyPlayer.pickedDraftCards.length,
-      DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1
+      DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1,
     );
 
     onlyPlayer.draftPool = drawRandomCardsFromDeck(state, nextPoolSize);
@@ -287,14 +321,17 @@ function resetSinglePlayerDraftPool(state: RoomState, playerId: PlayerId) {
 
   const nextPoolSize = Math.max(
     DRAFT_STARTING_POOL_SIZE - player.pickedDraftCards.length,
-    DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1
+    DRAFT_STARTING_POOL_SIZE - DRAFT_PICK_TARGET + 1,
   );
 
   player.draftPool = drawRandomCardsFromDeck(state, nextPoolSize);
   player.selectedDraftCardId = null;
 }
 
-function rotateDraftPoolsClockwise(state: RoomState, activePlayerIds: PlayerId[]) {
+function rotateDraftPoolsClockwise(
+  state: RoomState,
+  activePlayerIds: PlayerId[],
+) {
   if (activePlayerIds.length <= 1) return;
 
   const oldPools = activePlayerIds.map((playerId) => {
@@ -302,7 +339,8 @@ function rotateDraftPoolsClockwise(state: RoomState, activePlayerIds: PlayerId[]
   });
 
   activePlayerIds.forEach((playerId, index) => {
-    const sourceIndex = (index - 1 + activePlayerIds.length) % activePlayerIds.length;
+    const sourceIndex = (index - 1 + activePlayerIds.length) %
+      activePlayerIds.length;
     state.players[playerId].draftPool = oldPools[sourceIndex];
   });
 }
