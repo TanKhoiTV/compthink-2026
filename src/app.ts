@@ -60,6 +60,10 @@ import {
   renderUtilityEffectFlash,
 } from "./ui/boardArena.js";
 import {
+  applyUtilityPlacementEffect,
+  triggerUtilityEffectFlash,
+} from "./actions/utilityEffects.js";
+import {
   authClientState,
   clearSavedOnlineSession,
   confirmOnlineDraftPick,
@@ -1267,68 +1271,7 @@ function clearLocalGeneratedTokenForReturnedCard(
 }
 
 // Moved to ui/boardArena.ts
-function triggerUtilityEffectFlash(params: {
-  rowIndex: number;
-  colIndex: number;
-  type: "coin" | "stamina" | "vp";
-  value: number;
-}) {
-  const flashId = Date.now();
-
-  state.lastUtilityEffectFlash = {
-    ...params,
-    id: flashId,
-  };
-  state.resourceOrbFlashType = params.type;
-
-  window.setTimeout(() => {
-    if (state.lastUtilityEffectFlash?.id === flashId) {
-      state.lastUtilityEffectFlash = null;
-    }
-
-    if (state.resourceOrbFlashType === params.type) {
-      state.resourceOrbFlashType = null;
-    }
-
-    rerenderArena();
-  }, 1050);
-}
-
-function applyUtilityPlacementEffect(
-  card: TravelCardData,
-  rowIndex: number,
-  colIndex: number,
-) {
-  const effect = getUtilityPlacementEffect(card);
-
-  if (!effect) return false;
-
-  if (effect.type === "coin") {
-    state.eventResourceModifier = {
-      ...state.eventResourceModifier,
-      coin: state.eventResourceModifier.coin + effect.value,
-    };
-    playGameSound("eventPromo");
-  } else if (effect.type === "stamina") {
-    state.eventResourceModifier = {
-      ...state.eventResourceModifier,
-      stamina: state.eventResourceModifier.stamina + effect.value,
-    };
-    playGameSound("eventPromo");
-  } else if (effect.type === "vp") {
-    state.accumulatedVP += effect.value;
-    playGameSound("eventPromo");
-  }
-
-  triggerUtilityEffectFlash({
-    rowIndex,
-    colIndex,
-    type: effect.type,
-    value: effect.value,
-  });
-
-  return true;
-}
+// Moved to actions/utilityEffects.ts
 
 // Moved to ui/boardArena.ts
 async function measureDraftPendingHandSlotRect(): Promise<DOMRect | null> {
