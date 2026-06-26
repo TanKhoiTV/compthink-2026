@@ -52,7 +52,7 @@ jobs:
       - name: Prepare deployment directory
         run: |
           mkdir -p _site
-          cp -r build/* assets/ index.html sw.js manifest.json _site/
+          cp -r build assets/ index.html sw.js manifest.json _site/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

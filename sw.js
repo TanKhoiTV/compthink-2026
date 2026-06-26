@@ -6,9 +6,9 @@ const urlsToCache = [
   "./index.html",
   "./manifest.json",
 
-  "./app.js",
-  "./types.js",
-  "./client.css",
+  "./build/app.js",
+  "./build/types.js",
+  "./build/client.css",
 
   "https://cdn.socket.io/4.8.1/socket.io.min.js",
 

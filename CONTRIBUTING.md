@@ -55,9 +55,8 @@ This runs:
 
 1. **tsc** — compiles `src/` TypeScript to `build/` (no bundler, vanilla JS)
 2. **lessc** — compiles `src/styles/client.less` to `build/client.css`
-3. **postbuild** — copies `build/*` to the project root so `npx serve .` and similar static servers can serve files
 
-After build, compiled files live in both `build/` (for CI deployment) and the project root (for local dev). Root-level artifacts are gitignored — `git status` stays clean.
+The compiled output lives entirely in `build/`. The HTML and service worker reference `build/` paths directly, so any static server works from the project root.
 
 ### Run Tests
 
@@ -71,7 +70,7 @@ Tests cover all pure game logic (board, deck, draft, scoring, resources, queries
 ### Run Locally (Single-Player, No Server)
 
 ```bash
-npm run build                # One-time build (output is flattened to root)
+npm run build                # One-time build (output is in build/)
 npx serve . -l 5174          # Any static HTTP server works
 ```
 

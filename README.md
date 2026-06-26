@@ -89,10 +89,10 @@ compthink-2026/
 git clone https://github.com/TanKhoiTV/compthink-2026.git
 cd compthink-2026
 npm install
-npm run build       # tsc + lessc → build/ → flattened to root for local dev
+npm run build       # tsc + lessc → build/
 ```
 
-After build, the compiled files are available both in `build/` (for CI) and at the project root (for local serving). Root-level build artifacts are gitignored.
+The compiled output lives entirely in `build/`. The HTML and service worker reference `build/` paths directly, so any static server works from the project root.
 
 ### Run Tests
 
