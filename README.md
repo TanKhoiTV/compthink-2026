@@ -38,7 +38,7 @@ After Day 5, the game ends. Scores are tallied and the player with the most VP w
 | **Offline** | Service Worker (network-first) |
 | **Deployment** | Hugging Face Spaces Docker (server), GitHub Pages (frontend) |
 | **Testing** | Vitest (112 unit tests across 8 files) |
-| **Assets** | Card images via Git LFS (103 Saigon phase-1 cards) |
+| **Assets** | Card images via Git LFS (150 card images, Saigon phase-1) |
 
 ## Repository Structure
 
@@ -50,7 +50,7 @@ compthink-2026/
 │   ├── actions/        # State-mutation actions: cardPlacement, debtTokens, utilityEffects
 │   ├── ui/             # DOM rendering: arena, screens, cards, dashboard
 │   ├── audio/          # Web Audio API + <audio> BGM
-│   ├── data/           # Card definitions (103 phase-1 Saigon cards) + images
+│   ├── data/           # Card definitions (150 card images, Saigon phase-1) + images
 │   ├── online/         # Socket.IO client
 │   ├── state/          # GameState singleton (96-field flat interface)
 │   ├── styles/         # Less stylesheets (client.less, dashboard.less, mapSelection.less)
@@ -89,8 +89,10 @@ compthink-2026/
 git clone https://github.com/TanKhoiTV/compthink-2026.git
 cd compthink-2026
 npm install
-npm run build       # tsc + lessc → build/
+npm run build       # tsc + lessc → build/ → flattened to root for local dev
 ```
+
+After build, the compiled files are available both in `build/` (for CI) and at the project root (for local serving). Root-level build artifacts are gitignored.
 
 ### Run Tests
 
@@ -130,7 +132,9 @@ cd ..
 npx serve . -l 5174
 ```
 
-Open [http://localhost:5174](http://localhost:5174). The app connects to the local Socket.IO server for multiplayer draft + real-time play.
+Open [http://localhost:5174](http://localhost:5174). You should see the TREKPOLOGY lobby screen.
+To test multiplayer, open a second tab at the same URL and both players can join a room.
+The app connects to the local Socket.IO server for multiplayer draft + real-time play.
 
 ## Project Status
 

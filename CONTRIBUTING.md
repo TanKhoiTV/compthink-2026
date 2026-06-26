@@ -51,7 +51,13 @@ cd ..
 npm run build
 ```
 
-This runs `tsc` (compiles `src/` to `build/`) and `lessc` (compiles Less to `build/client.css`). No bundler — output is vanilla JS loaded via `<script type="module">`.
+This runs:
+
+1. **tsc** — compiles `src/` TypeScript to `build/` (no bundler, vanilla JS)
+2. **lessc** — compiles `src/styles/client.less` to `build/client.css`
+3. **postbuild** — copies `build/*` to the project root so `npx serve .` and similar static servers can serve files
+
+After build, compiled files live in both `build/` (for CI deployment) and the project root (for local dev). Root-level artifacts are gitignored — `git status` stays clean.
 
 ### Run Tests
 
@@ -65,11 +71,12 @@ Tests cover all pure game logic (board, deck, draft, scoring, resources, queries
 ### Run Locally (Single-Player, No Server)
 
 ```bash
-npm run build                # One-time build
+npm run build                # One-time build (output is flattened to root)
 npx serve . -l 5174          # Any static HTTP server works
 ```
 
-Open <http://localhost:5174>. The app runs in offline single-player mode — drafting uses simulated bots, no server needed.
+Open [http://localhost:5174](http://localhost:5174). You should see the TREKPOLOGY lobby screen.
+The app runs in offline single-player mode — drafting uses simulated bots, no server needed.
 
 ### Run Locally (Multiplayer, With Server)
 
@@ -88,10 +95,10 @@ cd ..
 npx serve . -l 5174           # Or use python3 -m http.server 5174
 ```
 
-Open **two browser tabs** at <http://localhost:5174>:
+Open **two browser tabs** at [http://localhost:5174](http://localhost:5174):
 
-1. Click **Chơi Online** → enter a room name → **Tạo Phòng**
-2. In the second tab, enter the same room name → **Vào Phòng**
+1. Click **Chơi Online** (Play Online) → enter a room name → **Tạo Phòng** (Create Room)
+2. In the second tab, enter the same room name → **Vào Phòng** (Join Room)
 3. Both players join the lobby and the host starts the game
 
 The client (`socketClient.ts`) connects to `http://localhost:3001` (Socket.IO server). To connect to a different server, edit the URL in `src/online/socketClient.ts` and rebuild.
@@ -115,13 +122,13 @@ TypeScript and Less compile on every file save. Refresh the browser to see chang
 
 Three GitHub Actions workflows run automatically:
 
-| Workflow | Trigger | What it does |
+| Workflow | Trigger | Steps |
 |---|---|---|
-| `ci.yml` | Any push | `npm ci` + `npm run build` — ensures clean build |
-| `deploy-pages.yml` | Push to `main` | Builds and deploys frontend to GitHub Pages |
-| `deploy-server.yml` | Push to `main` (server/ or src/data/ paths) | Syncs server code to Hugging Face Space |
+| `ci.yml` | Any push to `main` or PR | deno fmt --check → Node.js setup → npm ci → npx tsc --noEmit → npx vitest run → npm run build |
+| `deploy-pages.yml` | Push to `main` | Build frontend → patch socket URL to production HF Space → copy to `_site/` → deploy to GitHub Pages |
+| `deploy-server.yml` | Push to `main` (server/ or src/data/ or Dockerfile) | Clone HF Space repo → replace server files → commit and push via HF_TOKEN secret |
 
-> The deployed GitHub Pages URL uses a patched socket URL (`build/online/socketClient.js`) pointing to the production HF Space instead of `localhost:3001`.
+> The `ci.yml` workflow enforces formatting via `deno fmt --check` (Deno is installed in CI separately) and runs full type checking + tests before building. The deployed GitHub Pages URL uses a patched socket URL pointing to the production HF Space instead of `localhost:3001`.
 
 ## Working with Branches
 
