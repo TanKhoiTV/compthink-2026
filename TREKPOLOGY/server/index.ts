@@ -77,6 +77,72 @@ function emitRoomState(roomId: string) {
   }
 }
 
+// =========================================================
+// MATCHMAKING: mở trận từ nhóm đang chờ + đổ bot cho đủ 4
+// =========================================================
+const MATCHMAKING_FILL_TIMEOUT_MS = 12000;
+let matchmakingTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearMatchmakingTimer() {
+  if (matchmakingTimer) {
+    clearTimeout(matchmakingTimer);
+    matchmakingTimer = null;
+  }
+}
+
+// Hết giờ chờ mà chưa đủ 4 người thật → mở trận với số người đang có + bot.
+function scheduleMatchmakingTimer() {
+  if (matchmakingTimer) return; // đã có hẹn giờ đang chạy
+  matchmakingTimer = setTimeout(() => {
+    matchmakingTimer = null;
+    if (matchmakingQueue.length === 0) return;
+    const group = matchmakingQueue.splice(0, Math.min(4, matchmakingQueue.length));
+    launchMatchmakingGame(group);
+    if (matchmakingQueue.length > 0) scheduleMatchmakingTimer(); // còn người chờ → hẹn tiếp
+  }, MATCHMAKING_FILL_TIMEOUT_MS);
+}
+
+// Tạo phòng từ nhóm người thật (1–4), điền bot cho đủ ghế, rồi sút vào cinematic.
+function launchMatchmakingGame(group: { socketId: string; playerName: string }[]) {
+  if (group.length === 0) return;
+
+  const host = group[0];
+  const { roomId, playerId: hostPlayerId, state } = createRoom(host.playerName);
+  rooms.set(roomId, state);
+
+  const hostSocket = io.sockets.sockets.get(host.socketId);
+  if (hostSocket) {
+    socketPlayerIds.set(host.socketId, hostPlayerId);
+    socketRoomIds.set(host.socketId, roomId);
+    hostSocket.join(roomId);
+    hostSocket.emit("room:joined", { roomId, playerId: hostPlayerId, state: getPlayerViewState(state, hostPlayerId) });
+  }
+
+  for (let i = 1; i < group.length && i < 4; i++) {
+    const member = group[i];
+    const memberSocket = io.sockets.sockets.get(member.socketId);
+    const memberPlayerId = joinRoom(state, member.playerName);
+    if (memberSocket && memberPlayerId) {
+      socketPlayerIds.set(member.socketId, memberPlayerId);
+      socketRoomIds.set(member.socketId, roomId);
+      memberSocket.join(roomId);
+      memberSocket.emit("room:joined", { roomId, playerId: memberPlayerId, state: getPlayerViewState(state, memberPlayerId) });
+    }
+  }
+
+  // Điền ghế trống bằng bot cho đủ 4 (khi chưa đủ người thật).
+  fillRoomWithBots(state);
+
+  const allPlayerIds: PlayerId[] = ["p1", "p2", "p3", "p4"];
+  allPlayerIds.forEach((pid) => {
+    if (state.players[pid]) state.players[pid].isReady = true;
+  });
+  state.phase = "cinematic";
+  state.timer = 7; // đếm ngược chuyển cảnh
+
+  emitRoomState(roomId);
+}
+
 setInterval(() => {
   for (const [roomId, state] of rooms) {
     tickRoom(state);
@@ -116,49 +182,14 @@ io.on("connection", (socket) => {
       matchmakingQueue.push({ socketId: socket.id, playerName: playerName || "Lữ Khách" });
     }
 
-    // 2. Rà soát xem đủ 4 mạng chưa?
+    // 2. Đủ 4 người thật → mở trận ngay. Chưa đủ → bật đồng hồ chờ;
+    //    hết 12s sẽ mở trận với số người đang có + bot cho đủ 4.
     if (matchmakingQueue.length >= 4) {
-      // Bốc 4 ông đầu tiên ra khỏi hàng
+      clearMatchmakingTimer();
       const group = matchmakingQueue.splice(0, 4);
-      
-      // Ông đầu tiên làm Host để mồi hàm createRoom
-      const host = group[0];
-      const { roomId, playerId: hostPlayerId, state } = createRoom(host.playerName);
-      rooms.set(roomId, state);
-
-      // Cập nhật Socket cho Host
-      const hostSocket = io.sockets.sockets.get(host.socketId);
-      if (hostSocket) {
-        socketPlayerIds.set(host.socketId, hostPlayerId);
-        socketRoomIds.set(host.socketId, roomId);
-        hostSocket.join(roomId);
-        hostSocket.emit("room:joined", { roomId, playerId: hostPlayerId, state: getPlayerViewState(state, hostPlayerId) });
-      }
-
-      // Nhét 3 ông còn lại chui vào phòng
-      for (let i = 1; i < 4; i++) {
-        const member = group[i];
-        const memberSocket = io.sockets.sockets.get(member.socketId);
-        const memberPlayerId = joinRoom(state, member.playerName);
-        
-        if (memberSocket && memberPlayerId) {
-          socketPlayerIds.set(member.socketId, memberPlayerId);
-          socketRoomIds.set(member.socketId, roomId);
-          memberSocket.join(roomId);
-          memberSocket.emit("room:joined", { roomId, playerId: memberPlayerId, state: getPlayerViewState(state, memberPlayerId) });
-        }
-      }
-
-      // 3. Ép cả 4 ông Sẵn sàng và sút thẳng vào Game (Cinematic phase)
-      const allPlayerIds: PlayerId[] = ["p1", "p2", "p3", "p4"];
-      allPlayerIds.forEach(pid => {
-        if (state.players[pid]) state.players[pid].isReady = true;
-      });
-      state.phase = "cinematic";
-      state.timer = 7; // Chạy đếm ngược chuyển cảnh
-
-      // Gửi tín hiệu báo mâm đã dọn xong
-      emitRoomState(roomId);
+      launchMatchmakingGame(group);
+    } else {
+      scheduleMatchmakingTimer();
     }
   });
 
@@ -168,6 +199,7 @@ io.on("connection", (socket) => {
     if (index !== -1) {
       matchmakingQueue.splice(index, 1);
     }
+    if (matchmakingQueue.length === 0) clearMatchmakingTimer();
   });
   // =========================================================
 
@@ -435,6 +467,7 @@ io.on("connection", (socket) => {
     if (queueIndex !== -1) {
       matchmakingQueue.splice(queueIndex, 1);
     }
+    if (matchmakingQueue.length === 0) clearMatchmakingTimer();
     const playerId = socketPlayerIds.get(socket.id);
     const roomId = socketRoomIds.get(socket.id);
     const state = roomId ? rooms.get(roomId) : null;

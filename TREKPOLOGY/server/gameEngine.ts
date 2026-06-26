@@ -2833,6 +2833,7 @@ function stripPrivatePlayerState(player: RoomState["players"][PlayerId]) {
     isConnected: player.isConnected,
     isReady: player.isReady,
     hasJoined: player.hasJoined,
+    isBot: player.isBot === true,
     planningConfirmed: player.planningConfirmed === true,
     board: player.board,
   };
