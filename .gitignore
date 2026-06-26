@@ -23,3 +23,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Sub-package lockfiles
+
+# Agent workspace
+.agent-output/
