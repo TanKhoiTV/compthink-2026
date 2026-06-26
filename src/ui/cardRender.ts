@@ -25,7 +25,7 @@ import {
 } from "../game/resources.js";
 import type { BoardTokenCard, TravelCardData } from "../types.js";
 import type { SimulationReplayStep } from "../game/scoring.js";
-import { images } from "../app.js";
+import { images } from "../data/images.js";
 
 // ── Internal helpers ─────────────────────────────────────────
 

@@ -20,7 +20,7 @@ import {
   getHandTitleClass,
 } from "./cardDisplay.js";
 import { renderHandCard } from "./cardRender.js";
-import { images } from "../app.js";
+import { images } from "../data/images.js";
 import type { TravelCardData } from "../types.js";
 import {
   DRAFT_CENTER_DEAL_STEP_MS,
