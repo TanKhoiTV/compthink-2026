@@ -7,11 +7,11 @@ export const PLAYER_COUNT = 4;
 export const DRAFT_PICK_SECONDS = 90;
 
 /** Draft center deal animation — keep in sync with server/draftEngine.ts
-    Chia bài kiểu "bay cả cụm rồi tản ra": stagger nhỏ (55ms) → 7 lá bay gần như
-    cùng lúc từ deck rồi tản về vị trí, thay vì bay tuần tự từng lá. */
-export const DRAFT_CENTER_DEAL_CARD_MS = 600; // thời lượng 1 lá bay (khớp CSS draftPoolFlyFromDeck)
+    Chia bài kiểu "gom cụm rồi tỏa ra": stagger rất nhỏ (30ms) → 7 lá xuất hiện
+    gần như đồng thời thành cụm chồng nhau, giữ lại ~400ms, rồi tỏa ra vị trí. */
+export const DRAFT_CENTER_DEAL_CARD_MS = 1350; // thời lượng 1 lá animation (khớp CSS draftCenterPoolExpandFromDeckV2)
 export const DRAFT_CENTER_DEAL_GAP_MS = 0;
-export const DRAFT_CENTER_DEAL_STEP_MS = 55; // độ lệch giữa các lá (nhỏ = thành cụm)
+export const DRAFT_CENTER_DEAL_STEP_MS = 0; // stagger 0 để tất cả gom cùng lúc
 export const DRAFT_PASS_ANIMATION_MS = 1500;
 export const DRAFT_STARTING_POOL_SIZE = 7;
 

@@ -4742,7 +4742,11 @@ function applyDraftReturnGatherVars(
   gatherCenterX: number,
   gatherCenterY: number,
   deckInsertX: number,
-  deckInsertY: number
+  deckInsertY: number,
+  // "overTop": arc vòng lên trên (pass/return về deck phía trên).
+  // "directScoop": arc bám đường deck→cụm, bow nhẹ ra ngoài — dùng khi chia bài
+  //   bay ra từ góc dưới-phải, không vòng lên đầu màn hình.
+  arcStyle: "overTop" | "directScoop" = "overTop"
 ) {
   cards.forEach((card, index) => {
     const cardRect = card.getBoundingClientRect();
@@ -4756,9 +4760,18 @@ function applyDraftReturnGatherVars(
     const deckY = deckInsertY - cardCenterY + stackOffset * 2;
 
     const arc1X = gatherX + (deckX - gatherX) * 0.34;
-    const arc1Y = Math.min(gatherY, deckY) - 150 - Math.abs(stackOffset) * 7;
     const arc2X = gatherX + (deckX - gatherX) * 0.72;
-    const arc2Y = Math.min(gatherY, deckY) - 185 - Math.abs(stackOffset) * 5;
+    let arc1Y: number;
+    let arc2Y: number;
+    if (arcStyle === "directScoop") {
+      // Bám theo đường thẳng deck→cụm, bow nhẹ ra ngoài (xuống dưới một chút)
+      // để cảm giác "trườn" lên từ góc dưới-phải, không nhảy vọt lên trên.
+      arc1Y = gatherY + (deckY - gatherY) * 0.34 + 26 + Math.abs(stackOffset) * 4;
+      arc2Y = gatherY + (deckY - gatherY) * 0.72 + 14 + Math.abs(stackOffset) * 3;
+    } else {
+      arc1Y = Math.min(gatherY, deckY) - 150 - Math.abs(stackOffset) * 7;
+      arc2Y = Math.min(gatherY, deckY) - 185 - Math.abs(stackOffset) * 5;
+    }
 
     card.style.setProperty("--gather-x", `${gatherX}px`);
     card.style.setProperty("--gather-y", `${gatherY}px`);
@@ -8075,21 +8088,60 @@ function restartDraftCenterDealVisuals(): boolean {
   const overlay = document.querySelector(".draft-center-overlay") as HTMLElement | null;
   if (!overlay) return false;
 
+  /* Reset so the expand keyframe can replay cleanly */
   overlay.classList.remove("draft-center-overlay--dealing");
 
-  const wrappers = overlay.querySelectorAll(".draft-center-card-wrapper");
-  wrappers.forEach((node) => {
-    const wrapper = node as HTMLElement;
-    wrapper.classList.remove("draft-center-card-wrapper--flown-to-hand");
-    wrapper.style.animation = "none";
+  const wrappers = Array.from(
+    overlay.querySelectorAll(".draft-center-card-wrapper"),
+  ) as HTMLElement[];
+  if (wrappers.length === 0) return false;
+
+  wrappers.forEach((w) => {
+    w.classList.remove("draft-center-card-wrapper--flown-to-hand");
+    w.style.animation = "none";
+    // Clear old CSS vars
+    w.style.removeProperty("--gather-x");
+    w.style.removeProperty("--gather-y");
+    w.style.removeProperty("--gather-r");
+    w.style.removeProperty("--arc1-x");
+    w.style.removeProperty("--arc1-y");
+    w.style.removeProperty("--arc2-x");
+    w.style.removeProperty("--arc2-y");
+    w.style.removeProperty("--deck-in-x");
+    w.style.removeProperty("--deck-in-y");
+    w.style.removeProperty("--deck-r");
   });
 
+  // Force reflow
   void overlay.offsetWidth;
 
-  wrappers.forEach((node) => {
-    (node as HTMLElement).style.removeProperty("animation");
+  // Remove animation: none so keyframe can replay
+  wrappers.forEach((w) => {
+    w.style.removeProperty("animation");
   });
 
+  /* Calculate gather point at center of overlay, like collapse/expand does */
+  const overlayRect = overlay.getBoundingClientRect();
+  const gatherCenterX = overlayRect.left + overlayRect.width * 0.5;
+  const gatherCenterY = overlayRect.top + overlayRect.height * 0.38;
+
+  /* Gốc deck cho lúc CHIA BÀI: luôn bay ra từ góc dưới-phải màn hình.
+     (.deck-card-stack canh giữa nên không dùng — đó là lý do trước đây bay từ trên.) */
+  const deckInsertX = window.innerWidth - 70;
+  const deckInsertY = window.innerHeight - 50;
+
+  /* Set --gather-x/y/r và --deck-in-x/y/r per-card. Dùng arc "directScoop"
+     để các lá trườn lên từ góc dưới-phải về cụm, không vòng lên đầu màn hình. */
+  applyDraftReturnGatherVars(
+    wrappers,
+    gatherCenterX,
+    gatherCenterY,
+    deckInsertX,
+    deckInsertY,
+    "directScoop",
+  );
+
+  /* Re-add dealing class → CSS triggers draftCenterPoolExpandFromDeckV2 keyframe */
   overlay.classList.add("draft-center-overlay--dealing");
   return true;
 }
@@ -8103,7 +8155,25 @@ function clearDraftCenterDealAnimation() {
   }
 
   isDraftCenterDealing = false;
-  document.querySelector(".draft-center-overlay")?.classList.remove("draft-center-overlay--dealing");
+
+  const overlay = document.querySelector(".draft-center-overlay") as HTMLElement | null;
+  overlay?.classList.remove("draft-center-overlay--dealing");
+
+  // Clean up gather CSS vars
+  overlay?.querySelectorAll(".draft-center-card-wrapper").forEach((node) => {
+    const el = node as HTMLElement;
+    el.style.removeProperty("animation");
+    el.style.removeProperty("--gather-x");
+    el.style.removeProperty("--gather-y");
+    el.style.removeProperty("--gather-r");
+    el.style.removeProperty("--arc1-x");
+    el.style.removeProperty("--arc1-y");
+    el.style.removeProperty("--arc2-x");
+    el.style.removeProperty("--arc2-y");
+    el.style.removeProperty("--deck-in-x");
+    el.style.removeProperty("--deck-in-y");
+    el.style.removeProperty("--deck-r");
+  });
 }
 
 function getDraftCenterPoolSignature(): string {
@@ -8140,7 +8210,14 @@ function startDraftCenterDealAnimation(
 
     draftCenterDealEndTimerId = null;
     isDraftCenterDealing = false;
-    document.querySelector(".draft-center-overlay")?.classList.remove("draft-center-overlay--dealing");
+
+    const ov = document.querySelector(".draft-center-overlay") as HTMLElement | null;
+    ov?.classList.remove("draft-center-overlay--dealing");
+
+    // Clean up FLIP inline styles
+    ov?.querySelectorAll(".draft-center-card-wrapper").forEach((node) => {
+      (node as HTMLElement).style.cssText = "";
+    });
   }, durationMs);
 }
 

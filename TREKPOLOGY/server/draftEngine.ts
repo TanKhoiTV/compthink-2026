@@ -5,10 +5,12 @@ const DRAFT_STARTING_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = 5;
 const DRAFT_PICK_SECONDS = 90;
 export { DRAFT_PICK_SECONDS };
-// Chia bài "bay cả cụm rồi tản ra" — giữ KHỚP với src/game/constants.ts.
-const DRAFT_CENTER_DEAL_CARD_MS = 600;
+// Chia bài "gom cụm rồi tỏa ra" — giữ KHỚP với src/game/constants.ts.
+// STEP=0: 7 lá xuất hiện đồng thời thành cụm; CARD_MS=1350 khớp keyframe
+// draftCenterPoolExpandFromDeckV2 (1.35s). Dùng để tính draftTimerHold (lúc bật pick).
+const DRAFT_CENTER_DEAL_CARD_MS = 1350;
 const DRAFT_CENTER_DEAL_GAP_MS = 0;
-const DRAFT_CENTER_DEAL_STEP_MS = 55;
+const DRAFT_CENTER_DEAL_STEP_MS = 0;
 const DRAFT_PASS_ANIMATION_MS = 1500;
 
 function getDraftCenterDealDurationMs(cardCount: number): number {
