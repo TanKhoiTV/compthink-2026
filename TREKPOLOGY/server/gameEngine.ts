@@ -2835,6 +2835,11 @@ function stripPrivatePlayerState(player: RoomState["players"][PlayerId]) {
     hasJoined: player.hasJoined,
     isBot: player.isBot === true,
     planningConfirmed: player.planningConfirmed === true,
+    draftPool: player.draftPool,
+    hand: player.hand,
+    pickedDraftCards: player.pickedDraftCards,
+    selectedDraftCardId: player.selectedDraftCardId,
+    draftPickConfirmed: player.draftPickConfirmed === true,
     board: player.board,
   };
 }

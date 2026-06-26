@@ -638,6 +638,113 @@ function getOnlineSelfHand(): TravelCardData[] | null {
   return (getOnlineSelfState()?.hand as TravelCardData[] | undefined) ?? null;
 }
 
+function getOnlinePlayerHand(playerId?: PlayerId): TravelCardData[] | null {
+  if (!playerId || !onlineClientState.roomState) return null;
+
+  if (playerId === getOnlineSelfPlayerId()) {
+    return getOnlineSelfHand();
+  }
+
+  return (getOnlinePlayer(playerId)?.hand as TravelCardData[] | undefined) ?? null;
+}
+
+function getOnlinePlayerDraftPool(playerId?: PlayerId): TravelCardData[] {
+  if (!playerId || !onlineClientState.roomState) return [];
+
+  if (playerId === getOnlineSelfPlayerId()) {
+    return getOnlineSelfDraftPool() ?? [];
+  }
+
+  return (getOnlinePlayer(playerId)?.draftPool as TravelCardData[] | undefined) ?? [];
+}
+
+function getOnlinePlayerPickedDraftCards(playerId?: PlayerId): TravelCardData[] {
+  if (!playerId || !onlineClientState.roomState) return [];
+
+  if (playerId === getOnlineSelfPlayerId()) {
+    return (getOnlineSelfState()?.pickedDraftCards as TravelCardData[] | undefined) ?? [];
+  }
+
+  return (getOnlinePlayer(playerId)?.pickedDraftCards as TravelCardData[] | undefined) ?? [];
+}
+
+function getOnlinePlayerSelectedDraftCardId(playerId?: PlayerId): string | null {
+  if (!playerId || !onlineClientState.roomState) return null;
+
+  if (playerId === getOnlineSelfPlayerId()) {
+    return getOnlineSelfState()?.selectedDraftCardId ?? null;
+  }
+
+  return (getOnlinePlayer(playerId)?.selectedDraftCardId as string | null | undefined) ?? null;
+}
+
+function isOnlinePlayerDraftPickConfirmed(playerId?: PlayerId): boolean {
+  if (!playerId || !onlineClientState.roomState) return false;
+
+  if (playerId === getOnlineSelfPlayerId()) {
+    return getOnlineSelfState()?.draftPickConfirmed === true;
+  }
+
+  return (getOnlinePlayer(playerId)?.draftPickConfirmed as boolean | undefined) === true;
+}
+
+function getOnlinePlayerPendingPickedDraftCard(playerId?: PlayerId): TravelCardData | null {
+  const selectedDraftCardId = getOnlinePlayerSelectedDraftCardId(playerId);
+
+  if (!selectedDraftCardId) return null;
+
+  return getOnlinePlayerDraftPool(playerId).find((card) => card.id === selectedDraftCardId) ?? null;
+}
+
+function getSpectateDraftPoolCards(): TravelCardData[] {
+  if (!isSpectatingOnlinePlayer() || !isDraftPhase) return [];
+
+  const viewedPlayerId = getViewedPlayerId();
+  const selectedDraftCardId = getOnlinePlayerSelectedDraftCardId(viewedPlayerId);
+
+  return getOnlinePlayerDraftPool(viewedPlayerId).filter((card) => {
+    return card.id !== selectedDraftCardId;
+  });
+}
+
+function getSpectatePickedDraftCards(): TravelCardData[] {
+  if (!isSpectatingOnlinePlayer() || !isDraftPhase) return [];
+
+  const viewedPlayerId = getViewedPlayerId();
+  const pickedCards = [...getOnlinePlayerPickedDraftCards(viewedPlayerId)];
+  const pendingPickedCard = getOnlinePlayerPendingPickedDraftCard(viewedPlayerId);
+
+  if (pendingPickedCard && !pickedCards.some((card) => card.id === pendingPickedCard.id)) {
+    pickedCards.push(pendingPickedCard);
+  }
+
+  return pickedCards;
+}
+
+function getSpectateHandCards(): TravelCardData[] {
+  if (!isSpectatingOnlinePlayer()) return [];
+
+  const viewedPlayerId = getViewedPlayerId();
+  const handCards = getOnlinePlayerHand(viewedPlayerId) ?? [];
+
+  if (isDraftPhase) {
+    const allDraftCards = [
+      ...getSpectateDraftPoolCards(),
+      ...getSpectatePickedDraftCards(),
+    ];
+    const seen = new Set<string>();
+
+    return allDraftCards.filter((card) => {
+      if (seen.has(card.id)) return false;
+
+      seen.add(card.id);
+      return true;
+    });
+  }
+
+  return handCards;
+}
+
 function getOnlineSelectedDraftCardId() {
   return getOnlineSelfState()?.selectedDraftCardId ?? null;
 }
@@ -672,11 +779,116 @@ function getOnlinePlayer(playerId?: PlayerId) {
   return onlineClientState.roomState.players[playerId] ?? null;
 }
 
-export function getDisplayPlayerName() {
-  const selfPlayerId = onlineClientState.playerId ?? currentPlayerId;
-  const onlineSelf = getOnlinePlayer(selfPlayerId);
+function getOnlineSelfPlayerId(): PlayerId {
+  return onlineClientState.playerId ?? currentPlayerId;
+}
 
-  return onlineSelf?.name ?? "Player";
+function getViewedPlayerId(): PlayerId {
+  if (!isOnlineRoomActive()) return currentPlayerId;
+
+  return spectatingPlayerId ?? getOnlineSelfPlayerId();
+}
+
+function getViewedOnlinePlayer() {
+  return getOnlinePlayer(getViewedPlayerId());
+}
+
+function isSpectatingOnlinePlayer(): boolean {
+  return isOnlineRoomActive() && getViewedPlayerId() !== getOnlineSelfPlayerId();
+}
+
+function resetSpectateView() {
+  spectatingPlayerId = null;
+  focusedHandCardId = null;
+  focusedBoardCard = null;
+  focusedBoardPosition = null;
+  selectedHandCardId = null;
+  draggedHandCardId = null;
+  suppressNextClick = false;
+}
+
+function syncSpectateTargetWithRoomState() {
+  if (!isOnlineRoomActive()) {
+    spectatingPlayerId = null;
+    return;
+  }
+
+  if (!spectatingPlayerId) return;
+
+  const selfPlayerId = getOnlineSelfPlayerId();
+  const targetPlayer = getOnlinePlayer(spectatingPlayerId);
+
+  if (spectatingPlayerId === selfPlayerId || !targetPlayer || !targetPlayer.hasJoined) {
+    resetSpectateView();
+  }
+}
+
+function getSpectatableOnlinePlayerIds(): PlayerId[] {
+  if (!isOnlineRoomActive()) return [];
+
+  const selfPlayerId = getOnlineSelfPlayerId();
+
+  return playerIds.filter((playerId) => {
+    if (playerId === selfPlayerId) return false;
+
+    const player = getOnlinePlayer(playerId);
+
+    return player?.isConnected === true || player?.hasJoined === true;
+  });
+}
+
+function setSpectateTarget(playerId: PlayerId | null) {
+  if (!playerId) {
+    resetSpectateView();
+    return;
+  }
+
+  const selfPlayerId = getOnlineSelfPlayerId();
+  const targetPlayer = getOnlinePlayer(playerId);
+
+  if (playerId === selfPlayerId || !targetPlayer || !targetPlayer.hasJoined) {
+    resetSpectateView();
+    return;
+  }
+
+  spectatingPlayerId = playerId;
+  focusedHandCardId = null;
+  focusedBoardCard = null;
+  focusedBoardPosition = null;
+  selectedHandCardId = null;
+  draggedHandCardId = null;
+  handPointerDragState = null;
+  suppressNextClick = false;
+  clearBoardDragHoverClass();
+  clearDeckDiscardHoverClass();
+}
+
+function cycleSpectateTarget(direction: 1 | -1) {
+  if (!isOnlineRoomActive()) return;
+
+  const candidates = getSpectatableOnlinePlayerIds();
+
+  if (candidates.length === 0) {
+    resetSpectateView();
+    rerenderGameShell();
+    return;
+  }
+
+  const currentIndex = spectatingPlayerId ? candidates.indexOf(spectatingPlayerId) : -1;
+  const nextIndex = currentIndex === -1
+    ? direction > 0
+      ? 0
+      : candidates.length - 1
+    : (currentIndex + direction + candidates.length) % candidates.length;
+
+  setSpectateTarget(candidates[nextIndex]);
+  rerenderGameShell();
+}
+
+export function getDisplayPlayerName() {
+  const viewedPlayer = getViewedOnlinePlayer();
+
+  return viewedPlayer?.name ?? "Player";
 }
 
 function getCompactPhaseDayLabel() {
@@ -937,7 +1149,7 @@ function getOnlinePlayerBoard(playerId?: PlayerId) {
 }
 
 function getCurrentOnlinePlayerId(): PlayerId {
-  return onlineClientState.playerId ?? currentPlayerId;
+  return getViewedPlayerId();
 }
 
 function getOnlineScoreForPlayer(playerId?: PlayerId): number | null {
@@ -947,7 +1159,7 @@ function getOnlineScoreForPlayer(playerId?: PlayerId): number | null {
 }
 
 function getOnlineSelfScore(): number | null {
-  return getOnlineScoreForPlayer(onlineClientState.playerId ?? currentPlayerId);
+  return getOnlineScoreForPlayer(getViewedPlayerId());
 }
 
 
@@ -960,6 +1172,15 @@ function getKnownOnlineCardById(cardId: string): TravelCardData | null {
     ...(onlineSelf?.draftPool ?? []),
     ...(onlineSelf?.pickedDraftCards ?? []),
     ...(onlineSelf?.hand ?? []),
+    ...playerIds.reduce<TravelCardData[]>((cards, playerId) => {
+      const player = getOnlinePlayer(playerId);
+
+      cards.push(...((player?.draftPool as TravelCardData[] | undefined) ?? []));
+      cards.push(...((player?.pickedDraftCards as TravelCardData[] | undefined) ?? []));
+      cards.push(...((player?.hand as TravelCardData[] | undefined) ?? []));
+
+      return cards;
+    }, []),
     ...playerHand,
     ...initialDeck,
   ] as TravelCardData[];
@@ -1308,6 +1529,8 @@ const initialDeck = createInitialDeck();
 
 const playerIds: PlayerId[] = ["p1", "p2", "p3", "p4"];
 export const currentPlayerId: PlayerId = "p1";
+let spectatingPlayerId: PlayerId | null = null;
+let isOnlineRoomMenuOpen = false;
 
 function createEmptyPlayerBoards(): Record<PlayerId, BoardSlots> {
   return {
@@ -1776,12 +1999,12 @@ export function getRemainingResources() {
     nhưng UI orb không đổi.
   */
   if (isOnlineRoomActive()) {
-    const onlineSelf = getOnlineSelfPublicPlayer();
+    const onlineResourcePlayer = getViewedOnlinePlayer() ?? getOnlineSelfPublicPlayer();
 
-    if (onlineSelf) {
+    if (onlineResourcePlayer) {
       return {
-        coin: onlineSelf.coin,
-        stamina: onlineSelf.stamina,
+        coin: onlineResourcePlayer.coin,
+        stamina: onlineResourcePlayer.stamina,
       };
     }
   }
@@ -1870,6 +2093,8 @@ function isBoardLockToken(card: TravelCardData | null) {
 }
 
 function canPlaceOnBoardCell(rowIndex: number, colIndex: number) {
+  if (isSpectatingOnlinePlayer()) return false;
+
   const cell = getBoardSlots()[rowIndex]?.[colIndex] ?? null;
 
   return cell === null;
@@ -2002,6 +2227,13 @@ function payLocalDebtToken(rowIndex: number, colIndex: number, card: TravelCardD
 }
 
 function payDebtToken(rowIndex: number, colIndex: number, card: TravelCardData) {
+  if (isSpectatingOnlinePlayer()) {
+    focusedBoardCard = card;
+    focusedBoardPosition = { rowIndex, colIndex };
+    rerenderArena();
+    return;
+  }
+
   if (colIndex !== currentDayIndex) {
     focusedBoardCard = card;
     focusedBoardPosition = { rowIndex, colIndex };
@@ -2113,6 +2345,14 @@ function renderFramedCardFace(card: TravelCardData, mode: "hand" | "focused") {
 
 function getHandCardById(id: string | null) {
   if (!id) return null;
+
+  if (isSpectatingOnlinePlayer()) {
+    const spectateHandCard = getSpectateHandCards().find((card) => card.id === id) ?? null;
+
+    if (spectateHandCard) {
+      return spectateHandCard;
+    }
+  }
 
   if (isOnlineRoomActive()) {
     const onlineDraftCard = getOnlineSelfDraftPool()?.find((card) => card.id === id) ?? null;
@@ -2527,7 +2767,7 @@ function renderFocusedCard(card: TravelCardData) {
         ${renderFramedCardFace(card, "focused")}
 
         ${
-          focusedBoardPosition
+          focusedBoardPosition && !isSpectatingOnlinePlayer()
             ? `
               <button
                 class="focused-card__return-button"
@@ -3142,7 +3382,46 @@ function isDraftTimerDanger(): boolean {
   return !isDraftPickTimerFrozen() && draftPickSecondsLeft <= 3;
 }
 
+function renderSpectateDraftCenterOverlay() {
+  if (!isDraftPhase) return "";
+
+  const targetPlayer = getViewedOnlinePlayer();
+  const activePool = getSpectateDraftPoolCards();
+  const pickedCards = getSpectatePickedDraftCards();
+
+  if (activePool.length === 0 && pickedCards.length === 0) {
+    return "";
+  }
+
+  const topRow = activePool.slice(0, 4);
+  const bottomRow = activePool.slice(4);
+
+  const renderRow = (cards: TravelCardData[], startIndex: number) => {
+    return cards.map((card, idx) => {
+      const globalSlot = startIndex + idx + 1;
+
+      return `
+        <div class="draft-center-card-wrapper draft-center-card-wrapper--slot-${globalSlot} draft-center-card-wrapper--spectate-readonly" style="--draft-deal-delay: ${(globalSlot - 1) * DRAFT_CENTER_DEAL_STEP_MS}ms">
+          <div class="draft-center-card" data-spectate-draft-card-id="${card.id}" onclick="event.stopPropagation(); openSpectateHandCard('${card.id}')">
+            ${renderHandCard(card, startIndex + idx, true)}
+          </div>
+        </div>
+      `;
+    }).join("");
+  };
+
+  return `
+    <div class="draft-center-overlay draft-center-overlay--spectate-readonly">
+      <div class="draft-center-container draft-center-container--spectate">
+        ${topRow.length > 0 ? `<div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(topRow, 0)}</div>` : ""}
+        ${bottomRow.length > 0 ? `<div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(bottomRow, 4)}</div>` : ""}
+      </div>
+    </div>
+  `;
+}
+
 function renderDraftCenterOverlay() {
+  if (isSpectatingOnlinePlayer()) return "";
   if (!isDraftPhase) return "";
   if (!shouldShowDraftPickPool()) return "";
 
@@ -3215,6 +3494,7 @@ function renderDraftCenterOverlay() {
 }
 
 function renderDraftLeftoverReturnOverlay(): string {
+  if (isSpectatingOnlinePlayer()) return "";
   if (!shouldShowDraftLeftoverReturn()) return "";
 
   const cards = getDraftLeftoverReturnCards();
@@ -3358,9 +3638,20 @@ function renderPlayer(player: Player) {
       }
     : player;
   const connectionClass = onlinePlayer?.isConnected === false ? " side-player--offline" : "";
+  const isSelfOnlinePlayer = isOnlineRoomActive() && player.id === getOnlineSelfPlayerId();
+  const canSpectatePlayer = isOnlineRoomActive() && !isSelfOnlinePlayer && onlinePlayer?.isConnected === true;
+  const isViewingPlayer = isOnlineRoomActive() && spectatingPlayerId === player.id;
+  const spectateClass = canSpectatePlayer ? " side-player--spectatable" : "";
+  const viewingClass = isViewingPlayer ? " side-player--viewing" : "";
+  const clickHandler = canSpectatePlayer
+    ? ` onclick="event.stopPropagation(); spectatePlayerBoard('${displayPlayer.id}')"`
+    : "";
+  const spectateTitle = canSpectatePlayer
+    ? ` title="Bấm để xem sàn của ${displayPlayer.name}"`
+    : "";
 
   return `
-    <section class="side-player ${displayPlayer.active ? "side-player--active" : ""}${connectionClass}">
+    <section class="side-player ${displayPlayer.active ? "side-player--active" : ""}${connectionClass}${spectateClass}${viewingClass}"${clickHandler}${spectateTitle}>
       <div class="side-player__top">
         <div class="side-player__identity">
           <span class="rank">#${displayPlayer.rank}</span>
@@ -3383,6 +3674,17 @@ function renderPlayer(player: Player) {
       <div class="opponent-board">
         ${renderSidePlayerBoard(displayPlayer.id)}
       </div>
+
+      ${canSpectatePlayer ? `
+        <button
+          type="button"
+          class="side-player__view-button"
+          onclick="event.stopPropagation(); spectatePlayerBoard('${displayPlayer.id}')"
+          title="Xem bàn của ${displayPlayer.name}"
+        >
+          Xem
+        </button>
+      ` : ""}
     </section>
   `;
 }
@@ -4618,6 +4920,7 @@ function getPlanningConfirmStatusLabel() {
 }
 
 function confirmPlanningPick() {
+  if (isSpectatingOnlinePlayer()) return;
   if (!isOnlinePlanningPhase()) return;
   if (isSelfPlanningConfirmed()) return;
 
@@ -5864,6 +6167,7 @@ function getCurrentCoinDebtAmount() {
 }
 
 function openDebtTokenModal() {
+  if (isSpectatingOnlinePlayer()) return;
   if (getCurrentCoinDebtAmount() <= 0) return;
 
   isDebtTokenModalOpen = true;
@@ -5878,6 +6182,8 @@ function closeDebtTokenModal() {
 }
 
 function payCurrentCoinDebt() {
+  if (isSpectatingOnlinePlayer()) return;
+
   const debtAmount = getCurrentCoinDebtAmount();
 
   if (debtAmount <= 0) {
@@ -6028,10 +6334,10 @@ function renderPlayerEffectTokens() {
 
   if (coinDebt > 0) {
     effectTokens.push(`
-      <button
-        type="button"
-        class="player-effect-seal player-effect-seal--debt"
-        onclick="event.stopPropagation(); window.openDebtTokenModal()"
+      <${isSpectatingOnlinePlayer() ? "div" : "button"}
+        ${isSpectatingOnlinePlayer() ? "" : 'type="button"'}
+        class="player-effect-seal player-effect-seal--debt ${isSpectatingOnlinePlayer() ? "player-effect-seal--readonly" : ""}"
+        ${isSpectatingOnlinePlayer() ? "" : 'onclick="event.stopPropagation(); window.openDebtTokenModal()"'}
         aria-label="Token nợ: ${coinDebt} xu"
       >
         <span class="player-effect-seal__surface">
@@ -6042,7 +6348,7 @@ function renderPlayerEffectTokens() {
 
         <span class="player-effect-seal__count">${coinDebt}</span>
         <span class="player-effect-seal__hover-label">TOKEN NỢ</span>
-      </button>
+      </${isSpectatingOnlinePlayer() ? "div" : "button"}>
     `);
   }
 
@@ -6057,7 +6363,15 @@ function renderPlayerEffectTokens() {
   `;
 }
 
+function renderSpectateDeckPlaceholder() {
+  return "";
+}
+
 function renderDeckPilePanel() {
+  if (isSpectatingOnlinePlayer()) {
+    return renderSpectateDeckPlaceholder();
+  }
+
   const deckCount = isOnlineRoomActive() ? 0 : deck.length;
   const handCount =
     (isOnlineRoomActive() ? getOnlineSelfHand() : null)?.length ?? playerHand.length;
@@ -6173,11 +6487,119 @@ function renderDeckPilePanel() {
   `;
 }
 
-function renderMainArena() {
-  const focusedCard = getHandCardById(focusedHandCardId) ?? focusedBoardCard;
+function renderSpectateBanner() {
+  return "";
+}
+
+function renderSpectateHandCard(card: TravelCardData, index: number) {
+  return `
+    <article
+      class="spectate-card-tray__card hand-card hand-card--${card.rarity} hand-card--spectate-readonly"
+      data-spectate-hand-card-id="${card.id}"
+      title="${card.name} - ${card.city}"
+      onclick="event.stopPropagation(); openSpectateHandCard('${card.id}')"
+      style="--spectate-card-index: ${index};"
+    >
+      ${renderFramedCardFace(card, "hand")}
+    </article>
+  `;
+}
+
+function renderSpectateHandSection(
+  title: string,
+  label: string,
+  cards: TravelCardData[],
+  emptyText: string,
+  className = ""
+) {
+  return `
+    <div class="spectate-card-tray__section ${className}">
+      <div class="spectate-card-tray__section-title">
+        <span>${label}</span>
+        <strong>${title}</strong>
+        <em>${cards.length} lá</em>
+      </div>
+
+      <div class="spectate-card-tray__cards">
+        ${cards.length > 0 ? cards.map((card, index) => renderSpectateHandCard(card, index)).join("") : `<div class="spectate-hand-empty">${emptyText}</div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderSpectateHandPanel() {
+  const viewedPlayerId = getViewedPlayerId();
+  const targetPlayer = getViewedOnlinePlayer();
+  const viewedPlayerName = targetPlayer?.name ?? "đối thủ";
+  const handCards = getOnlinePlayerHand(viewedPlayerId) ?? [];
+  const pickedDraftCards = getSpectatePickedDraftCards();
+  const displayCards = isDraftPhase ? pickedDraftCards : handCards;
+  const displayCount = displayCards.length;
+  const emptyText = isDraftPhase
+    ? "Đối thủ chưa chọn lá nào trong vòng draft này."
+    : "Đối thủ chưa có bài trên tay.";
 
   return `
-    <main class="arena ${isOnlineGameOver() ? "arena--gameover" : ""} ${isSimulationMode ? "arena--scanning" : ""}">
+    <section
+      class="player-hand player-hand--spectate-normal ${isDraftPhase ? "player-hand--draft player-hand--spectate-draft" : ""}"
+      onclick="event.stopPropagation()"
+      aria-label="Bài của người chơi đang xem"
+    >
+      <div class="player-hand__top player-hand__top--spectate">
+        <div class="player-hand__title">
+          <span class="hand-badge">${isDraftPhase ? "PICK" : "HAND"}</span>
+          <h2>${isDraftPhase ? `Lá đã chọn của ${viewedPlayerName}` : `Bài trên tay của ${viewedPlayerName}`}</h2>
+        </div>
+
+        <button
+          type="button"
+          class="player-hand__return-button"
+          onclick="event.stopPropagation(); returnToOwnBoard()"
+          title="Quay về bàn của mình"
+        >
+          ← Bàn mình
+        </button>
+      </div>
+
+      <div class="player-hand__cards ${isDraftPhase ? `player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${Math.max(1, displayCount)}` : ""}">
+        ${
+          displayCount > 0
+            ? displayCards.map((card, index) => renderSpectateReadonlyHandCard(card, index)).join("")
+            : `<div class="spectate-normal-empty">${emptyText}</div>`
+        }
+      </div>
+    </section>
+  `;
+}
+
+function renderSpectateReturnButton() {
+  return "";
+}
+
+function renderSpectateReadonlyHandCard(card: TravelCardData, index: number) {
+  const pickedClass = isDraftPhase
+    ? ` hand-card--picked-draft hand-card--picked-slot-${index + 1}`
+    : ` hand-card--fan-${index + 1}`;
+
+  return `
+    <article
+      class="hand-card hand-card--${card.rarity} hand-card--spectate-readonly${pickedClass}"
+      data-spectate-hand-card-id="${card.id}"
+      title="${card.name} - ${card.city}"
+      onclick="event.stopPropagation(); openSpectateHandCard('${card.id}')"
+      style="--hand-card-index: ${index};"
+    >
+      ${renderFramedCardFace(card, "hand")}
+    </article>
+  `;
+}
+
+function renderMainArena() {
+  const focusedCard = getHandCardById(focusedHandCardId) ?? focusedBoardCard;
+  const isSpectating = isSpectatingOnlinePlayer();
+
+  return `
+    <main class="arena ${isOnlineGameOver() ? "arena--gameover" : ""} ${isSimulationMode ? "arena--scanning" : ""} ${isSpectating ? "arena--spectating" : ""}">
       <div class="arena__top arena__top--with-score">
         <div class="arena__title-block">
           <div class="blue-line"></div>
@@ -6190,6 +6612,7 @@ function renderMainArena() {
         ${renderScoreBreakdownPanel()}
       </div>
 
+      ${renderSpectateBanner()}
 
       ${renderResourceOrbs()}
 
@@ -6209,7 +6632,7 @@ function renderMainArena() {
                     .map((_, colIndex) => {
                       const card = getBoardCardByPosition(rowIndex, colIndex);
                       const isCurrentDayColumn = colIndex === currentDayIndex;
-                      const isPlaceable = !isDraftPhase && !isSimulationMode && !isInitialDealInProgress && isCurrentDayColumn && selectedHandCardId !== null && card === null;
+                      const isPlaceable = !isSpectating && !isDraftPhase && !isSimulationMode && !isInitialDealInProgress && isCurrentDayColumn && selectedHandCardId !== null && card === null;
 
                       if (!card) {
                         return `
@@ -6246,7 +6669,8 @@ function renderMainArena() {
               })
               .join("")}
           </section>
-          ${renderDraftCenterOverlay()}${renderDraftLeftoverReturnOverlay()}
+          ${isSpectating && isDraftPhase ? renderSpectateDraftCenterOverlay() : renderDraftCenterOverlay()}${renderDraftLeftoverReturnOverlay()}
+          ${renderSpectateReturnButton()}
         </div>
 
         ${isOnlineGameOver() ? renderFinalRankingPanel() : isDraftPhase ? "" : renderSimulationResultPanel()}
@@ -6254,7 +6678,9 @@ function renderMainArena() {
         ${
           isSimulationMode
             ? ""
-            : `
+            : isSpectating
+              ? renderSpectateHandPanel()
+              : `
               <section
           class="player-hand ${isDraftPhase ? "player-hand--draft" : ""} ${!isDraftPhase && isInitialDealInProgress ? "player-hand--dealing is-dealing" : ""}"
           onclick="${isDraftPhase ? "" : "clearSelectedHandCard()"}"
@@ -6350,6 +6776,7 @@ function rerenderArena() {
 }
 
 function placeHandCardOnBoard(cardId: string, rowIndex: number, colIndex: number) {
+  if (isSpectatingOnlinePlayer()) return;
   if (isSimulationMode || isInitialDealInProgress) return;
   if (colIndex !== currentDayIndex) return;
   if (!canPlaceOnBoardCell(rowIndex, colIndex)) return;
@@ -6465,6 +6892,7 @@ function placeSelectedHandCard(rowIndex: number, colIndex: number) {
 }
 
 function returnFocusedBoardCardToHand() {
+  if (isSpectatingOnlinePlayer()) return;
   if (isSimulationMode) return;
   if (!focusedBoardPosition) return;
 
@@ -6596,7 +7024,7 @@ function clearDeckDiscardHoverClass() {
 }
 
 function canDiscardHandCard() {
-  return !isDraftPhase && !isSimulationMode && !isInitialDealInProgress;
+  return !isSpectatingOnlinePlayer() && !isDraftPhase && !isSimulationMode && !isInitialDealInProgress;
 }
 
 function discardHandCardToDeck(cardId: string) {
@@ -6847,6 +7275,8 @@ function clearBoardDragHoverClass() {
 }
 
 (window as any).startDragHandCard = (event: DragEvent, id: string) => {
+  if (isSpectatingOnlinePlayer()) return;
+
   clearHoldTimer();
 
   /*
@@ -6880,6 +7310,7 @@ function clearBoardDragHoverClass() {
 };
 
 (window as any).handleBoardCellDragOver = (event: DragEvent, rowIndex: number, colIndex: number) => {
+  if (isSpectatingOnlinePlayer()) return;
   if (!draggedHandCardId) return;
   if (getBoardSlots()[rowIndex][colIndex] !== null) return;
 
@@ -6897,6 +7328,8 @@ function clearBoardDragHoverClass() {
 };
 
 (window as any).dropHandCardOnBoard = (event: DragEvent, rowIndex: number, colIndex: number) => {
+  if (isSpectatingOnlinePlayer()) return;
+
   clearHoldTimer();
   clearBoardDragHoverClass();
 
@@ -6917,6 +7350,7 @@ function clearBoardDragHoverClass() {
 };
 
 (window as any).startHandPointerDrag = (event: PointerEvent, id: string) => {
+  if (isSpectatingOnlinePlayer()) return;
   if (isInitialDealInProgress) return;
 
   if (isSimulationMode) return;
@@ -7012,10 +7446,57 @@ function clearBoardDragHoverClass() {
   rerenderArena();
 };
 
+(window as any).spectatePlayerBoard = (playerId: PlayerId) => {
+  if (!isOnlineRoomActive()) return;
+
+  setSpectateTarget(playerId);
+  rerenderGameShell();
+};
+
+(window as any).cycleSpectatePlayer = (direction: 1 | -1 = 1) => {
+  cycleSpectateTarget(direction);
+};
+
+(window as any).returnToOwnBoard = () => {
+  resetSpectateView();
+  rerenderGameShell();
+};
+
+(window as any).openSpectateHandCard = (cardId: string) => {
+  if (!isSpectatingOnlinePlayer()) return;
+
+  const card = getSpectateHandCards().find((item) => item.id === cardId);
+
+  if (!card) return;
+
+  clearHoldTimer();
+  focusedHandCardId = card.id;
+  focusedBoardCard = null;
+  focusedBoardPosition = null;
+  selectedHandCardId = null;
+  draggedHandCardId = null;
+  suppressNextClick = false;
+  rerenderArena();
+};
+
 (window as any).handleBoardCellClick = (rowIndex: number, colIndex: number) => {
   clearHoldTimer();
 
   const card = getBoardCardByPosition(rowIndex, colIndex);
+
+  if (isSpectatingOnlinePlayer()) {
+    if (card) {
+      clearCustomHandDragVisuals();
+      focusedHandCardId = null;
+      focusedBoardCard = card;
+      focusedBoardPosition = { rowIndex, colIndex };
+      selectedHandCardId = null;
+      suppressNextClick = false;
+      rerenderArena();
+    }
+
+    return;
+  }
 
   if (card) {
     if (isBoardDebtToken(card)) {
@@ -7215,9 +7696,13 @@ function renderMidGameRankingModal() {
               ? rankings
                   .map((player, index) => {
                     const isSelf = player.playerId === selfPlayerId;
+                    const canSpectateFromRank = !isSelf && player.hasJoined;
 
                     return `
-                      <div class="mid-ranking-row ${isSelf ? "mid-ranking-row--self" : ""}">
+                      <div
+                        class="mid-ranking-row ${isSelf ? "mid-ranking-row--self" : ""} ${canSpectateFromRank ? "mid-ranking-row--spectatable" : ""}"
+                        ${canSpectateFromRank ? `onclick="event.stopPropagation(); closeMidGameRanking(); spectatePlayerBoard('${player.playerId}')" title="Xem sàn của ${player.name}"` : ""}
+                      >
                         <div class="mid-ranking-row__rank">#${index + 1}</div>
 
                         <div class="mid-ranking-row__player">
@@ -7447,8 +7932,53 @@ function setupInGameMusicDelegation() {
   document.addEventListener("keydown", tryPlay);
 }
 
+function setupSpectateKeyboardControls() {
+  document.addEventListener("keydown", (event) => {
+    if (!isOnlineRoomActive() || onlineClientState.roomState?.phase === "lobby") return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+    const target = event.target as HTMLElement | null;
+    const tagName = target?.tagName?.toLowerCase();
+
+    if (tagName === "input" || tagName === "textarea" || target?.isContentEditable) return;
+
+    if (event.key === "e" || event.key === "E") {
+      event.preventDefault();
+      cycleSpectateTarget(1);
+      return;
+    }
+
+    if (event.key === "q" || event.key === "Q") {
+      event.preventDefault();
+      cycleSpectateTarget(-1);
+      return;
+    }
+
+    if (event.key === "Escape" && isSpectatingOnlinePlayer()) {
+      event.preventDefault();
+      resetSpectateView();
+      rerenderGameShell();
+    }
+  });
+}
+
 (window as any).toggleInGameBackgroundMusic = toggleInGameBackgroundMusic;
 (window as any).setInGameBackgroundMusicVolume = setInGameBackgroundMusicVolume;
+
+function toggleOnlineRoomMenu() {
+  isOnlineRoomMenuOpen = !isOnlineRoomMenuOpen;
+  rerenderGameShell();
+}
+
+function closeOnlineRoomMenu() {
+  if (!isOnlineRoomMenuOpen) return;
+
+  isOnlineRoomMenuOpen = false;
+  rerenderGameShell();
+}
+
+(window as any).toggleOnlineRoomMenu = toggleOnlineRoomMenu;
+(window as any).closeOnlineRoomMenu = closeOnlineRoomMenu;
 
 function renderOnlineRoomMenu() {
   if (!isOnlineRoomActive() || onlineClientState.roomState?.phase === "lobby") {
@@ -7456,23 +7986,17 @@ function renderOnlineRoomMenu() {
   }
 
   return `
-    <div class="online-room-menu" onclick="event.stopPropagation()">
-      <input id="online-room-menu-toggle" class="online-room-menu__toggle-input" type="checkbox" />
-
-      <label
+    <div class="online-room-menu ${isOnlineRoomMenuOpen ? "is-open" : ""}" onclick="event.stopPropagation()">
+      <button
+        type="button"
         class="online-room-menu__button"
-        for="online-room-menu-toggle"
         title="Mở menu phòng"
+        onclick="event.preventDefault(); event.stopPropagation(); toggleOnlineRoomMenu()"
       >
         ☰
-      </label>
+      </button>
 
       <div class="online-room-menu__panel">
-        <div class="online-room-menu__text">
-          <strong>Menu phòng</strong>
-          <span>Room ${onlineClientState.roomId ?? "-"}</span>
-        </div>
-
         ${renderInGameMusicControl()}
 
         <button
@@ -7900,8 +8424,476 @@ function setupSaigonCollageHover() {
   }
 }
 
+function renderSpectateRuntimeStyles() {
+  return `
+    <style id="spectate-runtime-styles">
+      .side-player--spectatable {
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+
+      .side-player--spectatable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 35px rgba(21, 173, 255, 0.22);
+      }
+
+      .side-player--viewing {
+        background: linear-gradient(180deg, rgba(11, 53, 115, 0.92), rgba(6, 31, 76, 0.88)) !important;
+        border-color: rgba(36, 132, 255, 0.96) !important;
+        box-shadow: 0 0 0 2px rgba(36, 132, 255, 0.42), 0 20px 42px rgba(6, 31, 76, 0.38) !important;
+        color: #f3fbff !important;
+      }
+
+      .side-player--viewing .side-player__identity h3,
+      .side-player--viewing .side-player__score,
+      .side-player--viewing .side-player__resources {
+        color: #f3fbff !important;
+      }
+
+      .side-player--viewing .rank {
+        background: #1d6dff !important;
+        color: #ffffff !important;
+      }
+
+      .mid-ranking-row--spectatable {
+        cursor: pointer;
+      }
+
+      .mid-ranking-row--spectatable:hover {
+        border-color: rgba(96, 211, 255, 0.55);
+        background: rgba(96, 211, 255, 0.10);
+      }
+
+      .player-effect-seal--readonly {
+        cursor: default;
+      }
+
+      .spectate-card-tray {
+        position: fixed;
+        left: 50%;
+        bottom: 14px;
+        transform: translateX(-50%);
+        width: min(980px, calc(100vw - 680px));
+        min-width: 520px;
+        z-index: 7200;
+        pointer-events: auto;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        display: grid;
+        gap: 6px;
+      }
+
+      .spectate-card-tray__header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        pointer-events: auto;
+      }
+
+      .spectate-card-tray__header strong,
+      .spectate-card-tray__header button {
+        border: 1px solid rgba(147, 197, 253, 0.52);
+        background: rgba(12, 58, 126, 0.86);
+        color: #f5fbff;
+        border-radius: 999px;
+        box-shadow: 0 10px 26px rgba(9, 31, 70, 0.28);
+        font-weight: 900;
+        letter-spacing: 0.02em;
+      }
+
+      .spectate-card-tray__header strong {
+        padding: 7px 14px;
+      }
+
+      .spectate-card-tray__header button {
+        cursor: pointer;
+        padding: 7px 13px;
+      }
+
+      .spectate-card-tray__body {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        align-items: end;
+        pointer-events: auto;
+      }
+
+      .spectate-card-tray--hand .spectate-card-tray__body {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .spectate-card-tray__section {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .spectate-card-tray__section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        color: #f5fbff;
+        text-shadow: 0 2px 8px rgba(6, 25, 58, 0.56);
+      }
+
+      .spectate-card-tray__section-title span {
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.9);
+        border: 1px solid rgba(191, 219, 254, 0.58);
+        font-size: 0.68rem;
+        font-weight: 950;
+        flex: 0 0 auto;
+      }
+
+      .spectate-card-tray__section-title strong {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
+      .spectate-card-tray__section-title em {
+        flex: 0 0 auto;
+        margin-left: auto;
+        font-style: normal;
+        font-size: 0.76rem;
+        opacity: 0.88;
+      }
+
+      .spectate-card-tray__cards {
+        --spectate-mini-card-w: 96px;
+        --spectate-mini-card-h: 142px;
+        min-height: calc(var(--spectate-mini-card-h) + 8px);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 6px;
+        overflow-x: auto;
+        overflow-y: visible;
+        padding: 4px 6px 10px;
+        border-radius: 18px;
+        background: rgba(5, 23, 52, 0.18);
+        backdrop-filter: blur(2px);
+        scrollbar-width: thin;
+      }
+
+      .spectate-card-tray__card.hand-card {
+        width: var(--spectate-mini-card-w) !important;
+        height: var(--spectate-mini-card-h) !important;
+        flex: 0 0 var(--spectate-mini-card-w) !important;
+        margin-left: 0 !important;
+        transform: none !important;
+        transform-origin: center bottom !important;
+        cursor: zoom-in;
+        border-radius: 12px !important;
+        z-index: calc(7300 + var(--spectate-card-index, 0)) !important;
+      }
+
+      .spectate-card-tray__card.hand-card:hover {
+        transform: translateY(-18px) scale(1.18) !important;
+        z-index: 7800 !important;
+      }
+
+      .spectate-card-tray__card .framed-card-face__description,
+      .spectate-card-tray__card .framed-card-face__cost,
+      .spectate-card-tray__card .framed-card-face__pill--rarity {
+        display: none !important;
+      }
+
+      .spectate-card-tray__card .framed-card-face__name {
+        font-size: 0.52rem !important;
+      }
+
+      .spectate-hand-empty {
+        min-width: 180px;
+        min-height: 74px;
+        padding: 12px 14px;
+        display: grid;
+        place-items: center;
+        border: 1px dashed rgba(90, 221, 255, 0.35);
+        border-radius: 18px;
+        color: rgba(238, 251, 255, 0.88);
+        background: rgba(13, 33, 55, 0.38);
+        font-weight: 850;
+        text-align: center;
+        font-size: 0.8rem;
+      }
+
+      @media (max-width: 1500px) {
+        .spectate-card-tray {
+          width: min(820px, calc(100vw - 520px));
+          min-width: 430px;
+        }
+
+        .spectate-card-tray__cards {
+          --spectate-mini-card-w: 82px;
+          --spectate-mini-card-h: 122px;
+        }
+      }
+
+      @media (max-width: 1180px) {
+        .spectate-card-tray {
+          width: calc(100vw - 44px);
+          min-width: 0;
+          bottom: 8px;
+        }
+      }
+
+      .draft-center-overlay--spectate-readonly {
+        pointer-events: auto;
+      }
+
+      .draft-center-container--spectate {
+        gap: 12px;
+      }
+
+      .draft-center-card-wrapper--spectate-readonly {
+        cursor: pointer;
+      }
+
+      .draft-center-card-wrapper--spectate-readonly .draft-center-card {
+        filter: drop-shadow(0 18px 30px rgba(8, 34, 78, 0.28));
+      }
+
+      .spectate-draft-title {
+        align-self: center;
+        padding: 8px 16px;
+        border-radius: 999px;
+        background: rgba(6, 31, 76, 0.82);
+        border: 1px solid rgba(96, 184, 255, 0.38);
+        color: #f3fbff;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        box-shadow: 0 12px 28px rgba(6, 31, 76, 0.28);
+      }
+
+      .spectate-hand-empty {
+        min-width: 240px;
+        padding: 18px 20px;
+        border: 1px dashed rgba(90, 221, 255, 0.35);
+        border-radius: 18px;
+        color: rgba(238, 251, 255, 0.76);
+        background: rgba(13, 33, 55, 0.28);
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .arena--spectating .board-cell {
+        cursor: zoom-in;
+      }
+
+      .arena--spectating .board-cell--empty {
+        cursor: default;
+      }
+
+
+
+
+
+
+      .spectate-return-button {
+        display: none !important;
+      }
+
+      .player-hand--spectate-normal {
+        pointer-events: auto;
+      }
+
+      .player-hand--spectate-normal .hand-card {
+        cursor: zoom-in !important;
+      }
+
+      .player-hand--spectate-normal .hand-card--spectate-readonly {
+        pointer-events: auto;
+      }
+
+      .player-hand--spectate-normal .hand-card--spectate-readonly:hover {
+        transform: translateY(-8px) scale(1.02);
+      }
+
+      .spectate-normal-empty {
+        min-width: 280px;
+        min-height: 86px;
+        display: grid;
+        place-items: center;
+        border: 2px dashed rgba(73, 145, 190, 0.42);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #18455d;
+        font-weight: 800;
+        text-align: center;
+        padding: 14px 20px;
+      }
+
+      .draft-center-overlay--spectate-readonly {
+        pointer-events: none;
+      }
+
+      .draft-center-overlay--spectate-readonly .draft-center-card,
+      .draft-center-overlay--spectate-readonly .hand-card {
+        pointer-events: auto;
+        cursor: zoom-in !important;
+      }
+
+      .draft-center-overlay--spectate-readonly .draft-center-card:hover {
+        transform: translateY(-8px) scale(1.02);
+      }
+
+
+      .side-player__view-button {
+        width: calc(100% - 28px);
+        margin: 10px 14px 0;
+        border: 1px solid rgba(37, 99, 235, 0.32);
+        border-radius: 999px;
+        padding: 7px 12px;
+        background: rgba(255, 255, 255, 0.78);
+        color: #0b4477;
+        font-weight: 950;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(13, 48, 92, 0.12);
+      }
+
+      .side-player__view-button:hover {
+        background: #0d5fb8;
+        border-color: rgba(147, 197, 253, 0.78);
+        color: #ffffff;
+      }
+
+      .side-player--viewing .side-player__view-button {
+        background: rgba(219, 234, 254, 0.14);
+        border-color: rgba(191, 219, 254, 0.65);
+        color: #ffffff;
+      }
+
+      .online-room-menu.is-open .online-room-menu__panel {
+        width: 392px !important;
+        max-width: min(392px, calc(100vw - 86px)) !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+        pointer-events: auto !important;
+        padding: 7px 8px 7px 12px !important;
+        transform: translateX(0) !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 7px !important;
+        flex-wrap: nowrap !important;
+      }
+
+      .online-room-menu__text {
+        display: none !important;
+      }
+
+      .online-room-menu__music {
+        flex: 0 0 198px !important;
+        width: 198px !important;
+        max-width: 198px !important;
+        min-width: 198px !important;
+      }
+
+      .online-room-menu__music-body {
+        min-width: 0 !important;
+      }
+
+      .online-room-menu__music-head span,
+      .online-room-menu__music-head strong,
+      .online-room-menu__export span,
+      .online-room-menu__export button,
+      .online-room-menu__ranking {
+        white-space: nowrap !important;
+      }
+
+      .online-room-menu__ranking {
+        flex: 0 0 auto !important;
+        min-width: 58px !important;
+      }
+
+      .online-room-menu__export {
+        flex: 0 0 auto !important;
+        min-width: 104px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+      }
+
+      .online-room-menu__export span {
+        display: none !important;
+      }
+
+      .online-room-menu__export button {
+        max-width: 104px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+      }
+
+      .online-room-menu__leave {
+        flex: 0 0 44px !important;
+      }
+
+      @media (max-width: 720px) {
+        .online-room-menu.is-open .online-room-menu__panel {
+          width: calc(100vw - 72px) !important;
+          max-width: calc(100vw - 72px) !important;
+          gap: 8px !important;
+        }
+
+        .online-room-menu__music {
+          flex-basis: 172px !important;
+          width: 172px !important;
+          min-width: 172px !important;
+          max-width: 172px !important;
+        }
+      }
+
+      .online-room-menu__button {
+        border: 0;
+        appearance: none;
+      }
+
+      .player-hand__top--spectate {
+        align-items: center;
+        gap: 12px;
+      }
+
+      .player-hand__return-button {
+        margin-left: auto;
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #144f91, #0d2e5e);
+        color: #ffffff;
+        font-weight: 950;
+        letter-spacing: 0.04em;
+        box-shadow: 0 10px 22px rgba(7, 24, 56, 0.26);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .player-hand__return-button:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+      }
+
+      .player-hand--spectate-normal .player-hand__cards--picked .hand-card--picked-draft {
+        cursor: zoom-in !important;
+      }
+
+      .player-hand--spectate-normal .player-hand__cards--picked .hand-card--picked-draft:hover {
+        z-index: 40 !important;
+      }
+
+    </style>
+  `;
+}
+
 function renderWithGlobalOverlays(content: string) {
-  return `${content}`;
+  return `${renderSpectateRuntimeStyles()}${content}`;
 }
 
 function renderGameShell() {
@@ -7910,6 +8902,8 @@ function renderGameShell() {
   }
 
   if (!isOnlineRoomActive()) {
+    spectatingPlayerId = null;
+
     if (!authClientState.user || currentAppScreen === "dashboard") {
       currentAppScreen = "dashboard";
       return renderWithGlobalOverlays(renderDashboard());
@@ -7923,8 +8917,11 @@ function renderGameShell() {
   }
 
   if (onlineClientState.roomState?.phase === "lobby") {
+    spectatingPlayerId = null;
     return renderWithGlobalOverlays(renderOnlineLobbyRoomScreen());
   }
+
+  syncSpectateTargetWithRoomState();
 
   const leftPlayers = getLeftSidePlayersToRender();
   const rightPlayers = getRightSidePlayersToRender();
@@ -8541,6 +9538,7 @@ setupCardClickDelegation();
 setupAuthFormDelegation();
 setupGameAudioDelegation();
 setupInGameMusicDelegation();
+setupSpectateKeyboardControls();
 initTourLauncher(buildOnboardingCtx);
 
 initOnlineClient(

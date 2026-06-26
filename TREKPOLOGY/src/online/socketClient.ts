@@ -48,7 +48,13 @@ export type PlayerPublicState = {
   isConnected: boolean;
   isReady: boolean;
   hasJoined: boolean;
+  isBot?: boolean;
   planningConfirmed?: boolean;
+  draftPool?: OnlineTravelCardData[];
+  hand?: OnlineTravelCardData[];
+  pickedDraftCards?: OnlineTravelCardData[];
+  selectedDraftCardId?: string | null;
+  draftPickConfirmed?: boolean;
   board: PublicBoardCell[][];
 };
 
