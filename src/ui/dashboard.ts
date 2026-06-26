@@ -1,3 +1,4 @@
+import { VERSION } from "../version.js";
 import { authClientState } from "../online/socketClient.js";
 
 export const HERO_VIDEO_SRC = "./assets/videos/one-minute-in-vietnam.mp4";
@@ -6,150 +7,152 @@ const HUB_HERO_MUTED_KEY = "trek.hubHeroMuted";
 let globalHeroVideo: HTMLVideoElement | null = null;
 
 export function cleanupDashboardHub() {
-  if (globalHeroVideo) {
-    try {
-      globalHeroVideo.pause();
-      globalHeroVideo.muted = true;
-      globalHeroVideo.removeAttribute("src");
-      globalHeroVideo.load();
-    } catch {}
-    globalHeroVideo = null;
-  }
+	if (globalHeroVideo) {
+		try {
+			globalHeroVideo.pause();
+			globalHeroVideo.muted = true;
+			globalHeroVideo.removeAttribute("src");
+			globalHeroVideo.load();
+		} catch {}
+		globalHeroVideo = null;
+	}
 }
 
 export function initDashboardHub() {
-  cleanupDashboardHub();
+	cleanupDashboardHub();
 
-  const media = document.getElementById("hub-hero-media") as HTMLElement | null;
-  const video = document.getElementById("hub-hero-video") as
-    | HTMLVideoElement
-    | null;
-  const hitarea = document.getElementById("hub-hero-video-hitarea") as
-    | HTMLButtonElement
-    | null;
-  const muteButton = document.getElementById("hub-hero-video-mute") as
-    | HTMLButtonElement
-    | null;
-  const volumeSlider = document.getElementById("hub-hero-video-volume") as
-    | HTMLInputElement
-    | null;
+	const media = document.getElementById("hub-hero-media") as HTMLElement | null;
+	const video = document.getElementById(
+		"hub-hero-video",
+	) as HTMLVideoElement | null;
+	const hitarea = document.getElementById(
+		"hub-hero-video-hitarea",
+	) as HTMLButtonElement | null;
+	const muteButton = document.getElementById(
+		"hub-hero-video-mute",
+	) as HTMLButtonElement | null;
+	const volumeSlider = document.getElementById(
+		"hub-hero-video-volume",
+	) as HTMLInputElement | null;
 
-  if (!media || !video || !hitarea || !muteButton || !volumeSlider) return;
-  globalHeroVideo = video;
+	if (!media || !video || !hitarea || !muteButton || !volumeSlider) return;
+	globalHeroVideo = video;
 
-  video.playsInline = true;
-  video.volume = parseFloat(volumeSlider.value) || 0.85;
+	video.playsInline = true;
+	video.volume = parseFloat(volumeSlider.value) || 0.85;
 
-  const updateVideoStatus = () => {
-    media.classList.toggle("hub-hero__media--paused", video.paused);
+	const updateVideoStatus = () => {
+		media.classList.toggle("hub-hero__media--paused", video.paused);
 
-    muteButton.classList.toggle(
-      "hub-hero__video-mute--muted",
-      video.muted || video.volume === 0,
-    );
-    muteButton.classList.toggle(
-      "hub-hero__video-mute--unmuted",
-      !video.muted && video.volume > 0,
-    );
-    muteButton.setAttribute(
-      "aria-label",
-      (video.muted || video.volume === 0)
-        ? "Bật tiếng video"
-        : "Tắt tiếng video",
-    );
-    muteButton.setAttribute(
-      "aria-pressed",
-      (video.muted || video.volume === 0) ? "true" : "false",
-    );
+		muteButton.classList.toggle(
+			"hub-hero__video-mute--muted",
+			video.muted || video.volume === 0,
+		);
+		muteButton.classList.toggle(
+			"hub-hero__video-mute--unmuted",
+			!video.muted && video.volume > 0,
+		);
+		muteButton.setAttribute(
+			"aria-label",
+			video.muted || video.volume === 0 ? "Bật tiếng video" : "Tắt tiếng video",
+		);
+		muteButton.setAttribute(
+			"aria-pressed",
+			video.muted || video.volume === 0 ? "true" : "false",
+		);
 
-    volumeSlider.value = video.volume.toString();
+		volumeSlider.value = video.volume.toString();
 
-    if (video.paused) {
-      hitarea.setAttribute("aria-label", "Tiếp tục video");
-      return;
-    }
+		if (video.paused) {
+			hitarea.setAttribute("aria-label", "Tiếp tục video");
+			return;
+		}
 
-    hitarea.setAttribute("aria-label", "Tạm dừng video");
-  };
+		hitarea.setAttribute("aria-label", "Tạm dừng video");
+	};
 
-  const tryAutoplay = async () => {
-    let userMutedState = localStorage.getItem(HUB_HERO_MUTED_KEY) === "true";
-    video.muted = userMutedState;
+	const tryAutoplay = async () => {
+		const userMutedState = localStorage.getItem(HUB_HERO_MUTED_KEY) === "true";
+		video.muted = userMutedState;
 
-    try {
-      await video.play();
-      updateVideoStatus();
-      return;
-    } catch {
-      video.muted = true;
+		try {
+			await video.play();
+			updateVideoStatus();
+			return;
+		} catch {
+			video.muted = true;
 
-      try {
-        await video.play();
-      } catch {
-        /* Autoplay blocked entirely */
-      }
+			try {
+				await video.play();
+			} catch {
+				/* Autoplay blocked entirely */
+			}
 
-      updateVideoStatus();
-    }
-  };
+			updateVideoStatus();
+		}
+	};
 
-  muteButton.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+	muteButton.addEventListener("click", (event) => {
+		event.preventDefault();
+		event.stopPropagation();
 
-    if (video.muted) {
-      video.muted = false;
-      if (video.volume === 0) video.volume = 0.5;
-    } else {
-      video.muted = true;
-    }
+		if (video.muted) {
+			video.muted = false;
+			if (video.volume === 0) video.volume = 0.5;
+		} else {
+			video.muted = true;
+		}
 
-    localStorage.setItem(HUB_HERO_MUTED_KEY, String(video.muted));
+		localStorage.setItem(HUB_HERO_MUTED_KEY, String(video.muted));
 
-    if (!video.paused) {
-      void video.play();
-    }
+		if (!video.paused) {
+			void video.play();
+		}
 
-    updateVideoStatus();
-  });
+		updateVideoStatus();
+	});
 
-  hitarea.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+	hitarea.addEventListener("click", (event) => {
+		event.preventDefault();
+		event.stopPropagation();
 
-    if (video.paused) {
-      void video.play();
-    } else {
-      video.pause();
-    }
+		if (video.paused) {
+			void video.play();
+		} else {
+			video.pause();
+		}
 
-    updateVideoStatus();
-  });
+		updateVideoStatus();
+	});
 
-  video.addEventListener("play", updateVideoStatus);
-  video.addEventListener("pause", updateVideoStatus);
-  video.addEventListener("volumechange", updateVideoStatus);
+	video.addEventListener("play", updateVideoStatus);
+	video.addEventListener("pause", updateVideoStatus);
+	video.addEventListener("volumechange", updateVideoStatus);
 
-  volumeSlider.addEventListener("input", (event) => {
-    event.stopPropagation();
-    const val = parseFloat(volumeSlider.value);
-    video.volume = val;
-    if (val > 0) {
-      video.muted = false;
-    }
-  });
+	volumeSlider.addEventListener("input", (event) => {
+		event.stopPropagation();
+		const val = parseFloat(volumeSlider.value);
+		video.volume = val;
+		if (val > 0) {
+			video.muted = false;
+		}
+	});
 
-  void tryAutoplay();
+	void tryAutoplay();
 
-  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-    video.addEventListener("loadeddata", () => {
-      void tryAutoplay();
-    }, { once: true });
-  }
+	if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+		video.addEventListener(
+			"loadeddata",
+			() => {
+				void tryAutoplay();
+			},
+			{ once: true },
+		);
+	}
 }
 
 function renderHubHeroMedia() {
-  return `
+	return `
     <div class="hub-hero__media" id="hub-hero-media">
       <div class="hub-hero__video-fallback" aria-hidden="true">
         <div class="hero-placeholder-pattern"></div>
@@ -205,7 +208,7 @@ function renderHubHeroMedia() {
 }
 
 function renderHubAuthPanel() {
-  return `
+	return `
     <section class="hub-auth" id="hub-auth">
       <div class="hub-auth__header">
         <span class="hub-auth__eyebrow">TÀI KHOẢN</span>
@@ -268,13 +271,13 @@ function renderHubAuthPanel() {
 }
 
 function renderHubExplorePanel() {
-  return `
+	return `
     <section class="hub-explore">
       <h3 class="side-title">Góc Khám Phá</h3>
 
       <div class="news-item">
         <span class="news-badge news-badge--new">MỚI</span>
-        <h4>Trekpology Alpha 1.0</h4>
+        <h4>Trekpology Alpha ${VERSION}</h4>
         <p>Phiên bản đầu tiên ra mắt với bản đồ Sài Gòn — hơn 60 địa điểm đang chờ bạn khám phá.</p>
       </div>
 
@@ -306,8 +309,8 @@ function renderHubExplorePanel() {
 }
 
 function renderHubTopbarUser(isLoggedIn: boolean, displayName: string) {
-  if (!isLoggedIn) {
-    return `
+	if (!isLoggedIn) {
+		return `
       <button
         type="button"
         class="hub-topbar__guest"
@@ -316,9 +319,9 @@ function renderHubTopbarUser(isLoggedIn: boolean, displayName: string) {
         Đăng nhập
       </button>
     `;
-  }
+	}
 
-  return `
+	return `
     <div class="hub-topbar__account">
       <span class="hub-topbar__user">${displayName}</span>
       <button
@@ -334,11 +337,11 @@ function renderHubTopbarUser(isLoggedIn: boolean, displayName: string) {
 }
 
 export function renderDashboard(isLoading = false) {
-  const user = authClientState.user;
-  const isLoggedIn = Boolean(user);
-  const displayName = user?.displayName || user?.username || "Nhà Lữ Hành";
+	const user = authClientState.user;
+	const isLoggedIn = Boolean(user);
+	const displayName = user?.displayName || user?.username || "Nhà Lữ Hành";
 
-  return `
+	return `
     <div class="dashboard-hub ${isLoading ? "dashboard-hub--loading" : ""}">
       <!-- Modal: Hướng Dẫn Chơi -->
       <div class="hub-modal" id="modal-rules" onclick="if(event.target===this)this.classList.remove('hub-modal--open')">
@@ -375,7 +378,7 @@ export function renderDashboard(isLoading = false) {
             <p>Chúng tôi tin rằng du lịch không chỉ là di chuyển — mà là khám phá, học hỏi và kết nối. Mỗi thẻ bài là một câu chuyện thật từ đất nước Việt Nam.</p>
             <h3>🔮 Sắp ra mắt</h3>
             <p>Đà Lạt • Hội An • Hạ Long • Hà Nội</p>
-            <p style="margin-top:16px; font-size:12px; opacity:0.6">Phiên bản Alpha 1.0 — 2025</p>
+            <p style="margin-top:16px; font-size:12px; opacity:0.6">Phiên bản Alpha ${VERSION} — 2025</p>
           </div>
         </div>
       </div>
@@ -406,10 +409,10 @@ export function renderDashboard(isLoading = false) {
                 ▶ &nbsp;BẮT ĐẦU HÀNH TRÌNH
               </button>
               ${
-    !isLoggedIn
-      ? `<p class="hero-auth-hint">Đăng nhập ở panel bên phải để vào phòng online.</p>`
-      : ""
-  }
+								!isLoggedIn
+									? `<p class="hero-auth-hint">Đăng nhập ở panel bên phải để vào phòng online.</p>`
+									: ""
+							}
             </div>
           </div>
         </div>
@@ -422,6 +425,7 @@ export function renderDashboard(isLoading = false) {
         </aside>
 
       </div>
+        <div style="position:fixed;bottom:8px;right:12px;font-size:11px;opacity:0.45;color:#fff;pointer-events:none;z-index:999">v${VERSION}</div>
     </div>
   `;
 }

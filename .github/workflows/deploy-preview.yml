@@ -1,0 +1,53 @@
+name: Deploy Preview to GitHub Pages
+
+on:
+  push:
+    branches:
+      - chore/decompose-app-ts
+      - deploy-*
+  workflow_dispatch:
+
+concurrency:
+  group: preview-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Patch socket URL → HF old server
+        run: |
+          OLD_URL='"http://localhost:3001"'
+          NEW_URL='"https://khoinguyentran-trekkopoly-old-server.hf.space"'
+          sed -i "s|$OLD_URL|$NEW_URL|g" build/online/socketClient.js
+          grep -n 'io("' build/online/socketClient.js
+
+      - name: Prepare deployment directory
+        run: |
+          mkdir -p _site
+          cp -r build assets/ index.html sw.js manifest.json _site/
+
+      - name: Deploy to preview repo (gh-pages branch)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+          external_repository: tankhoitv/compthink-2026-preview
+          publish_branch: gh-pages
+          publish_dir: ./_site
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
