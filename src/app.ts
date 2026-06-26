@@ -252,6 +252,10 @@ import {
   shouldShowReplayDay,
 } from "./ui/renderHelpers.js";
 import { renderMainArena } from "./ui/arena.js";
+import {
+  rerenderArena,
+  restartDraftCenterDealVisuals,
+} from "./ui/arenaRenderer.js";
 // Moved to ui/sidePlayerBoards.ts
 export const images = {
   coffee:
@@ -3610,63 +3614,7 @@ function clearHoldTimer() {
   }
 }
 
-function spawnFloatingText(
-  selector: string,
-  delta: number,
-  type: "coin" | "stamina",
-) {
-  const container = document.querySelector(selector);
-  if (!container) return;
-  const textNode = document.createElement("div");
-  textNode.className = `floating-text floating-text--${type}`;
-  textNode.textContent = `${delta > 0 ? "+" : ""}${delta}`;
-  container.appendChild(textNode);
-  container.classList.remove("resource-pulse");
-  void container.clientWidth; // force reflow
-  container.classList.add("resource-pulse");
-  setTimeout(() => textNode.remove(), 1200);
-}
-
-function rerenderArena() {
-  const arena = document.querySelector(".arena");
-  if (!arena) return;
-
-  arena.outerHTML = renderMainArena();
-
-  if (isDraftDealVisualActive()) {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        restartDraftCenterDealVisuals();
-      });
-    });
-  }
-
-  requestAnimationFrame(() => {
-    const remaining = getRemainingResources();
-    if (
-      state.lastAnimatedCoin !== -1 &&
-      remaining.coin !== state.lastAnimatedCoin
-    ) {
-      spawnFloatingText(
-        ".resource-orb--coin .resource-orb__frame",
-        remaining.coin - state.lastAnimatedCoin,
-        "coin",
-      );
-    }
-    if (
-      state.lastAnimatedStamina !== -1 &&
-      remaining.stamina !== state.lastAnimatedStamina
-    ) {
-      spawnFloatingText(
-        ".resource-orb--stamina .resource-orb__frame",
-        remaining.stamina - state.lastAnimatedStamina,
-        "stamina",
-      );
-    }
-    state.lastAnimatedCoin = remaining.coin;
-    state.lastAnimatedStamina = remaining.stamina;
-  });
-}
+// Moved to ui/arenaRenderer.ts
 
 function placeHandCardOnBoard(
   cardId: string,
@@ -4835,30 +4783,7 @@ const DRAFT_PICK_FLY_MS = 750;
 const DRAFT_POOL_COLLAPSE_MS = 1350;
 const DRAFT_HAND_PICK_SCALE = 0.84;
 
-function restartDraftCenterDealVisuals(): boolean {
-  const overlay = document.querySelector(
-    ".draft-center-overlay",
-  ) as HTMLElement | null;
-  if (!overlay) return false;
-
-  overlay.classList.remove("draft-center-overlay--dealing");
-
-  const wrappers = overlay.querySelectorAll(".draft-center-card-wrapper");
-  wrappers.forEach((node) => {
-    const wrapper = node as HTMLElement;
-    wrapper.classList.remove("draft-center-card-wrapper--flown-to-hand");
-    wrapper.style.animation = "none";
-  });
-
-  void overlay.offsetWidth;
-
-  wrappers.forEach((node) => {
-    (node as HTMLElement).style.removeProperty("animation");
-  });
-
-  overlay.classList.add("draft-center-overlay--dealing");
-  return true;
-}
+// Moved to ui/arenaRenderer.ts
 
 function clearDraftCenterDealAnimation() {
   state.draftCenterDealGeneration += 1;
