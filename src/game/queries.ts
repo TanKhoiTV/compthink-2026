@@ -29,7 +29,7 @@ const FALLBACK_CARD_IMAGE =
 
 // ── Local helpers ──
 
-function getOnlinePlayer(playerId?: PlayerId) {
+export function getOnlinePlayer(playerId?: PlayerId) {
 	if (!playerId || !onlineClientState.roomState) return null;
 
 	return onlineClientState.roomState.players[playerId] ?? null;
