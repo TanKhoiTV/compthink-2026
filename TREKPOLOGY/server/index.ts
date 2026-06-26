@@ -36,6 +36,8 @@ const rooms = new Map<string, RoomState>();
 const socketPlayerIds = new Map<string, PlayerId>();
 const socketRoomIds = new Map<string, string>();
 
+const matchmakingQueue: { socketId: string; playerName: string }[] = [];
+
 function bindSocketPlayer(
   socket: { id: string; join: (room: string) => void },
   payload: { roomId: string; playerId: PlayerId },
@@ -103,6 +105,71 @@ io.on("connection", (socket) => {
     });
     emitRoomState(roomId);
   });
+
+// =========================================================
+  // MATCHMAKING: TÌM TRẬN TỰ ĐỘNG (BẾ 4 NGƯỜI VÀO GAME)
+  // =========================================================
+  socket.on("matchmaking:find", ({ playerName }) => {
+    // 1. Nhét vào hàng đợi (nếu chưa có)
+    const isAlreadyInQueue = matchmakingQueue.some(p => p.socketId === socket.id);
+    if (!isAlreadyInQueue) {
+      matchmakingQueue.push({ socketId: socket.id, playerName: playerName || "Lữ Khách" });
+    }
+
+    // 2. Rà soát xem đủ 4 mạng chưa?
+    if (matchmakingQueue.length >= 4) {
+      // Bốc 4 ông đầu tiên ra khỏi hàng
+      const group = matchmakingQueue.splice(0, 4);
+      
+      // Ông đầu tiên làm Host để mồi hàm createRoom
+      const host = group[0];
+      const { roomId, playerId: hostPlayerId, state } = createRoom(host.playerName);
+      rooms.set(roomId, state);
+
+      // Cập nhật Socket cho Host
+      const hostSocket = io.sockets.sockets.get(host.socketId);
+      if (hostSocket) {
+        socketPlayerIds.set(host.socketId, hostPlayerId);
+        socketRoomIds.set(host.socketId, roomId);
+        hostSocket.join(roomId);
+        hostSocket.emit("room:joined", { roomId, playerId: hostPlayerId, state: getPlayerViewState(state, hostPlayerId) });
+      }
+
+      // Nhét 3 ông còn lại chui vào phòng
+      for (let i = 1; i < 4; i++) {
+        const member = group[i];
+        const memberSocket = io.sockets.sockets.get(member.socketId);
+        const memberPlayerId = joinRoom(state, member.playerName);
+        
+        if (memberSocket && memberPlayerId) {
+          socketPlayerIds.set(member.socketId, memberPlayerId);
+          socketRoomIds.set(member.socketId, roomId);
+          memberSocket.join(roomId);
+          memberSocket.emit("room:joined", { roomId, playerId: memberPlayerId, state: getPlayerViewState(state, memberPlayerId) });
+        }
+      }
+
+      // 3. Ép cả 4 ông Sẵn sàng và sút thẳng vào Game (Cinematic phase)
+      const allPlayerIds: PlayerId[] = ["p1", "p2", "p3", "p4"];
+      allPlayerIds.forEach(pid => {
+        if (state.players[pid]) state.players[pid].isReady = true;
+      });
+      state.phase = "cinematic";
+      state.timer = 7; // Chạy đếm ngược chuyển cảnh
+
+      // Gửi tín hiệu báo mâm đã dọn xong
+      emitRoomState(roomId);
+    }
+  });
+
+  // Hủy tìm trận (Thoát hàng đợi)
+  socket.on("matchmaking:cancel", () => {
+    const index = matchmakingQueue.findIndex(p => p.socketId === socket.id);
+    if (index !== -1) {
+      matchmakingQueue.splice(index, 1);
+    }
+  });
+  // =========================================================
 
   socket.on("tutorial:pauseReplay", ({ roomId }) => {
     const state = rooms.get(roomId);
@@ -364,6 +431,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    const queueIndex = matchmakingQueue.findIndex(p => p.socketId === socket.id);
+    if (queueIndex !== -1) {
+      matchmakingQueue.splice(queueIndex, 1);
+    }
     const playerId = socketPlayerIds.get(socket.id);
     const roomId = socketRoomIds.get(socket.id);
     const state = roomId ? rooms.get(roomId) : null;

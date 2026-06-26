@@ -90,10 +90,14 @@ export type PlayerViewState = Omit<RoomState, "deck" | "players"> & {
 };
 
 export type ClientToServerEvents = {
+  // --- 2 DÒNG MATCHMAKING ---
+  "matchmaking:find": (payload: { playerName: string }) => void;
+  "matchmaking:cancel": () => void;
+
+  // --- CÁC SỰ KIỆN GỐC ---
   "room:create": (payload: { playerName: string; isTutorial?: boolean }) => void;
   "room:join": (payload: { roomId: string; playerName: string }) => void;
 
-  // Tutorial: tạm dừng / chạy tiếp phase chấm điểm để giới thiệu sự kiện.
   "tutorial:pauseReplay": (payload: { roomId: string }) => void;
   "tutorial:resumeReplay": (payload: { roomId: string }) => void;
 

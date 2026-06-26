@@ -1,4 +1,4 @@
-import { authClientState } from "../online/socketClient.js";
+import { authClientState, socket } from "../online/socketClient.js";
 
 function renderMapCardWrapper(content: string, extraClass = "") {
   return `<div class="map-card-col ${extraClass}">${content}</div>`;
@@ -37,7 +37,7 @@ export function renderMapSelectionScreen() {
                   <p class="map-card__desc">Thành phố không ngủ, trung tâm kinh tế và văn hoá sôi động bậc nhất.</p>
                 </div>
                 <div class="map-card__actions">
-                  <button class="map-card__btn map-card__btn--primary" onclick="window.gotoOnlineLobby()">Tìm Trận</button>
+                  <button class="map-card__btn map-card__btn--primary" id="btn-find-match" onclick="window.startMatchmaking(this)">Tìm Trận</button>
                   <button class="map-card__btn map-card__btn--secondary" onclick="window.gotoOnlineLobby()">Tạo Phòng</button>
                 </div>
               </div>
@@ -91,3 +91,49 @@ export function renderMapSelectionScreen() {
     </div>
   `;
 }
+
+// =========================================================
+// LOGIC TÌM TRẬN & HỦY TÌM TRẬN
+// =========================================================
+let isSearchingMatch = false;
+
+(window as any).startMatchmaking = function (btnElement: HTMLButtonElement) {
+  const user = authClientState.user;
+  const playerName = user?.displayName || user?.username || "Lữ Khách";
+
+  if (!isSearchingMatch) {
+    // --- BẬT TÌM TRẬN ---
+    isSearchingMatch = true;
+    socket.emit("matchmaking:find", { playerName });
+
+    if (btnElement) {
+      btnElement.innerText = "Hủy Tìm (Đang chờ...)";
+      btnElement.style.backgroundColor = "#7a2828"; 
+      btnElement.style.borderColor = "#7a2828";
+      btnElement.style.boxShadow = "0 0 10px rgba(122, 40, 40, 0.8)";
+    }
+  } else {
+    // --- HỦY TÌM TRẬN ---
+    isSearchingMatch = false;
+    socket.emit("matchmaking:cancel");
+
+    if (btnElement) {
+      btnElement.innerText = "Tìm Trận";
+      btnElement.style.backgroundColor = ""; 
+      btnElement.style.borderColor = "";
+      btnElement.style.boxShadow = "";
+    }
+  }
+};
+
+// Reset nút khi server báo đã ghép phòng thành công (Phòng hờ lỗi UI)
+socket.on("room:joined", () => {
+  isSearchingMatch = false;
+  const btnElement = document.getElementById("btn-find-match");
+  if (btnElement) {
+    btnElement.innerText = "Tìm Trận";
+    btnElement.style.backgroundColor = "";
+    btnElement.style.borderColor = "";
+    btnElement.style.boxShadow = "";
+  }
+});
