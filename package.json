@@ -11,6 +11,7 @@
     "dev:css": "npx chokidar-cli \"src/styles/**/*.less\" -c \"npx lessc src/styles/client.less build/client.css\"",
     "dev:serve": "npx serve . -l 5174",
     "build": "tsc && npx lessc src/styles/client.less build/client.css",
+    "postbuild": "cp -r build/* . 2>/dev/null || true",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -26,3 +26,19 @@ yarn-error.log*
 
 # Agent workspace
 .agent-output/
+
+# Build artifacts flattened to root for local dev (via postbuild)
+/app.js
+/app.js.map
+/client.css
+/client.js
+/client.js.map
+/types.js
+/game/
+/actions/
+/audio/
+/data/
+/export/
+/online/
+/state/
+/ui/
