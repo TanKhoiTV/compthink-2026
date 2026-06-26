@@ -10,7 +10,9 @@
     "dev:tsc": "tsc --watch",
     "dev:css": "npx chokidar-cli \"src/styles/**/*.less\" -c \"npx lessc src/styles/client.less build/client.css\"",
     "dev:serve": "npx serve . -l 5174",
-    "build": "tsc && npx lessc src/styles/client.less build/client.css"
+    "build": "tsc && npx lessc src/styles/client.less build/client.css",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
@@ -26,6 +28,7 @@
   "homepage": "https://github.com/TanKhoiTV/compthink-2026#readme",
   "devDependencies": {
     "less": "^4.6.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
