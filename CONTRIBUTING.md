@@ -1,22 +1,127 @@
-# Contributing to Traveling Game
+# Contributing to TREKPOLOGY (Traveling Game)
 
-Thanks for helping build the Traveling Game. This is a **documentation-first** repo — we plan and agree on architecture before writing code. All contributions are welcome: docs, ADRs, diagrams, meeting notes, and eventually source code.
+Thanks for helping build TREKPOLOGY. This is a **documentation-first** repo — we plan and agree on architecture before writing code. All contributions are welcome: docs, ADRs, diagrams, meeting notes, and source code.
 
 ## Repository Overview
 
 ```
 compthink-2026/
-├── docs/
-│   ├── adr/               # Architecture Decision Records
-│   ├── poc/               # Proof-of-concept documents
-│   │   └── ui-docs/       # UX/UI specifications
-│   ├── meetings/notes/    # Sprint notes and discussion records
-│   ├── architecture.html  # System architecture diagram
-│   └── team-scoping-plan.html  # Domain & interface breakdown
-├── README.md
-├── CONTRIBUTING.md
-└── LICENSE
+├── src/                # Client TypeScript source
+│   ├── game/           # Pure game logic (board, deck, draft, scoring, queries, resources)
+│   ├── actions/        # State-mutation actions (cardPlacement, debtTokens, utilityEffects)
+│   ├── ui/             # DOM rendering (arena, screens, cards, dashboard, help)
+│   ├── audio/          # Web Audio API BGM + sound effects
+│   ├── data/           # Card definitions + images constant
+│   ├── online/         # Socket.IO client
+│   ├── state/          # GameState singleton
+│   ├── export/         # Travel certificate export
+│   └── styles/         # Less stylesheets
+├── server/             # Node.js + Socket.IO backend
+├── assets/             # Card images (LFS), sounds, backgrounds, videos
+├── docs/               # Documentation
+│   ├── adr/            # Architecture Decision Records
+│   ├── ARCHITECTURE-REFERENCE.md
+│   └── game-logic-design.md
+├── build/              # Compiled output (gitignored)
+├── Dockerfile          # Server container
+└── .github/workflows/  # CI/CD
 ```
+
+## Development Setup
+
+### Prerequisites
+
+- **Node.js 22+** — check with `node --version`
+- **npm** (ships with Node.js)
+- **Git LFS** for card images: `git lfs install`
+
+### One-Time Setup
+
+```bash
+git clone https://github.com/TanKhoiTV/compthink-2026.git
+cd compthink-2026
+npm install                  # Client dependencies (TypeScript, Less, Vitest)
+cd server && npm install     # Server dependencies (Socket.IO, tsx)
+cd ..
+```
+
+### Build the Client
+
+```bash
+npm run build
+```
+
+This runs `tsc` (compiles `src/` to `build/`) and `lessc` (compiles Less to `build/client.css`). No bundler — output is vanilla JS loaded via `<script type="module">`.
+
+### Run Tests
+
+```bash
+npm test                     # vitest run (112 tests, 8 test files)
+npm run test:watch           # vitest --watch
+```
+
+Tests cover all pure game logic (board, deck, draft, scoring, resources, queries) and action modules. See `vitest.config.ts` and `vitest.setup.ts` for configuration.
+
+### Run Locally (Single-Player, No Server)
+
+```bash
+npm run build                # One-time build
+npx serve . -l 5174          # Any static HTTP server works
+```
+
+Open <http://localhost:5174>. The app runs in offline single-player mode — drafting uses simulated bots, no server needed.
+
+### Run Locally (Multiplayer, With Server)
+
+You need three terminals for the full E2E experience:
+
+```bash
+# Terminal 1 — Build the client
+npm run build
+
+# Terminal 2 — Start the Socket.IO server
+cd server
+npm start                     # Listens on port 3001
+
+# Terminal 3 — Serve the client
+cd ..
+npx serve . -l 5174           # Or use python3 -m http.server 5174
+```
+
+Open **two browser tabs** at <http://localhost:5174>:
+
+1. Click **Chơi Online** → enter a room name → **Tạo Phòng**
+2. In the second tab, enter the same room name → **Vào Phòng**
+3. Both players join the lobby and the host starts the game
+
+The client (`socketClient.ts`) connects to `http://localhost:3001` (Socket.IO server). To connect to a different server, edit the URL in `src/online/socketClient.ts` and rebuild.
+
+### Watching for Changes (Development)
+
+```bash
+# Terminal 1 — Auto-rebuild TypeScript on save
+npm run dev:tsc
+
+# Terminal 2 — Auto-rebuild CSS on save
+npm run dev:css
+
+# Terminal 3 — Static server (reload browser on changes)
+npx serve . -l 5174
+```
+
+TypeScript and Less compile on every file save. Refresh the browser to see changes. No hot reload — it's vanilla DOM.
+
+### CI/CD
+
+Three GitHub Actions workflows run automatically:
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | Any push | `npm ci` + `npm run build` — ensures clean build |
+| `deploy-pages.yml` | Push to `main` | Builds and deploys frontend to GitHub Pages |
+| `deploy-server.yml` | Push to `main` (server/ or src/data/ paths) | Syncs server code to Hugging Face Space |
+
+> The deployed GitHub Pages URL uses a patched socket URL (`build/online/socketClient.js`) pointing to the production HF Space instead of `localhost:3001`.
 
 ## Working with Branches
 
