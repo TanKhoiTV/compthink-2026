@@ -3000,10 +3000,451 @@ export const phase1SaiGonCultureCards = [
   }
 ] satisfies GameCardData[];
 
+export const phase1SaiGonUtilityCards = [
+  {
+    "card_id": "SG_UTIL_001",
+    "name": "Trụ ATM",
+    "description": "Ngân sách cạn kiệt, bạn rảo bộ tìm bốt ATM để tiếp tế đạn dược. Mỏi chân đôi chút nhưng ví tiền lại rủng rỉnh.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_001.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 1
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_XU",
+      "effect_value": 2
+    },
+    "rarity": "UNCOMMON",
+    "icon": "💰"
+  },
+  {
+    "card_id": "SG_UTIL_002",
+    "name": "Trụ ATM",
+    "description": "Ngân sách cạn kiệt, bạn rảo bộ tìm bốt ATM để tiếp tế đạn dược. Mỏi chân đôi chút nhưng ví tiền lại rủng rỉnh.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_002.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 1
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_XU",
+      "effect_value": 2
+    },
+    "rarity": "UNCOMMON",
+    "icon": "💰"
+  },
+  {
+    "card_id": "SG_UTIL_003",
+    "name": "Voucher Xe Công Nghệ",
+    "description": "Chớp được mã gọi xe giá hời trên ứng dụng. Ngồi ô tô máy lạnh cho phép bạn nhảy cóc đến bất cứ đâu mà không lo mỏi chân.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_003.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 1,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "IGNORE_DISTANCE_NEXT",
+      "effect_value": 1
+    },
+    "rarity": "COMMON",
+    "icon": "🎟️"
+  },
+  {
+    "card_id": "SG_UTIL_004",
+    "name": "Voucher Xe Công Nghệ",
+    "description": "Chớp được mã gọi xe giá hời trên ứng dụng. Ngồi ô tô máy lạnh cho phép bạn nhảy cóc đến bất cứ đâu mà không lo mỏi chân.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_004.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 1,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "IGNORE_DISTANCE_NEXT",
+      "effect_value": 1
+    },
+    "rarity": "COMMON",
+    "icon": "🎟️"
+  },
+  {
+    "card_id": "SG_UTIL_005",
+    "name": "Voucher Giảm Giá",
+    "description": "Thu thập được một mã khuyến mãi chớp nhoáng. Thẻ này sẽ giúp bạn giảm đáng kể chi phí cho hoạt động đắt đỏ tiếp theo.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_005.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR",
+      "OUTDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "DISCOUNT_XU_NEXT",
+      "effect_value": 2
+    },
+    "rarity": "COMMON",
+    "icon": "🎟️"
+  },
+  {
+    "card_id": "SG_UTIL_006",
+    "name": "Voucher Giảm Giá",
+    "description": "Thu thập được một mã khuyến mãi chớp nhoáng. Thẻ này sẽ giúp bạn giảm đáng kể chi phí cho hoạt động đắt đỏ tiếp theo.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_006.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR",
+      "OUTDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "DISCOUNT_XU_NEXT",
+      "effect_value": 2
+    },
+    "rarity": "COMMON",
+    "icon": "🎟️"
+  },
+  {
+    "card_id": "SG_UTIL_007",
+    "name": "Xe Đạp Công Cộng",
+    "description": "Quét mã thuê một chiếc xe đạp để băng qua dòng xe kẹt cứng. Né được thuật toán trừ điểm khoảng cách nhưng bạn sẽ toát mồ hôi hột.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_007.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "OUTDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 2
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "IGNORE_DISTANCE_NEXT",
+      "effect_value": 1
+    },
+    "rarity": "EPIC",
+    "icon": "🚲"
+  },
+  {
+    "card_id": "SG_UTIL_008",
+    "name": "Xe Đạp Công Cộng",
+    "description": "Quét mã thuê một chiếc xe đạp để băng qua dòng xe kẹt cứng. Né được thuật toán trừ điểm khoảng cách nhưng bạn sẽ toát mồ hôi hột.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_008.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "OUTDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 2
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "IGNORE_DISTANCE_NEXT",
+      "effect_value": 1
+    },
+    "rarity": "EPIC",
+    "icon": "🚲"
+  },
+  {
+    "card_id": "SG_UTIL_009",
+    "name": "Tiệm Massage Chân",
+    "description": "Ngâm chân thảo mộc và ấn huyệt chuyên sâu. Một khoản đầu tư xứng đáng để đôi chân được hồi sinh sau chuỗi ngày cuốc bộ rã rời.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_009.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 2,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_LA",
+      "effect_value": 3
+    },
+    "rarity": "UNCOMMON",
+    "icon": "💆"
+  },
+  {
+    "card_id": "SG_UTIL_010",
+    "name": "Tiệm Massage Chân",
+    "description": "Ngâm chân thảo mộc và ấn huyệt chuyên sâu. Một khoản đầu tư xứng đáng để đôi chân được hồi sinh sau chuỗi ngày cuốc bộ rã rời.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_010.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 2,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_LA",
+      "effect_value": 3
+    },
+    "rarity": "UNCOMMON",
+    "icon": "💆"
+  },
+  {
+    "card_id": "SG_UTIL_011",
+    "name": "Cửa Hàng Tiện Lợi 24/7",
+    "description": "Đẩy cửa bước vào, luồng khí lạnh phả vào mặt lập tức xua tan cái nóng. Mua tạm chai nước suối và đứng hưởng sái điều hòa.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_011.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_LA",
+      "effect_value": 1
+    },
+    "rarity": "COMMON",
+    "icon": "💆"
+  },
+  {
+    "card_id": "SG_UTIL_012",
+    "name": "Cửa Hàng Tiện Lợi 24/7",
+    "description": "Đẩy cửa bước vào, luồng khí lạnh phả vào mặt lập tức xua tan cái nóng. Mua tạm chai nước suối và đứng hưởng sái điều hòa.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_012.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 0,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_LA",
+      "effect_value": 1
+    },
+    "rarity": "COMMON",
+    "icon": "💆"
+  },
+  {
+    "card_id": "SG_UTIL_013",
+    "name": "Tiệm Gội Đầu Dưỡng Sinh",
+    "description": "Đắm chìm trong hương sả chanh và những động tác xoa bóp điêu luyện. Trải nghiệm thư giãn đặc sản này giúp bạn rũ bỏ mọi mệt mỏi.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_013.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 1,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_LA",
+      "effect_value": 2
+    },
+    "rarity": "COMMON",
+    "icon": "💆"
+  },
+  {
+    "card_id": "SG_UTIL_014",
+    "name": "Tiệm Gội Đầu Dưỡng Sinh",
+    "description": "Đắm chìm trong hương sả chanh và những động tác xoa bóp điêu luyện. Trải nghiệm thư giãn đặc sản này giúp bạn rũ bỏ mọi mệt mỏi.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_014.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "INDOOR"
+    ],
+    "cost": {
+      "xu": 1,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "RECOVER_LA",
+      "effect_value": 2
+    },
+    "rarity": "COMMON",
+    "icon": "💆"
+  },
+  {
+    "card_id": "SG_UTIL_015",
+    "name": "Thuê Thợ Ảnh Dạo",
+    "description": "Bắt gặp một thợ nháy dạo chuyên nghiệp, bạn chi tiền để có bộ ảnh sống ảo chất lượng. Nhân đôi giá trị kỷ niệm cho điểm đến kế tiếp.",
+    "image_url": "./assets/cards/saigon/utility/sg_util_015.jpg",
+    "phase_pool": "SAIGON",
+    "tags": [
+      "UTILITY",
+      "OUTDOOR"
+    ],
+    "cost": {
+      "xu": 2,
+      "la": 0
+    },
+    "base_vp": 0,
+    "location": {
+      "lat": 10.7715,
+      "lng": 106.6931,
+      "is_virtual": true,
+      "label": "Sài Gòn"
+    },
+    "on_play_effect": {
+      "has_effect": true,
+      "effect_type": "DOUBLE_VP_NEXT",
+      "effect_value": 1
+    },
+    "rarity": "UNCOMMON",
+    "icon": "📷"
+  }
+] satisfies GameCardData[] ;
+
 export const phase1Cards: GameCardData[] = [
   ...phase1SaiGonFoodCards,
   ...phase1SaiGonActionCards,
   ...phase1SaiGonCultureCards,
+  ...phase1SaiGonUtilityCards,
 ];
 
 console.log("[DATA CHECK] cards.phase1.ts loaded");
