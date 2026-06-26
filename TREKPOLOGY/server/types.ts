@@ -76,6 +76,8 @@ export type RoomState = {
   isTutorial?: boolean;
   /** Tutorial: đóng băng phase chấm điểm trong lúc giới thiệu sự kiện. */
   tutorialPaused?: boolean;
+  /** Đã lưu kết quả ván vào DB chưa (tránh ghi trùng khi tick lại). */
+  dbSaved?: boolean;
 };
 
 export type PlayerViewState = Omit<RoomState, "deck" | "players"> & {

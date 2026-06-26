@@ -1,3 +1,4 @@
+import "dotenv/config";
 import http from "node:http";
 import { Server } from "socket.io";
 import type {
@@ -6,6 +7,8 @@ import type {
   RoomState,
   ServerToClientEvents,
 } from "./types.js";
+import { handleAuthHttpRequest } from "./auth.js";
+import { initDb } from "./db.js";
 import { confirmDraftPick, selectDraftCard } from "./draftEngine.js";
 import { getPlayerViewState } from "./gameEngine.js";
 import {
@@ -24,7 +27,13 @@ import {
 import { tickRoom } from "./timerEngine.js";
 import { driveBots, fillRoomWithBots } from "./bot.js";
 
-const httpServer = http.createServer();
+// Phục vụ REST /auth/* (đăng ký/đăng nhập backed bằng Postgres).
+// Socket.IO tự xử lý path /socket.io/ và uỷ quyền request khác cho handler này.
+const httpServer = http.createServer(async (req, res) => {
+  if (await handleAuthHttpRequest(req, res)) return;
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("TREKPOLOGY server OK");
+});
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
@@ -498,6 +507,9 @@ io.on("connection", (socket) => {
 
 const PORT = Number(process.env.PORT ?? 3001);
 
-httpServer.listen(PORT, () => {
-  console.log(`Socket server listening on http://localhost:${PORT}`);
+// Tạo bảng (no-op nếu chưa cấu hình DATABASE_URL) rồi mới mở cổng.
+initDb().finally(() => {
+  httpServer.listen(PORT, () => {
+    console.log(`Socket server listening on http://localhost:${PORT}`);
+  });
 });
