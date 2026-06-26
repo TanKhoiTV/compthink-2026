@@ -70,6 +70,12 @@ import {
   payLocalDebtToken,
 } from "./actions/debtTokens.js";
 import {
+  canDiscardHandCard,
+  canPlaceOnBoardCell,
+  placeHandCardOnBoard,
+  placeSelectedHandCard,
+} from "./actions/cardPlacement.js";
+import {
   authClientState,
   clearSavedOnlineSession,
   confirmOnlineDraftPick,
@@ -124,7 +130,6 @@ import {
   getBoardCardByPosition as getBoardCardByPositionFromSlots,
   getCardTagKeys,
   getCurrentDayPlacedCards as getCurrentDayPlacedCardsFromSlots,
-  getNextTimeSlotPosition,
   getPlacedCards as getPlacedCardsFromSlots,
 } from "./game/board.js";
 import {
@@ -1082,7 +1087,7 @@ function placeBotCardsForCurrentDay() {
   startRealtimeBotPlacement();
 }
 
-function placeBotCardsAfterPlayerMove(sourceCard: TravelCardData) {
+export function placeBotCardsAfterPlayerMove(sourceCard: TravelCardData) {
   if (isOnlineRoomActive()) return;
 
   const opponentIds = getOpponentPlayerIds();
@@ -1146,11 +1151,7 @@ function drawNextCard() {
   }
 }
 
-function canPlaceOnBoardCell(rowIndex: number, colIndex: number) {
-  const cell = getBoardSlots()[rowIndex]?.[colIndex] ?? null;
-
-  return cell === null;
-}
+// Moved to actions/cardPlacement.ts
 
 // Moved to game/board.ts
 
@@ -3444,131 +3445,9 @@ function clearHoldTimer() {
 
 // Moved to ui/arenaRenderer.ts
 
-function placeHandCardOnBoard(
-  cardId: string,
-  rowIndex: number,
-  colIndex: number,
-) {
-  if (state.isSimulationMode || state.isInitialDealInProgress) return;
-  if (colIndex !== state.currentDayIndex) return;
-  if (!canPlaceOnBoardCell(rowIndex, colIndex)) return;
+// Moved to actions/cardPlacement.ts
 
-  const handIndex = state.playerHand.findIndex((card) => card.id === cardId);
-  if (handIndex === -1) return;
-
-  const selectedCard = state.playerHand[handIndex];
-
-  if (isOnlineRoomActive()) {
-    playGameSound("cardPlace");
-
-    const onlineUtilityEffect = getUtilityPlacementEffect(selectedCard);
-
-    if (onlineUtilityEffect) {
-      triggerUtilityEffectFlash({
-        rowIndex,
-        colIndex,
-        type: onlineUtilityEffect.type,
-        value: onlineUtilityEffect.value,
-      });
-    }
-
-    sendPlaceCard({
-      cardId: selectedCard.id,
-      rowIndex,
-      colIndex,
-      tag: selectedCard.tag,
-      icon: selectedCard.icon,
-      vp: selectedCard.vp,
-      coin: selectedCard.coin,
-      stamina: selectedCard.stamina,
-      name: selectedCard.name,
-    });
-
-    state.selectedHandCardId = null;
-    state.draggedHandCardId = null;
-    state.focusedHandCardId = null;
-    state.focusedBoardCard = null;
-    state.focusedBoardPosition = null;
-    state.suppressNextClick = false;
-
-    if (onlineUtilityEffect) {
-      rerenderArena();
-    }
-
-    return;
-  }
-
-  const remainingBeforePlace = getRemainingResources();
-  const coinDebt = Math.max(0, selectedCard.coin - remainingBeforePlace.coin);
-  const staminaDebt = Math.max(
-    0,
-    selectedCard.stamina - remainingBeforePlace.stamina,
-  );
-
-  playGameSound("cardPlace");
-
-  state.playerHand.splice(handIndex, 1);
-
-  const didApplyUtilityEffect = applyUtilityPlacementEffect(
-    selectedCard,
-    rowIndex,
-    colIndex,
-  );
-
-  if (!didApplyUtilityEffect) {
-    getBoardSlots()[rowIndex][colIndex] = selectedCard;
-
-    addLocalDebtOrExhaustToken({
-      rowIndex,
-      colIndex,
-      card: selectedCard,
-      coinDebt,
-      staminaDebt,
-    });
-  }
-
-  sendPlaceCard({
-    cardId: selectedCard.id,
-    rowIndex,
-    colIndex,
-    tag: selectedCard.tag,
-    icon: selectedCard.icon,
-    vp: selectedCard.vp,
-    coin: selectedCard.coin,
-    stamina: selectedCard.stamina,
-    image: selectedCard.image,
-    name: selectedCard.name,
-  });
-
-  placeBotCardsAfterPlayerMove(selectedCard);
-
-  state.selectedHandCardId = null;
-  state.draggedHandCardId = null;
-  state.focusedHandCardId = null;
-  state.focusedBoardCard = null;
-  state.focusedBoardPosition = null;
-  state.suppressNextClick = false;
-
-  state.lastPlacedBoardPosition = { rowIndex, colIndex };
-
-  rerenderArena();
-
-  window.setTimeout(() => {
-    if (
-      state.lastPlacedBoardPosition?.rowIndex === rowIndex &&
-      state.lastPlacedBoardPosition?.colIndex === colIndex
-    ) {
-      state.lastPlacedBoardPosition = null;
-      rerenderArena();
-    }
-  }, 420);
-}
-
-function placeSelectedHandCard(rowIndex: number, colIndex: number) {
-  if (!state.selectedHandCardId) return;
-
-  placeHandCardOnBoard(state.selectedHandCardId, rowIndex, colIndex);
-}
+// Moved to actions/cardPlacement.ts
 
 function returnFocusedBoardCardToHand() {
   if (state.isSimulationMode) return;
@@ -3711,13 +3590,7 @@ function clearDeckDiscardHoverClass() {
     });
 }
 
-function canDiscardHandCard() {
-  return (
-    !state.isDraftPhase &&
-    !state.isSimulationMode &&
-    !state.isInitialDealInProgress
-  );
-}
+// Moved to actions/cardPlacement.ts
 
 function discardHandCardToDeck(cardId: string) {
   if (!canDiscardHandCard()) return;
