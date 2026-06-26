@@ -48,6 +48,7 @@ export type PlayerPublicState = {
   isConnected: boolean;
   isReady: boolean;
   hasJoined: boolean;
+  isBot?: boolean;
   planningConfirmed?: boolean;
   board: PublicBoardCell[][];
 };

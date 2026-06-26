@@ -1,5 +1,6 @@
 @import "dashboard.less";
 @import "mapSelection.less";
+@import "spotlight.less";
 @rarity-common: #9a7c57;
 @rarity-uncommon: #38d873;
 @rarity-epic: #8b5cf6;
@@ -13642,7 +13643,9 @@ body,
   text-transform: uppercase;
   z-index: 900;
   pointer-events: none;
-  animation: bannerGlow 2s infinite alternate, bannerSlideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Chỉ glow nhẹ; bỏ bannerSlideUp vì banner bị render lại mỗi tick server
+     → entrance trượt chạy lại liên tục gây "nhảy". Giờ chỉ hiện ổn định. */
+  animation: bannerGlow 2s infinite alternate;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);

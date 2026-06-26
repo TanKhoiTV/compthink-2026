@@ -22,6 +22,7 @@ import {
   startGame,
 } from "./rooms.js";
 import { tickRoom } from "./timerEngine.js";
+import { driveBots, fillRoomWithBots } from "./bot.js";
 
 const httpServer = http.createServer();
 
@@ -77,6 +78,7 @@ function emitRoomState(roomId: string) {
 setInterval(() => {
   for (const [roomId, state] of rooms) {
     tickRoom(state);
+    driveBots(state);
     emitRoomState(roomId);
   }
 }, 1000);
@@ -203,6 +205,7 @@ io.on("connection", (socket) => {
       return;
     }
 
+    fillRoomWithBots(state); // điền ghế trống bằng bot trước khi check sẵn sàng
     const error = startGame(state, payload);
 
     if (error) {

@@ -2856,6 +2856,8 @@ export function getPlayerViewState(state: RoomState, playerId: PlayerId) {
       pickedDraftCards: player.pickedDraftCards,
       hand: player.hand,
       selectedDraftCardId: player.selectedDraftCardId,
+      // Đã bấm "Kết thúc lượt" chưa (reset khi vòng xong = mọi người đã pick).
+      draftPickConfirmed: player.draftPickConfirmed === true,
     },
   };
 }

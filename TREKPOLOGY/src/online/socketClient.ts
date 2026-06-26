@@ -67,6 +67,7 @@ export type OnlineRoomState = {
     pickedDraftCards: OnlineTravelCardData[];
     hand: OnlineTravelCardData[];
     selectedDraftCardId: string | null;
+    draftPickConfirmed?: boolean;
   };
 };
 

@@ -1,7 +1,6 @@
 import { renderMapSelectionScreen } from "./ui/mapSelection.js";
 import { cleanupDashboardHub, initDashboardHub, renderDashboard } from "./ui/dashboard.js";
-import { GAME_HELP_STEPS, initHelpBubbleDelegation, renderHelpBubble } from "./ui/HelpBubble.js";
-import { initOnboardingModalDelegation, renderOnboardingModal, syncOnboardingAutoOpen } from "./ui/OnboardingModal.js";
+import { maybeStartOnboarding, initTourLauncher, type OnboardingCtx } from "./onboarding/onboardingTour.js";
 import {
   authClientState,
   createOnlineRoom,
@@ -652,9 +651,11 @@ function getDraftPoolHighlightedCardId(): string | null {
 
 function shouldShowDraftWaitBanner(): boolean {
   if (!isDraftPhase || isDraftDealVisualActive() || isPassingDraftCards) return false;
-  if (!draftHandPendingCardId) return false;
-
   if (!isOnlineRoomActive()) return false;
+
+  // Chỉ hiện SAU khi đã bấm "Kết thúc lượt" (đã confirm). Khi vòng xong (mọi
+  // người đã pick) server reset draftPickConfirmed → banner tự ẩn.
+  if (onlineClientState.roomState?.self?.draftPickConfirmed !== true) return false;
 
   const connectedCount = playerIds.filter((playerId) => {
     return onlineClientState.roomState?.players[playerId]?.isConnected;
@@ -5372,13 +5373,6 @@ function renderResourceOrbs() {
       </div>
 
       <div class="resource-orb-cluster resource-orb-cluster--stamina">
-        ${renderHelpBubble({
-          id: "gameplay-help",
-          title: "Cách chơi",
-          bubbleLabel: "Cách chơi",
-          steps: GAME_HELP_STEPS,
-          placement: "game",
-        })}
         <div class="resource-orb resource-orb--stamina ${resourceOrbFlashType === "stamina" ? "resource-orb--effect-pulse" : ""}" title="Thể lực hiện có">
           <div class="resource-orb__frame">
             <div class="resource-orb__icon resource-orb__icon--stamina">🏃</div>
@@ -7827,7 +7821,7 @@ function setupSaigonCollageHover() {
 }
 
 function renderWithGlobalOverlays(content: string) {
-  return `${content}${renderOnboardingModal()}`;
+  return `${content}`;
 }
 
 function renderGameShell() {
@@ -7896,10 +7890,53 @@ function applyLobbyBackground() {
   }
 }
 
+function buildOnboardingCtx(): OnboardingCtx {
+  return {
+    isLoggedIn: () => Boolean(authClientState.user),
+    getPhase: () => onlineClientState.roomState?.phase ?? null,
+    getSelfPlacedCount: () => {
+      const id = onlineClientState.playerId;
+      const board = id ? onlineClientState.roomState?.players?.[id]?.board : null;
+      if (!board) return 0;
+      return board.reduce(
+        (sum, row) => sum + row.filter((cell) => cell != null).length,
+        0,
+      );
+    },
+    getDraftSelected: () =>
+      Boolean(onlineClientState.roomState?.self?.selectedDraftCardId),
+    getDraftPickedCount: () =>
+      onlineClientState.roomState?.self?.pickedDraftCards?.length ?? 0,
+    getDayIndex: () => onlineClientState.roomState?.dayIndex ?? 0,
+    getPlayers: () => {
+      const players = onlineClientState.roomState?.players;
+      const selfId = onlineClientState.playerId;
+      if (!players) return [];
+      const ids = ["p1", "p2", "p3", "p4"] as const;
+      const out: { name: string; score: number; isBot: boolean; isSelf: boolean }[] = [];
+      for (const id of ids) {
+        const p = players[id] as (typeof players)[typeof id] & { isBot?: boolean; vp?: number };
+        if (!p) continue;
+        out.push({
+          name: p.name,
+          score: p.score ?? p.vp ?? 0,
+          isBot: p.isBot === true,
+          isSelf: id === selfId,
+        });
+      }
+      return out;
+    },
+    gotoHome: () => {
+      leaveOnlineRoom();
+      (window as any).gotoDashboard?.();
+    },
+  };
+}
+
 function rerenderGameShell() {
   stopOutsideBackgroundMedia();
 
-  syncOnboardingAutoOpen(authClientState.isReady);
+  maybeStartOnboarding(buildOnboardingCtx());
   app.innerHTML = renderGameShell();
   applyLobbyBackground();
   setupSaigonCollageHover();
@@ -8357,8 +8394,7 @@ setupCardClickDelegation();
 setupAuthFormDelegation();
 setupGameAudioDelegation();
 setupInGameMusicDelegation();
-initHelpBubbleDelegation();
-initOnboardingModalDelegation();
+initTourLauncher(buildOnboardingCtx);
 
 initOnlineClient(
   () => {

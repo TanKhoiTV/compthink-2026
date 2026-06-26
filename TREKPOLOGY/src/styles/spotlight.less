@@ -1,0 +1,259 @@
+/* ── Coachmark / spotlight tour ────────────────────────────────────
+   Phủ tối 4 mask-rect + ring phát sáng quanh target + tooltip kem.
+   Tông khớp game: nâu trầm, vàng đồng. Mọi lớp ở .sl-layer (z 5000).
+*/
+
+@sl-dim:     fade(#1c120b, 68%);
+@sl-gold:    #f0c674;
+@sl-cream:   #fbf4ea;
+@sl-ink:     #2a1c14;
+@sl-accent:  #a07d4f;
+
+body.sl-open { overflow: hidden; }
+
+/* passive: chỉ chiếu đèn, cho người chơi thao tác tự do (bước trong trận) */
+.sl-layer.sl-passive .sl-mask { pointer-events: none; }
+
+/* noSpotlight: ẩn hết che tối/đèn — chỉ còn tooltip ở góc, người chơi tự chơi */
+.sl-layer.sl-nospot .sl-mask,
+.sl-layer.sl-nospot .sl-ring,
+.sl-layer.sl-nospot .sl-pulse { display: none; }
+
+.sl-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* mặc định cho click xuyên; mask tự bật lại */
+  opacity: 0; /* ẩn tới khi định vị xong (tránh tooltip rỗng nhấp ở góc) */
+  transition: opacity 0.25s ease;
+}
+.sl-layer.sl-ready { opacity: 1; }
+
+/* 4 mảng tối — CHẶN click ngoài target */
+/* Token chuyển động chung: dịch chuyển giữa các bước — mượt, nhẹ, ease chuẩn. */
+@sl-move: 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+
+.sl-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: @sl-dim;
+  backdrop-filter: blur(1.5px);
+  pointer-events: auto;
+  transition: transform @sl-move, width @sl-move, height @sl-move;
+}
+
+/* Vòng sáng quanh target (không chặn click → control thật bấm được).
+   Glow nhẹ + breathing dịu; điểm thu hút chính là .sl-pulse co vào. */
+.sl-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px fade(@sl-gold, 85%), 0 0 16px 2px fade(@sl-gold, 22%);
+  transition: transform @sl-move, width @sl-move, height @sl-move;
+  animation: sl-ring-breathe 2.6s ease-in-out infinite;
+}
+.sl-ring--static { animation: none; }
+
+@keyframes sl-ring-breathe {
+  0%, 100% { box-shadow: 0 0 0 2px fade(@sl-gold, 80%), 0 0 14px 2px fade(@sl-gold, 18%); }
+  50%      { box-shadow: 0 0 0 2px fade(@sl-gold, 95%), 0 0 20px 4px fade(@sl-gold, 28%); }
+}
+
+/* Vòng "click vào đây": bắt đầu rộng & mờ rồi CO DẦN vào đúng target, lặp lại. */
+.sl-pulse {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  transition: transform @sl-move, width @sl-move, height @sl-move;
+}
+.sl-pulse__ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 18px;
+  border: 2px solid fade(@sl-gold, 85%);
+  transform-origin: center;
+  animation: sl-pulse-converge 1.9s cubic-bezier(0.33, 0, 0.2, 1) infinite;
+}
+.sl-pulse--static .sl-pulse__ring { animation: none; opacity: 0; }
+
+@keyframes sl-pulse-converge {
+  0%   { transform: scale(1.32); opacity: 0; }
+  28%  { opacity: 0.9; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* Tooltip card */
+.sl-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(340px, calc(100vw - 24px));
+  background: @sl-cream;
+  color: @sl-ink;
+  border-radius: 16px;
+  padding: 18px 18px 16px;
+  pointer-events: auto;
+  box-shadow: 0 18px 48px fade(#000, 45%);
+  border: 1px solid fade(@sl-gold, 60%);
+  transition: transform @sl-move;
+
+  &.sl-tip--enter { animation: sl-tip-enter 0.34s ease-out; }
+
+  &__skiprow {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  &__skip, &__results {
+    background: none;
+    border: 0;
+    color: @sl-accent;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 2px;
+    &:hover { color: darken(@sl-accent, 12%); }
+  }
+  &__results { margin-right: auto; font-weight: 700; }
+  &__count {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: @sl-accent;
+  }
+  &__title { margin: 0 0 6px; font-size: 18px; line-height: 1.25; }
+  &__body  { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: lighten(@sl-ink, 12%); }
+  &__hint  { font-size: 13px; color: @sl-accent; font-weight: 600; }
+
+  &__dots { display: flex; gap: 6px; margin-bottom: 14px; }
+  &__actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+}
+
+@keyframes sl-tip-enter {
+  from { opacity: 0.35; }
+  to   { opacity: 1; }
+}
+
+.sl-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: fade(@sl-accent, 35%);
+  transition: all 0.2s ease;
+  &.is-active { background: @sl-accent; width: 18px; border-radius: 4px; }
+}
+
+.sl-btn {
+  border: 0;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: filter 0.15s ease, background 0.15s ease;
+  &--primary { background: @sl-accent; color: #fff; &:hover { filter: brightness(1.08); } }
+  &--ghost { background: transparent; color: @sl-accent; border: 1px solid fade(@sl-accent, 45%); }
+}
+
+/* Nút skip nổi — luôn có trong ván tutorial để bỏ qua tới kết quả */
+.tour-skip-fab {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 5100;
+  background: @sl-accent;
+  color: #fff;
+  border: 0;
+  border-radius: 22px;
+  padding: 10px 18px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px fade(#000, 40%);
+  transition: filter 0.15s ease, transform 0.15s ease;
+  &:hover { filter: brightness(1.08); transform: translateY(-1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-mask, .sl-ring, .sl-pulse, .sl-tip { transition: none; }
+  .tour-skip-fab { transition: none; }
+  .sl-ring, .sl-pulse__ring { animation: none; }
+  .sl-pulse__ring { opacity: 0; }
+  .sl-tip--enter { animation: none; }
+}
+
+/* ── Màn kết quả cuối (skip → tổng kết) ─────────────────────── */
+body.tour-result-open { overflow: hidden; }
+
+.tour-result-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 5200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 120% at 50% 0%, fade(#3a2718, 96%), fade(#1c120b, 98%));
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  &.is-in { opacity: 1; }
+}
+
+.tour-result {
+  width: min(460px, 100%);
+  background: @sl-cream;
+  color: @sl-ink;
+  border-radius: 20px;
+  padding: 28px 26px 24px;
+  box-shadow: 0 24px 70px fade(#000, 55%);
+  border: 1px solid fade(@sl-gold, 60%);
+  text-align: center;
+
+  &__eyebrow { margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: @sl-accent; }
+  &__title { margin: 0 0 18px; font-size: 26px; }
+  &__board { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: fade(@sl-accent, 8%);
+    opacity: 0;
+    transform: translateY(8px);
+    animation: tour-result-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-delay: calc(var(--i) * 0.12s + 0.2s);
+    &.is-self { background: fade(@sl-gold, 28%); box-shadow: 0 0 0 2px fade(@sl-gold, 70%); font-weight: 700; }
+  }
+  &__medal { font-size: 20px; }
+  &__name { text-align: left; }
+  &__score { font-weight: 800; color: @sl-accent; small { font-weight: 600; opacity: 0.7; } }
+
+  &__verdict { margin: 0 0 18px; font-size: 14px; color: lighten(@sl-ink, 12%); }
+
+  &__home {
+    width: 100%;
+    background: @sl-accent;
+    color: #fff;
+    border: 0;
+    border-radius: 12px;
+    padding: 13px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+    &:hover { filter: brightness(1.08); }
+  }
+}
+
+@keyframes tour-result-in {
+  to { opacity: 1; transform: translateY(0); }
+}

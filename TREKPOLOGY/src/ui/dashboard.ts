@@ -318,31 +318,6 @@ export function renderDashboard(isLoading = false) {
 
   return `
     <div class="dashboard-hub ${isLoading ? "dashboard-hub--loading" : ""}">
-      <!-- Modal: Hướng Dẫn Chơi -->
-      <div class="hub-modal" id="modal-rules" onclick="if(event.target===this)this.classList.remove('hub-modal--open')">
-        <div class="hub-modal__box">
-          <button class="hub-modal__close" onclick="document.getElementById('modal-rules').classList.remove('hub-modal--open')">✕</button>
-          <h2>Hướng Dẫn Chơi</h2>
-          <div class="hub-modal__content">
-            <h3>🎯 Mục tiêu</h3>
-            <p>Mỗi người chơi xây dựng lịch trình du lịch 5 ngày, thu thập các thẻ địa điểm và ghi càng nhiều điểm VP (Điểm Hành Trình) càng tốt.</p>
-
-            <h3>🃏 Thẻ bài</h3>
-            <p>Mỗi thẻ đại diện cho một địa điểm du lịch tại Việt Nam — có các thuộc tính: Thể loại (Văn Hoá, Ẩm Thực, Thiên Nhiên...), Chi phí (Xu & Thể Lực), và Điểm VP.</p>
-
-            <h3>⚙️ Một lượt chơi</h3>
-            <ol>
-              <li><strong>Draft:</strong> Chọn 1 thẻ từ tay bài chung, truyền phần còn lại cho người kế tiếp.</li>
-              <li><strong>Lên kế hoạch:</strong> Đặt các thẻ đã chọn vào bảng lịch trình 5×5 của bạn.</li>
-              <li><strong>Tính điểm:</strong> Server tính điểm cuối mỗi ngày theo combo thẻ.</li>
-            </ol>
-
-            <h3>🏆 Kết thúc</h3>
-            <p>Sau 5 ngày chơi, người có tổng VP cao nhất giành chiến thắng và nhận Chứng Nhận Hành Trình.</p>
-          </div>
-        </div>
-      </div>
-
       <!-- Modal: Về Chúng Tôi -->
       <div class="hub-modal" id="modal-about" onclick="if(event.target===this)this.classList.remove('hub-modal--open')">
         <div class="hub-modal__box">
@@ -362,7 +337,7 @@ export function renderDashboard(isLoading = false) {
       <header class="hub-topbar">
         <div class="hub-topbar__logo">TREKPOLOGY</div>
         <nav class="hub-topbar__nav">
-          <button type="button" data-onboarding-open>Hướng Dẫn Chơi</button>
+          <button type="button" data-tutorial-open>Hướng Dẫn Chơi</button>
           <button onclick="document.getElementById('modal-about').classList.add('hub-modal--open')">Về Chúng Tôi</button>
         </nav>
         ${renderHubTopbarUser(isLoggedIn, displayName)}
