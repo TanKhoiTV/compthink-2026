@@ -92,7 +92,8 @@ function createDebtTokenCard(params: {
 		tagLabel: "Nợ",
 		tags: ["UTILITY"],
 		icon: "💸",
-		description: `Bấm để trả ${params.amount} xu. Nếu không trả trước khi hết ngày sẽ bị -20 VP.`,
+		description:
+			`Bấm để trả ${params.amount} xu. Nếu không trả trước khi hết ngày sẽ bị -20 VP.`,
 		bonusText: "Không trả nợ: -20 VP",
 		boardTokenType: "debt",
 		debtAmount: params.amount,
@@ -416,8 +417,7 @@ export function getCurrentScoreBreakdown(): ScoreBreakdown {
 		bonusVP: state.simulationResult.bonusVP,
 		totalVP: state.simulationResult.finalVP,
 		spentCoin: state.simulationResult.spentCoin,
-		spentStamina:
-			state.simulationResult.spentStamina +
+		spentStamina: state.simulationResult.spentStamina +
 			getSimulationEventStaminaPenalty(state.simulationResult),
 		usedSlots: state.simulationResult.usedSlots,
 		lines: state.simulationResult.lines,
@@ -464,12 +464,10 @@ export function getRemainingResources() {
 	});
 
 	return {
-		coin:
-			remaining.coin +
+		coin: remaining.coin +
 			state.discardedResourceBonus.coin +
 			state.eventResourceModifier.coin,
-		stamina:
-			remaining.stamina +
+		stamina: remaining.stamina +
 			state.discardedResourceBonus.stamina +
 			state.eventResourceModifier.stamina,
 	};
@@ -514,8 +512,8 @@ export function shouldShowDraftPickPool(): boolean {
 	if (!state.isDraftPhase) return false;
 	if (state.isOnlineFinalDraftReturnAnimating) return false;
 	if (isOnlineInterRoundPoolPassActive()) {
-		const passPool =
-			state.onlineDraftPassSnapshotPool ?? state.onlineDraftDisplayPool;
+		const passPool = state.onlineDraftPassSnapshotPool ??
+			state.onlineDraftDisplayPool;
 		if (passPool?.length) return true;
 	}
 	if (state.isPassingDraftCards && state.draftPassDisplayPool?.length) {
@@ -617,4 +615,218 @@ export function getPlanningConfirmStatusLabel() {
 	}
 
 	return "";
+}
+
+// ── Draft queries ──
+
+// ── Internal helpers ──
+
+function getOnlineSelectedDraftCardId() {
+	return getOnlineSelfState()?.selectedDraftCardId ?? null;
+}
+
+function getDraftVisualSelectedCardId() {
+	return getOnlineSelectedDraftCardId() ?? state.draftSelectedCardId;
+}
+
+export function getOnlineSelfDraftPool(): TravelCardData[] | null {
+	return (
+		(getOnlineSelfState()?.draftPool as TravelCardData[] | undefined) ?? null
+	);
+}
+
+export function getOnlineDraftDisplayPool(): TravelCardData[] | null {
+	if (!isOnlineRoomActive()) return null;
+
+	const serverPool = getOnlineSelfDraftPool();
+
+	/*
+    Fix online draft bị mất bài ở tab khác:
+    server vẫn có state.self.draftPool nhưng client đôi khi đang giữ
+    state.onlineDraftDisplayPool rỗng/null do animation/pass state. Khi đó UI không render bài,
+    dù hết giờ server vẫn auto-pick được. Luôn fallback về serverPool nếu có bài.
+  */
+	if (state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating) {
+		const passPool = state.onlineDraftPassSnapshotPool ??
+			state.onlineDraftDisplayPool;
+
+		if (passPool && passPool.length > 0) {
+			return passPool;
+		}
+
+		return passPool ?? serverPool;
+	}
+
+	if (
+		(state.isInitialDealInProgress || state.isDraftCenterDealing) &&
+		state.onlineDraftDisplayPool &&
+		state.onlineDraftDisplayPool.length > 0
+	) {
+		return state.onlineDraftDisplayPool;
+	}
+
+	if (state.onlineDraftDisplayPool && state.onlineDraftDisplayPool.length > 0) {
+		return state.onlineDraftDisplayPool;
+	}
+
+	if (serverPool && serverPool.length > 0) {
+		state.onlineDraftDisplayPool = [...serverPool];
+		return state.onlineDraftDisplayPool;
+	}
+
+	return state.onlineDraftDisplayPool ?? serverPool;
+}
+
+export function getCurrentDraftPlayer() {
+	return getCurrentDraftPlayerFromDraft(
+		state.draftPlayers,
+		getActiveDraftPlayerIndex(),
+	);
+}
+
+export function shouldShowDraftWaitBanner(): boolean {
+	if (
+		!state.isDraftPhase ||
+		isDraftDealVisualActive() ||
+		state.isPassingDraftCards
+	) {
+		return false;
+	}
+	if (!state.draftHandPendingCardId) return false;
+
+	if (!isOnlineRoomActive()) return false;
+
+	const connectedCount = playerIds.filter((playerId) => {
+		return onlineClientState.roomState?.players[playerId]?.isConnected;
+	}).length;
+
+	return connectedCount > 1;
+}
+
+export function getConfirmedPickedDraftCards(): TravelCardData[] {
+	if (isOnlineRoomActive()) {
+		return (
+			(getOnlineSelfState()?.pickedDraftCards as
+				| TravelCardData[]
+				| undefined) ?? []
+		);
+	}
+	return getCurrentDraftPlayer()?.picked ?? [];
+}
+
+export function findCardInDraftPool(cardId: string): TravelCardData | null {
+	const pool = isOnlineRoomActive()
+		? (getOnlineDraftDisplayPool() ?? [])
+		: (getCurrentDraftPlayer()?.pool ?? []);
+	return pool.find((card) => card.id === cardId) ?? null;
+}
+
+export function getDraftHandDisplayCards(): TravelCardData[] {
+	const confirmed = getConfirmedPickedDraftCards();
+	const pendingId = state.draftHandPendingCardId;
+
+	if (!pendingId || confirmed.some((card) => card.id === pendingId)) {
+		return confirmed;
+	}
+
+	const pendingCard = findCardInDraftPool(pendingId);
+	return pendingCard ? [...confirmed, pendingCard] : confirmed;
+}
+
+export function getDraftCenterRenderPool(): TravelCardData[] {
+	if (isOnlineRoomActive()) {
+		if (isOnlineInterRoundPoolPassActive()) {
+			return (
+				state.onlineDraftPassSnapshotPool ?? state.onlineDraftDisplayPool ?? []
+			);
+		}
+		return getOnlineDraftDisplayPool() ?? [];
+	}
+
+	if (state.isPassingDraftCards && state.draftPassDisplayPool) {
+		return state.draftPassDisplayPool;
+	}
+
+	return getCurrentDraftPlayer()?.pool ?? [];
+}
+
+export function shouldShowDraftLeftoverReturn(): boolean {
+	return state.isOnlineFinalDraftReturnAnimating && state.isPassingDraftCards;
+}
+
+export function getDraftLeftoverReturnCards(): TravelCardData[] {
+	const pool = getOnlineDraftDisplayPool() ?? [];
+	const pickedIds = new Set(
+		(getOnlineSelfState()?.pickedDraftCards ?? []).map((card) => card.id),
+	);
+	return pool.filter((card) => !pickedIds.has(card.id));
+}
+
+export function isDraftPickTimerFrozen(): boolean {
+	const hold = onlineClientState.roomState?.draftTimerHold ?? 0;
+
+	if (isOnlineRoomActive()) {
+		const serverPool = getOnlineSelfDraftPool();
+		const animationExpired = state.draftDealVisualEndsAt > 0 &&
+			Date.now() > state.draftDealVisualEndsAt + 180;
+
+		if (serverPool?.length && animationExpired) {
+			return hold > 0;
+		}
+	}
+
+	return (
+		state.isDraftCenterDealing ||
+		state.isInitialDealInProgress ||
+		state.isPassingDraftCards ||
+		hold > 0 ||
+		Date.now() < state.draftDealVisualEndsAt
+	);
+}
+
+export function getDraftSelectedCard() {
+	if (isOnlineRoomActive()) {
+		const onlinePool = getOnlineDraftDisplayPool();
+		const selectedId = getDraftVisualSelectedCardId();
+
+		if (!onlinePool || !selectedId) return null;
+
+		return onlinePool.find((card) => card.id === selectedId) ?? null;
+	}
+
+	const currentPlayer = getCurrentDraftPlayer();
+
+	if (!currentPlayer || !state.draftSelectedCardId) return null;
+
+	return (
+		currentPlayer.pool.find((card) => card.id === state.draftSelectedCardId) ??
+			null
+	);
+}
+
+export function shouldHideDraftPoolSlot(cardId: string): boolean {
+	if (isDraftDealVisualActive()) {
+		return (
+			cardId === state.draftHandPendingCardId ||
+			cardId === state.draftPoolFlyReturnCardId
+		);
+	}
+
+	if (
+		cardId === state.draftHandPendingCardId ||
+		cardId === state.draftPoolFlyReturnCardId
+	) {
+		return true;
+	}
+
+	/*
+    Online draft giữ display pool cũ trong lúc pass animation.
+    Lá vừa pick đã nằm trên tay nhưng vẫn còn trong display pool → ẩn slot
+    cho tới khi pool mới được apply sau animation.
+  */
+	if (state.isPassingDraftCards || state.isOnlineFinalDraftReturnAnimating) {
+		return getConfirmedPickedDraftCards().some((card) => card.id === cardId);
+	}
+
+	return false;
 }

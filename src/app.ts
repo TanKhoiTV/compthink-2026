@@ -131,11 +131,20 @@ import {
 } from "./state/gameState.js";
 import {
 	createExhaustLockTokenCard,
+	findCardInDraftPool,
 	getBoardSlots,
 	getBoardTotals,
+	getConfirmedPickedDraftCards,
+	getCurrentDraftPlayer,
 	getCurrentScoreBreakdown,
 	getDisplayPlayerName,
+	getDraftCenterRenderPool,
+	getDraftHandDisplayCards,
+	getDraftLeftoverReturnCards,
+	getDraftSelectedCard,
+	getOnlineDraftDisplayPool,
 	getOnlinePlayerBoard,
+	getOnlineSelfDraftPool,
 	getOnlineSelfHand,
 	getOnlineSelfPublicPlayer,
 	getOnlineSelfState,
@@ -144,12 +153,16 @@ import {
 	getSelfPlanningConfirmLockSignature,
 	getSimulationEventResourceModifier,
 	isDraftDealVisualActive,
+	isDraftPickTimerFrozen,
 	isDraftPoolToggleBlocked,
 	isOnlineInterRoundPoolPassActive,
 	isOnlinePlanningPhase,
 	isOnlineRoomActive,
 	isSelfPlanningConfirmed,
+	shouldHideDraftPoolSlot,
+	shouldShowDraftLeftoverReturn,
 	shouldShowDraftPickPool,
+	shouldShowDraftWaitBanner,
 } from "./game/queries.js";
 import {
 	renderDeckPilePanel,
@@ -225,8 +238,10 @@ export const images = {
 		"https://images.unsplash.com/photo-1517701550927-30cf4ba1f0d5?auto=format&fit=crop&w=1000&q=80",
 	bridge:
 		"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80",
-	sea: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80",
-	food: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1000&q=80",
+	sea:
+		"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80",
+	food:
+		"https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1000&q=80",
 	market:
 		"https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=1000&q=80",
 	night:
@@ -380,53 +395,7 @@ function returnUnplayedHandToDeck() {
 	state.playerHand = result.playerHand;
 }
 
-function getOnlineSelfDraftPool(): TravelCardData[] | null {
-	return (
-		(getOnlineSelfState()?.draftPool as TravelCardData[] | undefined) ?? null
-	);
-}
-
-function getOnlineDraftDisplayPool(): TravelCardData[] | null {
-	if (!isOnlineRoomActive()) return null;
-
-	const serverPool = getOnlineSelfDraftPool();
-
-	/*
-    Fix online draft bị mất bài ở tab khác:
-    server vẫn có state.self.draftPool nhưng client đôi khi đang giữ
-    state.onlineDraftDisplayPool rỗng/null do animation/pass state. Khi đó UI không render bài,
-    dù hết giờ server vẫn auto-pick được. Luôn fallback về serverPool nếu có bài.
-  */
-	if (state.isPassingDraftCards && !state.isOnlineFinalDraftReturnAnimating) {
-		const passPool =
-			state.onlineDraftPassSnapshotPool ?? state.onlineDraftDisplayPool;
-
-		if (passPool && passPool.length > 0) {
-			return passPool;
-		}
-
-		return passPool ?? serverPool;
-	}
-
-	if (
-		(state.isInitialDealInProgress || state.isDraftCenterDealing) &&
-		state.onlineDraftDisplayPool &&
-		state.onlineDraftDisplayPool.length > 0
-	) {
-		return state.onlineDraftDisplayPool;
-	}
-
-	if (state.onlineDraftDisplayPool && state.onlineDraftDisplayPool.length > 0) {
-		return state.onlineDraftDisplayPool;
-	}
-
-	if (serverPool && serverPool.length > 0) {
-		state.onlineDraftDisplayPool = [...serverPool];
-		return state.onlineDraftDisplayPool;
-	}
-
-	return state.onlineDraftDisplayPool ?? serverPool;
-}
+// Moved to game/queries.ts
 
 function getDraftPoolSignature(cards: TravelCardData[] | null | undefined) {
 	return (cards ?? []).map((card) => card.id).join(",");
@@ -448,17 +417,14 @@ function recoverOnlineDraftDisplayAfterTabVisible(reason = "visible-sync") {
 	const serverPool = getOnlineSelfDraftPool();
 	if (!serverPool || serverPool.length === 0) return false;
 
-	const visiblePool =
-		state.onlineDraftDisplayPool ??
+	const visiblePool = state.onlineDraftDisplayPool ??
 		state.onlineDraftPassSnapshotPool ??
 		state.onlineDraftPendingPool;
 
 	const hasVisibleCards = !!visiblePool && visiblePool.length > 0;
-	const animationExpired =
-		state.draftDealVisualEndsAt > 0 &&
+	const animationExpired = state.draftDealVisualEndsAt > 0 &&
 		Date.now() > state.draftDealVisualEndsAt + 180;
-	const visualDealStillRunning =
-		state.isInitialDealInProgress ||
+	const visualDealStillRunning = state.isInitialDealInProgress ||
 		state.isDraftCenterDealing ||
 		state.isPassingDraftCards ||
 		Date.now() < state.draftDealVisualEndsAt;
@@ -513,8 +479,7 @@ function syncOnlineDraftDisplayAfterTabVisible() {
 
 function getDraftCenterDealCardCount(): number {
 	if (isOnlineRoomActive()) {
-		const pool =
-			state.onlineDraftDisplayPool ??
+		const pool = state.onlineDraftDisplayPool ??
 			state.onlineDraftPendingPool ??
 			getOnlineSelfDraftPool() ??
 			[];
@@ -612,37 +577,14 @@ function beginOnlineDraftPoolPass(
 	}, DRAFT_PASS_ANIMATION_MS);
 }
 
-function getOnlineSelectedDraftCardId() {
-	return getOnlineSelfState()?.selectedDraftCardId ?? null;
-}
-
-function getDraftVisualSelectedCardId() {
-	return getOnlineSelectedDraftCardId() ?? state.draftSelectedCardId;
-}
+// Moved to game/queries.ts
 
 function getDraftPoolHighlightedCardId(): string | null {
 	// Pool không hiển thị trạng thái "đã chọn" — lá pending nằm trên tay, slot pool bị ẩn.
 	return null;
 }
 
-function shouldShowDraftWaitBanner(): boolean {
-	if (
-		!state.isDraftPhase ||
-		isDraftDealVisualActive() ||
-		state.isPassingDraftCards
-	) {
-		return false;
-	}
-	if (!state.draftHandPendingCardId) return false;
-
-	if (!isOnlineRoomActive()) return false;
-
-	const connectedCount = playerIds.filter((playerId) => {
-		return onlineClientState.roomState?.players[playerId]?.isConnected;
-	}).length;
-
-	return connectedCount > 1;
-}
+// Moved to game/queries.ts
 
 function getConnectedLobbyPlayers() {
 	const roomState = onlineClientState.roomState;
@@ -691,12 +633,11 @@ function applyOnlineRoomStateToLocal() {
 	rememberCurrentCertificatePhase();
 
 	state.isDraftPhase = roomState.phase === "draft";
-	state.isSimulationMode =
-		roomState.phase === "simulation" ||
+	state.isSimulationMode = roomState.phase === "simulation" ||
 		roomState.phase === "result" ||
 		roomState.phase === "gameover";
-	state.isReplayComplete =
-		roomState.phase === "result" || roomState.phase === "gameover";
+	state.isReplayComplete = roomState.phase === "result" ||
+		roomState.phase === "gameover";
 
 	state.draftRound = state.draftRound;
 	state.draftPickSecondsLeft = roomState.timer;
@@ -711,13 +652,12 @@ function applyOnlineRoomStateToLocal() {
 	const serverDraftPool =
 		(roomState.self.draftPool as TravelCardData[] | undefined) ?? [];
 	const onlinePoolSignature = getDraftPoolSignature(serverDraftPool);
-	const hasDisplayPool =
-		state.onlineDraftDisplayPool !== null &&
+	const hasDisplayPool = state.onlineDraftDisplayPool !== null &&
 		state.onlineDraftDisplayPool.length > 0;
 
 	if (isOnlineRoomActive()) {
-		const enteredDraft =
-			roomState.phase === "draft" && state.lastOnlineAnimationPhase !== "draft";
+		const enteredDraft = roomState.phase === "draft" &&
+			state.lastOnlineAnimationPhase !== "draft";
 		const pickedDraftCount = roomState.self.pickedDraftCards?.length ?? 0;
 		const pickedIncreased = pickedDraftCount > state.lastOnlinePickedDraftCount;
 		const draftRoundAdvanced =
@@ -785,8 +725,7 @@ function applyOnlineRoomStateToLocal() {
 					state.draftPoolFlyReturnCardId = null;
 				}
 			} else if (!state.isOnlineFinalDraftReturnAnimating) {
-				const snapshot =
-					state.onlineDraftDisplayPool ??
+				const snapshot = state.onlineDraftDisplayPool ??
 					state.onlineDraftPassSnapshotPool ??
 					(serverDraftPool.length > 0 ? [...serverDraftPool] : null);
 
@@ -807,8 +746,7 @@ function applyOnlineRoomStateToLocal() {
 			setOnlineDraftDisplayPoolFromServer();
 		}
 
-		const isEnteringPlanningAfterDraft =
-			roomState.phase === "planning" &&
+		const isEnteringPlanningAfterDraft = roomState.phase === "planning" &&
 			state.lastOnlineAnimationPhase === "draft" &&
 			state.onlineDraftDisplayPool !== null &&
 			state.onlineDraftDisplayPool.length > 0 &&
@@ -877,8 +815,7 @@ function applyOnlineRoomStateToLocal() {
 		state.lastOnlineAnimationPoolSignature = onlinePoolSignature;
 	}
 
-	const shouldPlayPlanningDealFallback =
-		isOnlineRoomActive() &&
+	const shouldPlayPlanningDealFallback = isOnlineRoomActive() &&
 		roomState.phase === "planning" &&
 		state.lastOnlineAnimationPhase === "draft" &&
 		!state.isOnlineFinalDraftReturnAnimating &&
@@ -991,7 +928,8 @@ function cloneCardForBot(
 ): TravelCardData {
 	return {
 		...card,
-		id: `${card.id}_${playerId}_${state.currentDayIndex}_${index}_${Date.now()}`,
+		id:
+			`${card.id}_${playerId}_${state.currentDayIndex}_${index}_${Date.now()}`,
 	};
 }
 
@@ -1091,7 +1029,7 @@ function placeNextRealtimeBotMove() {
 	const currentCount = countBotCardsInCurrentDay(playerId);
 	const sourceCard =
 		sourceCards[currentCount % Math.max(1, sourceCards.length)] ??
-		initialDeck[0];
+			initialDeck[0];
 
 	if (!sourceCard) {
 		stopBotPlacementTimer();
@@ -1351,15 +1289,17 @@ function getHandCardById(id: string | null) {
 	if (!id) return null;
 
 	if (isOnlineRoomActive()) {
-		const onlineDraftCard =
-			getOnlineSelfDraftPool()?.find((card) => card.id === id) ?? null;
+		const onlineDraftCard = getOnlineSelfDraftPool()?.find((card) =>
+			card.id === id
+		) ?? null;
 
 		if (onlineDraftCard) {
 			return onlineDraftCard;
 		}
 
-		const onlineHandCard =
-			getOnlineSelfHand()?.find((card) => card.id === id) ?? null;
+		const onlineHandCard = getOnlineSelfHand()?.find((card) =>
+			card.id === id
+		) ?? null;
 
 		if (onlineHandCard) {
 			return onlineHandCard;
@@ -1367,8 +1307,9 @@ function getHandCardById(id: string | null) {
 	}
 
 	if (state.isDraftPhase) {
-		const draftCard =
-			getCurrentDraftPlayer()?.pool.find((card) => card.id === id) ?? null;
+		const draftCard = getCurrentDraftPlayer()?.pool.find((card) =>
+			card.id === id
+		) ?? null;
 
 		if (draftCard) {
 			return draftCard;
@@ -1390,8 +1331,7 @@ function getBoardCardByPosition(
 function getUtilityPlacementEffect(card: TravelCardData) {
 	const effect = card.onPlayEffect;
 	const tags = getCardTagKeys(card);
-	const isUtilityCard =
-		tags.includes("UTILITY") ||
+	const isUtilityCard = tags.includes("UTILITY") ||
 		String(card.tag || "").toLowerCase() === "utility" ||
 		stripCardText(card.tagLabel || "")
 			.toLowerCase()
@@ -1572,12 +1512,11 @@ function renderUtilityEffectFlash(rowIndex: number, colIndex: number) {
 
 	const { type, value } = state.lastUtilityEffectFlash;
 	const icon = type === "coin" ? "🪙" : type === "stamina" ? "⚡" : "★";
-	const label =
-		type === "coin"
-			? `+${value} Xu`
-			: type === "stamina"
-				? `+${value} Thể lực`
-				: `+${value} VP`;
+	const label = type === "coin"
+		? `+${value} Xu`
+		: type === "stamina"
+		? `+${value} Thể lực`
+		: `+${value} VP`;
 
 	return `
     <div class="utility-effect-pop utility-effect-pop--${type}" aria-hidden="true">
@@ -1607,20 +1546,20 @@ function renderDraftHandTopMeta() {
       <div class="draft-hand-meta__info">
         <span>Vòng ${state.draftRound}/5</span>
         <strong>${
-					selectedCard ? getBoardDisplayName(selectedCard) : "Bấm 1 lá để chọn"
-				}</strong>
+		selectedCard ? getBoardDisplayName(selectedCard) : "Bấm 1 lá để chọn"
+	}</strong>
         <em>
           ${
-						state.isInitialDealInProgress
-							? "Đang phát bài vào tay..."
-							: state.isPassingDraftCards
-								? "Đang chuyền bài còn lại vào lượt kế tiếp..."
-								: selectedCard
-									? "Đã chọn. Hết giờ mới chuyền bài."
-									: activePool.length > 0
-										? "Bấm để chọn, giữ 0.5s để xem lớn."
-										: "Đang chuẩn bị bài..."
-					}
+		state.isInitialDealInProgress
+			? "Đang phát bài vào tay..."
+			: state.isPassingDraftCards
+			? "Đang chuyền bài còn lại vào lượt kế tiếp..."
+			: selectedCard
+			? "Đã chọn. Hết giờ mới chuyền bài."
+			: activePool.length > 0
+			? "Bấm để chọn, giữ 0.5s để xem lớn."
+			: "Đang chuẩn bị bài..."
+	}
         </em>
       </div>
 
@@ -1631,35 +1570,7 @@ function renderDraftHandTopMeta() {
   `;
 }
 
-function getConfirmedPickedDraftCards(): TravelCardData[] {
-	if (isOnlineRoomActive()) {
-		return (
-			(getOnlineSelfState()?.pickedDraftCards as
-				| TravelCardData[]
-				| undefined) ?? []
-		);
-	}
-	return getCurrentDraftPlayer()?.picked ?? [];
-}
-
-function findCardInDraftPool(cardId: string): TravelCardData | null {
-	const pool = isOnlineRoomActive()
-		? (getOnlineDraftDisplayPool() ?? [])
-		: (getCurrentDraftPlayer()?.pool ?? []);
-	return pool.find((card) => card.id === cardId) ?? null;
-}
-
-function getDraftHandDisplayCards(): TravelCardData[] {
-	const confirmed = getConfirmedPickedDraftCards();
-	const pendingId = state.draftHandPendingCardId;
-
-	if (!pendingId || confirmed.some((card) => card.id === pendingId)) {
-		return confirmed;
-	}
-
-	const pendingCard = findCardInDraftPool(pendingId);
-	return pendingCard ? [...confirmed, pendingCard] : confirmed;
-}
+// Moved to game/queries.ts
 
 function getDraftHandDisplayCount(): number {
 	return getDraftHandDisplayCards().length;
@@ -1791,10 +1702,9 @@ function getDraftCenterCardWrapper(cardId: string): HTMLElement | null {
 }
 
 function getDraftPendingHandSlotRect(): DOMRect | null {
-	const slot =
-		document.querySelector(
-			".hand-card--picked-pending:not(.hand-card--picked-pending-hidden)",
-		) ??
+	const slot = document.querySelector(
+		".hand-card--picked-pending:not(.hand-card--picked-pending-hidden)",
+	) ??
 		document.querySelector(".hand-card--picked-pending-hidden") ??
 		document.querySelector(".hand-card--picked-pending");
 	const rect = slot?.getBoundingClientRect() ?? null;
@@ -1829,7 +1739,7 @@ async function measureDraftPendingHandSlotRect(): Promise<DOMRect | null> {
 		if (attempt > 0) {
 			await new Promise<void>((resolve) => {
 				window.requestAnimationFrame(() =>
-					window.requestAnimationFrame(() => resolve()),
+					window.requestAnimationFrame(() => resolve())
 				);
 			});
 		}
@@ -1881,8 +1791,8 @@ function renderPickedDraftCard(
 	return `
     <article
       class="hand-card hand-card--${card.rarity} hand-card--picked-draft hand-card--picked-slot-${
-				index + 1
-			}${pendingClass}${hiddenClass}"
+		index + 1
+	}${pendingClass}${hiddenClass}"
       data-draft-hand-card-id="${card.id}"
     >
       <div class="hand-card__header">
@@ -1937,33 +1847,16 @@ function renderPickedDraftCards(options?: { hiddenPendingMeasure?: boolean }) {
 	return getDraftHandDisplayCards()
 		.map((card, index) =>
 			renderPickedDraftCard(card, index, {
-				isPending:
-					card.id === state.draftHandPendingCardId &&
+				isPending: card.id === state.draftHandPendingCardId &&
 					!confirmedIds.has(card.id),
-				hiddenForMeasure:
-					options?.hiddenPendingMeasure &&
+				hiddenForMeasure: options?.hiddenPendingMeasure &&
 					card.id === state.draftHandPendingCardId,
-			}),
+			})
 		)
 		.join("");
 }
 
-function getDraftCenterRenderPool(): TravelCardData[] {
-	if (isOnlineRoomActive()) {
-		if (isOnlineInterRoundPoolPassActive()) {
-			return (
-				state.onlineDraftPassSnapshotPool ?? state.onlineDraftDisplayPool ?? []
-			);
-		}
-		return getOnlineDraftDisplayPool() ?? [];
-	}
-
-	if (state.isPassingDraftCards && state.draftPassDisplayPool) {
-		return state.draftPassDisplayPool;
-	}
-
-	return getCurrentDraftPlayer()?.pool ?? [];
-}
+// Moved to game/queries.ts
 
 function updateDraftConfirmButtonVisualOnly() {
 	if (!state.isDraftPhase) return;
@@ -2193,40 +2086,7 @@ function toggleDraftPoolCollapse() {
 	}
 }
 
-function shouldShowDraftLeftoverReturn(): boolean {
-	return state.isOnlineFinalDraftReturnAnimating && state.isPassingDraftCards;
-}
-
-function getDraftLeftoverReturnCards(): TravelCardData[] {
-	const pool = getOnlineDraftDisplayPool() ?? [];
-	const pickedIds = new Set(
-		(getOnlineSelfState()?.pickedDraftCards ?? []).map((card) => card.id),
-	);
-	return pool.filter((card) => !pickedIds.has(card.id));
-}
-
-function isDraftPickTimerFrozen(): boolean {
-	const hold = onlineClientState.roomState?.draftTimerHold ?? 0;
-
-	if (isOnlineRoomActive()) {
-		const serverPool = getOnlineSelfDraftPool();
-		const animationExpired =
-			state.draftDealVisualEndsAt > 0 &&
-			Date.now() > state.draftDealVisualEndsAt + 180;
-
-		if (serverPool?.length && animationExpired) {
-			return hold > 0;
-		}
-	}
-
-	return (
-		state.isDraftCenterDealing ||
-		state.isInitialDealInProgress ||
-		state.isPassingDraftCards ||
-		hold > 0 ||
-		Date.now() < state.draftDealVisualEndsAt
-	);
-}
+// Moved to game/queries.ts
 
 function getDraftTimerDisplayLabel(): string {
 	if (isDraftPickTimerFrozen()) return "Chia bài";
@@ -2240,8 +2100,8 @@ function updateDraftTimerDisplayVisualOnly() {
 	meta.textContent = isDraftPickTimerFrozen()
 		? "Đang chia bài..."
 		: `Còn ${getDraftTimerDisplayLabel()} • ${
-				state.isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"
-			}`;
+			state.isPassingDraftCards ? "Đang chuyền bài..." : "bấm 1 lá để chọn"
+		}`;
 	meta.classList.toggle("player-hand__meta--danger", isDraftTimerDanger());
 }
 
@@ -2272,13 +2132,10 @@ function renderDraftCenterOverlay() {
 				const index = startIndex + idx;
 				const globalSlot = startIndex + idx + 1;
 				const isFlownToHand = shouldHideDraftPoolSlot(card.id);
-				const poolPickDisabled =
-					state.isPassingDraftCards ||
+				const poolPickDisabled = state.isPassingDraftCards ||
 					state.isDraftPoolCollapsed ||
 					state.isDraftPoolCollapseAnimating;
-				const pickButton = poolPickDisabled
-					? ""
-					: `
+				const pickButton = poolPickDisabled ? "" : `
           <button class="draft-center-btn" data-draft-card-id="${card.id}">
             CHỌN
           </button>
@@ -2323,20 +2180,24 @@ function renderDraftCenterOverlay() {
 	return `
     <div class="draft-center-overlay ${overlayModifierClass}">
       <div class="draft-center-container">
-        <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(
-					topRow,
-					0,
-				)}</div>
-        <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${renderRow(
-					bottomRow,
-					4,
-				)}</div>
+        <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${
+		renderRow(
+			topRow,
+			0,
+		)
+	}</div>
+        <div class="draft-center-row" style="display: flex; flex-direction: row; gap: 12px; justify-content: center;">${
+		renderRow(
+			bottomRow,
+			4,
+		)
+	}</div>
       </div>
       ${
-				shouldShowDraftWaitBanner()
-					? '<div class="draft-center-wait-banner">Đang chờ đối thủ...</div>'
-					: ""
-			}
+		shouldShowDraftWaitBanner()
+			? '<div class="draft-center-wait-banner">Đang chờ đối thủ...</div>'
+			: ""
+	}
     </div>
   `;
 }
@@ -2374,12 +2235,7 @@ function getOnlineBoardForPlayer(playerId?: PlayerId) {
 
 // Moved to ui/sidePlayerBoards.ts
 
-function getCurrentDraftPlayer() {
-	return getCurrentDraftPlayerFromList(
-		state.draftPlayers,
-		getActiveDraftPlayerIndex(),
-	);
-}
+// Moved to game/queries.ts
 
 function isSinglePlayerLocalDraftMode() {
 	/*
@@ -2684,25 +2540,7 @@ function initializeDailyDraftPhase() {
 	playDraftDealAnimationAndStartTimer();
 }
 
-function getDraftSelectedCard() {
-	if (isOnlineRoomActive()) {
-		const onlinePool = getOnlineDraftDisplayPool();
-		const selectedId = getDraftVisualSelectedCardId();
-
-		if (!onlinePool || !selectedId) return null;
-
-		return onlinePool.find((card) => card.id === selectedId) ?? null;
-	}
-
-	const currentPlayer = getCurrentDraftPlayer();
-
-	if (!currentPlayer || !state.draftSelectedCardId) return null;
-
-	return (
-		currentPlayer.pool.find((card) => card.id === state.draftSelectedCardId) ??
-		null
-	);
-}
+// Moved to game/queries.ts
 
 function rotateDraftPoolsClockwise() {
 	state.draftPlayers = rotateDraftPoolsClockwiseList(state.draftPlayers);
@@ -2760,8 +2598,7 @@ function finishDraftPick(cardId: string | null) {
 			return;
 		}
 
-		const chosenCard =
-			currentPlayer.pool.find((card) => card.id === cardId) ??
+		const chosenCard = currentPlayer.pool.find((card) => card.id === cardId) ??
 			pickRandomCard(currentPlayer.pool);
 
 		if (!chosenCard) {
@@ -2832,11 +2669,10 @@ function finishDraftPick(cardId: string | null) {
 	state.draftPlayers = state.draftPlayers.map((player, playerIndex) => {
 		if (player.pool.length === 0) return player;
 
-		const chosenCard =
-			playerIndex === activeIndex
-				? (player.pool.find((card) => card.id === cardId) ??
-					pickRandomCard(player.pool))
-				: pickRandomCard(player.pool);
+		const chosenCard = playerIndex === activeIndex
+			? (player.pool.find((card) => card.id === cardId) ??
+				pickRandomCard(player.pool))
+			: pickRandomCard(player.pool);
 
 		if (!chosenCard) return player;
 
@@ -2975,32 +2811,7 @@ function computeDraftPickFlyScaleEnd(
 	return clampDraftPickFlyScale(toRect.width / fromRect.width);
 }
 
-function shouldHideDraftPoolSlot(cardId: string): boolean {
-	if (isDraftDealVisualActive()) {
-		return (
-			cardId === state.draftHandPendingCardId ||
-			cardId === state.draftPoolFlyReturnCardId
-		);
-	}
-
-	if (
-		cardId === state.draftHandPendingCardId ||
-		cardId === state.draftPoolFlyReturnCardId
-	) {
-		return true;
-	}
-
-	/*
-    Online draft giữ display pool cũ trong lúc pass animation.
-    Lá vừa pick đã nằm trên tay nhưng vẫn còn trong display pool → ẩn slot
-    cho tới khi pool mới được apply sau animation.
-  */
-	if (state.isPassingDraftCards || state.isOnlineFinalDraftReturnAnimating) {
-		return getConfirmedPickedDraftCards().some((card) => card.id === cardId);
-	}
-
-	return false;
-}
+// Moved to game/queries.ts
 
 function animateDraftPickFly(
 	fromRect: DOMRect,
@@ -3101,7 +2912,7 @@ async function playDraftPickFlyToHand(cardId: string) {
 
 	await new Promise<void>((resolve) => {
 		window.requestAnimationFrame(() =>
-			window.requestAnimationFrame(() => resolve()),
+			window.requestAnimationFrame(() => resolve())
 		);
 	});
 
@@ -3160,8 +2971,8 @@ async function playDraftPickFlyToPool(cardId: string) {
 
 	const wrapper = getDraftCenterCardWrapper(cardId);
 	const poolCard = wrapper?.querySelector(".hand-card") as HTMLElement | null;
-	const poolTargetRect =
-		poolCard?.getBoundingClientRect() ?? wrapper?.getBoundingClientRect();
+	const poolTargetRect = poolCard?.getBoundingClientRect() ??
+		wrapper?.getBoundingClientRect();
 
 	if (!poolTargetRect) {
 		state.draftHandPendingCardId = null;
@@ -3204,8 +3015,8 @@ async function playDraftPickSwap(fromCardId: string, toCardId: string) {
 	const fromHandFlySource = fromHandEl
 		? getDraftHandFlySourceFromElement(fromHandEl)
 		: null;
-	const fromRect =
-		fromHandFlySource?.rect ?? fromHandEl?.getBoundingClientRect();
+	const fromRect = fromHandFlySource?.rect ??
+		fromHandEl?.getBoundingClientRect();
 	const fromHtml = fromHandEl?.outerHTML;
 
 	const toPoolWrapper = getDraftCenterCardWrapper(toCardId);
@@ -3246,7 +3057,7 @@ async function playDraftPickSwap(fromCardId: string, toCardId: string) {
 
 	await new Promise<void>((resolve) => {
 		window.requestAnimationFrame(() =>
-			window.requestAnimationFrame(() => resolve()),
+			window.requestAnimationFrame(() => resolve())
 		);
 	});
 
@@ -3305,7 +3116,8 @@ function updateDraftHandVisualOnly(options?: {
 	if (!cardsEl) return;
 
 	const count = getDraftHandDisplayCount();
-	cardsEl.className = `player-hand__cards player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${count}`;
+	cardsEl.className =
+		`player-hand__cards player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${count}`;
 	cardsEl.innerHTML = renderPickedDraftCards(options);
 }
 
@@ -3569,8 +3381,9 @@ function confirmPlanningPick() {
 	} catch (error) {
 		resetSelfPlanningConfirmLock();
 
-		const message =
-			error instanceof Error ? error.message : "Không gửi được xác nhận.";
+		const message = error instanceof Error
+			? error.message
+			: "Không gửi được xác nhận.";
 		alert(message);
 		updatePlanningConfirmButtonVisualOnly();
 		return;
@@ -3595,8 +3408,9 @@ function selectHandCard(cardId: string) {
 	}
 
 	playGameSound("cardSelect");
-	state.selectedHandCardId =
-		state.selectedHandCardId === cardId ? null : cardId;
+	state.selectedHandCardId = state.selectedHandCardId === cardId
+		? null
+		: cardId;
 	state.draggedHandCardId = null;
 	state.focusedHandCardId = null;
 	state.focusedBoardCard = null;
@@ -3723,10 +3537,9 @@ function activateDraftCenterPoolPassAnimation() {
 
 	window.requestAnimationFrame(() => {
 		window.requestAnimationFrame(() => {
-			const overlayElement =
-				(document.querySelector(
-					".draft-center-overlay--passing:not(.draft-center-overlay--returning)",
-				) as HTMLElement | null) ??
+			const overlayElement = (document.querySelector(
+				".draft-center-overlay--passing:not(.draft-center-overlay--returning)",
+			) as HTMLElement | null) ??
 				(document.querySelector(
 					".draft-center-overlay:not(.draft-center-overlay--returning)",
 				) as HTMLElement | null);
@@ -3819,11 +3632,11 @@ function activateDraftPassAnimation() {
           Tính control points theo vị trí thật của state.deck để không bay vào khoảng trắng.
         */
 				const arc1X = gatherX + (deckX - gatherX) * 0.34;
-				const arc1Y =
-					Math.min(gatherY, deckY) - 150 - Math.abs(stackOffset) * 7;
+				const arc1Y = Math.min(gatherY, deckY) - 150 -
+					Math.abs(stackOffset) * 7;
 				const arc2X = gatherX + (deckX - gatherX) * 0.72;
-				const arc2Y =
-					Math.min(gatherY, deckY) - 185 - Math.abs(stackOffset) * 5;
+				const arc2Y = Math.min(gatherY, deckY) - 185 -
+					Math.abs(stackOffset) * 5;
 
 				card.style.setProperty("--gather-x", `${gatherX}px`);
 				card.style.setProperty("--gather-y", `${gatherY}px`);
@@ -4157,10 +3970,10 @@ function runSystemSimulation() {
 
 		if (
 			state.simulationReplayIndex >=
-			state.simulationResult.replaySteps.length - 1
+				state.simulationResult.replaySteps.length - 1
 		) {
-			state.simulationReplayIndex =
-				state.simulationResult.replaySteps.length - 1;
+			state.simulationReplayIndex = state.simulationResult.replaySteps.length -
+				1;
 			state.isReplayComplete = true;
 			applyDailyScoreOnce();
 			stopSimulationReplayTimer();
@@ -4209,10 +4022,10 @@ function runOnlineSimulationReplay() {
 
 		if (
 			state.simulationReplayIndex >=
-			state.simulationResult.replaySteps.length - 1
+				state.simulationResult.replaySteps.length - 1
 		) {
-			state.simulationReplayIndex =
-				state.simulationResult.replaySteps.length - 1;
+			state.simulationReplayIndex = state.simulationResult.replaySteps.length -
+				1;
 			state.isReplayComplete = true;
 
 			/*
@@ -4293,20 +4106,20 @@ function getBoardCellReplayClass(rowIndex: number, colIndex: number) {
 	if (!state.simulationResult || colIndex !== state.currentDayIndex) return "";
 
 	const currentStep = getCurrentReplayStep();
-	const isCurrent =
-		currentStep?.rowIndex === rowIndex && currentStep?.dayIndex === colIndex;
+	const isCurrent = currentStep?.rowIndex === rowIndex &&
+		currentStep?.dayIndex === colIndex;
 
 	const stepIndex = state.simulationResult.replaySteps.findIndex(
 		(step) => step.rowIndex === rowIndex && step.dayIndex === colIndex,
 	);
 
-	const step =
-		stepIndex >= 0 ? state.simulationResult.replaySteps[stepIndex] : null;
+	const step = stepIndex >= 0
+		? state.simulationResult.replaySteps[stepIndex]
+		: null;
 	const isProcessed = stepIndex >= 0 && stepIndex < state.simulationReplayIndex;
-	const eventClass =
-		step?.eventType && stepIndex <= state.simulationReplayIndex
-			? `board-cell--event-${step.eventType}`
-			: "";
+	const eventClass = step?.eventType && stepIndex <= state.simulationReplayIndex
+		? `board-cell--event-${step.eventType}`
+		: "";
 
 	if (isCurrent) return `board-cell--replay-current ${eventClass}`.trim();
 	if (isProcessed) return `board-cell--replay-done ${eventClass}`.trim();
@@ -4356,10 +4169,9 @@ function payCurrentCoinDebt() {
 		coin: state.eventResourceModifier.coin - payableAmount,
 	};
 
-	state.debtTokenModalNotice =
-		state.localCoinDebt > 0
-			? `Đã trả ${payableAmount} xu. Hiện còn nợ ${state.localCoinDebt} xu.`
-			: `Đã trả hết nợ (${payableAmount} xu).`;
+	state.debtTokenModalNotice = state.localCoinDebt > 0
+		? `Đã trả ${payableAmount} xu. Hiện còn nợ ${state.localCoinDebt} xu.`
+		: `Đã trả hết nợ (${payableAmount} xu).`;
 
 	playGameSound("eventPromo");
 
@@ -4434,10 +4246,10 @@ function renderDebtTokenModal() {
           </p>
 
           ${
-						state.debtTokenModalNotice
-							? `<div class="effect-token-modal__notice">${state.debtTokenModalNotice}</div>`
-							: ""
-					}
+		state.debtTokenModalNotice
+			? `<div class="effect-token-modal__notice">${state.debtTokenModalNotice}</div>`
+			: ""
+	}
         </div>
 
         <div class="effect-token-modal__footer">
@@ -4452,8 +4264,8 @@ function renderDebtTokenModal() {
           <button
             type="button"
             class="effect-token-modal__primary ${
-							remainingCoin <= 0 ? "is-disabled" : ""
-						}"
+		remainingCoin <= 0 ? "is-disabled" : ""
+	}"
             onclick="event.stopPropagation(); window.payCoinDebtFromModal()"
           >
             Trả nợ
@@ -4465,13 +4277,13 @@ function renderDebtTokenModal() {
 }
 
 function renderMainArena() {
-	const focusedCard =
-		getHandCardById(state.focusedHandCardId) ?? state.focusedBoardCard;
+	const focusedCard = getHandCardById(state.focusedHandCardId) ??
+		state.focusedBoardCard;
 
 	return `
     <main class="arena ${isOnlineGameOver() ? "arena--gameover" : ""} ${
-			state.isSimulationMode ? "arena--scanning" : ""
-		}">
+		state.isSimulationMode ? "arena--scanning" : ""
+	}">
       <div class="arena__top arena__top--with-score">
         <div class="arena__title-block">
           <div class="blue-line"></div>
@@ -4481,12 +4293,14 @@ function renderMainArena() {
           </div>
         </div>
 
-        ${renderScoreBreakdownPanel({
-					draftTimerDanger: state.isDraftPhase ? isDraftTimerDanger() : false,
-					draftTimerDisplayLabel: state.isDraftPhase
-						? getDraftTimerDisplayLabel()
-						: "",
-				})}
+        ${
+		renderScoreBreakdownPanel({
+			draftTimerDanger: state.isDraftPhase ? isDraftTimerDanger() : false,
+			draftTimerDisplayLabel: state.isDraftPhase
+				? getDraftTimerDisplayLabel()
+				: "",
+		})
+	}
       </div>
 
 
@@ -4495,175 +4309,179 @@ function renderMainArena() {
       <div class="arena__main">
         <div class="board-block">
           <div class="days-header">
-            ${days
-							.map(
-								(day, dayIndex) =>
-									`<div class="day-pill ${
-										dayIndex === state.currentDayIndex
-											? "day-pill--current"
-											: ""
-									} ${
-										dayIndex < state.currentDayIndex ? "day-pill--done" : ""
-									}">NGÀY ${day}</div>`,
-							)
-							.join("")}
+            ${
+		days
+			.map(
+				(day, dayIndex) =>
+					`<div class="day-pill ${
+						dayIndex === state.currentDayIndex ? "day-pill--current" : ""
+					} ${
+						dayIndex < state.currentDayIndex ? "day-pill--done" : ""
+					}">NGÀY ${day}</div>`,
+			)
+			.join("")
+	}
           </div>
 
           <section class="board-grid">
-            ${rows
-							.map((row, rowIndex) => {
-								return `
+            ${
+		rows
+			.map((row, rowIndex) => {
+				return `
                   <div class="time-label">${row}</div>
 
-                  ${days
-										.map((_, colIndex) => {
-											const card = getBoardCardByPosition(rowIndex, colIndex);
-											const isCurrentDayColumn =
-												colIndex === state.currentDayIndex;
-											const isPlaceable =
-												!state.isDraftPhase &&
-												!state.isSimulationMode &&
-												!state.isInitialDealInProgress &&
-												isCurrentDayColumn &&
-												state.selectedHandCardId !== null &&
-												card === null;
+                  ${
+					days
+						.map((_, colIndex) => {
+							const card = getBoardCardByPosition(rowIndex, colIndex);
+							const isCurrentDayColumn = colIndex === state.currentDayIndex;
+							const isPlaceable = !state.isDraftPhase &&
+								!state.isSimulationMode &&
+								!state.isInitialDealInProgress &&
+								isCurrentDayColumn &&
+								state.selectedHandCardId !== null &&
+								card === null;
 
-											if (!card) {
-												return `
+							if (!card) {
+								return `
                           <div
-                            class="board-cell board-cell--empty ${getBoardCellReplayClass(
-															rowIndex,
-															colIndex,
-														)} ${state.isSimulationMode ? "board-cell--locked-mode" : ""} ${
-															!isCurrentDayColumn && !state.isSimulationMode
-																? "board-cell--not-current-day"
-																: ""
-														} ${isPlaceable ? "board-cell--placeable" : ""}"
+                            class="board-cell board-cell--empty ${
+									getBoardCellReplayClass(
+										rowIndex,
+										colIndex,
+									)
+								} ${state.isSimulationMode ? "board-cell--locked-mode" : ""} ${
+									!isCurrentDayColumn && !state.isSimulationMode
+										? "board-cell--not-current-day"
+										: ""
+								} ${isPlaceable ? "board-cell--placeable" : ""}"
                             data-board-drop-cell="true"
                             data-row-index="${rowIndex}"
                             data-col-index="${colIndex}"
                             onclick="event.stopPropagation(); handleBoardCellClick(${rowIndex}, ${colIndex})"
                             title="${
-															isCurrentDayColumn
-																? isPlaceable
-																	? "Thả lá đang kéo vào ô ngày hiện tại"
-																	: "Chỉ xếp bài cho ngày hiện tại"
-																: "Không phải ngày hiện tại"
-														}"
+									isCurrentDayColumn
+										? isPlaceable
+											? "Thả lá đang kéo vào ô ngày hiện tại"
+											: "Chỉ xếp bài cho ngày hiện tại"
+										: "Không phải ngày hiện tại"
+								}"
                           >
                             <span class="empty-plus">+</span>
                             ${renderUtilityEffectFlash(rowIndex, colIndex)}
                           </div>
                         `;
-											}
+							}
 
-											return `
+							return `
                         <div
-                          class="board-cell board-cell--occupied board-cell--clickable ${getBoardCellReplayClass(
-														rowIndex,
-														colIndex,
-													)} ${
-														isLastPlacedBoardCell(rowIndex, colIndex)
-															? "board-cell--just-placed"
-															: ""
-													}"
+                          class="board-cell board-cell--occupied board-cell--clickable ${
+								getBoardCellReplayClass(
+									rowIndex,
+									colIndex,
+								)
+							} ${
+								isLastPlacedBoardCell(rowIndex, colIndex)
+									? "board-cell--just-placed"
+									: ""
+							}"
                           data-board-drop-cell="true"
                           data-row-index="${rowIndex}"
                           data-col-index="${colIndex}"
                           onclick="event.stopPropagation(); handleBoardCellClick(${rowIndex}, ${colIndex})"
                           title="Ô đã có bài - bấm để xem lớn"
                         >
-                          ${renderBoardMiniCard(
-														card,
-														getReplayStepForBoardCell(rowIndex, colIndex),
-													)}
+                          ${
+								renderBoardMiniCard(
+									card,
+									getReplayStepForBoardCell(rowIndex, colIndex),
+								)
+							}
                             ${renderUtilityEffectFlash(rowIndex, colIndex)}
                         </div>
                       `;
-										})
-										.join("")}
+						})
+						.join("")
+				}
                 `;
-							})
-							.join("")}
+			})
+			.join("")
+	}
           </section>
           ${renderDraftCenterOverlay()}${renderDraftLeftoverReturnOverlay()}
         </div>
 
         ${
-					isOnlineGameOver()
-						? renderFinalRankingPanel()
-						: state.isDraftPhase
-							? ""
-							: renderSimulationResultPanel()
-				}
+		isOnlineGameOver()
+			? renderFinalRankingPanel()
+			: state.isDraftPhase
+			? ""
+			: renderSimulationResultPanel()
+	}
 
         ${
-					state.isSimulationMode
-						? ""
-						: `
+		state.isSimulationMode ? "" : `
               <section
           class="player-hand ${
-						state.isDraftPhase ? "player-hand--draft" : ""
-					} ${
-						!state.isDraftPhase && state.isInitialDealInProgress
-							? "player-hand--dealing is-dealing"
-							: ""
-					}"
+			state.isDraftPhase ? "player-hand--draft" : ""
+		} ${
+			!state.isDraftPhase && state.isInitialDealInProgress
+				? "player-hand--dealing is-dealing"
+				: ""
+		}"
           onclick="${state.isDraftPhase ? "" : "clearSelectedHandCard()"}"
         >
           <div class="player-hand__top">
             <div class="player-hand__title">
               <span class="hand-badge">${
-								state.isDraftPhase ? "DRAFT" : "HAND"
-							}</span>
+			state.isDraftPhase ? "DRAFT" : "HAND"
+		}</span>
               <h2>
                 ${
-									state.isDraftPhase
-										? `Chọn bài ngày ${days[state.currentDayIndex]}`
-										: `Bài ngày ${days[state.currentDayIndex]}`
-								}
+			state.isDraftPhase
+				? `Chọn bài ngày ${days[state.currentDayIndex]}`
+				: `Bài ngày ${days[state.currentDayIndex]}`
+		}
               </h2>
             </div>
 
             <div class="player-hand__meta ${
-							state.isDraftPhase && isDraftTimerDanger()
-								? "player-hand__meta--danger"
-								: ""
-						}">
+			state.isDraftPhase && isDraftTimerDanger()
+				? "player-hand__meta--danger"
+				: ""
+		}">
               ${
-								state.isDraftPhase
-									? isDraftPickTimerFrozen()
-										? "Đang chia bài..."
-										: `Còn ${state.draftPickSecondsLeft}s • ${
-												state.isPassingDraftCards
-													? "Đang chuyền bài..."
-													: "bấm 1 lá để chọn"
-											}`
-									: state.isInitialDealInProgress
-										? "Đang chia bài..."
-										: "Giữ 0.5s để xem lớn"
-							}
+			state.isDraftPhase
+				? isDraftPickTimerFrozen()
+					? "Đang chia bài..."
+					: `Còn ${state.draftPickSecondsLeft}s • ${
+						state.isPassingDraftCards
+							? "Đang chuyền bài..."
+							: "bấm 1 lá để chọn"
+					}`
+				: state.isInitialDealInProgress
+				? "Đang chia bài..."
+				: "Giữ 0.5s để xem lớn"
+		}
             </div>
           </div>
 
           ${state.isDraftPhase ? renderDraftHandTopMeta() : ""}
 
           <div class="player-hand__cards ${
-						state.isDraftPhase
-							? `player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${getDraftHandDisplayCount()}`
-							: ""
-					}">
+			state.isDraftPhase
+				? `player-hand__cards--draft player-hand__cards--picked player-hand__cards--picked-count-${getDraftHandDisplayCount()}`
+				: ""
+		}">
             ${
-							state.isDraftPhase
-								? renderPickedDraftCards()
-								: state.playerHand
-										.map((card, index) => renderHandCard(card, index))
-										.join("")
-						}
+			state.isDraftPhase ? renderPickedDraftCards() : state.playerHand
+				.map((card, index) => renderHandCard(card, index))
+				.join("")
+		}
           </div>
         </section>
             `
-				}
+	}
       </div>
 
       ${focusedCard ? renderFocusedCard(focusedCard) : ""}
@@ -5239,12 +5057,11 @@ function handleHandPointerCancel() {
 function triggerResourceRejectedFeedback(rowIndex?: number, colIndex?: number) {
 	playGameSound("reject");
 
-	const target =
-		rowIndex !== undefined && colIndex !== undefined
-			? document.querySelector(
-					`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`,
-				)
-			: document.querySelector(".arena");
+	const target = rowIndex !== undefined && colIndex !== undefined
+		? document.querySelector(
+			`[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`,
+		)
+		: document.querySelector(".arena");
 
 	target?.classList.add("resource-rejected-feedback");
 
@@ -5842,12 +5659,14 @@ function renderGameShell() {
 	return renderWithGlobalOverlays(`
     <div class="game-shell">
       ${renderSaigonCollageBackground()}
-      ${renderOnlineRoomMenu({
-				isRoomActive: isOnlineRoomActive(),
-				roomId: onlineClientState.roomId,
-				roomPhase: onlineClientState.roomState?.phase,
-				renderInGameMusicControl,
-			})}
+      ${
+		renderOnlineRoomMenu({
+			isRoomActive: isOnlineRoomActive(),
+			roomId: onlineClientState.roomId,
+			roomPhase: onlineClientState.roomState?.phase,
+			renderInGameMusicControl,
+		})
+	}
       ${renderMidGameRankingModal()}
       ${renderDebtTokenModal()}
 
@@ -6014,7 +5833,7 @@ function getOnlineRenderSignature() {
 
 							return `${cell.cardId}:${cell.tag}:${cell.icon}:${cell.vp}`;
 						})
-						.join(","),
+						.join(",")
 				)
 				.join("|");
 
@@ -6113,19 +5932,16 @@ function renderAfterOnlineStateChange() {
 			!state.shouldActivateOnlineDealAnimation &&
 			!state.shouldActivateOnlinePassAnimation;
 
-		const shouldDeferRerenderForDraftTransition =
-			(state.isPassingDraftCards ||
-				state.isInitialDealInProgress ||
-				state.isDraftCenterDealing) &&
+		const shouldDeferRerenderForDraftTransition = (state.isPassingDraftCards ||
+			state.isInitialDealInProgress ||
+			state.isDraftCenterDealing) &&
 			!state.shouldActivateOnlinePassAnimation &&
 			!state.shouldActivateOnlineDealAnimation;
 
-		const passVisualRunning =
-			isOnlineInterRoundPoolPassActive() &&
+		const passVisualRunning = isOnlineInterRoundPoolPassActive() &&
 			document.querySelector(".draft-center-overlay--passing.pass-active");
 
-		const poolCollapseVisualRunning =
-			state.isDraftPoolCollapseAnimating &&
+		const poolCollapseVisualRunning = state.isDraftPoolCollapseAnimating &&
 			document.querySelector(
 				".draft-center-overlay--collapsing.pass-active, .draft-center-overlay--expanding.pass-active",
 			);
@@ -6395,7 +6211,7 @@ initOnlineClient(
 function setAuthStatus(message: string, isError = false) {
 	const statusElement =
 		(document.querySelector("#hub-auth-status") as HTMLElement | null) ??
-		(document.querySelector("#auth-status") as HTMLElement | null);
+			(document.querySelector("#auth-status") as HTMLElement | null);
 
 	if (!statusElement) return;
 
@@ -6441,15 +6257,13 @@ function setupAuthFormDelegation() {
 }
 
 (window as any).loginFromAuthScreen = async () => {
-	const usernameInput =
-		(document.querySelector(
-			"#hub-auth-login-username",
-		) as HTMLInputElement | null) ??
+	const usernameInput = (document.querySelector(
+		"#hub-auth-login-username",
+	) as HTMLInputElement | null) ??
 		(document.querySelector("#auth-login-username") as HTMLInputElement | null);
-	const passwordInput =
-		(document.querySelector(
-			"#hub-auth-login-password",
-		) as HTMLInputElement | null) ??
+	const passwordInput = (document.querySelector(
+		"#hub-auth-login-password",
+	) as HTMLInputElement | null) ??
 		(document.querySelector("#auth-login-password") as HTMLInputElement | null);
 
 	setAuthStatus("Đang đăng nhập...");
@@ -6463,32 +6277,30 @@ function setupAuthFormDelegation() {
 		setAuthStatus("Đăng nhập thành công.");
 		rerenderGameShell();
 	} catch (error) {
-		const message =
-			error instanceof Error ? error.message : "Đăng nhập thất bại.";
+		const message = error instanceof Error
+			? error.message
+			: "Đăng nhập thất bại.";
 		setAuthStatus(message, true);
 		alert(message);
 	}
 };
 
 (window as any).registerFromAuthScreen = async () => {
-	const displayNameInput =
-		(document.querySelector(
-			"#hub-auth-register-display-name",
-		) as HTMLInputElement | null) ??
+	const displayNameInput = (document.querySelector(
+		"#hub-auth-register-display-name",
+	) as HTMLInputElement | null) ??
 		(document.querySelector(
 			"#auth-register-display-name",
 		) as HTMLInputElement | null);
-	const usernameInput =
-		(document.querySelector(
-			"#hub-auth-register-username",
-		) as HTMLInputElement | null) ??
+	const usernameInput = (document.querySelector(
+		"#hub-auth-register-username",
+	) as HTMLInputElement | null) ??
 		(document.querySelector(
 			"#auth-register-username",
 		) as HTMLInputElement | null);
-	const passwordInput =
-		(document.querySelector(
-			"#hub-auth-register-password",
-		) as HTMLInputElement | null) ??
+	const passwordInput = (document.querySelector(
+		"#hub-auth-register-password",
+	) as HTMLInputElement | null) ??
 		(document.querySelector(
 			"#auth-register-password",
 		) as HTMLInputElement | null);
@@ -6505,8 +6317,9 @@ function setupAuthFormDelegation() {
 		setAuthStatus("Tạo tài khoản thành công.");
 		rerenderGameShell();
 	} catch (error) {
-		const message =
-			error instanceof Error ? error.message : "Đăng ký thất bại.";
+		const message = error instanceof Error
+			? error.message
+			: "Đăng ký thất bại.";
 		setAuthStatus(message, true);
 		alert(message);
 	}
@@ -6529,8 +6342,7 @@ function setupAuthFormDelegation() {
 	const input = document.querySelector(
 		"#lobby-create-name",
 	) as HTMLInputElement | null;
-	const playerName =
-		input?.value.trim() ||
+	const playerName = input?.value.trim() ||
 		authClientState.user?.displayName ||
 		authClientState.user?.username ||
 		"An";
