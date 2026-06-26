@@ -80,7 +80,7 @@ function emitRoomState(roomId: string) {
 // =========================================================
 // MATCHMAKING: mở trận từ nhóm đang chờ + đổ bot cho đủ 4
 // =========================================================
-const MATCHMAKING_FILL_TIMEOUT_MS = 12000;
+const MATCHMAKING_FILL_TIMEOUT_MS = 30000;
 let matchmakingTimer: ReturnType<typeof setTimeout> | null = null;
 
 function clearMatchmakingTimer() {
