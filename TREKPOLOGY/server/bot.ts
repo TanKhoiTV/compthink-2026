@@ -33,9 +33,11 @@ export function roomHasBots(state: RoomState): boolean {
   return PLAYER_IDS.some((id) => state.players[id].isBot === true);
 }
 
-/** Chọn thẻ tham lam: VP cao nhất trong pool. */
-function chooseDraftCard(pool: ServerTravelCardData[]): ServerTravelCardData {
-  return [...pool].sort((a, b) => (b.vp ?? 0) - (a.vp ?? 0))[0] ?? pool[0];
+/** Chọn thẻ tham lam: VP cao nhất trong pool (bỏ qua phần tử rỗng). */
+function chooseDraftCard(pool: ServerTravelCardData[]): ServerTravelCardData | null {
+  return (
+    [...pool].filter(Boolean).sort((a, b) => (b.vp ?? 0) - (a.vp ?? 0))[0] ?? null
+  );
 }
 
 /** Đặt thẻ trong tay vào các ô trống của cột ngày hiện tại (VP cao trước). */
@@ -69,6 +71,7 @@ export function driveBots(state: RoomState): void {
       if (p.isBot !== true) continue;
       if (p.draftPool.length === 0 || p.draftPickConfirmed === true) continue;
       const card = chooseDraftCard(p.draftPool);
+      if (!card) continue;
       selectDraftCard(state, { playerId: id, cardId: card.id });
       confirmDraftPick(state, { playerId: id });
     }

@@ -6,6 +6,7 @@ export type PublicBoardCell = {
   cardId: string;
   name: string;
   tag: string;
+  tags?: string[];
   icon: string;
   vp: number;
   coin: number;
@@ -72,6 +73,9 @@ export type RoomState = {
   draftTimerHold: number;
   deck: ServerTravelCardData[];
   players: Record<PlayerId, PlayerPrivateState>;
+  isTutorial?: boolean;
+  /** Tutorial: đóng băng phase chấm điểm trong lúc giới thiệu sự kiện. */
+  tutorialPaused?: boolean;
 };
 
 export type PlayerViewState = Omit<RoomState, "deck" | "players"> & {
@@ -86,8 +90,12 @@ export type PlayerViewState = Omit<RoomState, "deck" | "players"> & {
 };
 
 export type ClientToServerEvents = {
-  "room:create": (payload: { playerName: string }) => void;
+  "room:create": (payload: { playerName: string; isTutorial?: boolean }) => void;
   "room:join": (payload: { roomId: string; playerName: string }) => void;
+
+  // Tutorial: tạm dừng / chạy tiếp phase chấm điểm để giới thiệu sự kiện.
+  "tutorial:pauseReplay": (payload: { roomId: string }) => void;
+  "tutorial:resumeReplay": (payload: { roomId: string }) => void;
 
   "game:start": (payload: {
     roomId: string;

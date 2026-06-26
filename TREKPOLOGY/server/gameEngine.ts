@@ -2850,6 +2850,7 @@ export function getPlayerViewState(state: RoomState, playerId: PlayerId) {
     timer: state.timer,
     draftTimerHold: state.draftTimerHold,
     selfPlayerId: playerId,
+    isTutorial: state.isTutorial,
     players: getPublicPlayers(state),
     self: {
       draftPool: player.draftPool,

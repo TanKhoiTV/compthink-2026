@@ -390,6 +390,7 @@ export function placeCardOnPlayerBoard(
   const cardVp = card?.vp ?? payload.vp;
   const cardCoin = card?.coin ?? payload.coin ?? 0;
   const cardStamina = card?.stamina ?? payload.stamina ?? 0;
+  const cardTags = card?.tags ?? (cardTag ? [String(cardTag).toUpperCase()] : []);
 
   if (!cardTag || !cardIcon || typeof cardVp !== "number") {
     return "Không đủ dữ liệu lá bài để xếp.";
@@ -424,6 +425,7 @@ export function placeCardOnPlayerBoard(
     cardId,
     name: cardName,
     tag: cardTag,
+    tags: cardTags,
     icon: cardIcon,
     vp: cardVp,
     coin: cardCoin,

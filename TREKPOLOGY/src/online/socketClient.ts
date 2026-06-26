@@ -56,6 +56,7 @@ export type OnlineRoomState = {
   roomId: string;
   phase: "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover";
   phaseNumber: number;
+  isTutorial?: boolean;
   dayIndex: number;
   draftRound: number;
   timer: number;
@@ -303,13 +304,14 @@ export function initOnlineClient(
   });
 }
 
-export function createOnlineRoom(playerName: string) {
+export function createOnlineRoom(playerName: string, isTutorial?: boolean) {
   if (!socket.connected) {
     socket.connect();
   }
 
   socket.emit("room:create", {
     playerName,
+    isTutorial: isTutorial === true,
   });
 }
 
@@ -345,6 +347,18 @@ export function setOnlineReady(isReady: boolean) {
   });
 }
 
+
+/** Tutorial: báo server đóng băng phase chấm điểm trong lúc giới thiệu sự kiện. */
+export function pauseReplayOnServer() {
+  if (!onlineClientState.roomId) return;
+  socket.emit("tutorial:pauseReplay", { roomId: onlineClientState.roomId });
+}
+
+/** Tutorial: báo server cho phase chấm điểm chạy tiếp. */
+export function resumeReplayOnServer() {
+  if (!onlineClientState.roomId) return;
+  socket.emit("tutorial:resumeReplay", { roomId: onlineClientState.roomId });
+}
 
 export function leaveOnlineRoom() {
   if (!onlineClientState.roomId || !onlineClientState.playerId) {

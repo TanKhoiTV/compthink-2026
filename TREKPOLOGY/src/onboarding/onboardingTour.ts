@@ -31,6 +31,10 @@ export type OnboardingCtx = {
   getPlayers: () => TourPlayer[];
   /** Rời phòng + về dashboard. */
   gotoHome: () => void;
+  /** Replay đang PAUSE tại bước sự kiện (tutorial) chưa? */
+  isReplayPausedForEvent: () => boolean;
+  /** Cho replay chạy tiếp sau khi giới thiệu sự kiện. */
+  resumeReplay: () => void;
 };
 
 /** Tour có đang chạy không (để app.ts tạm ẩn modal welcome). */
@@ -121,10 +125,55 @@ function buildTourSteps(ctx: OnboardingCtx): SpotlightStep[] {
       primaryLabel: "Bấm Bắt đầu…",
     },
     {
+      id: "intro-food",
+      target: () =>
+        document
+          .querySelector('.draft-center-card [data-card-tag="food"]')
+          ?.closest(".draft-center-card-wrapper") ?? null,
+      title: "🍜 Thẻ Ẩm thực",
+      body: "Trong nhóm bài này có nhiều LOẠI thẻ. Đây là thẻ Ẩm thực — món ăn, quán xá. Đặt 2 lá Ẩm thực cùng ngày → combo +5 VP!",
+      placement: "auto",
+      padding: 4,
+      passive: true,
+      allowSkipResults: true,
+      advance: "next",
+      primaryLabel: "Tiếp →",
+    },
+    {
+      id: "intro-culture",
+      target: () =>
+        document
+          .querySelector('.draft-center-card [data-card-tag="culture"]')
+          ?.closest(".draft-center-card-wrapper") ?? null,
+      title: "🏛️ Thẻ Văn hóa",
+      body: "Thẻ Văn hóa — chùa chiền, bảo tàng, di tích. Combo mạnh hơn: 2 lá Văn hóa cùng ngày = +8 VP!",
+      placement: "auto",
+      padding: 4,
+      passive: true,
+      allowSkipResults: true,
+      advance: "next",
+      primaryLabel: "Tiếp →",
+    },
+    {
+      id: "intro-action",
+      target: () =>
+        document
+          .querySelector('.draft-center-card [data-card-tag="action"]')
+          ?.closest(".draft-center-card-wrapper") ?? null,
+      title: "🧭 Thẻ Khám phá",
+      body: "Thẻ Khám phá — hoạt động, trải nghiệm. Combo cao nhất: 2 lá Khám phá cùng ngày = +10 VP!",
+      placement: "auto",
+      padding: 4,
+      passive: true,
+      allowSkipResults: true,
+      advance: "next",
+      primaryLabel: "Đã hiểu! →",
+    },
+    {
       id: "draft-pick",
       target: ".draft-center-overlay",
-      title: "Chọn thẻ (Draft)",
-      body: "Bấm nút “CHỌN” trên một thẻ địa điểm bạn thích để chọn nó.",
+      title: "Giờ tới lượt bạn chọn",
+      body: "Bấm nút “CHỌN” trên một thẻ bạn thích để chọn nó.",
       placement: "auto",
       padding: 6,
       passive: true,
@@ -157,19 +206,31 @@ function buildTourSteps(ctx: OnboardingCtx): SpotlightStep[] {
       id: "place-hand",
       target: ".player-hand",
       title: "Bài trên tay",
-      body: "Đây là các thẻ bạn vừa chọn. Bấm chọn một thẻ ở đây để chuẩn bị xếp lên bàn.",
+      body: "Đây là những thẻ bạn vừa chọn ở phần Draft. Giờ ta xếp chúng lên lịch trình.",
       placement: "top",
       padding: 6,
       passive: true,
       allowSkipResults: true,
       advance: "next",
-      primaryLabel: "Tiếp",
+      primaryLabel: "Tiếp →",
+    },
+    {
+      id: "intro-combo",
+      target: ".board-grid",
+      title: "💥 Combo thưởng điểm!",
+      body: "Xếp các thẻ trong CÙNG một ngày để ăn combo bonus, ví dụ: 2 thẻ cùng chủ đề (🍜🏛️🧭), ghép cặp chủ đề (Ẩm thực + Văn hóa), 2 thẻ Ngoài trời, lấp đủ khung giờ, có lịch Sáng/Khuya… Combo CHỒNG combo — xếp càng khéo, điểm càng cao!",
+      placement: "auto",
+      padding: 6,
+      passive: true,
+      allowSkipResults: true,
+      advance: "next",
+      primaryLabel: "Hiểu rồi, xếp thôi! →",
     },
     {
       id: "place-board",
       target: ".board-grid",
       title: "Xếp lên lịch trình",
-      body: "Bấm vào một ô khung giờ trống trên bàn để đặt thẻ vừa chọn. Ghép thẻ cùng chủ đề để ăn combo!",
+      body: "Giờ bấm chọn một thẻ trên tay, rồi bấm vào ô trống trên bàn để đặt. Thử ghép thẻ cùng chủ đề để ăn combo!",
       placement: "auto",
       padding: 6,
       passive: true,
@@ -184,8 +245,34 @@ function buildTourSteps(ctx: OnboardingCtx): SpotlightStep[] {
       body: "Xếp thêm thẻ tùy thích. Khi xong, bấm nút “Xác nhận” (góc phải) để chốt ngày và xem chấm điểm.",
       noSpotlight: true,
       allowSkipResults: true,
-      advance: { waitUntil: () => ctx.getPhase() === "result" },
+      advance: { waitUntil: () => ctx.getPhase() === "simulation" },
       primaryLabel: "Đang chờ bạn xếp xong…",
+    },
+    {
+      id: "scan-watch",
+      target: "body",
+      title: "⏳ Đang chấm điểm…",
+      body: "Dòng quét đang chạy qua từng khung giờ để cộng điểm. Theo dõi nhé — sắp có điều bất ngờ!",
+      noSpotlight: true,
+      allowSkipResults: true,
+      advance: {
+        waitUntil: () =>
+          ctx.isReplayPausedForEvent() || ctx.getPhase() === "result",
+      },
+      primaryLabel: "Đang quét…",
+    },
+    {
+      id: "intro-event",
+      target: ".score-ticket.is-active",
+      title: "🎲 Sự kiện ngẫu nhiên!",
+      body: "Dừng lại đây! Mỗi địa điểm có thể gặp sự kiện bất ngờ: 🏷 Khuyến mãi (+VP), 🚦 Kẹt xe (−thể lực), ⛈ Mưa giông (−VP) — cộng/trừ thẳng vào điểm ngày. Bấm Tiếp để chạy nốt.",
+      placement: "auto",
+      padding: 6,
+      passive: true,
+      allowSkipResults: true,
+      advance: "next",
+      primaryLabel: "Tiếp tục chấm điểm →",
+      onAdvance: () => ctx.resumeReplay(),
     },
     {
       id: "finale",
@@ -268,9 +355,12 @@ export function startTour(ctx: OnboardingCtx): TourController {
     active = false;
     controller = null;
     markSeen();
+    // Nếu replay đang bị pause cho tutorial → cho chạy tiếp, tránh kẹt frozen.
+    ctx.resumeReplay();
   };
   const reveal = () => {
     removeSkipFab();
+    ctx.resumeReplay();
     controller?.stop("skip"); // gỡ overlay hướng dẫn TRƯỚC khi cleanup set null
     cleanup();
     // chỉ hiện kết quả nếu đã thực sự vào trận (có người chơi)

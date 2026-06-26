@@ -43,6 +43,8 @@ export type SpotlightStep = {
    * target nên đặt "body".
    */
   noSpotlight?: boolean;
+  /** Gọi khi bước này được qua (bấm "Tiếp"/waitUntil) — vd: resume replay đang pause. */
+  onAdvance?: () => void;
 };
 
 export type TourController = { stop: (reason?: "finish" | "skip") => void };
@@ -279,6 +281,7 @@ export function startSpotlightTour(
   }
 
   function next() {
+    steps[index]?.onAdvance?.(); // hook khi qua bước (vd: resume replay)
     if (index >= steps.length - 1) return stop("finish");
     goTo(index + 1);
   }

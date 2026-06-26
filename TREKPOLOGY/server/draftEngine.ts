@@ -5,9 +5,10 @@ const DRAFT_STARTING_POOL_SIZE = 7;
 const DRAFT_PICK_TARGET = 5;
 const DRAFT_PICK_SECONDS = 90;
 export { DRAFT_PICK_SECONDS };
-const DRAFT_CENTER_DEAL_CARD_MS = 900;
-const DRAFT_CENTER_DEAL_GAP_MS = 150;
-const DRAFT_CENTER_DEAL_STEP_MS = DRAFT_CENTER_DEAL_CARD_MS + DRAFT_CENTER_DEAL_GAP_MS;
+// Chia bài "bay cả cụm rồi tản ra" — giữ KHỚP với src/game/constants.ts.
+const DRAFT_CENTER_DEAL_CARD_MS = 600;
+const DRAFT_CENTER_DEAL_GAP_MS = 0;
+const DRAFT_CENTER_DEAL_STEP_MS = 55;
 const DRAFT_PASS_ANIMATION_MS = 1500;
 
 function getDraftCenterDealDurationMs(cardCount: number): number {
@@ -57,7 +58,7 @@ function collectInFlightDraftCardIds(state: RoomState): Set<string> {
     const player = state.players[playerId];
 
     for (const card of [...player.draftPool, ...player.pickedDraftCards, ...player.hand]) {
-      ids.add(card.id);
+      if (card) ids.add(card.id); // chịu được phần tử rỗng, không crash server
     }
   }
 
@@ -133,6 +134,59 @@ export function startDraftForCurrentDay(state: RoomState) {
     );
   });
 
+  // Tutorial ngày 1: đảm bảo pool ĐẦU TIÊN của P1 có đủ 3 loại để tour giới thiệu.
+  if (state.isTutorial && state.dayIndex === 0) {
+    rigTutorialFirstPool(state);
+  }
+
+  sanitizeAllCards(state); // dọn phần tử rỗng phòng edge case
+}
+
+const TUTORIAL_THEMES = ["FOOD", "CULTURE", "ACTION"];
+
+function cardTheme(c: ServerTravelCardData): string | null {
+  if (!c) return null;
+  const t = (c.tag || "").toUpperCase();
+  if (TUTORIAL_THEMES.includes(t)) return t;
+  for (const x of c.tags ?? []) {
+    const u = x.toUpperCase();
+    if (TUTORIAL_THEMES.includes(u)) return u;
+  }
+  return null;
+}
+
+/**
+ * Đảm bảo pool draft đầu tiên của P1 có ít nhất 1 lá mỗi loại (FOOD/CULTURE/ACTION)
+ * để tour giới thiệu ngay trên pool. Thiếu loại nào thì rút từ deck thay vào.
+ */
+function rigTutorialFirstPool(state: RoomState) {
+  const pool = state.players.p1.draftPool;
+  const have = new Set(pool.map(cardTheme).filter(Boolean) as string[]);
+
+  for (const theme of TUTORIAL_THEMES) {
+    if (have.has(theme)) continue;
+
+    const deckIdx = state.deck.findIndex((c) => cardTheme(c) === theme);
+    if (deckIdx < 0) continue;
+    const card = state.deck.splice(deckIdx, 1)[0];
+
+    // thay một lá thuộc loại đang DƯ (xuất hiện >1) để không mất loại khác
+    const counts = new Map<string, number>();
+    for (const c of pool) {
+      const th = cardTheme(c);
+      if (th) counts.set(th, (counts.get(th) ?? 0) + 1);
+    }
+    let replaceIdx = pool.findIndex((c) => {
+      const th = cardTheme(c);
+      return th !== null && (counts.get(th) ?? 0) > 1;
+    });
+    if (replaceIdx < 0) replaceIdx = pool.length - 1;
+
+    const removed = pool[replaceIdx];
+    pool[replaceIdx] = card;
+    state.deck.push(removed);
+    have.add(theme);
+  }
 }
 
 export function selectDraftCard(
@@ -150,7 +204,7 @@ export function selectDraftCard(
 
   if (!player) return "Không tìm thấy người chơi.";
   if (!player.isConnected) return "Người chơi chưa kết nối.";
-  if (!player.draftPool.some((card) => card.id === payload.cardId)) {
+  if (!player.draftPool.some((card) => card && card.id === payload.cardId)) {
     return "Lá này không nằm trong bài đang được chọn.";
   }
 
@@ -196,8 +250,19 @@ export function confirmDraftPick(
   return null;
 }
 
+/** Dọn mọi phần tử rỗng (undefined) khỏi pool/picked/hand — chống crash do edge case. */
+function sanitizeAllCards(state: RoomState) {
+  for (const id of PLAYER_IDS) {
+    const p = state.players[id];
+    p.draftPool = p.draftPool.filter(Boolean);
+    p.pickedDraftCards = p.pickedDraftCards.filter(Boolean);
+    p.hand = p.hand.filter(Boolean);
+  }
+}
+
 export function finishDraftRound(state: RoomState) {
   if (state.phase !== "draft") return;
+  sanitizeAllCards(state);
 
   const activePlayerIds = getActiveDraftPlayerIds(state);
 
@@ -208,10 +273,18 @@ export function finishDraftRound(state: RoomState) {
 
     const selectedCard =
       player.draftPool.find((card) => card.id === player.selectedDraftCardId) ??
-      player.draftPool[0];
+      player.draftPool.find((card) => Boolean(card));
+
+    // Phòng deck cạn / pool có phần tử rỗng → bỏ qua an toàn, không crash server.
+    if (!selectedCard) {
+      player.draftPool = player.draftPool.filter((card) => Boolean(card));
+      player.selectedDraftCardId = null;
+      player.draftPickConfirmed = false;
+      continue;
+    }
 
     player.pickedDraftCards.push(selectedCard);
-    player.draftPool = player.draftPool.filter((card) => card.id !== selectedCard.id);
+    player.draftPool = player.draftPool.filter((card) => card && card.id !== selectedCard.id);
     player.selectedDraftCardId = null;
     player.draftPickConfirmed = false;
   }
@@ -328,3 +401,4 @@ function finishDraftAndStartPlanning(state: RoomState) {
 
   returnCardsToDeck(state, leftoverDraftCards);
 }
+

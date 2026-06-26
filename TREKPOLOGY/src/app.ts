@@ -1,6 +1,6 @@
 import { renderMapSelectionScreen } from "./ui/mapSelection.js";
 import { cleanupDashboardHub, initDashboardHub, renderDashboard } from "./ui/dashboard.js";
-import { maybeStartOnboarding, initTourLauncher, type OnboardingCtx } from "./onboarding/onboardingTour.js";
+import { maybeStartOnboarding, isOnboardingActive, initTourLauncher, type OnboardingCtx } from "./onboarding/onboardingTour.js";
 import {
   authClientState,
   createOnlineRoom,
@@ -9,6 +9,8 @@ import {
   getSavedOnlineSession,
   joinOnlineRoom,
   leaveOnlineRoom,
+  pauseReplayOnServer,
+  resumeReplayOnServer,
   loginAccount,
   logoutAccount,
   onlineClientState,
@@ -1699,6 +1701,9 @@ function calculateSimulationResult(): SimulationResult {
     getCardTagKeys,
     countCardsWithTag,
     getCurrentDayPlacedCards,
+    // Tutorial ngày 1: ép 1 sự kiện ngẫu nhiên xuất hiện để giới thiệu.
+    forceTutorialEvent:
+      onlineClientState.roomState?.isTutorial === true && currentDayIndex === 0,
   });
 }
 
@@ -2484,6 +2489,7 @@ function renderHandCard(card: TravelCardData, index: number, disableFan: boolean
     <article
       class="hand-card hand-card--${card.rarity} ${disableFan ? "" : `hand-card--fan-${index + 1}`} ${isPlanningSelected ? "hand-card--selected" : ""} ${isDraftSelected ? "hand-card--draft-selected" : ""} ${unaffordableClass}"
       data-hand-card-id="${card.id}"
+      data-card-tag="${card.tag}"
       title="${affordabilityMessage}"
       onpointerdown="${isDraftPhase ? `` : `event.stopPropagation(); startHandPointerDrag(event, '${card.id}')`}"
       onclick="${isDraftPhase ? `` : `event.stopPropagation(); window['selectHandCard']('${card.id}')`}"
@@ -5208,6 +5214,51 @@ function runSystemSimulation() {
 }
 
 
+// Tutorial: pause replay tại bước có sự kiện để tour giới thiệu; resume khi bấm Tiếp.
+let tutorialReplayPauseIndex = -1;
+let tutorialReplayPaused = false;
+
+export function isTutorialReplayPaused(): boolean {
+  return tutorialReplayPaused;
+}
+
+export function resumeTutorialReplay(): void {
+  if (!tutorialReplayPaused) return;
+  tutorialReplayPaused = false;
+  resumeReplayOnServer(); // cho server chạy tiếp phase chấm điểm
+  startOnlineReplayTimer();
+}
+
+function startOnlineReplayTimer() {
+  stopSimulationReplayTimer();
+  simulationReplayTimerId = window.setInterval(() => {
+    if (!simulationResult) return;
+
+    if (simulationReplayIndex >= simulationResult.replaySteps.length - 1) {
+      simulationReplayIndex = simulationResult.replaySteps.length - 1;
+      isReplayComplete = true;
+      // Online: điểm do server cộng khi phase chuyển simulation→result.
+      stopSimulationReplayTimer();
+      rerenderGameShell();
+      return;
+    }
+
+    simulationReplayIndex += 1;
+    playSimulationScanSoundForCurrentStep();
+
+    // Tutorial: dừng lại đúng bước có sự kiện để giới thiệu.
+    if (simulationReplayIndex === tutorialReplayPauseIndex && !tutorialReplayPaused) {
+      tutorialReplayPaused = true;
+      pauseReplayOnServer(); // đóng băng server để overlay không tự tắt
+      stopSimulationReplayTimer();
+      rerenderGameShell();
+      return;
+    }
+
+    rerenderGameShell();
+  }, 850);
+}
+
 function runOnlineSimulationReplay() {
   clearHoldTimer();
   clearCustomHandDragVisuals();
@@ -5228,29 +5279,24 @@ function runOnlineSimulationReplay() {
   isSimulationMode = true;
   hasStartedOnlineSimulationReplay = true;
 
+  // Xác định bước pause cho tutorial ngày 1: bước ĐẦU TIÊN có sự kiện.
+  tutorialReplayPaused = false;
+  tutorialReplayPauseIndex =
+    onlineClientState.roomState?.isTutorial === true && currentDayIndex === 0
+      ? simulationResult.replaySteps.findIndex((s) => Boolean(s.eventType))
+      : -1;
+
   playSimulationScanSoundForCurrentStep();
 
-  simulationReplayTimerId = window.setInterval(() => {
-    if (!simulationResult) return;
-
-    if (simulationReplayIndex >= simulationResult.replaySteps.length - 1) {
-      simulationReplayIndex = simulationResult.replaySteps.length - 1;
-      isReplayComplete = true;
-
-      /*
-        Online: điểm do server cộng khi phase chuyển từ simulation sang result.
-        Client chỉ replay animation, không tự cộng điểm để tránh lệch giữa các máy.
-      */
-      stopSimulationReplayTimer();
-      rerenderGameShell();
-      return;
-    }
-
-    simulationReplayIndex += 1;
-    playSimulationScanSoundForCurrentStep();
+  // Sự kiện ngay ở bước 0 → pause ngay từ đầu.
+  if (tutorialReplayPauseIndex === 0) {
+    tutorialReplayPaused = true;
+    pauseReplayOnServer();
     rerenderGameShell();
-  }, 850);
+    return;
+  }
 
+  startOnlineReplayTimer();
   rerenderGameShell();
 }
 
@@ -5583,6 +5629,33 @@ function getStablePhaseScoreDisplay() {
     : getPhaseScoreBeforeCurrentSimulation();
 }
 
+/**
+ * Đặt vị trí track quét điểm bằng cách ĐO LÁ ACTIVE THẬT (ticket rộng không đều
+ * — ô trống hẹp, ô có thẻ rộng — nên không thể tính bằng index×stride).
+ * Lệch TRÁI: mép trái lá active ~20% từ trái để thấy trọn lá + lá kế.
+ * Set với transition:none → đo lại mỗi render mà KHÔNG gây transition = không giật.
+ */
+function positionScanTrack() {
+  const strip = document.querySelector(".ticket-scan-strip") as HTMLElement | null;
+  const track = document.querySelector(".ticket-scan-track") as HTMLElement | null;
+  if (!strip || !track) return;
+  const tickets = track.querySelectorAll<HTMLElement>(".score-ticket");
+  if (tickets.length === 0) return;
+
+  const idx = Math.max(0, Math.min(simulationReplayIndex, tickets.length - 1));
+  const active = tickets[idx];
+  if (!active) return;
+
+  const leftBias = Math.round(strip.clientWidth * 0.2);
+  const x = Math.round(leftBias - active.offsetLeft);
+
+  // CSS transition là !important → phải tắt bằng setProperty(...,"important").
+  track.style.setProperty("transition", "none", "important");
+  track.style.transform = `translateX(${x}px)`;
+  void track.offsetWidth; // commit ngay, không chạy transition
+  track.style.removeProperty("transition"); // trả lại transition CSS cho lần sau
+}
+
 function renderSimulationResultPanel() {
   if (!simulationResult) return "";
 
@@ -5593,15 +5666,8 @@ function renderSimulationResultPanel() {
   const currentDayDelta = isReplayComplete
     ? result.finalVP
     : getCurrentReplayPartialVP();
-  const ticketStepWidth = 366;
-  const firstTicketCenter = 223;
-  const endCenterBoost =
-    simulationReplayIndex === totalSteps - 1
-      ? 460
-      : simulationReplayIndex === totalSteps - 2
-        ? 180
-        : 0;
-  const trackOffset = firstTicketCenter + simulationReplayIndex * ticketStepWidth + endCenterBoost;
+  // Căn giữa được thực hiện bằng đo DOM thật trong centerActiveScoreTicket()
+  // (gọi sau render) — tránh magic-number lệch khi width/gap CSS đổi.
 
   const getEventIcon = (eventType?: string | null) => {
     if (eventType === "storm") return "⛈";
@@ -5635,7 +5701,8 @@ function renderSimulationResultPanel() {
 
         <div
           class="ticket-scan-track"
-          style="transform: translateX(calc(50% - ${trackOffset}px)); --scan-index: ${simulationReplayIndex};"
+          data-scan-index="${simulationReplayIndex}"
+          style="--scan-index: ${simulationReplayIndex};"
         >
           ${result.replaySteps
             .map((step, stepIndex) => {
@@ -7930,6 +7997,8 @@ function buildOnboardingCtx(): OnboardingCtx {
       leaveOnlineRoom();
       (window as any).gotoDashboard?.();
     },
+    isReplayPausedForEvent: () => isTutorialReplayPaused(),
+    resumeReplay: () => resumeTutorialReplay(),
   };
 }
 
@@ -7942,6 +8011,7 @@ function rerenderGameShell() {
   setupSaigonCollageHover();
   syncInGameBackgroundMusic();
   initDashboardHub();
+  positionScanTrack();
 
   // Re-insert background video into map selection screen if it exists
   if (currentAppScreen === "map_selection" && bgSmokeVideo) {
@@ -8533,7 +8603,7 @@ function setupAuthFormDelegation() {
   const input = document.querySelector("#lobby-create-name") as HTMLInputElement | null;
   const playerName = input?.value.trim() || authClientState.user?.displayName || authClientState.user?.username || "An";
 
-  createOnlineRoom(playerName);
+  createOnlineRoom(playerName, isOnboardingActive());
 };
 
 (window as any).joinRoomFromLobby = () => {

@@ -1,5 +1,6 @@
 import type { TravelCardData } from "../types.js";
 import type { BoardSlots } from "./board.js";
+import { computeDayCombos, type ComboCard } from "./combos.js";
 
 export type ScoreBreakdown = {
   baseVP: number;
@@ -61,7 +62,17 @@ export type SimulationResult = ScoreBreakdown & {
 type CalculateScoreBreakdownParams = {
   placedCards: TravelCardData[];
   getBoardDisplayName: (card: TravelCardData) => string;
+  /** Cột 5 ô của ngày (index = khung giờ) cho combo theo vị trí. Thiếu thì suy từ placedCards. */
+  dayCells?: (ComboCard | null)[];
 };
+
+function cardToComboCard(card: TravelCardData): ComboCard {
+  const tags =
+    card.tags && card.tags.length > 0
+      ? card.tags.map((t) => t.toUpperCase())
+      : [String(card.tag).toUpperCase()];
+  return { tags, coin: card.coin ?? 0, stamina: card.stamina ?? 0 };
+}
 
 type BuildSimulationReplayStepsParams = {
   boardSlots: BoardSlots;
@@ -71,6 +82,8 @@ type BuildSimulationReplayStepsParams = {
   getCardTagKeys: (card: TravelCardData) => string[];
   countCardsWithTag: (cards: TravelCardData[], tag: string) => number;
   getCurrentDayPlacedCards: (dayIndex?: number) => TravelCardData[];
+  /** Tutorial: ép 1 sự kiện "Khuyến mãi" lên thẻ đầu nếu không có sự kiện nào tự nhiên. */
+  forceTutorialEvent?: boolean;
 };
 
 type CalculateSimulationResultParams = {
@@ -82,11 +95,14 @@ type CalculateSimulationResultParams = {
   getCardTagKeys: (card: TravelCardData) => string[];
   countCardsWithTag: (cards: TravelCardData[], tag: string) => number;
   getCurrentDayPlacedCards: (dayIndex?: number) => TravelCardData[];
+  /** Tutorial: ép 1 sự kiện "Khuyến mãi" lên thẻ đầu nếu không có sự kiện nào tự nhiên. */
+  forceTutorialEvent?: boolean;
 };
 
 export function calculateScoreBreakdown({
   placedCards,
   getBoardDisplayName,
+  dayCells,
 }: CalculateScoreBreakdownParams): ScoreBreakdown {
   const baseVP = placedCards.reduce((sum, card) => sum + card.vp, 0);
   const spentCoin = placedCards.reduce((sum, card) => sum + card.coin, 0);
@@ -95,27 +111,12 @@ export function calculateScoreBreakdown({
 
   let bonusVP = 0;
 
-  const foodCount = countCardsByTag(placedCards, "FOOD");
-  const cultureCount = countCardsByTag(placedCards, "CULTURE");
-  const actionCount = countCardsByTag(placedCards, "ACTION");
-
-  if (foodCount >= 2) {
-    const foodBonus = 5;
-    bonusVP += foodBonus;
-    lines.push(`Combo Ẩm thực x${foodCount}: +${foodBonus} VP`);
-  }
-
-  if (cultureCount >= 2) {
-    const cultureBonus = 8;
-    bonusVP += cultureBonus;
-    lines.push(`Combo Văn hóa x${cultureCount}: +${cultureBonus} VP`);
-  }
-
-  if (actionCount >= 2) {
-    const actionBonus = 10;
-    bonusVP += actionBonus;
-    lines.push(`Chuỗi Khám phá x${actionCount}: +${actionBonus} VP`);
-  }
+  // Combo qua module CHUNG (khớp server). dayCells có vị trí khung giờ; nếu
+  // thiếu thì suy từ placedCards (mất combo theo vị trí, các combo khác vẫn chạy).
+  const cells = dayCells ?? placedCards.map((c) => cardToComboCard(c));
+  const combo = computeDayCombos(cells);
+  bonusVP += combo.bonus;
+  for (const line of combo.lines) lines.push(line);
 
   for (const card of placedCards) {
     const effect = card.onPlayEffect;
@@ -171,12 +172,14 @@ export function buildSimulationReplaySteps({
   getCardTagKeys,
   countCardsWithTag,
   getCurrentDayPlacedCards,
+  forceTutorialEvent,
 }: BuildSimulationReplayStepsParams): {
   steps: SimulationReplayStep[];
   daySummaries: DayScoreSummary[];
 } {
   const steps: SimulationReplayStep[] = [];
   const dayIndex = currentDayIndex;
+  let tutorialEventForced = false;
   const daySummary: DayScoreSummary = {
     dayIndex,
     label: dayLabel,
@@ -273,7 +276,20 @@ export function buildSimulationReplaySteps({
       ? getDistanceEvent(previousCard, card, dayIndex, rowIndex)
       : null;
 
-    const activeEvent = distanceEvent ?? randomEvent;
+    let activeEvent = distanceEvent ?? randomEvent;
+
+    // Tutorial: nếu chưa có sự kiện nào, ép "Khuyến mãi +10 VP" lên thẻ đầu tiên
+    // để người chơi thấy & được giới thiệu về sự kiện ngẫu nhiên.
+    if (forceTutorialEvent && !tutorialEventForced && !activeEvent) {
+      tutorialEventForced = true;
+      activeEvent = {
+        type: "promo",
+        text: "Khuyến mãi: +10 VP",
+        vpDelta: 10,
+        staminaDelta: 0,
+        isBad: false,
+      };
+    }
     const eventVpDelta = activeEvent?.vpDelta ?? 0;
     const eventStaminaDelta = activeEvent?.staminaDelta ?? 0;
     const stepVP = card.vp + eventVpDelta;
@@ -316,10 +332,22 @@ export function calculateSimulationResult({
   getCardTagKeys,
   countCardsWithTag,
   getCurrentDayPlacedCards,
+  forceTutorialEvent,
 }: CalculateSimulationResultParams): SimulationResult {
+  // Cột 5 ô của ngày hiện tại (giữ vị trí khung giờ) cho combo theo vị trí.
+  const dayCells: (ComboCard | null)[] = boardSlots.map((row) => {
+    const card = row[currentDayIndex] ?? null;
+    if (!card) return null;
+    const tags =
+      card.tags && card.tags.length > 0
+        ? card.tags.map((t) => t.toUpperCase())
+        : [String(card.tag).toUpperCase()];
+    return { tags, coin: card.coin ?? 0, stamina: card.stamina ?? 0 };
+  });
   const breakdown = calculateScoreBreakdown({
     placedCards: getCurrentDayPlacedCards(),
     getBoardDisplayName,
+    dayCells,
   });
   const warnings: string[] = [];
   const events: string[] = [];
@@ -331,6 +359,7 @@ export function calculateSimulationResult({
     getCardTagKeys,
     countCardsWithTag,
     getCurrentDayPlacedCards,
+    forceTutorialEvent,
   });
 
   const debtPenalty = replaySteps.reduce((sum, step) => {

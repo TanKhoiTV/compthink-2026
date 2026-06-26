@@ -84,8 +84,12 @@ setInterval(() => {
 }, 1000);
 
 io.on("connection", (socket) => {
-  socket.on("room:create", ({ playerName }) => {
+  socket.on("room:create", ({ playerName, isTutorial }) => {
     const { roomId, playerId, state } = createRoom(playerName);
+
+    if (isTutorial) {
+      state.isTutorial = true;
+    }
 
     rooms.set(roomId, state);
     socketPlayerIds.set(socket.id, playerId);
@@ -98,6 +102,16 @@ io.on("connection", (socket) => {
       state: getPlayerViewState(state, playerId),
     });
     emitRoomState(roomId);
+  });
+
+  socket.on("tutorial:pauseReplay", ({ roomId }) => {
+    const state = rooms.get(roomId);
+    if (state) state.tutorialPaused = true;
+  });
+
+  socket.on("tutorial:resumeReplay", ({ roomId }) => {
+    const state = rooms.get(roomId);
+    if (state) state.tutorialPaused = false;
   });
 
   socket.on("room:join", ({ roomId, playerName }) => {

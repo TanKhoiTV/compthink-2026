@@ -1,6 +1,7 @@
 import type { PlayerId, RoomState } from "./types.js";
 import { finishDraftRound, startDraftForCurrentDay, DRAFT_PICK_SECONDS } from "./draftEngine.js";
 import { PLAYER_IDS, createEmptyBoard, createServerDeck } from "./gameEngine.js";
+import { computeDayCombos } from "../src/game/combos.js";
 
 export const SIMULATION_SECONDS = 6;
 const RESULT_SECONDS = 3;
@@ -78,28 +79,20 @@ function getPseudoDistanceKm(previousCardId: string, currentCardId: string, dayI
 function getCurrentDayComboBonus(state: RoomState, playerId: PlayerId) {
   const player = state.players[playerId];
   const dayIndex = state.dayIndex;
-
   if (!player) return 0;
 
-  const tagCounts = new Map<string, number>();
-
-  for (const row of player.board) {
+  // Dựng cột 5 ô của ngày hiện tại cho module combo chung.
+  const dayCells = player.board.map((row) => {
     const cell = row[dayIndex];
+    if (!cell || cell.type === "debt" || cell.type === "lock") return null;
+    const tags =
+      cell.tags && cell.tags.length > 0
+        ? cell.tags.map((t) => t.toUpperCase())
+        : [(cell.tag || "").toUpperCase()];
+    return { tags, coin: cell.coin ?? 0, stamina: cell.stamina ?? 0 };
+  });
 
-    if (!cell || cell.type === "debt" || cell.type === "lock") continue;
-
-    const tag = (cell.tag || "").toUpperCase();
-
-    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-  }
-
-  let bonus = 0;
-
-  if ((tagCounts.get("FOOD") ?? 0) >= 2) bonus += 5;
-  if ((tagCounts.get("CULTURE") ?? 0) >= 2) bonus += 8;
-  if ((tagCounts.get("ACTION") ?? 0) >= 2) bonus += 10;
-
-  return bonus;
+  return computeDayCombos(dayCells).bonus;
 }
 
 function getCurrentDaySimulationDelta(state: RoomState, playerId: PlayerId): ServerScanEventResult {
@@ -251,6 +244,11 @@ export function tickRoom(state: RoomState) {
     state.phase !== "gameover" &&
     state.phase !== "cinematic"
   ) {
+    return;
+  }
+
+  // Tutorial: đóng băng phase chấm điểm trong lúc giới thiệu sự kiện (chờ bấm Tiếp).
+  if (state.tutorialPaused && state.phase === "simulation") {
     return;
   }
 
