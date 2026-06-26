@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trekkopoly-cache-v1';
+const CACHE_NAME = 'trekkopoly-cache-v2';
 
 // Danh sách toàn bộ file cần thiết để game offline
 const urlsToCache = [
