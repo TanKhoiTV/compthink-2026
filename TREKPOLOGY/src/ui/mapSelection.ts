@@ -93,47 +93,128 @@ export function renderMapSelectionScreen() {
 }
 
 // =========================================================
-// LOGIC TÌM TRẬN & HỦY TÌM TRẬN
+// MÀN "ĐANG TÌM TRẬN" — video máy bay loop + bộ đếm + cất cánh
 // =========================================================
 let isSearchingMatch = false;
+const MM_TARGET = 4;
 
-(window as any).startMatchmaking = function (btnElement: HTMLButtonElement) {
+// Dựng overlay full-screen: video phòng chờ + bảng trạng thái + 4 ghế.
+function buildMatchmakingOverlay(): HTMLElement {
+  const el = document.createElement("div");
+  el.id = "mm-overlay";
+  el.className = "mm-overlay";
+  const seats = Array.from({ length: MM_TARGET }, (_, i) =>
+    `<span class="mm-seat${i === 0 ? " is-you" : ""}" data-seat="${i}">
+       <svg viewBox="0 0 24 24" class="mm-seat__icon" aria-hidden="true"><path d="M12 12c2.7 0 4.5-1.9 4.5-4.5S14.7 3 12 3 7.5 4.9 7.5 7.5 9.3 12 12 12Zm0 2c-3.6 0-8 1.8-8 4.5V21h16v-2.5c0-2.7-4.4-4.5-8-4.5Z"/></svg>
+       <b class="mm-seat__tag">${i === 0 ? "Bạn" : "Đang chờ"}</b>
+     </span>`
+  ).join("");
+
+  el.innerHTML = `
+    <video class="mm-overlay__video" autoplay muted loop playsinline preload="auto">
+      <source src="./assets/matchmaking-plane.mp4" type="video/mp4" />
+    </video>
+    <div class="mm-overlay__scrim"></div>
+    <div class="mm-overlay__flash"></div>
+
+    <div class="mm-panel">
+      <div class="mm-panel__kicker"><i class="mm-radar"></i>CHUYẾN BAY ĐANG MỞ CỬA</div>
+      <h1 class="mm-panel__title" id="mm-title">Đang tìm <span>bạn đồng hành</span><i class="mm-dots"><b>.</b><b>.</b><b>.</b></i></h1>
+      <p class="mm-panel__sub" id="mm-sub">Đang kết nối những lữ khách cùng chuyến đến Sài Gòn</p>
+
+      <div class="mm-seats" id="mm-seats">${seats}</div>
+
+      <div class="mm-count" id="mm-count"><b>1</b><span>/ ${MM_TARGET} lữ khách đã lên chuyến</span></div>
+
+      <div class="mm-path"><span class="mm-path__plane">✈</span></div>
+
+      <button class="mm-cancel" id="mm-cancel" type="button" onclick="window.cancelMatchmaking()">Huỷ tìm trận</button>
+    </div>
+  `;
+  return el;
+}
+
+function showMatchmakingOverlay() {
+  if (document.getElementById("mm-overlay")) return;
+  const el = buildMatchmakingOverlay();
+  document.body.appendChild(el);
+  void el.offsetWidth; // ép reflow để transition vào chạy
+  el.classList.add("mm-overlay--visible");
+  setMatchmakingCount(1); // mặc định: chính mình
+}
+
+function hideMatchmakingOverlay() {
+  const el = document.getElementById("mm-overlay");
+  if (!el) return;
+  el.classList.remove("mm-overlay--visible");
+  window.setTimeout(() => el.remove(), 420);
+}
+
+// Cập nhật số ghế đã đầy + bộ đếm theo số người trong hàng đợi.
+function setMatchmakingCount(count: number) {
+  const el = document.getElementById("mm-overlay");
+  if (!el) return;
+  const safe = Math.max(1, Math.min(MM_TARGET, count));
+  el.querySelectorAll<HTMLElement>(".mm-seat").forEach((seat, i) => {
+    const filled = i < safe;
+    seat.classList.toggle("is-filled", filled);
+    const tag = seat.querySelector(".mm-seat__tag");
+    if (tag && !seat.classList.contains("is-you")) {
+      tag.textContent = filled ? "Đã vào" : "Đang chờ";
+    }
+  });
+  const countEl = el.querySelector("#mm-count b");
+  if (countEl) countEl.textContent = String(safe);
+}
+
+// Đủ đội hình → đổi chữ, đầy 4 ghế, rồi "cất cánh" (zoom + loé sáng) trước cinematic.
+function playMatchmakingTakeoff() {
+  const el = document.getElementById("mm-overlay");
+  if (!el) return;
+  setMatchmakingCount(MM_TARGET);
+  const title = el.querySelector("#mm-title");
+  const sub = el.querySelector("#mm-sub");
+  const kicker = el.querySelector(".mm-panel__kicker");
+  const cancel = el.querySelector("#mm-cancel");
+  if (title) title.innerHTML = `Đủ đội hình — <span>cất cánh!</span>`;
+  if (sub) sub.textContent = "Đang đưa cả đoàn vào hành trình…";
+  if (kicker) kicker.innerHTML = `<i class="mm-radar is-on"></i>HOÀN TẤT GHÉP TRẬN`;
+  cancel?.remove();
+
+  el.classList.add("mm-overlay--found");
+  window.setTimeout(() => el.classList.add("mm-overlay--takeoff"), 700);
+  window.setTimeout(() => hideMatchmakingOverlay(), 1700);
+}
+
+(window as any).startMatchmaking = function () {
+  if (isSearchingMatch) {
+    (window as any).cancelMatchmaking();
+    return;
+  }
   const user = authClientState.user;
   const playerName = user?.displayName || user?.username || "Lữ Khách";
-
-  if (!isSearchingMatch) {
-    // --- BẬT TÌM TRẬN ---
-    isSearchingMatch = true;
-    socket.emit("matchmaking:find", { playerName });
-
-    if (btnElement) {
-      btnElement.innerText = "Hủy Tìm (Đang chờ...)";
-      btnElement.style.backgroundColor = "#7a2828"; 
-      btnElement.style.borderColor = "#7a2828";
-      btnElement.style.boxShadow = "0 0 10px rgba(122, 40, 40, 0.8)";
-    }
-  } else {
-    // --- HỦY TÌM TRẬN ---
-    isSearchingMatch = false;
-    socket.emit("matchmaking:cancel");
-
-    if (btnElement) {
-      btnElement.innerText = "Tìm Trận";
-      btnElement.style.backgroundColor = ""; 
-      btnElement.style.borderColor = "";
-      btnElement.style.boxShadow = "";
-    }
-  }
+  isSearchingMatch = true;
+  socket.emit("matchmaking:find", { playerName });
+  showMatchmakingOverlay();
 };
 
-// Reset nút khi server báo đã ghép phòng thành công (Phòng hờ lỗi UI)
-socket.on("room:joined", () => {
+(window as any).cancelMatchmaking = function () {
+  if (!isSearchingMatch) return;
   isSearchingMatch = false;
-  const btnElement = document.getElementById("btn-find-match");
-  if (btnElement) {
-    btnElement.innerText = "Tìm Trận";
-    btnElement.style.backgroundColor = "";
-    btnElement.style.borderColor = "";
-    btnElement.style.boxShadow = "";
+  socket.emit("matchmaking:cancel");
+  hideMatchmakingOverlay();
+};
+
+// Bộ đếm live từ server (số người đang chờ trong hàng đợi).
+socket.on("matchmaking:status", (payload: { count: number; target: number }) => {
+  if (!isSearchingMatch) return;
+  setMatchmakingCount(payload?.count ?? 1);
+});
+
+// Đã ghép đủ phòng → chạy animation cất cánh rồi vào trận.
+socket.on("room:joined", () => {
+  if (isSearchingMatch) {
+    isSearchingMatch = false;
+    playMatchmakingTakeoff();
   }
 });

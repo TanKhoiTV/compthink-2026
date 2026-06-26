@@ -188,4 +188,6 @@ export type ServerToClientEvents = {
   }) => void;
   "game:error": (payload: { message: string }) => void;
   "room:left": () => void;
+  // Cập nhật số người đang chờ trong hàng đợi tìm trận (cho màn "đang tìm trận").
+  "matchmaking:status": (payload: { count: number; target: number }) => void;
 };

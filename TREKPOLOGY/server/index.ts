@@ -90,6 +90,14 @@ function clearMatchmakingTimer() {
   }
 }
 
+// Báo số lữ khách đang chờ cho từng người trong hàng đợi (màn "đang tìm trận").
+function broadcastMatchmakingStatus() {
+  const count = matchmakingQueue.length;
+  for (const p of matchmakingQueue) {
+    io.sockets.sockets.get(p.socketId)?.emit("matchmaking:status", { count, target: 4 });
+  }
+}
+
 // Hết giờ chờ mà chưa đủ 4 người thật → mở trận với số người đang có + bot.
 function scheduleMatchmakingTimer() {
   if (matchmakingTimer) return; // đã có hẹn giờ đang chạy
@@ -98,6 +106,7 @@ function scheduleMatchmakingTimer() {
     if (matchmakingQueue.length === 0) return;
     const group = matchmakingQueue.splice(0, Math.min(4, matchmakingQueue.length));
     launchMatchmakingGame(group);
+    broadcastMatchmakingStatus();
     if (matchmakingQueue.length > 0) scheduleMatchmakingTimer(); // còn người chờ → hẹn tiếp
   }, MATCHMAKING_FILL_TIMEOUT_MS);
 }
@@ -191,6 +200,7 @@ io.on("connection", (socket) => {
     } else {
       scheduleMatchmakingTimer();
     }
+    broadcastMatchmakingStatus();
   });
 
   // Hủy tìm trận (Thoát hàng đợi)
@@ -200,6 +210,7 @@ io.on("connection", (socket) => {
       matchmakingQueue.splice(index, 1);
     }
     if (matchmakingQueue.length === 0) clearMatchmakingTimer();
+    broadcastMatchmakingStatus();
   });
   // =========================================================
 
@@ -468,6 +479,7 @@ io.on("connection", (socket) => {
       matchmakingQueue.splice(queueIndex, 1);
     }
     if (matchmakingQueue.length === 0) clearMatchmakingTimer();
+    if (queueIndex !== -1) broadcastMatchmakingStatus();
     const playerId = socketPlayerIds.get(socket.id);
     const roomId = socketRoomIds.get(socket.id);
     const state = roomId ? rooms.get(roomId) : null;
