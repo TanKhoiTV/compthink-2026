@@ -64,6 +64,12 @@ import {
   triggerUtilityEffectFlash,
 } from "./actions/utilityEffects.js";
 import {
+  addLocalDebtOrExhaustToken,
+  clearLocalGeneratedTokenForReturnedCard,
+  payDebtToken,
+  payLocalDebtToken,
+} from "./actions/debtTokens.js";
+import {
   authClientState,
   clearSavedOnlineSession,
   confirmOnlineDraftPick,
@@ -118,6 +124,7 @@ import {
   getBoardCardByPosition as getBoardCardByPositionFromSlots,
   getCardTagKeys,
   getCurrentDayPlacedCards as getCurrentDayPlacedCardsFromSlots,
+  getNextTimeSlotPosition,
   getPlacedCards as getPlacedCardsFromSlots,
 } from "./game/board.js";
 import {
@@ -1145,131 +1152,9 @@ function canPlaceOnBoardCell(rowIndex: number, colIndex: number) {
   return cell === null;
 }
 
-function getNextTimeSlotPosition(
-  rowIndex: number,
-  colIndex: number,
-): BoardPosition | null {
-  if (rowIndex < rows.length - 1) {
-    return {
-      rowIndex: rowIndex + 1,
-      colIndex,
-    };
-  }
+// Moved to game/board.ts
 
-  if (colIndex < PHASE_DAYS - 1) {
-    return {
-      rowIndex: 0,
-      colIndex: colIndex + 1,
-    };
-  }
-
-  return null;
-}
-
-function addLocalDebtOrExhaustToken(params: {
-  rowIndex: number;
-  colIndex: number;
-  card: TravelCardData;
-  coinDebt: number;
-  staminaDebt: number;
-}) {
-  if (params.coinDebt > 0) {
-    state.localCoinDebt += params.coinDebt;
-  }
-
-  if (params.staminaDebt <= 0) return;
-
-  const nextPosition = getNextTimeSlotPosition(
-    params.rowIndex,
-    params.colIndex,
-  );
-
-  if (!nextPosition) return;
-  if (
-    getBoardSlots()[nextPosition.rowIndex]?.[nextPosition.colIndex] !== null
-  ) {
-    return;
-  }
-
-  getBoardSlots()[nextPosition.rowIndex][nextPosition.colIndex] =
-    createExhaustLockTokenCard({
-      rowIndex: nextPosition.rowIndex,
-      colIndex: nextPosition.colIndex,
-      sourceCardName: params.card.name,
-    });
-}
-
-function payLocalDebtToken(
-  rowIndex: number,
-  colIndex: number,
-  card: TravelCardData,
-) {
-  const token = card as BoardTokenCard;
-  const debtAmount = token.debtAmount ?? 0;
-  const remaining = getRemainingResources();
-
-  if (debtAmount <= 0) return;
-
-  if (remaining.coin < debtAmount) {
-    alert(`Không đủ xu để trả nợ. Cần ${debtAmount} xu.`);
-    return;
-  }
-
-  state.eventResourceModifier = {
-    ...state.eventResourceModifier,
-    coin: state.eventResourceModifier.coin - debtAmount,
-  };
-
-  getBoardSlots()[rowIndex][colIndex] = null;
-  playGameSound("eventPromo");
-  rerenderArena();
-}
-
-function payDebtToken(
-  rowIndex: number,
-  colIndex: number,
-  card: TravelCardData,
-) {
-  if (colIndex !== state.currentDayIndex) {
-    state.focusedBoardCard = card;
-    state.focusedBoardPosition = { rowIndex, colIndex };
-    rerenderArena();
-    return;
-  }
-
-  if (isOnlineRoomActive()) {
-    sendPayDebt({
-      rowIndex,
-      colIndex,
-    });
-    return;
-  }
-
-  payLocalDebtToken(rowIndex, colIndex, card);
-}
-
-function clearLocalGeneratedTokenForReturnedCard(
-  rowIndex: number,
-  colIndex: number,
-  card: TravelCardData,
-) {
-  const nextPosition = getNextTimeSlotPosition(rowIndex, colIndex);
-
-  if (!nextPosition) return;
-
-  const nextCell =
-    getBoardSlots()[nextPosition.rowIndex]?.[nextPosition.colIndex] ?? null;
-  const token = nextCell as BoardTokenCard | null;
-
-  if (
-    token &&
-    token.boardTokenType === "lock" &&
-    token.sourceCardName === card.name
-  ) {
-    getBoardSlots()[nextPosition.rowIndex][nextPosition.colIndex] = null;
-  }
-}
-
+// Moved to actions/debtTokens.ts
 // Moved to ui/boardArena.ts
 // Moved to actions/utilityEffects.ts
 
