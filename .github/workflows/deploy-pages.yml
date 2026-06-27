@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages (TREKPOLOGY)
 
 on:
   push:
@@ -27,8 +27,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+      # Build the LIVE game frontend from trekpology/feature-updates,
+      # which carries the full TREKPOLOGY/ app (map select, tutorial, cities).
       - uses: actions/checkout@v4
         with:
+          ref: trekpology/feature-updates
           lfs: true
 
       - name: Install Node.js 22
@@ -36,23 +39,24 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build frontend
+      - name: Build TREKPOLOGY frontend
         run: |
           npm install
           npm run build
+        working-directory: TREKPOLOGY
 
-      - name: Patch socket URL → HF old server
+      - name: Patch client socket URL → HF server
         run: |
-          # Override the localhost URL to the old-stack HF Space
+          # Override the localhost URL to the HF Space server
           OLD_URL='"http://localhost:3001"'
           NEW_URL='"https://khoinguyentran-trekkopoly-old-server.hf.space"'
-          sed -i "s|$OLD_URL|$NEW_URL|g" build/online/socketClient.js
-          grep -n 'io("' build/online/socketClient.js
+          sed -i "s|$OLD_URL|$NEW_URL|g" TREKPOLOGY/build/online/socketClient.js
+          grep -n 'io("' TREKPOLOGY/build/online/socketClient.js
 
       - name: Prepare deployment directory
         run: |
           mkdir -p _site
-          cp -r build/* assets/ index.html sw.js manifest.json _site/
+          cp -r TREKPOLOGY/* _site/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
