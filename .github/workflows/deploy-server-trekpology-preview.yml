@@ -1,0 +1,84 @@
+name: Deploy Server Preview (trekpology/feature-updates) → HF Space
+
+on:
+  push:
+    branches:
+      - trekpology/feature-updates
+    paths:
+      - "server/**"
+      - "TREKPOLOGY/server/**"
+      - "TREKPOLOGY/src/data/**"
+      - "TREKPOLOGY/src/types.ts"
+      - ".github/workflows/deploy-server-trekpology-preview.yml"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout trekpology/feature-updates
+        uses: actions/checkout@v4
+        with:
+          ref: trekpology/feature-updates
+          lfs: true
+
+      - name: Build deployment directory
+        run: |
+          set -eux
+          D=/tmp/hf-deploy
+          mkdir -p "$D/server" "$D/src/data"
+
+          cp -r server/. "$D/server/"
+          cp -r TREKPOLOGY/src/data/. "$D/src/data/"
+          cp TREKPOLOGY/src/types.ts "$D/src/types.ts"
+
+          if [ -f server/hf-readme.md ]; then
+            cp server/hf-readme.md "$D/README.md"
+          else
+            echo "# Trekpology Game Server" > "$D/README.md"
+          fi
+
+      - name: Write Dockerfile
+        run: |
+          FILE=/tmp/hf-deploy/Dockerfile
+          printf 'FROM node:22-alpine\nWORKDIR /app\n' > "$FILE"
+          printf 'COPY server/ ./server/\n' >> "$FILE"
+          printf 'COPY src/data/ ./src/data/\n' >> "$FILE"
+          printf 'COPY src/types.ts ./src/types.ts\n' >> "$FILE"
+          printf 'RUN cd server && npm install --omit=dev\n' >> "$FILE"
+          printf 'EXPOSE 7860\n' >> "$FILE"
+          printf 'CMD ["npx", "tsx", "server/index.ts"]\n' >> "$FILE"
+          echo "=== Dockerfile ==="
+          cat "$FILE"
+
+      - name: Sync to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -eux
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          git clone \
+            https://user:${HF_TOKEN}@huggingface.co/spaces/khoinguyentran/trekkopoly-old-server \
+            /tmp/hf-space
+
+          cd /tmp/hf-space
+          for item in * .*; do
+            [ "$item" = "." ] && continue
+            [ "$item" = ".." ] && continue
+            [ "$item" = ".git" ] && continue
+            rm -rf "$item"
+          done
+
+          cp -r /tmp/hf-deploy/. /tmp/hf-space/
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to deploy"
+          else
+            git commit -m \
+              "Sync server from compthink-2026@${GITHUB_SHA::7} (trekpology/feature-updates)"
+            git push
+          fi
