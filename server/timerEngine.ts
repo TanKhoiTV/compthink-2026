@@ -1,6 +1,7 @@
 import type { PlayerId, RoomState } from "./types.js";
 import { finishDraftRound, startDraftForCurrentDay, DRAFT_PICK_SECONDS } from "./draftEngine.js";
 import { PLAYER_IDS, createEmptyBoard, createServerDeck } from "./gameEngine.js";
+import { saveMatchResult } from "./db.js";
 
 export const SIMULATION_SECONDS = 6;
 const RESULT_SECONDS = 3;
@@ -224,6 +225,11 @@ function startNextDayOrFinish(state: RoomState) {
     applyFinalCoinDebtPenalty(state);
     state.phase = "gameover";
     state.timer = GAMEOVER_SECONDS;
+    // Lưu kết quả ván vào DB 1 lần (no-op nếu chưa cấu hình DATABASE_URL).
+    if (!state.dbSaved) {
+      state.dbSaved = true;
+      void saveMatchResult(state);
+    }
     return;
   }
 

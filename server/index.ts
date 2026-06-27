@@ -1,3 +1,4 @@
+import "dotenv/config";
 import http from "node:http";
 import { Server } from "socket.io";
 import type {
@@ -6,6 +7,8 @@ import type {
   RoomState,
   ServerToClientEvents,
 } from "./types.js";
+import { handleAuthHttpRequest } from "./auth.js";
+import { initDb } from "./db.js";
 import { confirmDraftPick, selectDraftCard } from "./draftEngine.js";
 import { getPlayerViewState } from "./gameEngine.js";
 import {
@@ -23,12 +26,18 @@ import {
 } from "./rooms.js";
 import { tickRoom } from "./timerEngine.js";
 
-const httpServer = http.createServer((req, res) => {
+const httpServer = http.createServer(async (req, res) => {
+  // Phục vụ các endpoint /auth/* (đăng ký / đăng nhập / me) qua DB.
+  if (await handleAuthHttpRequest(req, res)) return;
+
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end("ok");
     return;
   }
+
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("TREKPOLOGY server OK");
 });
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
@@ -371,6 +380,9 @@ io.on("connection", (socket) => {
 
 const PORT = Number(process.env.PORT ?? 3001);
 
-httpServer.listen(PORT, () => {
-  console.log(`Socket server listening on http://localhost:${PORT}`);
+// Khởi tạo bảng DB (no-op nếu chưa cấu hình DATABASE_URL) rồi mới mở cổng.
+initDb().finally(() => {
+  httpServer.listen(PORT, () => {
+    console.log(`Socket server listening on http://localhost:${PORT}`);
+  });
 });

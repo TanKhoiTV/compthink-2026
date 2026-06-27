@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
-import fs from "node:fs";
 import http from "node:http";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import {
+  dbFindUserByUsername,
+  dbInsertUser,
+  type DbUserRow,
+} from "./db.js";
 
 export type AuthUser = {
   id: string;
@@ -10,58 +12,20 @@ export type AuthUser = {
   displayName: string;
 };
 
-type StoredUser = AuthUser & {
-  passwordHash: string;
-  createdAt: string;
-};
-
-type UsersDatabase = {
-  users: StoredUser[];
-};
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, "data");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PASSWORD_ITERATIONS = 120_000;
 const AUTH_SECRET =
   process.env.AUTH_SECRET ?? "dev-secret-change-me-before-deploying-online";
 
-function ensureUsersFile() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-
-  if (!fs.existsSync(USERS_FILE)) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify({ users: [] }, null, 2), "utf-8");
-  }
-}
-
-function readUsersDatabase(): UsersDatabase {
-  ensureUsersFile();
-
-  try {
-    return JSON.parse(fs.readFileSync(USERS_FILE, "utf-8")) as UsersDatabase;
-  } catch {
-    return { users: [] };
-  }
-}
-
-function writeUsersDatabase(database: UsersDatabase) {
-  ensureUsersFile();
-  fs.writeFileSync(USERS_FILE, JSON.stringify(database, null, 2), "utf-8");
-}
-
 function normalizeUsername(username: string) {
   return username.trim().toLowerCase();
 }
 
-function toPublicUser(user: StoredUser): AuthUser {
+function rowToPublicUser(row: DbUserRow): AuthUser {
   return {
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName,
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
   };
 }
 
@@ -161,31 +125,18 @@ export function verifyAuthToken(token?: string | null): AuthUser | null {
 
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
 
-    const user = findUserById(payload.sub);
-
-    if (!user) return null;
-
-    return toPublicUser(user);
+    // Token đã ký HMAC + còn hạn → tin payload, không cần truy vấn DB.
+    return {
+      id: payload.sub,
+      username: payload.username,
+      displayName: payload.displayName,
+    };
   } catch {
     return null;
   }
 }
 
-function findUserById(userId: string) {
-  return readUsersDatabase().users.find((user) => user.id === userId) ?? null;
-}
-
-function findUserByUsername(username: string) {
-  const normalizedUsername = normalizeUsername(username);
-
-  return (
-    readUsersDatabase().users.find(
-      (user) => normalizeUsername(user.username) === normalizedUsername
-    ) ?? null
-  );
-}
-
-export function registerUser(payload: {
+export async function registerUser(payload: {
   username: string;
   password: string;
   displayName?: string;
@@ -201,42 +152,40 @@ export function registerUser(payload: {
     throw new Error("Password cần ít nhất 6 ký tự.");
   }
 
-  const database = readUsersDatabase();
-
-  if (database.users.some((user) => normalizeUsername(user.username) === username)) {
+  if (await dbFindUserByUsername(username)) {
     throw new Error("Username này đã tồn tại.");
   }
 
-  const user: StoredUser = {
+  const row: DbUserRow = {
     id: crypto.randomUUID(),
     username,
-    displayName,
-    passwordHash: hashPassword(payload.password),
-    createdAt: new Date().toISOString(),
+    display_name: displayName,
+    password_hash: hashPassword(payload.password),
   };
 
-  database.users.push(user);
-  writeUsersDatabase(database);
+  await dbInsertUser(row);
 
+  const user = rowToPublicUser(row);
   return {
-    user: toPublicUser(user),
-    token: createAuthToken(toPublicUser(user)),
+    user,
+    token: createAuthToken(user),
   };
 }
 
-export function loginUser(payload: {
+export async function loginUser(payload: {
   username: string;
   password: string;
 }) {
-  const user = findUserByUsername(payload.username);
+  const row = await dbFindUserByUsername(normalizeUsername(payload.username));
 
-  if (!user || !verifyPassword(payload.password, user.passwordHash)) {
+  if (!row || !verifyPassword(payload.password, row.password_hash)) {
     throw new Error("Sai username hoặc password.");
   }
 
+  const user = rowToPublicUser(row);
   return {
-    user: toPublicUser(user),
-    token: createAuthToken(toPublicUser(user)),
+    user,
+    token: createAuthToken(user),
   };
 }
 
@@ -299,7 +248,7 @@ export async function handleAuthHttpRequest(
         displayName?: string;
       }>(request);
 
-      sendJson(response, 200, registerUser(body));
+      sendJson(response, 200, await registerUser(body));
       return true;
     }
 
@@ -309,7 +258,7 @@ export async function handleAuthHttpRequest(
         password: string;
       }>(request);
 
-      sendJson(response, 200, loginUser(body));
+      sendJson(response, 200, await loginUser(body));
       return true;
     }
 

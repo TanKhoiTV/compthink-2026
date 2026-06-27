@@ -48,6 +48,7 @@ export type PlayerPublicState = {
   isConnected: boolean;
   isReady: boolean;
   hasJoined: boolean;
+  isBot?: boolean;
   planningConfirmed?: boolean;
   board: PublicBoardCell[][];
 };
@@ -71,6 +72,8 @@ export type RoomState = {
   draftTimerHold: number;
   deck: ServerTravelCardData[];
   players: Record<PlayerId, PlayerPrivateState>;
+  /** Đã lưu kết quả ván vào DB chưa (tránh ghi trùng khi tick lại). */
+  dbSaved?: boolean;
 };
 
 export type PlayerViewState = Omit<RoomState, "deck" | "players"> & {

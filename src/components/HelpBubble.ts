@@ -47,36 +47,47 @@ export const GAME_HELP_STEPS: HelpStep[] = [
 	{
 		title: "Lịch trình 5 ngày",
 		description:
-			"Mỗi trận có 5 ngày, mỗi ngày gồm 5 khung giờ: Sáng, Trưa, Chiều, Tối, Khuya.",
+			"Mỗi trận có 5 ngày. Mỗi ngày có 5 ô thời gian: Sáng, Trưa, Chiều, Tối, Khuya. Hãy lấp đầy lịch trình để tối đa điểm VP!",
 	},
 	{
-		title: "Chọn thẻ",
-		description: "Chọn thẻ địa điểm hoặc hoạt động từ bộ bài trên tay.",
-	},
-	{
-		title: "Đặt thẻ",
+		title: "Draft – Chọn thẻ từ Pool",
 		description:
-			"Đặt thẻ vào ô thời gian phù hợp trên lịch trình để xây dựng hành trình.",
+			"Đầu mỗi ngày, bạn được nhìn thấy một pool thẻ chung. Chọn 1 thẻ, phần còn lại sẽ chuyển cho người kế. Mỗi người nhận được 5 thẻ sau 5 vòng chọn.",
+	},
+	{
+		title: "4 loại thẻ chính",
+		description:
+			"🍜 Ẩm thực (FOOD): địa điểm ăn uống đặc sắc. 🏛️ Văn hóa (CULTURE): di sản, kiến trúc. 🎒 Khám phá (ACTION): hoạt động vui chơi. 🧰 Tiện ích (UTILITY): hỗ trợ hành trình.",
+	},
+	{
+		title: "Thẻ Tiện Ích – Dùng sao cho khéo",
+		description:
+			"Thẻ Tiện Ích không cho điểm VP nhưng có hiệu ứng đặc biệt khi đặt xuống: 💰 ATM hồi xu · ⚡ Massage/Tiệm Gội hồi thể lực · 🎟️ Voucher giảm chi phí hoặc bỏ qua phạt khoảng cách · 📸 Thuê Thợ Ảnh nhân đôi VP thẻ kế.",
+	},
+	{
+		title: "Độ hiếm thẻ (Rarity)",
+		description:
+			"★ Common: thẻ cơ bản. ★★ Uncommon: thẻ khá tốt. ★★★★ Epic: thẻ mạnh, chi phí cao hơn. ★★★★★ Legendary: thẻ siêu hiếm với VP cực cao (ví dụ: Suối Tiên 25VP, Vàm Sát 35VP, Landmark 81 30VP).",
 	},
 	{
 		title: "Quản lý tài nguyên",
 		description:
-			"Mỗi thẻ có thể cộng điểm và tiêu hao Tiền hoặc Thể lực. Hãy tính toán trước khi đặt.",
+			"Mỗi thẻ có thể tốn Xu 💰 và/hoặc Thể lực ⚡. Nếu cạn tài nguyên, bạn sẽ bị phạt VP. Dùng thẻ Tiện Ích để hồi phục đúng lúc!",
 	},
 	{
-		title: "Combo",
+		title: "Combo điểm thưởng",
 		description:
-			"Một số thẻ có thể tạo combo theo loại như Ẩm thực, Văn hóa, Thiên nhiên hoặc Di sản.",
+			"Xếp nhiều thẻ cùng loại trong một ngày sẽ tạo combo: 2 lá Ẩm thực +5VP · 2 lá Văn hóa +8VP · Đặt sau lá Khám phá +10VP. Hãy tính toán combo để bứt phá điểm số!",
+	},
+	{
+		title: "Phạt khoảng cách",
+		description:
+			"Nếu hai điểm đến kề nhau quá xa trên bản đồ, bạn sẽ bị trừ điểm vì 'mất thời gian di chuyển'. Dùng Voucher Xe hoặc Xe Đạp Công Cộng để bỏ qua hình phạt này!",
 	},
 	{
 		title: "Xác nhận lượt",
 		description:
-			"Sau khi sắp xếp xong, bấm 'Xác nhận' để hoàn tất lượt.",
-	},
-	{
-		title: "Mục tiêu",
-		description:
-			"Cố gắng xây dựng hành trình du lịch có tổng điểm cao nhất.",
+			"Sau khi đặt thẻ xong, bấm 'Xác nhận' để kết thúc ngày. Điểm sẽ được tính theo từng ô, từng combo. Người có tổng VP cao nhất sau 5 ngày giành chiến thắng!",
 	},
 ];
 
