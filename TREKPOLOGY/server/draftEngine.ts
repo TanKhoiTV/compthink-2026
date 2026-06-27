@@ -72,7 +72,7 @@ function rebuildDeckFromAvailableCards(state: RoomState) {
 
   const usedOnBoards = collectCardIdsOnBoards(state);
   const inFlight = collectInFlightDraftCardIds(state);
-  const deckIds = new Set(state.deck.map((card) => card.id));
+  const deckIds = new Set(state.deck.filter(Boolean).map((card) => card.id));
 
   const available = createServerDeck().filter((card) => {
     return !usedOnBoards.has(card.id) && !inFlight.has(card.id) && !deckIds.has(card.id);
