@@ -13,6 +13,7 @@ import {
 	authClientState,
 	saveAuthSession,
 	clearAuthSession,
+	serverBaseUrl,
 } from "../online/socketClient.ts";
 
 export const HERO_VIDEO_SRC = "assets/videos/chuyencanh.mp4";
@@ -486,7 +487,7 @@ async function handleLoginSubmit(event: SubmitEvent) {
 
 	try {
 		const resp = await fetch(
-			"${import.meta.env.VITE_SERVER_URL}/api/auth/login",
+			`${serverBaseUrl}/api/auth/login`,
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -546,10 +547,7 @@ async function handleRegisterSubmit(event: SubmitEvent) {
 	statusEl.className = "hub-auth__status";
 
 	try {
-		const serverUrl =
-			(globalThis as any).SERVER_HTTP_URL ??
-			"${import.meta.env.VITE_SERVER_URL}";
-		const resp = await fetch(`${serverUrl}/api/auth/register`, {
+		const resp = await fetch(`${serverBaseUrl}/api/auth/register`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ username, password, displayName }),

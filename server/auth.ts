@@ -1,10 +1,11 @@
 /**
  * auth.ts — User registration, login, and JWT token verification.
  *
- * Ported from Trekkopoly/server/auth.ts to Deno's Web Crypto API.
  * Uses PBKDF2 for password hashing and HMAC-SHA256 for token signing.
- * Stores users in server/data/users.json.
+ * Stores users in PostgreSQL.
  */
+
+import { sql } from "./db.ts";
 
 export type AuthUser = {
 	id: string;
@@ -17,41 +18,10 @@ interface StoredUser extends AuthUser {
 	createdAt: string;
 }
 
-interface UsersDatabase {
-	users: StoredUser[];
-}
-
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 const PASSWORD_ITERATIONS = 120_000;
 const AUTH_SECRET =
 	Deno.env.get("AUTH_SECRET") ?? "dev-secret-change-me-before-deploying-online";
-const DATA_DIR = new URL("data/", import.meta.url);
-const USERS_FILE = new URL("users.json", DATA_DIR);
-
-// ─── File I/O ────────────────────────────────────────────────────────────────
-
-function ensureDataDir() {
-	try {
-		Deno.mkdirSync(DATA_DIR, { recursive: true });
-	} catch {
-		// directory already exists
-	}
-}
-
-function readUsersDatabase(): UsersDatabase {
-	ensureDataDir();
-	try {
-		const text = Deno.readTextFileSync(USERS_FILE);
-		return JSON.parse(text) as UsersDatabase;
-	} catch {
-		return { users: [] };
-	}
-}
-
-function writeUsersDatabase(database: UsersDatabase): void {
-	ensureDataDir();
-	Deno.writeTextFileSync(USERS_FILE, JSON.stringify(database, null, 2));
-}
 
 // ─── Password hashing (PBKDF2 via Web Crypto) ───────────────────────────────
 
@@ -171,21 +141,29 @@ async function createAuthToken(user: AuthUser): Promise<string> {
 
 // ─── User lookups ────────────────────────────────────────────────────────────
 
-function findUserById(userId: string): StoredUser | null {
-	return readUsersDatabase().users.find((u) => u.id === userId) ?? null;
+async function findUserById(userId: string): Promise<StoredUser | null> {
+	const rows = await sql`
+		SELECT id, username, display_name as "displayName", password_hash as "passwordHash", created_at as "createdAt"
+		FROM users
+		WHERE id = ${userId}
+	`;
+	if (rows.length === 0) return null;
+	return rows[0] as StoredUser;
 }
 
 function normalizeUsername(username: string): string {
 	return username.trim().toLowerCase();
 }
 
-function findUserByUsername(username: string): StoredUser | null {
+async function findUserByUsername(username: string): Promise<StoredUser | null> {
 	const normalized = normalizeUsername(username);
-	return (
-		readUsersDatabase().users.find(
-			(u) => normalizeUsername(u.username) === normalized,
-		) ?? null
-	);
+	const rows = await sql`
+		SELECT id, username, display_name as "displayName", password_hash as "passwordHash", created_at as "createdAt"
+		FROM users
+		WHERE LOWER(username) = ${normalized}
+	`;
+	if (rows.length === 0) return null;
+	return rows[0] as StoredUser;
 }
 
 function toPublicUser(user: StoredUser): AuthUser {
@@ -213,23 +191,24 @@ export async function registerUser(payload: {
 		throw new Error("Password cần ít nhất 6 ký tự.");
 	}
 
-	const database = readUsersDatabase();
-	if (database.users.some((u) => normalizeUsername(u.username) === username)) {
+	const existingUser = await findUserByUsername(username);
+	if (existingUser) {
 		throw new Error("Username này đã tồn tại.");
 	}
 
-	const user: StoredUser = {
-		id: crypto.randomUUID(),
+	const passwordHash = await hashPassword(payload.password);
+	const userId = crypto.randomUUID();
+
+	await sql`
+		INSERT INTO users (id, username, display_name, password_hash)
+		VALUES (${userId}, ${username}, ${displayName}, ${passwordHash})
+	`;
+
+	const publicUser: AuthUser = {
+		id: userId,
 		username,
 		displayName,
-		passwordHash: await hashPassword(payload.password),
-		createdAt: new Date().toISOString(),
 	};
-
-	database.users.push(user);
-	writeUsersDatabase(database);
-
-	const publicUser = toPublicUser(user);
 	const token = await createAuthToken(publicUser);
 	return { user: publicUser, token };
 }
@@ -238,7 +217,7 @@ export async function loginUser(payload: {
 	username: string;
 	password: string;
 }): Promise<{ user: AuthUser; token: string }> {
-	const user = findUserByUsername(payload.username);
+	const user = await findUserByUsername(payload.username);
 	if (!user) {
 		throw new Error("Sai username hoặc password.");
 	}
@@ -287,7 +266,7 @@ export async function verifyAuthToken(
 		};
 		if (payload.exp < Math.floor(Date.now() / 1000)) return null;
 
-		const user = findUserById(payload.sub);
+		const user = await findUserById(payload.sub);
 		if (!user) return null;
 
 		return toPublicUser(user);

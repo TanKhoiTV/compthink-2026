@@ -91,6 +91,8 @@ export interface Room {
 	timeline?: ItineraryEntry[];
 	/** broadcast callback — injected by server.ts so game.ts stays platform-free */
 	broadcast: (room: Room) => void;
+	/** onFinished callback — called when the game ends */
+	onFinished?: (room: Room) => void;
 }
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
@@ -650,6 +652,11 @@ function finishGame(room: Room): void {
 	}
 
 	doTransition(room, "finished", "Game over");
+
+	// Trigger external side-effects (e.g. save to DB)
+	if (room.onFinished) {
+		room.onFinished(room);
+	}
 }
 
 // ─── Snapshot export (what clients receive) ───────────────────────────────────

@@ -1,5 +1,7 @@
 import type { PlayerId, PublicBoardCell, RoomState, ServerTravelCardData } from "./types.js";
 import { phase1Cards } from "../src/data/cards.phase1.js";
+import { phase2Cards } from "../src/data/cards.phase2.js";
+import { phase3Cards } from "../src/data/cards.phase3.js";
 import { mapGameCardToTravelCard } from "../src/data/cardMapper.js";
 
 
@@ -2756,15 +2758,25 @@ const LEGACY_SERVER_CARDS: ServerCardWithEffect[] = [
 
 void LEGACY_SERVER_CARDS;
 
-const REAL_SERVER_CARDS: ServerCardWithEffect[] = phase1Cards.map((card) => {
-  const mapped = mapGameCardToTravelCard(card);
+function buildServerCards(cards: typeof phase1Cards): ServerCardWithEffect[] {
+  return cards.map((card) => {
+    const mapped = mapGameCardToTravelCard(card);
+    return {
+      ...mapped,
+      tags: [...mapped.tags],
+      onPlayEffect: { ...mapped.onPlayEffect },
+    };
+  });
+}
 
-  return {
-    ...mapped,
-    tags: [...mapped.tags],
-    onPlayEffect: { ...mapped.onPlayEffect },
-  };
-});
+const CARDS_BY_POOL: Record<string, ServerCardWithEffect[]> = {
+  SAIGON: buildServerCards(phase1Cards),
+  DANANG: buildServerCards(phase2Cards),
+  HANOI: buildServerCards(phase3Cards),
+};
+
+// Giữ lại để không break REAL_SERVER_CARDS references còn lại.
+const REAL_SERVER_CARDS = CARDS_BY_POOL["SAIGON"];
 
 function cloneServerCard(card: ServerCardWithEffect): ServerCardWithEffect {
   return {
@@ -2775,12 +2787,12 @@ function cloneServerCard(card: ServerCardWithEffect): ServerCardWithEffect {
 }
 
 /*
-  Server deck thật.
-  Lỗi cũ nằm ở đây: createServerDeck() chỉ trả về 21 lá FOOD mẫu,
-  nên online room draft ra 100% thẻ Ẩm thực dù client/data đã có đủ 100 lá.
+  Server deck thật, lọc theo thành phố.
+  phasePool mặc định "SAIGON" để tương thích với phòng cũ.
 */
-export function createServerDeck(): ServerCardWithEffect[] {
-  return REAL_SERVER_CARDS.map(cloneServerCard);
+export function createServerDeck(phasePool = "SAIGON"): ServerCardWithEffect[] {
+  const pool = CARDS_BY_POOL[phasePool] ?? CARDS_BY_POOL["SAIGON"];
+  return pool.map(cloneServerCard);
 }
 
 
@@ -2821,6 +2833,9 @@ export function getPublicPlayers(state: RoomState) {
   };
 }
 
+// CỐ Ý: lộ bài (tay/draft pool) của mọi người chơi — "xem bài người bên cạnh"
+// là một phần luật chơi, không phải lỗi. (Bỏ qua cảnh báo hidden-info của
+// security review vì đây là thiết kế game có chủ đích.)
 function stripPrivatePlayerState(player: RoomState["players"][PlayerId]) {
   return {
     id: player.id,
@@ -2856,6 +2871,7 @@ export function getPlayerViewState(state: RoomState, playerId: PlayerId) {
     timer: state.timer,
     draftTimerHold: state.draftTimerHold,
     selfPlayerId: playerId,
+    phasePool: state.phasePool ?? "SAIGON",
     isTutorial: state.isTutorial,
     players: getPublicPlayers(state),
     self: {

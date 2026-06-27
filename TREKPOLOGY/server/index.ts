@@ -45,7 +45,7 @@ const rooms = new Map<string, RoomState>();
 const socketPlayerIds = new Map<string, PlayerId>();
 const socketRoomIds = new Map<string, string>();
 
-const matchmakingQueue: { socketId: string; playerName: string }[] = [];
+const matchmakingQueue: { socketId: string; playerName: string; city: string }[] = [];
 
 function bindSocketPlayer(
   socket: { id: string; join: (room: string) => void },
@@ -121,11 +121,11 @@ function scheduleMatchmakingTimer() {
 }
 
 // Tạo phòng từ nhóm người thật (1–4), điền bot cho đủ ghế, rồi sút vào cinematic.
-function launchMatchmakingGame(group: { socketId: string; playerName: string }[]) {
+function launchMatchmakingGame(group: { socketId: string; playerName: string; city: string }[]) {
   if (group.length === 0) return;
 
   const host = group[0];
-  const { roomId, playerId: hostPlayerId, state } = createRoom(host.playerName);
+  const { roomId, playerId: hostPlayerId, state } = createRoom(host.playerName, host.city || "SAIGON");
   rooms.set(roomId, state);
 
   const hostSocket = io.sockets.sockets.get(host.socketId);
@@ -170,8 +170,8 @@ setInterval(() => {
 }, 1000);
 
 io.on("connection", (socket) => {
-  socket.on("room:create", ({ playerName, isTutorial }) => {
-    const { roomId, playerId, state } = createRoom(playerName);
+  socket.on("room:create", ({ playerName, isTutorial, city }) => {
+    const { roomId, playerId, state } = createRoom(playerName, city || "SAIGON");
 
     if (isTutorial) {
       state.isTutorial = true;
@@ -193,11 +193,11 @@ io.on("connection", (socket) => {
 // =========================================================
   // MATCHMAKING: TÌM TRẬN TỰ ĐỘNG (BẾ 4 NGƯỜI VÀO GAME)
   // =========================================================
-  socket.on("matchmaking:find", ({ playerName }) => {
+  socket.on("matchmaking:find", ({ playerName, city }) => {
     // 1. Nhét vào hàng đợi (nếu chưa có)
     const isAlreadyInQueue = matchmakingQueue.some(p => p.socketId === socket.id);
     if (!isAlreadyInQueue) {
-      matchmakingQueue.push({ socketId: socket.id, playerName: playerName || "Lữ Khách" });
+      matchmakingQueue.push({ socketId: socket.id, playerName: playerName || "Lữ Khách", city: city || "SAIGON" });
     }
 
     // 2. Đủ 4 người thật → mở trận ngay. Chưa đủ → bật đồng hồ chờ;

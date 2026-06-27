@@ -73,6 +73,7 @@ export type RoomState = {
   draftTimerHold: number;
   deck: ServerTravelCardData[];
   players: Record<PlayerId, PlayerPrivateState>;
+  phasePool: string;
   isTutorial?: boolean;
   /** Tutorial: đóng băng phase chấm điểm trong lúc giới thiệu sự kiện. */
   tutorialPaused?: boolean;
@@ -93,11 +94,11 @@ export type PlayerViewState = Omit<RoomState, "deck" | "players"> & {
 
 export type ClientToServerEvents = {
   // --- 2 DÒNG MATCHMAKING ---
-  "matchmaking:find": (payload: { playerName: string }) => void;
+  "matchmaking:find": (payload: { playerName: string; city?: string }) => void;
   "matchmaking:cancel": () => void;
 
   // --- CÁC SỰ KIỆN GỐC ---
-  "room:create": (payload: { playerName: string; isTutorial?: boolean }) => void;
+  "room:create": (payload: { playerName: string; isTutorial?: boolean; city?: string }) => void;
   "room:join": (payload: { roomId: string; playerName: string }) => void;
 
   "tutorial:pauseReplay": (payload: { roomId: string }) => void;

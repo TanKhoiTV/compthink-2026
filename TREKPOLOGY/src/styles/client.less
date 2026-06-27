@@ -11063,16 +11063,32 @@ body,
    - hover làm tối background xung quanh rõ hơn
    - glow không scale/translate, chỉ sáng theo viền mask
    ========================================= */
-@saigon-collage-bg: "../assets/backgrounds/saigon-collage-hover/backgroundboard.jpg";
+@board-bg-gradient:
+  linear-gradient(rgba(80, 55, 40, 0.75), rgba(60, 40, 25, 0.85)),
+  radial-gradient(circle at center, rgba(200, 150, 100, 0.1), transparent 58%);
+@board-bg-fallback: linear-gradient(180deg, #f5efe6, #e8dccb);
 
 .game-shell {
   position: relative;
   isolation: isolate;
   background:
-    linear-gradient(rgba(80, 55, 40, 0.75), rgba(60, 40, 25, 0.85)),
-    radial-gradient(circle at center, rgba(200, 150, 100, 0.1), transparent 58%),
-    url(@saigon-collage-bg) center / cover no-repeat,
-    linear-gradient(180deg, #f5efe6, #e8dccb);
+    @board-bg-gradient,
+    url("../assets/backgrounds/saigon-collage-hover/backgroundboard.jpg") center / cover no-repeat,
+    @board-bg-fallback;
+}
+
+.game-shell[data-phase-pool="DANANG"] {
+  background:
+    @board-bg-gradient,
+    url("../assets/backgrounds/saigon-collage-hover/danangboard.jpg") center / cover no-repeat,
+    @board-bg-fallback;
+}
+
+.game-shell[data-phase-pool="HANOI"] {
+  background:
+    @board-bg-gradient,
+    url("../assets/backgrounds/saigon-collage-hover/hanoiboard.png") center / cover no-repeat,
+    @board-bg-fallback;
 }
 
 .players-column,
@@ -12218,6 +12234,20 @@ body,
   background:
     radial-gradient(circle at center, rgba(255, 255, 255, 0.16), transparent 58%),
     url("../assets/backgrounds/saigon-collage-hover/backgroundboard.jpg") center / cover no-repeat,
+    linear-gradient(180deg, #f5efe6, #e8dccb) !important;
+}
+
+.game-shell[data-phase-pool="DANANG"] {
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.16), transparent 58%),
+    url("../assets/backgrounds/saigon-collage-hover/danangboard.jpg") center / cover no-repeat,
+    linear-gradient(180deg, #f5efe6, #e8dccb) !important;
+}
+
+.game-shell[data-phase-pool="HANOI"] {
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.16), transparent 58%),
+    url("../assets/backgrounds/saigon-collage-hover/hanoiboard.png") center / cover no-repeat,
     linear-gradient(180deg, #f5efe6, #e8dccb) !important;
 }
 

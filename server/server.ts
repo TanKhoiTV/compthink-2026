@@ -30,6 +30,7 @@ import {
 } from "./player.ts";
 import type { TravelCard } from "../src/shared/types.ts";
 import { registerUser, loginUser, verifyAuthToken } from "./auth.ts";
+import { initDb, getUserHistory, saveMatchResult } from "./db.ts";
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -121,6 +122,11 @@ async function handleCreateRoom(req: Request): Promise<Response> {
 		body.maxPlayers ?? 2,
 		body.maxDays ?? 5,
 	);
+	room.onFinished = (r) => {
+		saveMatchResult(r).catch((err) => {
+			console.error(`[server] Error saving match result for ${r.roomId}:`, err);
+		});
+	};
 	rooms.set(roomId, room);
 
 	console.log(`[server] Room ${roomId} created (${body.cards.length} cards).`);
@@ -323,6 +329,24 @@ async function router(req: Request): Promise<Response> {
 			return jsonRes({ user }, origin);
 		}
 
+		// Match history
+		if (pathname === "/api/history" && method === "GET") {
+			const authHeader = req.headers.get("Authorization") || "";
+			const token = authHeader.startsWith("Bearer ")
+				? authHeader.slice(7)
+				: null;
+			const user = await verifyAuthToken(token);
+			if (!user) {
+				return jsonRes(
+					{ error: "Chưa đăng nhập hoặc token hết hạn." },
+					origin,
+					401,
+				);
+			}
+			const history = await getUserHistory(user.id);
+			return jsonRes({ history }, origin);
+		}
+
 		// WebSocket upgrade endpoint
 		if (pathname === "/ws" && method === "GET") {
 			return await handleWebSocket(req);
@@ -394,6 +418,8 @@ function errorRes(status: number, message: string, origin: string): Response {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
+
+await initDb();
 
 console.log(`[server] Starting on http://${HOST}:${PORT}`);
 console.log(

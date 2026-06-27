@@ -63,6 +63,7 @@ export type OnlineRoomState = {
   phase: "lobby" | "cinematic" | "draft" | "planning" | "simulation" | "result" | "gameover";
   phaseNumber: number;
   isTutorial?: boolean;
+  phasePool?: string;
   dayIndex: number;
   draftRound: number;
   timer: number;
@@ -310,7 +311,7 @@ export function initOnlineClient(
   });
 }
 
-export function createOnlineRoom(playerName: string, isTutorial?: boolean) {
+export function createOnlineRoom(playerName: string, isTutorial?: boolean, city = "SAIGON") {
   if (!socket.connected) {
     socket.connect();
   }
@@ -318,6 +319,7 @@ export function createOnlineRoom(playerName: string, isTutorial?: boolean) {
   socket.emit("room:create", {
     playerName,
     isTutorial: isTutorial === true,
+    city,
   });
 }
 

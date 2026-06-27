@@ -24,7 +24,7 @@ const isProduction =
 	(window.location.hostname === "tankhoitv.github.io" ||
 		window.location.hostname.includes("github.io"));
 
-let serverBaseUrl = isProduction
+export let serverBaseUrl = isProduction
 	? (localStorage.getItem("trekkopoly_server_url") ?? "https://khoinguyentran-trekkopoly-server.hf.space")
 	: "http://localhost:8080";
 let wsBaseUrl = isProduction

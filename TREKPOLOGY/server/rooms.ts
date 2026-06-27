@@ -185,7 +185,7 @@ function clearGeneratedTokenForReturnedCard(
   }
 }
 
-export function createRoom(firstPlayerName: string): {
+export function createRoom(firstPlayerName: string, phasePool = "SAIGON"): {
   roomId: string;
   playerId: PlayerId;
   state: RoomState;
@@ -200,7 +200,8 @@ export function createRoom(firstPlayerName: string): {
     draftRound: 0,
     timer: 0,
     draftTimerHold: 0,
-    deck: shuffleCards(createServerDeck()),
+    deck: shuffleCards(createServerDeck(phasePool)),
+    phasePool,
     players: {
       p1: createEmptyPlayer("p1", firstPlayerName || "An", true),
       p2: createEmptyPlayer("p2", "Cường", false),

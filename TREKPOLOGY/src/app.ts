@@ -8151,12 +8151,13 @@ let isTransitioning = false;
   }, 6000);
 };
 
-(window as any).gotoOnlineLobby = () => {
+(window as any).gotoOnlineLobby = (city = "SAIGON") => {
   if (!authClientState.user) {
     (window as any).focusHubAuthPanel();
     setAuthStatus("Đăng nhập hoặc đăng ký để bắt đầu hành trình.");
     return;
   }
+  (window as any)._selectedCity = city;
   transitionToScreen("lobby");
 };
 
@@ -8417,11 +8418,12 @@ function isInsideOpaqueSaigonPixel(hotspot: SaigonAlphaHotspot, bgX: number, bgY
 }
 
 function setupSaigonCollageHover() {
-  // Background hover/glow đã tắt. Chỉ giữ một background tĩnh.
   const shell = document.querySelector<HTMLElement>(".game-shell");
-  if (shell) {
-    delete shell.dataset.saigonHover;
-  }
+  if (!shell) return;
+  delete shell.dataset.saigonHover;
+
+  // Nền bàn cờ đổi theo thành phố (data-phase-pool đã set ở template, đảm bảo lại ở đây).
+  shell.dataset.phasePool = onlineClientState.roomState?.phasePool ?? "SAIGON";
 }
 
 function renderSpectateRuntimeStyles() {
@@ -8925,9 +8927,10 @@ function renderGameShell() {
 
   const leftPlayers = getLeftSidePlayersToRender();
   const rightPlayers = getRightSidePlayersToRender();
+  const boardPool = onlineClientState.roomState?.phasePool ?? "SAIGON";
 
   return renderWithGlobalOverlays(`
-    <div class="game-shell">
+    <div class="game-shell" data-phase-pool="${boardPool}">
       ${renderSaigonCollageBackground()}
       ${renderOnlineRoomMenu()}
       ${renderMidGameRankingModal()}
@@ -9678,7 +9681,8 @@ function setupAuthFormDelegation() {
   const input = document.querySelector("#lobby-create-name") as HTMLInputElement | null;
   const playerName = input?.value.trim() || authClientState.user?.displayName || authClientState.user?.username || "An";
 
-  createOnlineRoom(playerName, isOnboardingActive());
+  const city = (window as any)._selectedCity || "SAIGON";
+  createOnlineRoom(playerName, isOnboardingActive(), city);
 };
 
 (window as any).joinRoomFromLobby = () => {
