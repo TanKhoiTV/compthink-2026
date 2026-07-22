@@ -11,7 +11,7 @@ Hệ thống sử dụng một số kiểu dữ liệu nền tảng xuyên suố
 
     \item \texttt{PlayerState} — Trạng thái hiện tại của người chơi: \texttt{gold} (Xu Vàng), \texttt{stamina} (Thể lực), \texttt{debtTokens} (số Token Nợ), \texttt{exhaustedSlots} (danh sách ô bị khóa do kiệt sức), \texttt{hand} (các thẻ đang giữ).
 
-    \item \texttt{RoomState} — Trạng thái tổng thể của phòng chơi: \texttt{phase} (\texttt{"lobby"}, \texttt{"draft"}, \texttt{"planning"}, \texttt{"simulation"}, \texttt{"gameover"}), \texttt{dayIndex}, \texttt{players} (danh sách người chơi), \texttt{board} (mảng \texttt{GameBoard} cho mỗi người).
+    \item \texttt{RoomState} — Trạng thái tổng thể của phòng chơi: \texttt{phase} (\texttt{"lobby"}, \texttt{"cinematic"}, \texttt{"draft"}, \texttt{"planning"}, \texttt{"simulation"}, \texttt{"result"}, \texttt{"gameover"}), \texttt{dayIndex}, \texttt{players} (danh sách người chơi), \texttt{board} (mảng \texttt{GameBoard} cho mỗi người), \texttt{isTutorial} (đang trong hướng dẫn không).
 
     \item \texttt{DraftState} — Trạng thái draft hiện tại: \texttt{pool} (các thẻ đang chờ chọn), \texttt{pickedCards} (thẻ đã giữ lại), \texttt{round} (lượt hiện tại, 1–5), \texttt{direction} (chiều rotation, \texttt{"clockwise"} hoặc \texttt{"counterclockwise"}).
 

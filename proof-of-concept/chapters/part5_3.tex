@@ -95,7 +95,7 @@ Tính năng Campaign Progression (chơi nối tiếp nhiều phase) chưa đư�
     \item Backend / Game Engine - Xử lý logic gameplay gồm:
     \begin{itemize}[label=\ding{111}, leftmargin=1.5cm]
         \item Kiểm tra tài nguyên, kiểm tra điều kiện đặt thẻ
-        \item Tính combo và synergy
+        \item Tính combo theo ngày (5 nhóm: Theme, Secondary, Tag-pair, Slot/Rhythm, Risk/Reward)
         \item Thanh tài nguyên
         \item Áp dụng debt token, exhaustion và penalty
         \item Mô phỏng random events, distance check và final VP
@@ -259,7 +259,7 @@ Sau khi người dùng hoàn tất lịch trình, hệ thống khóa grid và ch
     \begin{enumerate}[topsep=0pt, itemsep=2pt]
         \item Kiểm tra Token Nợ và trừ điểm tương ứng.
         \item Kích hoạt random events theo xác suất 15\% dựa trên tag, dùng hàm hash có seed để đảm bảo tái tạo được.
-        \item Duyệt combo theo hàng và cột để cộng thưởng.
+        \item Duyệt combo theo từng ngày (cột) để cộng thưởng (src/game/combos.ts): Theme, Secondary, Tag-pair, Slot/Rhythm, Risk/Reward.
         \item Kiểm tra khoảng cách giữa các điểm liền kề, áp dụng phạt nếu vượt 20km.
         \item Tổng hợp điểm gốc, bonus và penalty để ra Final VP.
     \end{enumerate}
