@@ -46,14 +46,14 @@ Nếu người chơi xếp hai địa điểm có khoảng cách vật lý quá 
     \item \textbf{Tính trực quan}: Việc số hóa các địa danh thành thẻ bài với thông số cụ thể giúp người dùng dễ dàng so sánh, lựa chọn và ghi nhớ thông tin văn hóa một cách tự nhiên thông qua quá trình chơi.
 \end{itemize}
 
-\section{Các giới hạn của bản hiện tại (MVP)}
+\section{Các giới hạn của đồ án}
 
-Bản triển khai hiện tại có các giới hạn sau, được xác định dựa trên phạm vi của đồ án:
+Trong phạm vi đồ án, hệ thống có các giới hạn sau — đây đồng thời là hướng phát triển cho các phiên bản tương lai:
 
 \begin{itemize}[topsep=0pt, itemsep=4pt, leftmargin=1.5cm]
-    \item \textbf{Multiplayer:} Hỗ trợ matchmaking tự động qua hàng đợi, bot fill sau 30s để đủ 4 người. Chưa có chế độ mời bạn bè hoặc phòng riêng.
+    \item \textbf{Multiplayer:} Hỗ trợ matchmaking tự động qua hàng đợi, bot fill sau 30s để đủ 4 người. Chưa có chế độ mời bạn bè, phòng riêng hoặc chat trong game.
 
-    \item \textbf{Campaign:} Chỉ gồm Phase 1 (Sài Gòn) với 100+ thẻ địa điểm. Các nhánh bản đồ Đà Lạt, Đà Nẵng, Nha Trang, Huế chưa được triển khai.
+    \item \textbf{Campaign:} Đã có dữ liệu thẻ cho 3 thành phố: Sài Gòn (Phase 1), Đà Nẵng (Phase 2) và Hà Nội (Phase 3). Tuy nhiên, tính năng Campaign Progression (chơi nối tiếp nhiều phase) và các nhánh bản đồ Đà Lạt, Nha Trang, Huế chưa được triển khai.
 
     \item \textbf{Lưu trữ:} Sử dụng PostgreSQL (\texttt{server/db.ts}) với các bảng users, matches, match\_players. Server vẫn chạy được ở chế độ không-DB nếu chưa cấu hình DATABASE\_URL. Chưa có migration tự động hoặc rollback.
 
@@ -61,7 +61,7 @@ Bản triển khai hiện tại có các giới hạn sau, được xác định
 
     \item \textbf{Leaderboard:} Hiển thị điểm VP trong phòng chơi, chưa có bảng xếp hạng toàn cầu hoặc giữa các nhóm bạn bè.
 
-    \item \textbf{Admin panel:} Chưa có giao diện quản trị nội dung. Việc thêm/sửa thẻ địa điểm phải thực hiện thủ công qua file nguồn (\texttt{src/data/cards.phase1.ts}).
+    \item \textbf{Admin panel:} Chưa có giao diện quản trị nội dung. Việc thêm/sửa thẻ địa điểm phải thực hiện thủ công qua file nguồn (\texttt{src/data/cards.phase1.ts}, \texttt{cards.phase2.ts}, \texttt{cards.phase3.ts}).
 
-    \item \textbf{Xuất lịch trình:} Chỉ xuất được timeline dạng văn bản trong game, chưa có xuất file PDF hoặc chia sẻ qua link.
+    \item \textbf{Xuất lịch trình:} Hỗ trợ xuất timeline dạng văn bản và chứng chỉ du lịch (\texttt{src/export/certificate.ts}). Chưa có xuất file PDF hoặc chia sẻ qua link.
 \end{itemize}

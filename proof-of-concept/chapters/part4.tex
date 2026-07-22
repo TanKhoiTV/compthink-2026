@@ -66,15 +66,17 @@
 
 \textbf{Quản lý ưu đãi hoặc nội dung đối tác (nếu có)}: Service Provider có thể tham gia bằng cách cung cấp thông tin địa điểm, ưu đãi hoặc nội dung quảng bá.
 
-\section{Các Use Cases nên tập trung cho MVP sắp tới}
+\section{Các Use Cases đã triển khai}
+
+Tất cả các use cases cốt lõi sau đã được triển khai đầy đủ trong phiên bản hiện tại:
 
 \begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
-    \item Customer chơi được một màn game lập lịch trình du lịch ảo.
-    \item Hệ thống có bộ Thẻ Địa Điểm với tag, vị trí, chi phí tài nguyên và điểm VP.
-    \item Người dùng có thể quản lý xu vàng, thể lực và xếp thẻ vào bàn cờ lịch trình.
-    \item Hệ thống có thể tính điểm VP dựa trên combo, tài nguyên, khoảng cách và sự kiện.
-    \item Sau ván chơi, hệ thống tạo được lịch trình du lịch hoàn chỉnh để tham khảo ngoài đời.
-    \item Trạng thái ván chơi, điểm số và lịch trình đầu ra được lưu ổn định.
-    \item Content Manager/Moderator chỉnh được dữ liệu thẻ và chỉ số gameplay cơ bản.
-    \item Analyst có thể theo dõi dữ liệu playtest để cân bằng game và đánh giá chất lượng lịch trình.
+    \item Người chơi hoàn thành một ván game lập lịch trình du lịch ảo đầy đủ, từ matchmaking/draft đến simulation/scoring.
+    \item Hệ thống có bộ Thẻ Địa Điểm với tag, tọa độ, chi phí tài nguyên và điểm VP (3 phase: Sài Gòn, Đà Nẵng, Hà Nội).
+    \item Người dùng có thể quản lý Xu Vàng, Thể lực, kéo thả thẻ vào bàn cờ lịch trình 5×5.
+    \item Hệ thống tính điểm VP dựa trên combo (5 nhóm), khoảng cách (>20km phạt), sự kiện (15\%, hash seed) và tài nguyên.
+    \item Sau ván chơi, hệ thống tạo lịch trình du lịch hoàn chỉnh (timeline + chứng chỉ) để tham khảo ngoài đời.
+    \item Trạng thái ván chơi, điểm số và lịch trình đầu ra được lưu trong PostgreSQL (server/db.ts).
+    \item Hỗ trợ matchmaking tự động (queue + bot fill) và chơi đơn qua tạo phòng riêng.
+    \item Hướng dẫn tương tác (Onboarding Tour) cho người chơi mới.
 \end{itemize}
