@@ -1,0 +1,125 @@
+\newpage
+
+\section{Chi tiết hạ tầng}
+
+\subsection{Frontend module}
+
+\subsubsection{Build Pipeline}
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{|>{\RaggedRight\arraybackslash}p{2.8cm}|>{\RaggedRight\arraybackslash}p{2.8cm}|>{\RaggedRight\arraybackslash}p{4.8cm}|>{\RaggedRight\arraybackslash}p{4.8cm}|}
+        \hline
+        \rowcolor[rgb]{0.8, 0.9, 1.0}
+        \textbf{Module} & \textbf{Loại} & \textbf{Sở hữu} & \textbf{Không sở hữu} \\ \hline
+
+        \texttt{tsc} & Trình biên dịch &
+        Chuyển đổi TS $\rightarrow$ JS, kiểm tra lỗi kiểu dữ liệu (type checking) &
+        Đóng gói tệp cuối, quản lý tài nguyên tĩnh \\ \hline
+
+        \texttt{lessc} & Trình tiền xử lý &
+        Chuyển đổi Less $\rightarrow$ CSS, xử lý biến và hàm giao diện &
+        Thực thi logic game, đóng gói tệp JS \\ \hline
+
+        \texttt{build/} & Kho lưu trữ &
+        Lưu trữ các tệp \texttt{.js} và \texttt{.css} đã biên dịch &
+        Mã nguồn gốc (\texttt{src}), tệp đóng gói hoàn chỉnh \\ \hline
+
+        \texttt{sw.js} & Trình trung gian &
+        Chiến lược lưu đệm (caching), hỗ trợ chơi offline &
+        Render giao diện, logic phía server \\ \hline
+
+    \end{tabular}
+    \caption{Build Pipeline}
+\end{table}
+
+\noindent \textbf{Ghi chú}: Dự án không sử dụng bundler. Đầu ra của \texttt{tsc} là các tệp \texttt{.js} riêng lẻ trong \texttt{build/}, không gom thành \texttt{client.js} duy nhất.
+
+\subsubsection{Client/Browser}
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{|>{\RaggedRight\arraybackslash}p{3.2cm}|>{\RaggedRight\arraybackslash}p{2.8cm}|>{\RaggedRight\arraybackslash}p{4.8cm}|>{\RaggedRight\arraybackslash}p{4.8cm}|}
+        \hline
+        \rowcolor[rgb]{0.8, 0.9, 1.0}
+        \textbf{Module} & \textbf{Loại} & \textbf{Sở hữu} & \textbf{Không sở hữu} \\ \hline
+
+        \texttt{index.html} & Điểm nhập &
+        Cấu trúc DOM, khai báo nạp tài nguyên hệ thống &
+        Logic xử lý, các quy tắc định dạng style \\ \hline
+
+        % \texttt{client.js} & Tệp đóng gói &
+        % Mã thực thi JS tổng hợp, hành vi runtime của game &
+        % Tệp nguồn \texttt{.ts}, định dạng giao diện \\ \hline
+
+        \texttt{client.css} & Tệp định dạng &
+        Các quy tắc CSS, bố cục (layout), hiệu ứng chuyển động &
+        Logic thành phần, quản lý tài nguyên ảnh \\ \hline
+
+        \texttt{app.ts} & Bộ điều phối UI &
+        Quản lý trạng thái view, xử lý sự kiện (event), DOM, render, drag-and-drop &
+        Đồng bộ đa người chơi \\ \hline
+
+        \texttt{socketClient.ts} & Giao diện mạng & Vòng đời Socket.IO, kết nối phòng, gửi/nhận sự kiện RPC, xác thực token & Cơ chế gameplay, render đồ họa cục bộ \\ \hline
+
+        \texttt{assets/} & Tài nguyên tĩnh &
+        Hình ảnh icon, ảnh nền, tài nguyên đồ họa &
+        Mã nguồn thực thi, dữ liệu trạng thái \\ \hline
+
+    \end{tabular}
+    \caption{Client / Browser}
+\end{table}
+
+\subsection{Backend module}
+
+% --- BẢNG 1: Các module xử lý Gameplay & Engine ---
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{|>{\RaggedRight\arraybackslash\ttfamily}p{2.8cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|}
+        \hline
+        \rowcolor[rgb]{0.8, 0.9, 1.0}
+        \textrm{\textbf{Module}} & \textbf{Sở hữu} & \textbf{Không sở hữu} \\ \hline
+
+        index.ts & HTTP listener + Socket.IO, /health endpoint, socket binding, CORS & Business logic, trạng thái người chơi \\ \hline
+
+        rooms.ts & Room lifecycle (create, join, leave, reconnect), quản lý phase, xác thực người chơi, broadcast snapshot & Chi tiết game engine, draft engine \\ \hline
+
+        gameEngine.ts & Game state factories (board, deck, player, view); load card data (phase1--3) & Xử lý draft rotation, timer simulation \\ \hline
+
+        draftEngine.ts & Draft state machine: pool creation, rotation, pick/confirm & Render UI, tính điểm \\ \hline
+
+        timerEngine.ts & Simulation tick: debt scan, random events, combo, distance, day transitions & Quản lý phòng, xác thực \\ \hline
+
+        auth.ts & PBKDF2 + JWT, register/login/verify qua PostgreSQL (server/db.ts) & Gameplay logic \\ \hline
+    \end{tabular}
+    \caption{Module/service của Backend (Phần 1: Core Engine \& Network)}
+    \label{tab:backend_modules_p1}
+\end{table}
+
+% --- BẢNG 2: Các module phụ trợ (Auth, Bot, DB, Types) ---
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{|>{\RaggedRight\arraybackslash\ttfamily}p{2.8cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|}
+        \hline
+        \rowcolor[rgb]{0.8, 0.9, 1.0}
+        \textrm{\textbf{Module}} & \textbf{Sở hữu} & \textbf{Không sở hữu} \\ \hline
+
+        bot.ts & Bot AI: fillRoomWithBots, auto pick/draft/place/confirm (greedy) & Logic game, render UI \\ \hline
+
+        db.ts & PostgreSQL: bảng users, matches, match\_players; initDb, saveMatchResult & Gameplay logic, render UI \\ \hline
+
+        types.ts & Socket.IO wire event types (ClientToServerEvents, ServerToClientEvents) & Business logic \\ \hline
+    \end{tabular}
+    \caption{Module/service của Backend (Phần 2: Auth, Database \& Types)}
+    \label{tab:backend_modules_p2}
+\end{table}

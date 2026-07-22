@@ -1,0 +1,55 @@
+\newpage
+
+\section{Kiểm soát dữ liệu}
+
+Hệ thống được thiết kế theo hướng tách biệt rõ dữ liệu lưu trữ tạm thời trong phiên chơi và dữ liệu cần lưu trữ dài hạn nhằm tối ưu hiệu năng, giảm tải backend và đảm bảo an toàn dữ liệu. Với kiến trúc PWA và phần lớn gameplay xử lý ở phía client, nhiều dữ liệu chỉ tồn tại trong thời gian diễn ra ván chơi và không cần đồng bộ liên tục lên server.
+
+\subsection{Dữ liệu lưu trữ dài hạn}
+
+Các dữ liệu được lưu trữ lâu dài bao gồm:
+
+\begin{itemize}[topsep=0pt, itemsep=2pt, leftmargin=1.2cm]
+    \item Bộ dữ liệu thẻ địa điểm (card data), combo, event và content bundle.
+    \item Phiên bản dữ liệu game (\texttt{bundle\_version}) để đảm bảo tương thích giữa các session.
+    \item Điểm số tổng kết, leaderboard và thống kê gameplay
+    \item Lịch sử ván chơi và timeline hành trình đã hoàn thành
+\end{itemize}
+
+Những dữ liệu này được lưu phía server nhằm đảm bảo tính nhất quán giữa các thiết bị, hỗ trợ cập nhật nội dung game và phục vụ mở rộng hệ thống trong tương lai. Đối với session game, hệ thống lưu \texttt{card\_id}, \texttt{bundle\_version} và các thông tin cần thiết để tránh lỗi khi dữ liệu game được cập nhật ở phiên bản mới.
+
+\subsection{Dữ liệu lưu trữ tạm thời}
+
+Các dữ liệu tạm thời chủ yếu tồn tại trong bộ nhớ client hoặc cache cục bộ trong lúc chơi, bao gồm:
+
+\begin{itemize}[topsep=0pt, itemsep=2pt, leftmargin=1.2cm]
+    \item Trạng thái hiện tại của bàn cờ lịch trình 5x5
+    \item Thẻ đang được kéo thả (drag-and-drop)
+    \item Chỉ số Xu Vàng, Thể lực và VP tạm thời
+    \item Snapshot trạng thái game theo từng phase
+    \item Kết quả tính điểm trung gian
+    \item Cache tài nguyên PWA như HTML, CSS, JavaScript và hình ảnh
+\end{itemize}
+
+Frontend sử dụng Service Worker và Cache API để lưu đệm tài nguyên nhằm hỗ trợ chế độ offline và giảm thời gian tải lại ứng dụng. Phần lớn logic gameplay cũng chạy trực tiếp trên client để tạo phản hồi gần như tức thời khi người chơi thao tác kéo thả thẻ bài.
+
+\subsection{Chiến lược lưu trữ dữ liệu}
+
+Hệ thống áp dụng chiến lược hybrid storage:
+
+\begin{itemize}[topsep=0pt, itemsep=2pt, leftmargin=1.2cm]
+    \item Client-side storage dùng cho dữ liệu gameplay ngắn hạn và cache offline nhằm giảm độ trễ và hạn chế phụ thuộc mạng.
+    \item Server-side storage dùng cho dữ liệu cần đồng bộ, thống kê và bảo toàn lâu dài.
+    \item Nội dung game được đóng gói theo dạng content bundle có version để hỗ trợ cập nhật từng phần mà không làm hỏng session cũ.
+    \item Dữ liệu gameplay được tổ chức theo schema thống nhất nhằm đảm bảo khả năng mở rộng cho nhiều phase, thành phố và loại thẻ khác nhau.
+\end{itemize}
+
+\subsection{Biện pháp bảo mật}
+
+Hệ thống áp dụng một số biện pháp bảo mật cơ bản phù hợp với phạm vi MVP:
+
+\begin{itemize}[topsep=0pt, itemsep=2pt, leftmargin=1.2cm]
+    \item Runtime Node.js + tsx, kết hợp với cơ chế container Docker (Dockerfile) nhằm hạn chế truy cập file system hoặc network trái phép từ server logic.
+    \item Giao tiếp client-server sử dụng WebSocket và Socket.IO events để kiểm soát luồng message rõ ràng, dễ xác thực và kiểm thử.
+    \item Các session game được gắn version dữ liệu nhằm tránh lỗi không tương thích khi cập nhật nội dung.
+    \item Việc tách logic gameplay theo FSM giúp ngăn các trạng thái game không hợp lệ hoặc thao tác trái quy trình.
+\end{itemize}

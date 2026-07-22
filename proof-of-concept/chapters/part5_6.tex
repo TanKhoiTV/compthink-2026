@@ -1,0 +1,60 @@
+\newpage
+
+\section{Môi trường phát triển \& Triển khai}
+
+\subsection{Công cụ phát triển}
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{|l|l|}
+        \hline
+        \rowcolor[rgb]{0.8, 0.9, 1.0}
+        \textbf{Thành phần} & \textbf{Công nghệ} \\
+        \hline
+        Hệ điều hành & Windows 11 / Linux (WSL2) \\
+        Ngôn ngữ chính & TypeScript 5.x \\
+        CSS Preprocessor & Less (lessc) \\
+        Trình biên dịch JS & tsc (TypeScript Compiler) \\
+        Server runtime & Node.js 22 + tsx \\
+        Trình duyệt đích & Chrome, Firefox, Safari (ưu tiên mobile) \\
+        Container & Docker (Alpine Linux) \\
+        CI/CD & GitHub Actions \\
+        Quản lý phiên bản & Git + GitHub \\
+        \hline
+    \end{tabular}
+    \caption{Công cụ phát triển}
+\end{table}
+
+\subsection{Môi trường triển khai}
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{|l|l|p{6cm}|}
+        \hline
+        \rowcolor[rgb]{0.8, 0.9, 1.0}
+        \textbf{Thành phần} & \textbf{Nền tảng} & \textbf{Cách triển khai} \\
+        \hline
+        Server (Node.js + Socket.IO) & Hugging Face Spaces & Docker image, push qua GitHub Actions workflow (\texttt{deploy-server.yml}) \\
+        \hline
+        Frontend (PWA tĩnh) & GitHub Pages & Build bằng \texttt{npm run build} (tsc + lessc), deploy qua workflow \texttt{deploy-pages.yml} \\
+        \hline
+    \end{tabular}
+    \caption{Môi trường triển khai}
+\end{table}
+
+\subsection{Quy trình build}
+
+Quy trình build được tự động hóa qua Makefile:
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item \textbf{\texttt{make build}}: Biên dịch TypeScript (\texttt{tsc}) và Less (\texttt{lessc}), output vào thư mục \texttt{build/}.
+    \item \textbf{\texttt{make server}}: Chạy server ở chế độ development (Node.js + tsx, watch mode).
+    \item \textbf{\texttt{make deploy-server}}: CI/CD — GitHub Actions build Docker image và push lên Hugging Face Spaces.
+    \item \textbf{\texttt{make deploy-pages}}: CI/CD — Build frontend và push lên GitHub Pages.
+\end{itemize}
+
+Frontend được deploy tại: \url{https://tankhoitv.github.io/compthink-2026/}

@@ -1,0 +1,110 @@
+\newpage
+
+\chapter{Lộ trình phát triển sản phẩm}
+
+Dựa trên kết quả của giai đoạn PoC, nhóm xác định lộ trình phát triển gồm hai giai đoạn kế tiếp nhau, mỗi giai đoạn kéo dài \textbf{4 tuần}, tổng cộng \textbf{8 tuần}. Giai đoạn đầu tập trung xây dựng vòng lặp gameplay cốt lõi đủ để kiểm chứng giá trị sản phẩm. Giai đoạn hai mở rộng sang trải nghiệm cộng đồng, tiến trình chiến dịch và các công cụ vận hành.
+
+\section{MVP - Các chức năng cốt lõi \& tiêu chí thành công}
+
+\textbf{Mục tiêu giai đoạn (Tuần 1--4):} Chứng minh vòng lặp ``Play to Plan'' hoạt động đầu-cuối. Người chơi phải có thể hoàn thành một ván game đầy đủ --- từ lúc bốc thẻ cho đến khi nhận được lịch trình du lịch có thể tham khảo ngoài đời thực --- trên một thiết bị di động tầm trung, không cần kết nối mạng liên tục.
+
+\subsection{Gameplay cốt lõi}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item \textbf{Giai đoạn Bốc bài (Daily Drafting Phase):} Mỗi ngày hệ thống phát 7 thẻ, người chơi thực hiện 5 lượt chọn-giữ-chuyển. Cơ chế \textbf{Token Nợ} (khi thiếu Xu) và \textbf{Khóa ô Kiệt sức} (khi cạn Thể lực) được áp dụng đầy đủ.
+
+    \item \textbf{Sa bàn lịch trình 5×5:} Lưới 5 ngày × 5 khung giờ (Sáng–Trưa–Chiều–Tối–Khuya), hỗ trợ thao tác kéo thả một mượt trên mobile. Người chơi có thể để trống ô để tạo \textbf{Khoảng đệm di chuyển}, hóa giải hình phạt khoảng cách.
+
+    \item \textbf{Hệ thống Tài nguyên Kép:} Thanh Xu Vàng và Thể lực hiển thị theo thời gian thực. Cơ chế hủy thẻ để thu hồi tài nguyên được hỗ trợ.
+
+    \item \textbf{Máy tính điểm VP (5 bước):} Kiểm tra nợ $\rightarrow$ Sự kiện ngẫu nhiên (15\%) $\rightarrow$ Duyệt combo $\rightarrow$ Phạt khoảng cách ($>$20km) $\rightarrow$ Tổng hợp điểm cuối. Toàn bộ pipeline chạy phía server để ngăn chặn gian lận điểm số.
+
+    \item \textbf{Xuất lịch trình du lịch:} Sau mỗi ván, hệ thống chuyển đổi grid thành timeline hành trình bao gồm danh sách địa điểm theo từng ngày, tổng quãng đường di chuyển và dự toán chi phí.
+\end{itemize}
+
+\subsection{Nội dung \& Dữ liệu}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item \textbf{Bộ Thẻ Địa Điểm:} Hơn 300 thẻ chia làm 3 phase, tổng hợp trong \texttt{src/data/cards.all.ts}:
+
+    \begin{itemize}[label=\ding{111}, leftmargin=1.5cm]
+        \item \textbf{Phase 1 (Sài Gòn):} Hơn 100 thẻ (\texttt{cards.phase1.ts}) — Food, Culture, Action, Utility.
+        \item \textbf{Phase 2 (Đà Nẵng):} Hơn 100 thẻ (\texttt{cards.phase2.ts}) — Food, Culture, Action, Utility.
+        \item \textbf{Phase 3 (Hà Nội):} Hơn 100 thẻ (\texttt{cards.phase3.ts}) — Food, Culture, Action, Utility.
+    \end{itemize}
+
+    Người chơi chọn thành phố qua màn hình \texttt{mapSelection.ts} trước khi vào game. Dữ liệu thẻ được ánh xạ qua \texttt{cardMapper.ts}.
+
+    \item \textbf{Hệ thống Combo chi tiết (\texttt{src/game/combos.ts}):} Bao gồm 5 nhóm:
+    \begin{itemize}[label=\ding{111}, leftmargin=1.5cm]
+        \item \textbf{Theme:} 2+ FOOD → +5 VP, 2+ CULTURE → +8 VP, 2+ ACTION → +10 VP.
+        \item \textbf{Secondary:} 2+ INDOOR → +5 VP, 2+ OUTDOOR → +6 VP, cân bằng trong/ngoài → +4 VP.
+        \item \textbf{Tag-pair:} 6 cặp (FOOD+CULTURE, ACTION+OUTDOOR, …) mỗi cặp +4–9 VP.
+        \item \textbf{Slot/Rhythm:} Có lịch Sáng → +3 VP, có lịch Khuya → +5 VP, dùng 4+ khung → +7 VP.
+        \item \textbf{Risk/Reward:} Tiết kiệm (ít Xu) → +6 VP, khỏe khoắn (ít Thể lực) → +5 VP, liều mạng (chi đậm) → +12 VP.
+    \end{itemize}
+    Combo được tính mỗi ngày dựa trên các thẻ đã đặt trong ngày đó.
+\end{itemize}
+
+\subsection{Hạ tầng kỹ thuật}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item \textbf{PWA Mobile-first + Offline:} Service Worker lưu đệm toàn bộ gói dữ liệu thẻ bài. Ván game có thể tiếp tục mà không cần kết nối sau lần tải đầu tiên.
+
+    \item \textbf{Hướng dẫn tương tác (Onboarding Tour):} Module \texttt{src/onboarding/} hướng dẫn người chơi mới qua các bước: chọn thẻ draft, kéo thả lên grid, xem kết quả simulation. Có spotlight và tooltip tương tác.
+
+    \item \textbf{Lưu trữ trạng thái ván chơi:} Trạng thái sa bàn, tài nguyên, token nợ, trạng thái khóa ô và điểm VP tạm thời được tự động lưu; làm mới trang sẽ khôi phục đúng tiến trình.
+
+    \item \textbf{Bảng quản trị nội dung (Admin Panel):} Content Manager và Moderator có thể thêm, sửa, xóa thẻ địa điểm và các chỉ số gameplay. Dữ liệu được đánh phiên bản (\texttt{bundle\_version}) để tránh làm hỏng session đang hoạt động.
+\end{itemize}
+
+\subsection{Tiêu chí thành công của MVP}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item Người chơi hoàn thành được một ván game đầy đủ từ đầu đến cuối mà không gặp lỗi hệ thống.
+    \item Lịch trình xuất ra sau ván game có tính thực tế: các địa điểm liền kề không cách nhau quá 20km trừ khi có ô đệm, khung giờ phân bổ hợp lý.
+    \item Điểm VP được tính đúng và nhất quán giữa client và server.
+    \item Playtest nội bộ xác nhận cân bằng tài nguyên ở mức chấp nhận được --- người chơi không bị hết Xu hay Thể lực từ lượt đầu tiên trong đa số ván chơi.
+\end{itemize}
+
+\section{Bản phát hành chính thức}
+
+\textbf{Mục tiêu giai đoạn (Tuần 5--8):} Nâng cấp sản phẩm từ bản demo đã kiểm chứng thành một trải nghiệm hoàn chỉnh với tài khoản người dùng, tiến trình chiến dịch nhiều vùng và các tính năng cộng đồng.
+
+\subsection{Tài khoản người chơi \& Lịch sử}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item \textbf{Xác thực tài khoản (Authentication):} Đăng ký và đăng nhập bằng email/mật khẩu với PBKDF2 + JWT (\texttt{server/auth.ts}) đã được triển khai. Tuy nhiên, chưa có chức năng đăng nhập bằng tài khoản mạng xã hội. Hệ thống lưu hồ sơ người chơi trong PostgreSQL (\texttt{server/db.ts}) với bảng \texttt{users} (\texttt{id}, \texttt{username}, \texttt{display\_name}, \texttt{password\_hash}). Trang hồ sơ cá nhân chi tiết (lịch sử ván đấu, lịch trình đã tạo, thành tựu) chưa được hoàn thiện.
+
+    \item \textbf{Trang hồ sơ cá nhân:} Người chơi xem lại toàn bộ hành trình --- các địa điểm đã từng chọn, combo đã kích hoạt và lịch trình đã xuất --- như một nhật ký du lịch kỹ thuật số.
+\end{itemize}
+
+\subsection{Tiến trình chiến dịch \& Mở rộng bản đồ}
+
+Dữ liệu thẻ đã có sẵn cho Phase 2 (Đà Nẵng) trong \texttt{src/data/cards.phase2.ts} và Phase 3 (Hà Nội) trong \texttt{src/data/cards.phase3.ts}. Người chơi có thể chọn thành phố qua màn hình \texttt{mapSelection.ts} trước khi vào game. Tuy nhiên, Campaign Progression (chơi nối tiếp nhiều phase) và các nhánh bản đồ Đà Lạt, Nha Trang, Huế chưa được triển khai. Sàn bài đã sử dụng lưới 5×5 ngay từ MVP (không cần mở rộng).
+
+\subsection{Tính năng cộng đồng \& Thi đua}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item \textbf{Bảng xếp hạng (Leaderboard):} Đã triển khai — hiển thị điểm VP theo ngày chơi (xem trong \texttt{src/app.ts}). Tuy nhiên chưa có xếp hạng toàn cầu hoặc theo nhóm bạn bè.
+
+    \item \textbf{Chia sẻ lịch trình:} Người chơi xuất bản lịch trình hoàn chỉnh dưới dạng file pdf, hiển thị điểm VP, combo đã kích hoạt, danh sách địa điểm và kế hoạch từng ngày. Cho phép người chơi tham khảo lịch trình của nhau.
+\end{itemize}
+
+% \subsection{Phân tích \& Vận hành}
+
+% \begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+%     \item \textbf{Dashboard phân tích (Analyst):} Theo dõi tỷ lệ chọn thẻ, tần suất combo, số lần thiếu tài nguyên, VP trung bình và chất lượng lịch trình đầu ra. Dữ liệu này là đầu vào trực tiếp để Game Designer tinh chỉnh cân bằng gameplay ở các bản cập nhật tiếp theo.
+
+%     \item \textbf{Công cụ quản lý người dùng (tùy chọn):} Moderator xem, khóa hoặc hỗ trợ tài khoản trong các trường hợp vi phạm hoặc điểm số bất thường. Tích hợp log thao tác để phát hiện gian lận.
+
+%     \item \textbf{Dữ liệu ngữ cảnh thời gian thực (tùy chọn):} Kết nối tag thẻ bài với dữ liệu thời tiết bên ngoài --- ví dụ giảm ưu tiên thẻ Outdoor khi trời mưa --- để điều chỉnh xác suất sự kiện ngẫu nhiên, tăng tính thực tế cho mô phỏng.
+% \end{itemize}
+
+\subsection{Tiêu chí thành công của bản phát hành chính thức}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item Người chơi có tài khoản có thể xem lại đầy đủ lịch sử ván chơi và lịch trình đã tạo qua nhiều phiên đăng nhập khác nhau.
+    % \item Chiến dịch Phase 2 chạy ổn định với ít nhất một trong hai nhánh địa lý (Đà Lạt hoặc Đà Nẵng) đã hoàn thiện nội dung thẻ bài.
+    \item Bảng xếp hạng không bị thao túng bởi điểm gian lận sau khi cơ chế xác thực phía server được bật.
+\end{itemize}

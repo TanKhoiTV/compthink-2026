@@ -1,0 +1,396 @@
+\newpage
+
+\chapter{Các quyết định kỹ thuật}
+
+\section{Công nghệ thực hiện (Tech Stack)}
+\subsection{Backend}
+\subsubsection{Tech stack thực tế}
+
+Kiến trúc tuân theo sơ đồ phân chia ba panel:
+\textbf{Build pipeline (Makefile)},
+\textbf{Client (Trình duyệt)},
+và \textbf{Server (Deno)},
+với \textbf{Logic dùng chung (\texttt{src/})} là nhân domain.
+\renewcommand{\arraystretch}{1.3}
+
+\begin{longtable}{|p{2.5cm}|p{2.8cm}|p{4.5cm}|p{5.2cm}|}
+
+\hline
+\rowcolor[rgb]{0.8, 0.9, 1.0}
+\textbf{Tầng} &
+\textbf{Công nghệ} &
+\textbf{Vai trò trong Backend} &
+\textbf{Lý do chọn}
+\\
+\hline
+
+\textbf{Runtime}
+&
+Node.js + tsx
+&
+Chạy \texttt{server/index.ts} --- điểm vào HTTP + Socket.IO listener
+&
+Hệ sinh thái npm phong phú (Socket.IO, tsx), team quen thuộc với Node.js, dễ tìm tài liệu
+\\
+\hline
+
+\textbf{Transport}
+&
+Socket.IO
+&
+Kênh real-time hai chiều từ \texttt{socketClient.ts} (client) đến \texttt{index.ts} (server)
+&
+Tự động fallback transport, built-in room management, dễ dàng broadcast, type-safe events
+\\
+\hline
+
+\textbf{Messaging}
+&
+Socket.IO events (\texttt{types.ts})
+&
+Giao thức event-based với kiểu TypeScript (\texttt{ClientToServerEvents} / \texttt{ServerToClientEvents})
+&
+An toàn kiểu dữ liệu, dễ debug, không cần tự implement message framing
+\\
+\hline
+
+\textbf{State Machine}
+&
+\texttt{rooms.ts} (phase-based state machine)
+&
+State machine phòng --- phase: lobby $\rightarrow$ cinematic $\rightarrow$ draft $\rightarrow$ planning $\rightarrow$ simulation $\rightarrow$ result $\rightarrow$ gameover, dayIndex, player resources
+&
+Vòng lặp game có trình tự pha rõ ràng (5 ngày $\times$ 4 phase); kết hợp \texttt{gameEngine.ts}, \texttt{draftEngine.ts}, \texttt{timerEngine.ts}
+\\
+\hline
+
+\textbf{Room Logic}
+&
+\texttt{gameEngine.ts}
+&
+Game state factories: board, deck, player, view projections
+&
+Tách biệt logic game khỏi lifecycle phòng
+\\
+\hline
+
+\textbf{Draft Engine}
+&
+\texttt{draftEngine.ts}
+&
+Draft state machine: pool creation, rotation, pick/confirm
+&
+Tách biệt logic draft khỏi game engine
+\\
+\hline
+
+\textbf{Timer Engine}
+&
+\texttt{timerEngine.ts}
+&
+Simulation tick: debt scan, random events, combo, distance, day transitions
+&
+Xử lý simulation theo thời gian thực
+\\
+\hline
+
+\textbf{Auth}
+&
+\texttt{auth.ts} (PBKDF2 + JWT)
+&
+Đăng ký, đăng nhập, xác thực token (\texttt{crypto.subtle}, không external deps)
+&
+Bảo mật cơ bản, không phụ thuộc thư viện ngoài, dễ maintain
+\\
+\hline
+
+\textbf{Types}
+&
+\texttt{types.ts}
+&
+Định nghĩa kiểu Socket.IO event (client $\leftrightarrow$ server contract)
+&
+Đảm bảo an toàn kiểu dữ liệu xuyên suốt
+\\
+\hline
+
+\textbf{Triển khai}
+&
+Docker (\texttt{Dockerfile}) --- Hugging Face Spaces
+&
+Đóng gói Node.js runtime + tài nguyên vào container image
+&
+Loại bỏ drift môi trường; tích hợp sẵn với Hugging Face Spaces + GitHub Actions (\texttt{deploy-server.yml})
+\\
+\hline
+
+\end{longtable}
+
+\newpage
+
+\subsection{Frontend}
+\subsection*{1. Tech Stack Thực Tế}
+
+Kiến trúc tuân theo sơ đồ phân chia ba panel:
+\textbf{Build pipeline (Makefile)},
+\textbf{Client (Trình duyệt)},
+và \textbf{Server (Node.js + tsx)},
+với \textbf{Logic dùng chung (\texttt{src/})} là nhân domain.
+
+\renewcommand{\arraystretch}{1.3}
+
+\begin{longtable}{|p{2.5cm}|p{2.8cm}|p{4.5cm}|p{5.2cm}|}
+\hline
+\rowcolor[rgb]{0.8, 0.9, 1.0}
+\textbf{Tầng} &
+\textbf{Công nghệ} &
+\textbf{Vai trò trong Frontend} &
+\textbf{Lý do chọn}
+\\
+\hline
+\endfirsthead
+
+\hline
+\rowcolor[rgb]{0.8, 0.9, 1.0}
+\textbf{Tầng} &
+\textbf{Công nghệ} &
+\textbf{Vai trò trong Frontend} &
+\textbf{Lý do chọn}
+\\
+\hline
+\endhead
+
+\textbf{Runtime}
+&
+Browser (DOM API)
+&
+Môi trường thực thi trực tiếp \texttt{app.js} và render \texttt{index.html}, \texttt{client.css}
+&
+Môi trường đích bắt buộc của Web App; hỗ trợ native HTML5 Drag and Drop API cho cơ chế xếp thẻ
+\\
+\hline
+
+\textbf{Ngôn ngữ}
+&
+TypeScript \& Less
+&
+Định nghĩa logic điều khiển UI an toàn (TS); hệ thống biến và lồng ghép cho giao diện (Less)
+&
+Bắt lỗi tương tác DOM từ lúc code; quản lý màu sắc thẻ bài (Đà Lạt, Sài Gòn) dễ dàng nhờ biến Less
+\\
+\hline
+
+\textbf{Giao diện \& Cấu trúc}
+&
+HTML5 \& CSS Grid
+&
+Xây dựng khung lưới lịch trình 5x5 và quản lý layout tổng thể
+&
+CSS Grid ánh xạ hoàn hảo 1:1 với logic ma trận 3 ngày $\times$ 5 slot thời gian trong \texttt{board.ts}
+\\
+\hline
+
+\textbf{Transport}
+&
+WebSocket (Browser API)
+&
+Kênh real-time kết nối lên server để truyền nhận hành động người chơi
+&
+Cần gửi tọa độ thẻ bài (drag-drop) lập tức không cần tải lại trang; nhận broadcast tức thời từ đối thủ
+\\
+\hline
+
+\textbf{Trạng thái UI}
+&
+Vanilla TS (\texttt{app.ts})
+&
+Quản lý DOM state: cập nhật thanh năng lượng, số Xu, vẽ lại lưới 5x5 khi thẻ được thả
+&
+Giữ bundle size cực nhỏ, không có overhead của Virtual DOM (như React/Vue) cho một game ưu tiên tốc độ
+\\
+\hline
+
+\textbf{Domain Logic}
+&
+Tái sử dụng \texttt{src/}
+&
+Chạy bộ luật (\texttt{rules.ts}, \texttt{score.ts}) trực tiếp trên trình duyệt để tính điểm tạm thời (Optimistic UI)
+&
+Tính điểm và báo lỗi sai luật ngay khi người chơi đang cầm thẻ kéo thả, không cần đợi server phản hồi
+\\
+\hline
+
+\textbf{Build Tool}
+&
+tsc (TypeScript compiler)
+&
+Biên dịch TypeScript sang JavaScript, kiểm tra kiểu tĩnh
+&
+Đơn giản, không cần bundler cho MVP; giảm độ phức tạp của build chain; output là các file .js riêng lẻ trong \texttt{build/} 
+\\
+\hline
+
+\textbf{Offline / PWA}
+&
+Service Worker (Cache API)
+&
+Lưu đệm \texttt{index.html}, \texttt{app.ts}, \texttt{client.css} và hình ảnh trong \texttt{assets/}
+&
+Đảm bảo người chơi mở được game ngay cả khi mất mạng (đang đi xe khách, leo núi); giảm tải băng thông
+\\
+\hline
+
+\end{longtable}
+
+% =====================================================
+
+
+\section{Các quyết định kiến trúc}
+
+\subsection{Backend}
+
+\subsubsection*{ADR-001 — Sử Dụng Node.js + tsx Làm Server Runtime}
+
+\textbf{Bối cảnh:} Game server cần chạy TypeScript, expose HTTP endpoint và WebSocket, deploy trong Docker container. Ban đầu đề xuất Deno nhưng trong quá trình phát triển, team nhận thấy Node.js đã có hệ sinh thái hơn cho Socket.IO, dễ tìm tài liệu, và tsx cho phép chạy TypeScript trực tiếp không cần build riêng.
+
+\textbf{Quyết định:} Sử dụng Node.js + tsx làm runtime server chính.
+
+\textbf{Lý do:} Socket.IO yêu cầu npm package — Node.js có sẵn support. tsx cho phép chạy TypeScript trực tiếp (type-stripping) tương tự Deno. Team đã có kinh nghiệm với Node.js. Dockerfile chỉ cần \texttt{FROM node:22-alpine}.
+
+\textbf{Hệ quả:} Phải cài npm packages. Không có sandbox bảo mật tích hợp như Deno, thay vào đó dùng container Docker để cô lập.
+
+% =====================================================
+
+\subsubsection*{ADR-002 — Sử Dụng Socket.IO Cho Messaging Client–Server}
+
+\textbf{Bối cảnh:} Pha Bốc Bài yêu cầu đồng bộ lượt bài và truyền bài giữa các người chơi. Pha Mô Phỏng cần server push sự kiện đến tất cả clients.
+
+\textbf{Quyết định:} Socket.IO transport với event-based messaging. Server định nghĩa \texttt{ClientToServerEvents} và \texttt{ServerToClientEvents} trong \texttt{types.ts}.
+
+\textbf{Lý do:} Socket.IO cung cấp sẵn cơ chế room, broadcast, và fallback transport. Event-based approach dễ hiểu hơn JSON-RPC. Type safety được đảm bảo qua TypeScript generics.
+
+\textbf{Hệ quả:} Client phải load thư viện \texttt{socket.io.min.js} từ CDN. Server dùng \texttt{socket.io} package. Cả client và server đều tham chiếu đến cùng kiểu event trong \texttt{types.ts}.
+
+% =====================================================
+
+\subsubsection*{ADR-003 — Implement Game Loop Bằng Phase-based State Machine Trong rooms.ts, Kết Hợp Các Engine Chuyên Biệt}
+
+\textbf{Bối cảnh:} Game có vòng lặp với trình tự phase nghiêm ngặt: Lobby → Draft → Planning → Simulation, lặp qua 5 ngày.
+
+% \subsubsection*{Các Lựa Chọn Đã Xem Xét}
+
+% \begin{longtable}{|p{4cm}|p{5.3cm}|p{5.3cm}|}
+% \hline
+% \textbf{Lựa chọn} & \textbf{Ưu điểm} & \textbf{Nhược điểm} \\
+% \hline
+
+% Biến flag ad-hoc
+% &
+% Nhanh để prototype
+% &
+% Bùng nổ tổ hợp trạng thái không hợp lệ; khó kiểm tra
+% \\
+% \hline
+
+% XState (thư viện)
+% &
+% Đã được kiểm chứng, có thể trực quan hóa
+% &
+% Thêm dependency; quá mức cần thiết cho vòng lặp theo lượt xác định; cần compat layer cho Deno
+% \\
+% \hline
+
+% \textbf{FSM tùy chỉnh trong \texttt{game.ts}} ✓
+% &
+% Không phụ thuộc; state là enum tường minh; \texttt{transition()} là hàm thuần có thể test độc lập
+% &
+% Phải duy trì bảng transition thủ công
+% \\
+% \hline
+% \end{longtable}
+
+\textbf{Quyết định:} Implement state machine trong `rooms.ts` với `phase` field (kiểu string enum: `"lobby"`, `"cinematic"`, `"draft"`, `"planning"`, `"simulation"`, `"result"`, `"gameover"`) và `dayIndex`. Các logic chuyên biệt được tách ra: `gameEngine.ts` (khởi tạo state), `draftEngine.ts` (draft rotation), `timerEngine.ts` (simulation).
+
+\textbf{Lý do:} FSM tường minh với transition function là phù hợp nhưng team chọn cách đơn giản hơn: kiểm tra phase hiện tại trước khi xử lý action. Điều này đủ để ngăn trạng thái game không hợp lệ.
+
+\textbf{Hệ quả:} Mỗi action handler trong \texttt{rooms.ts} đều kiểm tra \texttt{state.phase} trước khi xử lý. Các engine phụ (\texttt{draftEngine.ts}, \texttt{timerEngine.ts}) query state.phase hiện tại.
+
+% =====================================================
+
+\subsubsection*{ADR-004 - Giữ Domain Logic Trong \texttt{src/} Dùng Chung Biên Dịch Cho Cả Client Và Server}
+
+\textbf{Bối cảnh:} Các quy tắc như tương thích tag-slot, tính phạt khoảng cách, và tính điểm VP cần thiết cả trên client (xem trước real-time) lẫn server (kiểm tra chuẩn quyền). Nhân đôi code quy tắc tạo ra nguy cơ drift.
+
+\textbf{Quyết định:} Đặt tất cả rule logic (\texttt{board.ts}, \texttt{rules.ts}, \texttt{score.ts}, \texttt{dice.ts}) trong \texttt{src/} và biên dịch vào cả client bundle (qua tsc) và import graph của Node.js server.
+
+\textbf{Lý do:} Optimistic UI với server authority --- UX nhanh + ngăn gian lận. Các module TypeScript thuần không có side effects có thể được import bởi cả hai target.
+
+\textbf{Hệ quả:} Tất cả module dùng chung phải không chứa platform-specific API. Bất kỳ module nào cần Deno (file I/O, crypto) hoặc DOM (\texttt{window}, \texttt{document}) phải được tách thành platform adapter.
+
+% =====================================================
+
+\subsubsection*{ADR-005 — Sử Dụng Docker để Đóng Gói Server và Triển Khai lên Hugging Face Spaces}
+
+\textbf{Bối cảnh:} Deno server phải có thể triển khai lên hạ tầng cloud. Team đã xem xét ba mô hình triển khai cho lần ra mắt đầu tiên.
+
+\textbf{Quyết định:} Đóng gói server dưới dạng Docker image sử dụng \texttt{Dockerfile} trong panel Server.
+
+\textbf{Lý do:} WebSocket session là stateful --- FSM \texttt{game.ts} của phòng sống trong bộ nhớ server suốt phiên. Serverless functions không thể giữ in-memory state qua các lần gọi mà không có external store (Redis, v.v.), điều này thêm độ trễ và chi phí ở giai đoạn MVP.
+
+\textbf{Hệ quả:} Mở rộng ngang yêu cầu sticky sessions (định tuyến mỗi WebSocket theo room ID đến cùng container) hoặc migrate room state sang external store. Đây là nút thắt cổ chai mở rộng chính cần xem xét lại nếu số lượng phòng đồng thời vượt quá khả năng của một container.
+
+\textbf{Triển khai thực tế:}
+
+\begin{itemize}[topsep=0pt, itemsep=2.5pt, leftmargin=1.5cm]
+    \item \textbf{Server:} Docker image được triển khai lên Hugging Face Spaces qua GitHub Actions workflow (\texttt{deploy-server.yml}). Workflow được kích hoạt khi push vào nhánh main có thay đổi trong \texttt{server/}, \texttt{src/data/}, \texttt{src/types.ts}, hoặc \texttt{Dockerfile}.
+    \item \textbf{Frontend:} Static PWA được triển khai lên GitHub Pages qua workflow \texttt{deploy-pages.yml}. Build bằng \texttt{npm run build} (tsc + lessc), output được đẩy lên GitHub Pages.
+\end{itemize}
+
+\subsection{Frontend}
+
+\subsubsection*{ADR-001 - Sử Dụng Vanilla TypeScript Thay Vì Framework (React/Vue)}
+
+\textbf{Bối cảnh:} Game yêu cầu các tương tác kéo thả (Drag and Drop) phức tạp, hiệu năng cao trên lưới 5x5. Kích thước file tải xuống (bundle size) cần cực kỳ tối ưu vì target là người dùng di động, PWA, có thể sử dụng mạng 3G/4G yếu.
+
+\textbf{Quyết định:} Viết logic UI hoàn toàn bằng Vanilla TypeScript, không dùng Framework UI.
+
+\textbf{Lý do:} Bản chất của game là thao tác trực tiếp lên tọa độ lưới. Việc sử dụng HTML5 Drag/Drop native nhanh và nhẹ hơn nhiều so với việc wrap qua Virtual DOM. Bundle size sẽ giảm được hàng trăm KB, giúp game tải gần như lập tức.
+
+\textbf{Hệ quả:} Developer phải tự quản lý việc đồng bộ giữa State (dữ liệu) và View (DOM). Mọi thay đổi dữ liệu phải đi kèm hàm \texttt{updateUI()} thủ công.
+
+% =====================================================
+
+\subsubsection*{ADR-002 - Xử Lý Giao Diện Bằng CSS Preprocessor (Less) Kết Hợp CSS Grid}
+
+\textbf{Bối cảnh:} Giao diện yêu cầu một bàn cờ thời gian 5x5, các thẻ bài có màu sắc riêng theo khu vực, và cần khả năng bảo trì cao khi thêm các vùng du lịch mới.
+
+\textbf{Quyết định:} Sử dụng Less để biên dịch ra CSS, và dùng CSS Grid làm layout chính cho board game.
+
+\textbf{Lý do:} CSS Grid (\texttt{grid-template-columns: repeat(5, 1fr)}) sinh ra là để làm lưới 5x5. Kết hợp với biến của Less, việc thay đổi theme màu sắc hoặc kích thước toàn bộ game chỉ cần sửa ở 1 nơi duy nhất thay vì tìm-thay-thế hàng loạt class.
+
+\textbf{Hệ quả:}
+Dây chuyền \texttt{Makefile} cần thêm bước gọi \texttt{lessc}. Không dùng trực tiếp file \texttt{.css} trong thư mục source mà phải làm việc qua \texttt{client.css} ở thư mục \texttt{build/}.
+
+% =====================================================
+
+\subsubsection*{ADR-003 - Triển Khai Optimistic UI Cho Phép Tương Tác Không Độ Trễ}
+
+\textbf{Bối cảnh:} Game chơi qua mạng (WebSocket). Khi người chơi kéo thẻ thả vào lưới, nếu phải đợi server xác nhận ``hợp lệ'' rồi mới vẽ vào lưới thì sẽ bị khựng (lag), gây trải nghiệm thao tác kém mượt mà.
+
+\textbf{Quyết định:} Import thư mục \texttt{src/} (\texttt{rules.ts}, \texttt{score.ts}) vào \texttt{app.ts}. Tính toán điểm tạm thời và check luật trực tiếp ngay khi thả thẻ bài. Giả định thành công, sau đó gửi sự kiện lên server qua \texttt{socketClient.ts}.
+
+\textbf{Lý do:} Vừa mượt (do xử lý tức thời ở Browser) vừa an toàn (do server vẫn cầm trịch kết quả cuối). Vì dùng chung logic TypeScript, client không bao giờ báo hợp lệ cho một nước đi mà server sẽ từ chối.
+
+\textbf{Hệ quả:} tsc phải gom mã nguồn thư mục \texttt{src/} vào \texttt{app.js}. Client phải chuẩn bị cơ chế ``rollback'' (hủy thao tác, giật thẻ bài về vị trí cũ) nếu Server bị lỗi do mạng bất đồng bộ.
+
+% =====================================================
+
+\subsubsection*{ADR-004 - Tối Ưu Tải Trạng Thái Bằng Service Worker (\texttt{sw.js}) \& Cache Storage}
+
+\textbf{Bối cảnh:} Là game du lịch, người chơi có thể mở game khi đang di chuyển trên tàu xe, nơi kết nối mạng chập chờn. Việc phải fetch lại đống ảnh thẻ bài \texttt{img/} liên tục sẽ làm nghẽn game.
+
+\textbf{Quyết định:} Sử dụng Service Worker (\texttt{sw.js}) để cache \texttt{index.html}, \texttt{app.js}, \texttt{types.js}, và các file \texttt{.js} khác trong \texttt{build/}, \texttt{client.css} và toàn bộ thư mục \texttt{assets/}.
+
+\textbf{Lý do:} Chiến lược ``Cache-First'' sẽ giúp game load mất $< 1$ giây ở các lần mở sau, giảm tải server. Đặc biệt quan trọng cho các file ảnh tĩnh không bao giờ thay đổi (như mặt thẻ bài).
+
+\textbf{Hệ quả:} Developer phải xử lý cẩn thận phiên bản (versioning) trong \texttt{sw.js}. Nếu build bản cập nhật mới (ví dụ sửa lỗi tính điểm) mà không đổi key cache, người chơi sẽ kẹt ở phiên bản lỗi vĩnh viễn dù đã có mạng.

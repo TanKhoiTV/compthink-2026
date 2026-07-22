@@ -1,0 +1,21 @@
+\newpage
+
+\section{Các kiểu dữ liệu chính (Core Types)}
+
+Hệ thống sử dụng một số kiểu dữ liệu nền tảng xuyên suốt cả client và server, được định nghĩa tập trung trong \texttt{src/types.ts}:
+
+\begin{itemize}[topsep=0pt, itemsep=4pt, leftmargin=1.5cm]
+    \item \texttt{GameBoard} — Ma trận 5×5, mỗi ô chứa một \texttt{PlacedCard} hoặc để trống. Đại diện cho lịch trình 5 ngày × 5 khung giờ.
+
+    \item \texttt{PlacedCard} — Thẻ đã được đặt lên grid, bao gồm: \texttt{cardId}, \texttt{dayIndex} (0–4), \texttt{slotIndex} (0–4: Sáng–Trưa–Chiều–Tối–Khuya), \texttt{pos} (tọa độ trong grid).
+
+    \item \texttt{PlayerState} — Trạng thái hiện tại của người chơi: \texttt{gold} (Xu Vàng), \texttt{stamina} (Thể lực), \texttt{debtTokens} (số Token Nợ), \texttt{exhaustedSlots} (danh sách ô bị khóa do kiệt sức), \texttt{hand} (các thẻ đang giữ).
+
+    \item \texttt{RoomState} — Trạng thái tổng thể của phòng chơi: \texttt{phase} (\texttt{"lobby"}, \texttt{"draft"}, \texttt{"planning"}, \texttt{"simulation"}, \texttt{"gameover"}), \texttt{dayIndex}, \texttt{players} (danh sách người chơi), \texttt{board} (mảng \texttt{GameBoard} cho mỗi người).
+
+    \item \texttt{DraftState} — Trạng thái draft hiện tại: \texttt{pool} (các thẻ đang chờ chọn), \texttt{pickedCards} (thẻ đã giữ lại), \texttt{round} (lượt hiện tại, 1–5), \texttt{direction} (chiều rotation, \texttt{"clockwise"} hoặc \texttt{"counterclockwise"}).
+
+    \item \texttt{Card} — Thẻ địa điểm: \texttt{id}, \texttt{name}, \texttt{description}, \texttt{tags} (mảng tag như \texttt{"food"}, \texttt{"culture"}), \texttt{lat}/\texttt{lng} (tọa độ), \texttt{vp} (điểm cơ bản), \texttt{cost} (chi phí Xu), \texttt{staminaCost} (tiêu hao Thể lực), \texttt{timeSlot} (khung giờ phù hợp).
+\end{itemize}
+
+Các kiểu dữ liệu này được sử dụng chung ở cả client (\texttt{app.ts}) lẫn server (\texttt{rooms.ts}, \texttt{gameEngine.ts}, \texttt{draftEngine.ts}), đảm bảo tính nhất quán xuyên suốt hệ thống. Mọi thay đổi về cấu trúc dữ liệu đều được kiểm tra kiểu tĩnh bởi TypeScript compiler trước khi biên dịch.
