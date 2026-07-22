@@ -1,8 +1,8 @@
-# Trekkopoly — Architecture
+# TREKPOLOGY — Architecture
 
 ## Overview
 
-Trekkopoly is a travel itinerary board game built as a **single-page web app** with a **lightweight WebSocket relay server**. The game runs in a browser; the server handles room management and online multiplayer. Single-player/local mode runs entirely client-side.
+TREKPOLOGY is a travel itinerary board game built as a **single-page web app** with a **lightweight WebSocket relay server**. The game runs in a browser; the server handles room management and online multiplayer. Single-player/local mode runs entirely client-side.
 
 **Live:** <https://tankhoitv.github.io/compthink-2026/>  
 **Server:** <https://khoinguyentran-trekkopoly-old-server.hf.space>  

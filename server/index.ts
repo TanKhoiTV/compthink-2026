@@ -32,7 +32,7 @@ import { driveBots, fillRoomWithBots } from "./bot.js";
 const httpServer = http.createServer(async (req, res) => {
 	if (await handleAuthHttpRequest(req, res)) return;
 	res.writeHead(200, { "Content-Type": "text/plain" });
-	res.end("Trekkopoly server OK");
+	res.end("TREKPOLOGY server OK");
 });
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
