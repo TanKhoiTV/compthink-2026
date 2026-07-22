@@ -76,13 +76,11 @@
 
 \subsection{Backend module}
 
-% --- BẢNG 1: Các module xử lý Gameplay & Engine ---
 \begin{table}[H]
     \centering
-    \small
     \renewcommand{\arraystretch}{1.3}
     \setlength{\tabcolsep}{6pt}
-    \begin{tabular}{|>{\RaggedRight\arraybackslash\ttfamily}p{2.8cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|}
+    \begin{tabular}{|>{\RaggedRight\arraybackslash\ttfamily}p{3cm}|>{\RaggedRight\arraybackslash}p{7.5cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|}
         \hline
         \rowcolor[rgb]{0.8, 0.9, 1.0}
         \textrm{\textbf{Module}} & \textbf{Sở hữu} & \textbf{Không sở hữu} \\ \hline
@@ -90,7 +88,19 @@
         index.ts & HTTP listener + Socket.IO, /health endpoint, socket binding, CORS & Business logic, trạng thái người chơi \\ \hline
 
         rooms.ts & Room lifecycle (create, join, leave, reconnect), quản lý phase, xác thực người chơi, broadcast snapshot & Chi tiết game engine, draft engine \\ \hline
+    \end{tabular}
+    \label{tab:backend_modules_p1}
+\end{table}
 
+% --- BẢNG 1: Các module xử lý Gameplay & Engine ---
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{|>{\RaggedRight\arraybackslash\ttfamily}p{3cm}|>{\RaggedRight\arraybackslash}p{7.5cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|}
+        \hline
+        \rowcolor[rgb]{0.8, 0.9, 1.0}
+        \textrm{\textbf{Module}} & \textbf{Sở hữu} & \textbf{Không sở hữu} \\ \hline
         gameEngine.ts & Game state factories (board, deck, player, view); load card data (phase1--3) & Xử lý draft rotation, timer simulation \\ \hline
 
         draftEngine.ts & Draft state machine: pool creation, rotation, pick/confirm & Render UI, tính điểm \\ \hline
@@ -98,21 +108,6 @@
         timerEngine.ts & Simulation tick: debt scan, random events, combo, distance, day transitions & Quản lý phòng, xác thực \\ \hline
 
         auth.ts & PBKDF2 + JWT, register/login/verify qua PostgreSQL (server/db.ts) & Gameplay logic \\ \hline
-    \end{tabular}
-    \caption{Module/service của Backend (Phần 1: Core Engine \& Network)}
-    \label{tab:backend_modules_p1}
-\end{table}
-
-% --- BẢNG 2: Các module phụ trợ (Auth, Bot, DB, Types) ---
-\begin{table}[H]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.2}
-    \setlength{\tabcolsep}{5pt}
-    \begin{tabular}{|>{\RaggedRight\arraybackslash\ttfamily}p{2.8cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|>{\RaggedRight\arraybackslash}p{5.5cm}|}
-        \hline
-        \rowcolor[rgb]{0.8, 0.9, 1.0}
-        \textrm{\textbf{Module}} & \textbf{Sở hữu} & \textbf{Không sở hữu} \\ \hline
 
         bot.ts & Bot AI: fillRoomWithBots, auto pick/draft/place/confirm (greedy) & Logic game, render UI \\ \hline
 
@@ -120,6 +115,6 @@
 
         types.ts & Socket.IO wire event types (ClientToServerEvents, ServerToClientEvents) & Business logic \\ \hline
     \end{tabular}
-    \caption{Module/service của Backend (Phần 2: Auth, Database \& Types)}
-    \label{tab:backend_modules_p2}
+    \caption{Module/service của Backend}
+    \label{tab:backend_modules_p1}
 \end{table}
