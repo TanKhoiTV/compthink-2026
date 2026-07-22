@@ -1,12 +1,12 @@
-# Trekkopoly — Architecture
+# TREKPOLOGY — Architecture
 
 ## Overview
 
-Trekkopoly is a travel itinerary board game built as a **single-page web app** with a **lightweight WebSocket relay server**. The game runs in a browser; the server handles room management and online multiplayer. Single-player/local mode runs entirely client-side.
+TREKPOLOGY is a travel itinerary board game built as a **single-page web app** with a **lightweight WebSocket relay server**. The game runs in a browser; the server handles room management and online multiplayer. Single-player/local mode runs entirely client-side.
 
-**Live:** https://tankhoitv.github.io/compthink-2026/  
-**Server:** https://trekkopoly-3ecx8dx2y5kj.compthink-2026.deno.net  
-**Source:** https://github.com/TanKhoiTV/compthink-2026
+**Live:** <https://tankhoitv.github.io/compthink-2026/>  
+**Server:** <https://khoinguyentran-trekkopoly-old-server.hf.space>  
+**Source:** <https://github.com/TanKhoiTV/compthink-2026>
 
 ---
 
@@ -81,11 +81,12 @@ Trekkopoly is a travel itinerary board game built as a **single-page web app** w
 ## Dual Runtime
 
 | Runtime | Role | Entry | Bundler | Deploy Target |
-|---------|------|-------|---------|--------------|
+| --------- | ------ | ------- | --------- | -------------- |
 | **Deno** | WebSocket relay server | `server/server.ts` | Deno native | Deno Deploy |
 | **Browser** | Game client (SPA) | `src/app.ts` | Rollup + TypeScript | GitHub Pages |
 
 The `src/shared/` directory is compiled into both bundles:
+
 - `src/shared/` → server imports via `../src/shared/...` (Deno resolves `.ts` extensions natively)
 - `src/shared/` → client imports via `./shared/...` (Rollup resolves `.ts` through @rollup/plugin-typescript)
 
@@ -141,6 +142,7 @@ LOBBY ──START──▶ DRAFT ──5 picks──▶ PLACEMENT ──endDay�
 ```
 
 **Draft phase:** (7 cards dealt, pick 1 per round, 5 rounds)
+
 1. Deal animation: cards fly into pool (1.32s)
 2. Player picks a card (click or timer auto-pick)
 3. Pass animation: unselected cards fly to deck (0.94s)
@@ -148,12 +150,14 @@ LOBBY ──START──▶ DRAFT ──5 picks──▶ PLACEMENT ──endDay�
 5. Repeat until 5 picks made → transition to placement
 
 **Placement phase:**
+
 1. Player hand fan rendered at bottom of arena
 2. Click card to select, click board cell (current day column) to place
 3. Resource costs checked: coin debt tracked (penalty at day advance), stamina debt creates lock token on next slot
 4. "End Day" button advances to simulation
 
 **Scoring (simulation):**
+
 1. 5-step simulation runs: debt scan → random events → combo scan → distance scan → final tally
 2. Step-by-step replay overlay (850ms per step)
 3. After replay: score applied, day advances or game over
@@ -169,6 +173,7 @@ document.addEventListener("click", handler, true);
 ```
 
 This single handler:
+
 1. Checks for `[data-draft-card-id]` → draft card selection
 2. Checks for `[data-hand-card-id]` → hand card selection (placement)
 3. Checks for `[data-board-cell]` → board cell click (place card)

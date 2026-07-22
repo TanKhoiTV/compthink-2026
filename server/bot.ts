@@ -1,244 +1,89 @@
-/**
- * bot.ts — Auto-play logic for bot players in the server Room FSM.
- *
- * Provides bot player creation and turn-scheduling so that rooms with
- * bot players (e.g. single-player mode with 3 bots + 1 human) advance
- * through all game phases without requiring a human to play every seat.
- *
- * Usage:
- *   import { createBotPlayer, scheduleBotTurns } from "./bot.ts";
- *
- *   // Add bots to room
- *   for (let i = 0; i < numBots; i++) {
- *     const bot = createBotPlayer(i, "bot-");
- *     addPlayer(room, bot.playerId, bot.name);
- *   }
- *
- *   // After startGame, schedule bots to auto-play
- *   scheduleBotTurns(room, 500);
- */
+/*
+  Bot players — server-side.
 
-import { draftCard, placeCard, confirmDay, type Room } from "./game.ts";
-import type {
-	PlayerState,
-	GridPosition,
-	TimeSlot,
-} from "../src/shared/types.ts";
-import { STARTING_RESOURCES } from "../src/shared/rules.ts";
-import { createBoardCells } from "../src/shared/board.ts";
+  Kiến trúc tận dụng: game đã tự chạy bằng timer (tickRoom) và finishDraftRound
+  tự pick hộ. Bot chỉ cần (1) điền ghế trống để làm đối thủ ghi điểm, và (2) tự
+  ra nước đi NHANH mỗi tick để không phải chờ hết 90s timer mỗi vòng.
 
-// ─── Bot name pool ───────────────────────────────────────────────────────────
+  driveBots(state) được gọi trong vòng setInterval của index.ts, sau tickRoom.
+*/
+import type { RoomState, PlayerId, ServerTravelCardData } from "./types.js";
+import { PLAYER_IDS } from "./gameEngine.js";
+import { selectDraftCard, confirmDraftPick } from "./draftEngine.js";
+import { placeCardOnPlayerBoard, confirmPlanning } from "./rooms.js";
 
-const BOT_NAMES = [
-	"Bot Alpha",
-	"Bot Beta",
-	"Bot Gamma",
-	"Bot Delta",
-	"Bot Epsilon",
-	"Bot Zeta",
-	"Bot Eta",
-	"Bot Theta",
-	"Bot Iota",
-	"Bot Kappa",
-];
+const BOT_NAMES = ["Minh (Bot)", "Lan (Bot)", "Hùng (Bot)"];
 
-// ─── Player factory ──────────────────────────────────────────────────────────
-
-/**
- * Create a bot PlayerState with a generated name and default resources.
- * The playerId is constructed as `${prefix}${index}` (e.g. "bot-0", "bot-1").
- */
-export function createBotPlayer(
-	index: number,
-	playerIdPrefix = "bot-",
-): PlayerState {
-	const name = BOT_NAMES[index % BOT_NAMES.length];
-	return {
-		playerId: `${playerIdPrefix}${index}`,
-		name,
-		board: createBoardCells(),
-		hand: [],
-		chosen: [],
-		storage: [],
-		resources: { ...STARTING_RESOURCES },
-		ready: false,
-		connected: true,
-	};
+/** Điền mọi ghế chưa có người bằng bot (ready, connected) để có thể start solo. */
+export function fillRoomWithBots(state: RoomState): void {
+  let n = 0;
+  for (const id of PLAYER_IDS) {
+    const p = state.players[id];
+    if (p.hasJoined) continue;
+    p.hasJoined = true;
+    p.isConnected = true;
+    p.isReady = true;
+    p.isBot = true;
+    p.name = BOT_NAMES[n % BOT_NAMES.length];
+    n += 1;
+  }
 }
 
-// ─── Bot turn execution ─────────────────────────────────────────────────────
+export function roomHasBots(state: RoomState): boolean {
+  return PLAYER_IDS.some((id) => state.players[id].isBot === true);
+}
 
-/**
- * Execute one bot turn based on the current room phase.
- *
- * - draft: pick the first card in the bot's hand with "store" mode.
- *   If hand is empty, the bot has nothing to do this round.
- *
- * - placement: iterate through the bot's chosen cards and place each into
- *   the first available (non-occupied, non-locked, non-skipped) cell on the
- *   current day. When all chosen cards are placed (or none remain), confirm
- *   the day.
- *
- * - All other phases: no action needed (scoring/finished are server-driven).
- *
- * Returns true if the bot performed an action, false if idle.
- */
-export function runBotTurn(room: Room, playerId: string): boolean {
-	if (room.phase === "draft") {
-		return autoDraft(room, playerId);
-	}
-	if (room.phase === "placement") {
-		return autoPlace(room, playerId);
-	}
-	return false;
+/** Chọn thẻ tham lam: VP cao nhất trong pool (bỏ qua phần tử rỗng). */
+function chooseDraftCard(pool: ServerTravelCardData[]): ServerTravelCardData | null {
+  return (
+    [...pool].filter(Boolean).sort((a, b) => (b.vp ?? 0) - (a.vp ?? 0))[0] ?? null
+  );
+}
+
+/** Đặt thẻ trong tay vào các ô trống của cột ngày hiện tại (VP cao trước). */
+function placeBotCards(state: RoomState, id: PlayerId): void {
+  const p = state.players[id];
+  const day = state.dayIndex;
+  const hand = [...p.hand].sort((a, b) => (b.vp ?? 0) - (a.vp ?? 0));
+
+  for (const card of hand) {
+    const row = p.board.findIndex((r) => r[day] === null);
+    if (row < 0) break; // hết ô trong ngày
+    const err = placeCardOnPlayerBoard(state, {
+      playerId: id,
+      cardId: card.id,
+      rowIndex: row,
+      colIndex: day,
+    });
+    if (err) break; // hết tài nguyên / không hợp lệ → dừng đặt
+  }
 }
 
 /**
- * Schedule all non-ready bot players in the room to execute their turns
- * after `delayMs` milliseconds. Bots that are already ready are skipped.
- *
- * Returns an array of setTimeout IDs so the caller can cancel if needed.
+ * Một bước bot mỗi tick. Bot hành động ~1s sau khi vào phase → không chờ timer.
+ * Idempotent: gọi lại khi bot đã xong thì không làm gì.
  */
-export function scheduleBotTurns(room: Room, delayMs = 500): number[] {
-	const timers: number[] = [];
+export function driveBots(state: RoomState): void {
+  if (state.phase === "draft") {
+    if ((state.draftTimerHold ?? 0) > 0) return; // chờ deal animation xong
+    for (const id of PLAYER_IDS) {
+      const p = state.players[id];
+      if (p.isBot !== true) continue;
+      if (p.draftPool.length === 0 || p.draftPickConfirmed === true) continue;
+      const card = chooseDraftCard(p.draftPool);
+      if (!card) continue;
+      selectDraftCard(state, { playerId: id, cardId: card.id });
+      confirmDraftPick(state, { playerId: id });
+    }
+    return;
+  }
 
-	for (const player of room.players) {
-		// Skip non-bots (bots have "Bot " prefix in name)
-		if (!isBotPlayer(player)) continue;
-		// Skip bots that already have their turn ready
-		if (player.ready) continue;
-
-		// Skip bots with empty hand in draft (nothing to do)
-		if (room.phase === "draft" && player.hand.length === 0) continue;
-
-		const id = setTimeout(() => {
-			try {
-				runBotTurn(room, player.playerId);
-			} catch (err: unknown) {
-				const message = err instanceof Error ? err.message : String(err);
-				console.warn(`[bot] ${player.name} turn failed: ${message}`);
-			}
-		}, delayMs) as unknown as number;
-
-		timers.push(id);
-	}
-
-	return timers;
-}
-
-// ─── Draft auto-play ─────────────────────────────────────────────────────────
-
-/**
- * Auto-draft: pick the first card in the bot's hand with "store" mode.
- * The bot always stores — it never discards for rest resources.
- */
-function autoDraft(room: Room, playerId: string): boolean {
-	if (room.phase !== "draft") return false;
-
-	const player = getPlayerOrNull(room, playerId);
-	if (!player || player.hand.length === 0) return false;
-
-	const cardId = player.hand[0];
-	try {
-		draftCard(room, playerId, cardId, "store");
-		return true;
-	} catch {
-		// If the first card fails (e.g. cost issue), try the rest
-		for (const cId of player.hand.slice(1)) {
-			try {
-				draftCard(room, playerId, cId, "store");
-				return true;
-			} catch {
-				// Try next card
-			}
-		}
-		return false;
-	}
-}
-
-// ─── Placement auto-play ─────────────────────────────────────────────────────
-
-/**
- * Auto-place: place the bot's chosen cards sequentially into available cells
- * on the current day. Slots are filled from early_morning → night.
- * When all chosen are placed (or none left), confirm the day.
- */
-function autoPlace(room: Room, playerId: string): boolean {
-	if (room.phase !== "placement") return false;
-
-	const player = getPlayerOrNull(room, playerId);
-	if (!player) return false;
-
-	// If nothing to place, confirm and return
-	if (player.chosen.length === 0) {
-		try {
-			confirmDay(room, playerId);
-			return true;
-		} catch {
-			return false;
-		}
-	}
-
-	// Find available (empty, unlocked, unskipped) cells on current day
-	const availableCells = player.board.filter(
-		(cell) =>
-			cell.day === room.day && !cell.card_id && !cell.locked && !cell.skipped,
-	);
-
-	if (availableCells.length === 0) {
-		// No space — discard remaining chosen by confirming
-		try {
-			confirmDay(room, playerId);
-			return true;
-		} catch {
-			return false;
-		}
-	}
-
-	// Place as many cards as we have space for, in order
-	const cardsToPlace = player.chosen.slice(0, availableCells.length);
-	let placed = 0;
-
-	for (let i = 0; i < cardsToPlace.length; i++) {
-		const cardId = cardsToPlace[i];
-		const cell = availableCells[i];
-
-		try {
-			const position: GridPosition = {
-				day: room.day,
-				slot: cell.slot as TimeSlot,
-			};
-			placeCard(room, playerId, cardId, position);
-			placed++;
-		} catch {
-			// If one card fails to place, skip it and try the next
-			continue;
-		}
-	}
-
-	// If we placed everything (or nothing to place), confirm day
-	if (placed === 0 || player.chosen.length === 0) {
-		try {
-			confirmDay(room, playerId);
-			return true;
-		} catch {
-			return false;
-		}
-	}
-
-	return placed > 0;
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getPlayerOrNull(room: Room, playerId: string): PlayerState | null {
-	return room.players.find((p) => p.playerId === playerId) ?? null;
-}
-
-/**
- * Check if a player is a bot by name prefix.
- * Bot names always start with "Bot ".
- */
-export function isBotPlayer(player: PlayerState): boolean {
-	return player.name.startsWith("Bot ");
+  if (state.phase === "planning") {
+    for (const id of PLAYER_IDS) {
+      const p = state.players[id];
+      if (p.isBot !== true || p.planningConfirmed === true) continue;
+      placeBotCards(state, id);
+      confirmPlanning(state, { playerId: id });
+    }
+  }
 }

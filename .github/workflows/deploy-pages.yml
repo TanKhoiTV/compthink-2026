@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages (TREKPOLOGY — old codebase)
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -37,24 +37,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build TREKPOLOGY frontend
-        run: |
-          npm install
-          npm run build
-        working-directory: TREKPOLOGY
+      - name: Install dependencies
+        run: npm install
 
-      - name: Patch old client socket URL → old server on HF
-        run: |
-          # Override the localhost URL to the old-stack HF Space
-          OLD_URL='"http://localhost:3001"'
-          NEW_URL='"https://khoinguyentran-trekkopoly-old-server.hf.space"'
-          sed -i "s|$OLD_URL|$NEW_URL|g" TREKPOLOGY/build/online/socketClient.js
-          grep -n 'io("' TREKPOLOGY/build/online/socketClient.js
+      - name: Build frontend
+        run: npm run build
 
       - name: Prepare deployment directory
         run: |
           mkdir -p _site
-          cp -r TREKPOLOGY/* _site/
+          cp -r build/* _site/
+          cp index.html sw.js manifest.json _site/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

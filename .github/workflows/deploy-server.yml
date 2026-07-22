@@ -1,11 +1,12 @@
-name: Deploy Server (Fly.io)
+name: Deploy Server (HF Spaces)
 
 on:
   push:
     branches: [main]
     paths:
       - "server/**"
-      - "src/shared/**"
+      - "src/**"
+      - "Dockerfile"
       - ".github/workflows/deploy-server.yml"
 
   # Manual trigger from Actions tab
@@ -19,18 +20,9 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v4
 
-      - name: Install Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: Run server tests
-        run: deno task test
-        working-directory: server
-
-      - name: Deploy to Fly.io
-        uses: superfly/flyctl-actions/deploy@v1
-        with:
-          args: "--remote-only"
+      - name: Push to HF Space
+        run: |
+          git remote add hfspace https://huggingface.co/spaces/khoinguyentran/trekkopoly-old-server
+          git push hfspace main:main --force
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          GIT_HTTP_PASSWORD: ${{ secrets.HF_TOKEN }}
